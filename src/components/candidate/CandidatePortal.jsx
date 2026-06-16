@@ -13,7 +13,7 @@ const sideStyle = (active) => ({
 });
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, send, showToast } = props;
+  const { candTab, setCandTab, signOut, send, showToast, setShowContactModal } = props;
 
   const handleHelp = () => {
     setCandTab('advisor');
@@ -21,7 +21,7 @@ export default function CandidatePortal(props) {
   };
 
   const handleUpgrade = () => {
-    showToast('Elite Strategy tier coming soon — contact your advisor to learn more.');
+    setShowContactModal(true);
   };
 
   const navItems = [

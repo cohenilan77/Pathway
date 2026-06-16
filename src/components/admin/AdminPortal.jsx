@@ -142,19 +142,37 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                     {/* Programs summary */}
                     {programs && programs.length > 0 && (
                       <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>RECOMMENDED SCHOOLS</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>RECOMMENDED SCHOOLS ({programs.length})</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {programs.map(p => (
                             <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <span style={{
                                   fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, textTransform: 'capitalize',
-                                  background: p.tier === 'reach' ? '#f6e2a8' : p.tier === 'safety' ? '#dfeee4' : '#dfe6f7',
-                                  color: p.tier === 'reach' ? '#7a5d12' : p.tier === 'safety' ? '#2c6c49' : '#3a4b6e',
+                                  background: p.tier === 'stretch' ? '#fee2e2' : p.tier === 'possible' ? '#fef9c3' : p.tier === 'safe' ? '#dcfce7' : '#f1f3f9',
+                                  color: p.tier === 'stretch' ? '#d64545' : p.tier === 'possible' ? '#92620a' : p.tier === 'safe' ? '#2d7d46' : '#4a5568',
                                 }}>{p.tier}</span>
                                 <span style={{ fontSize: 14, fontWeight: 600, color: '#16233f' }}>{p.name}</span>
                               </div>
-                              <span style={{ fontSize: 14, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                {(p.avgGMAT || p.avgGPA) && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    {p.avgGMAT && (
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{p.avgGMAT}</div>
+                                        <div style={{ fontSize: 9, fontWeight: 600, color: '#8a93a3', letterSpacing: '.4px', marginTop: 2 }}>GMAT</div>
+                                      </div>
+                                    )}
+                                    {p.avgGPA && (
+                                      <div style={{ textAlign: 'right' }}>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{p.avgGPA}</div>
+                                        <div style={{ fontSize: 9, fontWeight: 600, color: '#8a93a3', letterSpacing: '.4px', marginTop: 2 }}>GPA</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                <span style={{ fontSize: 14, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+                              </div>
                             </div>
                           ))}
                         </div>

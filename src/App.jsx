@@ -3,6 +3,7 @@ import Login from './components/Login.jsx';
 import Landing from './components/Landing.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
+import ContactModal from './components/ContactModal.jsx';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV'];
 
@@ -70,6 +71,7 @@ export default function App() {
   const [insights, setInsights] = useState(saved?.insights || null);
   const [override, setOverride] = useState(saved?.override ?? saved?.scores?.overall ?? 0);
   const [showCvModal, setShowCvModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
   const toastTimerRef = useRef(null);
 
@@ -104,8 +106,12 @@ export default function App() {
   }, [showToast]);
 
   const send = useCallback(async (text) => {
-    const t = (text != null ? text : input).trim();
-    if (!t || busy) return;
+    const raw_t = (text != null ? text : input).trim();
+    if (!raw_t || busy) return;
+    const NEXT_KEYWORDS = /^(next|continue|move on|proceed|next step|go on)$/i;
+    const t = NEXT_KEYWORDS.test(raw_t)
+      ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
+      : raw_t;
 
     const userMsg = { role: 'user', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
@@ -167,6 +173,12 @@ export default function App() {
   const handleFileUpload = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (['pdf', 'doc', 'docx'].includes(ext)) {
+      showToast('PDF/Word files can\'t be read directly — please copy-paste the text content instead.');
+      e.target.value = '';
+      return;
+    }
     const reader = new FileReader();
     reader.onload = (ev) => setCvDraft(ev.target.result || '');
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
@@ -214,6 +226,7 @@ export default function App() {
     essayText, setEssayText,
     essaySchool, setEssaySchool,
     showCvModal, setShowCvModal,
+    showContactModal, setShowContactModal,
     cvDraft, setCvDraft,
     go, enter, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
@@ -250,8 +263,8 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload file (.txt, .pdf, .doc, .docx)'}
-              <input type="file" accept=".txt,.pdf,.doc,.docx,.rtf" onChange={handleFileUpload} style={{ display: 'none' }} />
+              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload .txt file (for PDF/Word, paste text below)'}
+              <input type="file" accept=".txt,.rtf" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
@@ -274,6 +287,8 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {showContactModal && <ContactModal onClose={() => setShowContactModal(false)} profile={profile} />}
 
       {screen === 'login' && <Login {...sharedProps} />}
       {screen === 'landing' && <Landing {...sharedProps} />}
