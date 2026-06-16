@@ -14,6 +14,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
   const [msgInput, setMsgInput] = useState('');
   const [summary, setSummary] = useState('');
   const [summarizing, setSummarizing] = useState(false);
+  const [summaryVisible, setSummaryVisible] = useState(false);
 
   const sessionActive = chat && chat.length > 1;
   const stepLabel = STEPS[stepIdx] || 'Profile';
@@ -36,6 +37,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
 
   const generateSummary = async () => {
     setSummarizing(true);
+    setSummaryVisible(true);
     try {
       const res = await fetch('/api/summarize', {
         method: 'POST',
@@ -237,6 +239,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                       ))}
                       {programs.length > 6 && <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - 6} more schools in full portfolio</div>}
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Session summary */}
+              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22, marginTop: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: summaryVisible && summary ? 14 : 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>SESSION SUMMARY</div>
+                  <button onClick={generateSummary} disabled={summarizing || !sessionActive}
+                    style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
+                    {summarizing ? 'Summarizing…' : summary ? 'Re-summarize Chat' : 'Summarize Chat'}
+                  </button>
+                </div>
+                {summaryVisible && (
+                  <div style={{ marginTop: 14 }}>
+                    {summarizing && !summary && (
+                      <div style={{ fontSize: 13, color: '#8a93a3', fontStyle: 'italic' }}>Analyzing conversation…</div>
+                    )}
+                    {summary && (
+                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap', background: '#fafbfd', borderRadius: 10, padding: '14px 16px', border: '1px solid #eaedf4' }}>{summary}</div>
+                    )}
                   </div>
                 )}
               </div>
