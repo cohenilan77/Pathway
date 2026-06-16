@@ -9,17 +9,26 @@ export default function ContactModal({ onClose, profile }) {
     message: '',
   });
 
+  const [status, setStatus] = useState('idle'); // idle | sending | sent | error
+
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const subject = encodeURIComponent('Pathway Elite Strategy — Upgrade Inquiry');
-    const body = encodeURIComponent(
-      `Full Name: ${form.name}\nEmail: ${form.email}\nPhone: ${form.phone || 'N/A'}\nProgram Type: ${form.program || 'N/A'}\n\nMessage:\n${form.message}`
-    );
-    window.location.href = `mailto:cohenilan@gmail.com?subject=${subject}&body=${body}`;
+    setStatus('sending');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) setStatus('sent');
+      else setStatus('error');
+    } catch {
+      setStatus('error');
+    }
   };
 
   return (
@@ -100,8 +109,25 @@ export default function ContactModal({ onClose, profile }) {
           </p>
         </div>
 
+        {/* Success state */}
+        {status === 'sent' && (
+          <div style={{ padding: '40px', textAlign: 'center' }}>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: '#16233f', margin: '0 0 10px' }}>Inquiry Sent</h3>
+            <p style={{ fontSize: 14, color: '#7a8295', margin: '0 0 24px', lineHeight: 1.6 }}>We'll be in touch within one business day.</p>
+            <button onClick={onClose} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+          </div>
+        )}
+
+        {/* Error state */}
+        {status === 'error' && (
+          <div style={{ margin: '0 40px', padding: '12px 16px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#d64545', fontWeight: 600 }}>
+            Couldn't send — please email <a href="mailto:cohenilan@gmail.com" style={{ color: '#d64545' }}>cohenilan@gmail.com</a> directly.
+          </div>
+        )}
+
         {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: '32px 40px 0' }}>
+        {status !== 'sent' && <form onSubmit={handleSubmit} style={{ padding: '32px 40px 0' }}>
           <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Full Name</label>
@@ -205,10 +231,11 @@ export default function ContactModal({ onClose, profile }) {
               e.currentTarget.style.opacity = '1';
               e.currentTarget.style.transform = 'translateY(0)';
             }}
+          disabled={status === 'sending'}
           >
-            Send Inquiry
+            {status === 'sending' ? 'Sending…' : 'Send Inquiry'}
           </button>
-        </form>
+        </form>}
 
         {/* Or call us */}
         <div style={{ padding: '24px 40px 0' }}>

@@ -174,11 +174,35 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
-    if (['pdf', 'doc', 'docx'].includes(ext)) {
-      showToast('PDF/Word files can\'t be read directly — please copy-paste the text content instead.');
+
+    if (['doc', 'docx'].includes(ext)) {
+      showToast('Word files not supported — save as PDF, or paste the text directly.');
       e.target.value = '';
       return;
     }
+
+    if (ext === 'pdf') {
+      showToast('Extracting text from PDF…');
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result.split(',')[1];
+        try {
+          const res = await fetch('/api/parse-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ base64, mediaType: 'application/pdf' }),
+          });
+          const data = await res.json();
+          if (data.text) { setCvDraft(data.text); showToast('PDF loaded — review the text below.'); }
+          else showToast('Could not extract PDF text — please paste it manually.');
+        } catch { showToast('PDF extraction failed — please paste the text manually.'); }
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+      return;
+    }
+
+    // .txt / .rtf
     const reader = new FileReader();
     reader.onload = (ev) => setCvDraft(ev.target.result || '');
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
@@ -263,7 +287,7 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload file (.txt) or paste CV text below'}
+              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload PDF or .txt file (or paste text below)'}
               <input type="file" accept=".txt,.rtf,.pdf,.doc,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 

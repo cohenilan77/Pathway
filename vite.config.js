@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import Anthropic from '@anthropic-ai/sdk';
+import nodemailer from 'nodemailer';
 
 const SYSTEM_PROMPT = `You are an elite Pathway admissions strategist. You guide candidates through a structured 7-step admissions pipeline. Be warm, strategic, and precise — never robotic.
 
@@ -137,6 +138,66 @@ export default defineConfig(({ mode }) => {
                 console.error('[Pathway] Anthropic error:', err.message);
                 res.writeHead(500);
                 res.end(JSON.stringify({ error: 'Anthropic API error', details: err.message }));
+              }
+            });
+          });
+
+          // PDF parse endpoint
+          server.middlewares.use('/api/parse-file', (req, res) => {
+            res.setHeader('Content-Type', 'application/json');
+            if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
+            const apiKey = env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', async () => {
+              try {
+                const { base64, mediaType } = JSON.parse(body);
+                if (!base64 || mediaType !== 'application/pdf') {
+                  res.writeHead(400); res.end(JSON.stringify({ error: 'Only PDF supported' })); return;
+                }
+                const client = new Anthropic({ apiKey });
+                const response = await client.messages.create({
+                  model: 'claude-haiku-4-5-20251001',
+                  max_tokens: 4000,
+                  messages: [{ role: 'user', content: [
+                    { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+                    { type: 'text', text: 'Extract all text from this document as plain text. Preserve structure. Return only the text, no commentary.' },
+                  ]}],
+                });
+                res.writeHead(200);
+                res.end(JSON.stringify({ text: response.content[0]?.text || '' }));
+              } catch (err) {
+                res.writeHead(500);
+                res.end(JSON.stringify({ error: err.message }));
+              }
+            });
+          });
+
+          // Contact form email endpoint
+          server.middlewares.use('/api/contact', (req, res) => {
+            res.setHeader('Content-Type', 'application/json');
+            if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', async () => {
+              try {
+                const { name, email, phone, program, message } = JSON.parse(body);
+                const user = env.EMAIL_USER || process.env.EMAIL_USER;
+                const pass = env.EMAIL_PASS || process.env.EMAIL_PASS;
+                if (!user || !pass) {
+                  console.log('[Contact inquiry - no email creds set]', { name, email, program });
+                  res.writeHead(200); res.end(JSON.stringify({ success: true })); return;
+                }
+                const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
+                await transporter.sendMail({
+                  from: `"Pathway Admissions" <${user}>`,
+                  to: 'cohenilan@gmail.com',
+                  subject: 'Pathway Elite Strategy — Upgrade Inquiry',
+                  html: `<h2>New inquiry from ${name}</h2><p><b>Email:</b> ${email}<br><b>Phone:</b> ${phone || '—'}<br><b>Program:</b> ${program || '—'}</p><p><b>Message:</b><br>${(message || '').replace(/\n/g, '<br>')}</p>`,
+                });
+                res.writeHead(200); res.end(JSON.stringify({ success: true }));
+              } catch (err) {
+                res.writeHead(500); res.end(JSON.stringify({ error: err.message }));
               }
             });
           });

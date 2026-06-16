@@ -120,64 +120,69 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                           <div style={{ fontSize: 17, fontWeight: 700, color: '#16233f' }}>{candidateName}</div>
                           <div style={{ fontSize: 13, color: '#8a93a3' }}>{candidateSub}</div>
                         </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 4 }}>PIPELINE STEP</div>
-                          <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8 }}>{stepLabel}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {scores && (
+                            <div style={{ textAlign: 'center' }}>
+                              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>{scores.overall}</div>
+                              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginTop: 2 }}>SCORE</div>
+                            </div>
+                          )}
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 4 }}>PIPELINE STEP</div>
+                            <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8 }}>{stepLabel}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Score overview */}
-                    {scores && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 20 }}>
-                        {Object.entries(scores).filter(([k]) => k !== 'overall').map(([key, val]) => (
-                          <div key={key} style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '14px 12px', textAlign: 'center' }}>
-                            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f' }}>{val}</div>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', textTransform: 'uppercase', marginTop: 3 }}>{key}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Programs summary */}
-                    {programs && programs.length > 0 && (
-                      <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 20 }}>
-                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>RECOMMENDED SCHOOLS ({programs.length})</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                          {programs.map(p => (
-                            <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <span style={{
-                                  fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 6, textTransform: 'capitalize',
-                                  background: p.tier === 'stretch' ? '#fee2e2' : p.tier === 'possible' ? '#fef9c3' : p.tier === 'safe' ? '#dcfce7' : '#f1f3f9',
-                                  color: p.tier === 'stretch' ? '#d64545' : p.tier === 'possible' ? '#92620a' : p.tier === 'safe' ? '#2d7d46' : '#4a5568',
-                                }}>{p.tier}</span>
-                                <span style={{ fontSize: 14, fontWeight: 600, color: '#16233f' }}>{p.name}</span>
-                              </div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                {(p.avgGMAT || p.avgGPA) && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    {p.avgGMAT && (
-                                      <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{p.avgGMAT}</div>
-                                        <div style={{ fontSize: 9, fontWeight: 600, color: '#8a93a3', letterSpacing: '.4px', marginTop: 2 }}>GMAT</div>
-                                      </div>
-                                    )}
-                                    {p.avgGPA && (
-                                      <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{p.avgGPA}</div>
-                                        <div style={{ fontSize: 9, fontWeight: 600, color: '#8a93a3', letterSpacing: '.4px', marginTop: 2 }}>GPA</div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                <span style={{ fontSize: 14, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
-                              </div>
+                    {/* Key insights from strengths */}
+                    {strengths && strengths.length > 0 && (
+                      <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 12 }}>KEY INSIGHTS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {strengths.slice(0, 4).map((s, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#b8902f', marginTop: 5, flexShrink: 0 }} />
+                              <span style={{ fontSize: 13, color: '#2a3447', lineHeight: 1.5 }}>{s}</span>
                             </div>
                           ))}
                         </div>
                       </div>
                     )}
+
+                    {/* Programs — compact tier summary */}
+                    {programs && programs.length > 0 && (() => {
+                      const stretch = programs.filter(p => p.tier === 'stretch');
+                      const possible = programs.filter(p => p.tier === 'possible');
+                      const safe = programs.filter(p => p.tier === 'safe');
+                      return (
+                        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 20 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>SCHOOL PORTFOLIO — {programs.length} schools</div>
+                          <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                            {[{ list: stretch, label: 'Stretch', color: '#d64545', bg: '#fff5f5' },
+                              { list: possible, label: 'Possible', color: '#b8902f', bg: '#fffbf0' },
+                              { list: safe, label: 'Safe', color: '#2d7d46', bg: '#f0fdf4' }].map(t => t.list.length > 0 && (
+                              <div key={t.label} style={{ flex: 1, background: t.bg, borderRadius: 10, padding: '10px 14px', textAlign: 'center' }}>
+                                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: t.color }}>{t.list.length}</div>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.color, letterSpacing: '.5px' }}>{t.label.toUpperCase()}</div>
+                              </div>
+                            ))}
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {programs.slice(0, 5).map(p => (
+                              <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f' }} />
+                                  <span style={{ fontSize: 13, fontWeight: 600, color: '#16233f' }}>{p.name}</span>
+                                </div>
+                                <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+                              </div>
+                            ))}
+                            {programs.length > 5 && <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - 5} more schools in full portfolio</div>}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
               </div>
