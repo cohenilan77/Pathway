@@ -39,9 +39,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
 
-  const handleChatScroll = () => {
-    if (chatScrollRef.current) setShowScrollTop(chatScrollRef.current.scrollTop > 300);
-  };
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 200);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -87,21 +89,21 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
         <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative' }}>
           {showScrollTop && (
             <button
-              onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               title="Scroll to top"
               style={{
-                position: 'absolute', top: 16, right: 16, zIndex: 10,
-                width: 36, height: 36, borderRadius: '50%',
+                position: 'fixed', bottom: 90, right: 32, zIndex: 100,
+                width: 42, height: 42, borderRadius: '50%',
                 background: '#16233f', color: '#fff', border: 'none',
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(22,35,63,.25)',
+                boxShadow: '0 4px 14px rgba(22,35,63,.32)',
               }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             </button>
           )}
-          <div ref={chatScrollRef} onScroll={handleChatScroll} style={{ flex: 1, overflowY: 'auto', padding: '34px 40px' }}>
+          <div ref={chatScrollRef} style={{ flex: 1, overflowY: 'auto', padding: '34px 40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
@@ -228,7 +230,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: '#9aa3b5' }}>
               <span>Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV</span></span>
-              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 19V5M5 12l7-7 7 7" /></svg>
                 Top
               </button>

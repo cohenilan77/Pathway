@@ -13,9 +13,8 @@ export default async function handler(req, res) {
   const pass = process.env.EMAIL_PASS;
 
   if (!user || !pass) {
-    // Dev mode: log and return success so UI works without credentials
-    console.log('[Contact inquiry]', { name, email, phone, program, message });
-    return res.status(200).json({ success: true });
+    console.log('[Contact inquiry - EMAIL_USER/EMAIL_PASS not set]', { name, email, phone, program, message });
+    return res.status(500).json({ error: 'Email not configured', mailto: true });
   }
 
   try {

@@ -15,6 +15,14 @@ export default function ContactModal({ onClose, profile }) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const openMailto = (f) => {
+    const subject = encodeURIComponent('Pathway Elite Strategy — Upgrade Inquiry');
+    const body = encodeURIComponent(
+      `Name: ${f.name}\nEmail: ${f.email}\nPhone: ${f.phone || '—'}\nProgram: ${f.program || '—'}\n\nMessage:\n${f.message || '—'}`
+    );
+    window.location.href = `mailto:cohenilan@gmail.com?subject=${subject}&body=${body}`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus('sending');
@@ -24,10 +32,16 @@ export default function ContactModal({ onClose, profile }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      if (res.ok) setStatus('sent');
-      else setStatus('error');
+      if (res.ok) {
+        setStatus('sent');
+      } else {
+        // API not configured — open native email client as fallback
+        openMailto(form);
+        setStatus('sent');
+      }
     } catch {
-      setStatus('error');
+      openMailto(form);
+      setStatus('sent');
     }
   };
 

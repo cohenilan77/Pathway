@@ -73,6 +73,7 @@ export default function App() {
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
+  const [cvExtra, setCvExtra] = useState('');
   const toastTimerRef = useRef(null);
 
   // Persist session on every meaningful change
@@ -175,13 +176,18 @@ export default function App() {
   }, [input, chat, busy]);
 
   const submitCv = useCallback(() => {
-    if (!cvDraft.trim()) return;
+    if (!cvDraft.trim() && !cvExtra.trim()) return;
     setCvText(cvDraft);
     setShowCvModal(false);
     const draft = cvDraft;
+    const extra = cvExtra;
     setCvDraft('');
-    send(`Here is my CV/resume:\n\n${draft}`);
-  }, [cvDraft, send]);
+    setCvExtra('');
+    const combined = extra.trim()
+      ? `Here is my CV/resume:\n\n${draft}\n\n---ADDITIONAL BACKGROUND---\n\n${extra}`
+      : `Here is my CV/resume:\n\n${draft}`;
+    send(combined);
+  }, [cvDraft, cvExtra, send]);
 
   const handleFileUpload = useCallback((e) => {
     const file = e.target.files[0];
@@ -305,19 +311,32 @@ export default function App() {
             </label>
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>OR PASTE TEXT BELOW</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>CV / RESUME</div>
               <textarea
                 value={cvDraft}
                 onChange={e => setCvDraft(e.target.value)}
-                placeholder="Paste your CV, resume, or any background info (work history, education, test scores, goals)…"
-                style={{ width: '100%', height: 220, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+                placeholder="Paste your CV, resume text, or work history…"
+                style={{ width: '100%', height: 160, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
               />
             </div>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 14, justifyContent: 'flex-end', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{cvDraft.trim().split(/\s+/).filter(Boolean).length} words</span>
-              <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={submitCv} disabled={!cvDraft.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: cvDraft.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: cvDraft.trim() ? 1 : 0.5 }}>
+            <div style={{ borderTop: '1px dashed #d7ddec', margin: '14px 0 14px', padding: '14px 0 0' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 4 }}>ADDITIONAL BACKGROUND DUMP <span style={{ color: '#b6bdcd', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
+              <div style={{ fontSize: 12, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>
+                Anything else: personal story, achievements, test scores, recommenders, career pivot context, life experiences not in your CV.
+              </div>
+              <textarea
+                value={cvExtra}
+                onChange={e => setCvExtra(e.target.value)}
+                placeholder="e.g. I was born in Brazil, started my career in banking, switched to tech startup... My GMAT is 710. My recommenders are my VP at Goldman and my professor at NYU..."
+                style={{ width: '100%', height: 110, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{(cvDraft + ' ' + cvExtra).trim().split(/\s+/).filter(Boolean).length} words</span>
+              <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvExtra(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={submitCv} disabled={!cvDraft.trim() && !cvExtra.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5 }}>
                 Analyze →
               </button>
             </div>
