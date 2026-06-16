@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 function RadialDial({ score, stroke, label, sublabel }) {
   const pct = Math.max(0, Math.min(100, score || 0));
@@ -32,10 +32,16 @@ const PROGRAM_CHIPS = [
 
 export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, programs }) {
   const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
+
+  const handleChatScroll = () => {
+    if (chatScrollRef.current) setShowScrollTop(chatScrollRef.current.scrollTop > 300);
+  };
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -75,8 +81,24 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
       {/* Chat + Right rail */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', background: '#fff' }}>
         {/* Chat area */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6' }}>
-          <div style={{ flex: 1, overflowY: 'auto', padding: '34px 40px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative' }}>
+          {showScrollTop && (
+            <button
+              onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+              title="Scroll to top"
+              style={{
+                position: 'absolute', top: 16, right: 16, zIndex: 10,
+                width: 36, height: 36, borderRadius: '50%',
+                background: '#16233f', color: '#fff', border: 'none',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(22,35,63,.25)',
+              }}>
+              <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <path d="M12 19V5M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          )}
+          <div ref={chatScrollRef} onScroll={handleChatScroll} style={{ flex: 1, overflowY: 'auto', padding: '34px 40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>

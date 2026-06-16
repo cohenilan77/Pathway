@@ -150,6 +150,19 @@ export default function App() {
         }
         if (parsed.insights) setInsights(parsed.insights);
         const displayText = parsed.clean || raw;
+
+        // Auto-advance stepper based on AI response keywords
+        const lc = displayText.toLowerCase();
+        if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
+          setStepIdx(prev => Math.max(prev, 4));
+        }
+        if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
+          setStepIdx(prev => Math.max(prev, 5));
+        }
+        if (lc.includes('paste an essay') || (lc.includes('essay prompt') && lc.includes('draft'))) {
+          setStepIdx(prev => Math.max(prev, 6));
+        }
+
         setChat(prev => [...prev, { role: 'ai', text: displayText }]);
       } else {
         setChat(prev => [...prev, { role: 'ai', text: data.error || 'Connection issue. Please try again.' }]);

@@ -142,6 +142,29 @@ export default defineConfig(({ mode }) => {
             });
           });
 
+          // Summarize endpoint
+          server.middlewares.use('/api/summarize', (req, res) => {
+            res.setHeader('Content-Type', 'application/json');
+            if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
+            const apiKey = env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+            let body = '';
+            req.on('data', chunk => { body += chunk; });
+            req.on('end', async () => {
+              try {
+                const { chat } = JSON.parse(body);
+                const transcript = chat.filter(m => m.text?.length > 2)
+                  .map(m => `${m.role === 'ai' ? 'Advisor' : 'Candidate'}: ${m.text.slice(0, 600)}`).join('\n\n');
+                const client = new Anthropic({ apiKey });
+                const response = await client.messages.create({
+                  model: 'claude-haiku-4-5-20251001',
+                  max_tokens: 700,
+                  messages: [{ role: 'user', content: `Summarize this admissions consulting session for the consultant in 4-5 concise bullet points. Cover: candidate background, key strengths, program targets, narrative direction, and current stage.\n\nTranscript:\n${transcript}` }],
+                });
+                res.writeHead(200); res.end(JSON.stringify({ summary: response.content[0]?.text || '' }));
+              } catch (err) { res.writeHead(500); res.end(JSON.stringify({ error: err.message })); }
+            });
+          });
+
           // PDF parse endpoint
           server.middlewares.use('/api/parse-file', (req, res) => {
             res.setHeader('Content-Type', 'application/json');
