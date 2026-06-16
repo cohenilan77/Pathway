@@ -57,18 +57,29 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
     safe: programs.filter(p => p.tier === 'safe').length,
   } : null;
 
-  // Detect which schools the candidate chose by finding their reply after the portfolio AI message
+  // Detect which schools the candidate chose by finding their reply after the AI asks "which schools excite you most"
+  // Step 3 also mentions "Analysis tab" so we must match Step 4-specific phrasing only
   const chosenSchools = (() => {
     if (!programs || !chat || !chat.length) return [];
     const portfolioMsgIdx = chat.findIndex(m =>
-      m.role === 'ai' && m.text.includes('Analysis tab') &&
-      (m.text.includes('excite') || m.text.includes('excited') || m.text.includes('portfolio') || m.text.includes('schools'))
+      m.role === 'ai' && (
+        m.text.includes('excite you most') ||
+        m.text.includes('3–5 schools') ||
+        m.text.includes('3-5 schools') ||
+        (m.text.includes('portfolio') && m.text.includes('excite'))
+      )
     );
     if (portfolioMsgIdx < 0) return [];
     const userMsg = chat.slice(portfolioMsgIdx + 1).find(m => m.role === 'user');
     if (!userMsg) return [];
     const t = userMsg.text.toLowerCase();
-    return programs.filter(p => t.includes(p.name.toLowerCase()));
+    return programs.filter(p => {
+      const nameLower = p.name.toLowerCase();
+      if (t.includes(nameLower)) return true;
+      // Also match on first word e.g. "Harvard" → "Harvard Business School", "Booth" → "Booth"
+      const firstWord = nameLower.split(' ')[0];
+      return firstWord.length >= 3 && t.includes(firstWord);
+    });
   })();
 
   return (
