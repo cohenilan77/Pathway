@@ -292,7 +292,7 @@ export default function App() {
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
-              Paste your CV, upload a file, or paste any background info. Claude will extract your full profile, score your competitiveness, and personalize your strategy in one step.
+              Paste your CV, upload a file, or share a <strong style={{ color: '#16233f' }}>background dump</strong> — anything about yourself: work history, achievements, experiences, test scores, recommender names, personal story. The more context, the sharper your strategy.
             </p>
 
             {/* File upload row */}

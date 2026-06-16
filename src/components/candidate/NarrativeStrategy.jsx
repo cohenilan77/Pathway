@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function NarrativeStrategy({ narrative, setNarrative, setCandTab, noop }) {
+export default function NarrativeStrategy({ narrative, setNarrative, setCandTab, send, noop }) {
   const narrCard = (kind) => {
     const on = narrative === kind;
     const accent = kind === 'pivot' ? '#c2962f' : '#16233f';
@@ -42,7 +42,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22, marginBottom: 14 }}>
           {/* Upgrade card */}
-          <div onClick={() => setNarrative('upgrade')} style={upgrade.card}>
+          <div onClick={() => { setNarrative('upgrade'); send && send("I've chosen the Upgrade narrative. Please craft my complete narrative strategy now for my chosen schools."); setCandTab('advisor'); }} style={upgrade.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <span style={upgrade.badge}>
                 <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -81,7 +81,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
           </div>
 
           {/* Pivot card */}
-          <div onClick={() => setNarrative('pivot')} style={pivot.card}>
+          <div onClick={() => { setNarrative('pivot'); send && send("I've chosen the Pivot narrative. Please craft my complete narrative strategy now for my chosen schools."); setCandTab('advisor'); }} style={pivot.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
               <span style={pivot.badge}>
                 <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round' }}>

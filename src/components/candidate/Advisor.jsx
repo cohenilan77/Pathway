@@ -30,7 +30,7 @@ const PROGRAM_CHIPS = [
   { label: 'Undergrad', text: 'Undergraduate' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, programs }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, programs, narrative }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -50,6 +50,9 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const hasScores = !!scores;
   // Show chips only before first user message
   const showChips = !busy && chat.every(m => m.role === 'ai');
+  // Detect when AI has presented narrative choice (mentions "Narrative Strategy tab")
+  const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
+  const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -180,6 +183,19 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 </div>
               )}
 
+              {/* Narrative choice CTA */}
+              {showNarrativeCTA && (
+                <div style={{ background: '#16233f', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#f5c94c', marginBottom: 4 }}>NEXT STEP</div>
+                    <span style={{ fontSize: 14, color: '#e5ebf6', fontWeight: 600 }}>Choose your narrative strategy</span>
+                  </div>
+                  <button onClick={() => setCandTab('strategy')} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    Choose Narrative →
+                  </button>
+                </div>
+              )}
+
               <div ref={messagesEndRef} />
             </div>
           </div>
@@ -210,8 +226,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 </svg>
               </button>
             </div>
-            <div style={{ textAlign: 'center', fontSize: 11, color: '#9aa3b5', marginTop: 8 }}>
-              Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV for instant analysis</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: '#9aa3b5' }}>
+              <span>Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV</span></span>
+              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                Top
+              </button>
             </div>
           </div>
         </div>
