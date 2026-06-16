@@ -57,6 +57,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
     safe: programs.filter(p => p.tier === 'safe').length,
   } : null;
 
+  // Detect which schools the candidate chose by finding their reply after the portfolio AI message
+  const chosenSchools = (() => {
+    if (!programs || !chat || !chat.length) return [];
+    const portfolioMsgIdx = chat.findIndex(m =>
+      m.role === 'ai' && m.text.includes('Analysis tab') &&
+      (m.text.includes('excite') || m.text.includes('excited') || m.text.includes('portfolio') || m.text.includes('schools'))
+    );
+    if (portfolioMsgIdx < 0) return [];
+    const userMsg = chat.slice(portfolioMsgIdx + 1).find(m => m.role === 'user');
+    if (!userMsg) return [];
+    const t = userMsg.text.toLowerCase();
+    return programs.filter(p => t.includes(p.name.toLowerCase()));
+  })();
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
       {/* Sidebar */}
@@ -213,6 +227,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                 {programs && programs.length > 0 && (
                   <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22 }}>
                     <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>SCHOOL PORTFOLIO — {programs.length} schools</div>
+
+                    {/* Tier counts */}
                     <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
                       {[{ key: 'stretch', label: 'STRETCH', color: '#d64545', bg: '#fff5f5' },
                         { key: 'possible', label: 'POSSIBLE', color: '#b8902f', bg: '#fffbf0' },
@@ -227,16 +243,50 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                         );
                       })}
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {programs.slice(0, 6).map(p => (
-                        <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f' }} />
-                            <span style={{ fontSize: 13.5, fontWeight: 600, color: '#16233f' }}>{p.name}</span>
-                          </div>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+
+                    {/* Candidate's chosen schools */}
+                    {chosenSchools.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                          {chosenSchools.map(p => {
+                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f';
+                            const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : '#fffbf0';
+                            const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : '#fde68a';
+                            return (
+                              <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tierBg, border: `1.5px solid ${tierBorder}`, borderRadius: 9, padding: '9px 12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <span style={{ color: '#b8902f', fontSize: 13 }}>★</span>
+                                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f' }}>{p.name}</span>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: tierColor, letterSpacing: '.5px', textTransform: 'uppercase' }}>{p.tier}</span>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: tierColor }}>{p.fit}%</span>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
+                        <div style={{ height: 1, background: '#eaedf4', margin: '14px 0 10px' }} />
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 8 }}>FULL PORTFOLIO</div>
+                      </div>
+                    )}
+
+                    {/* All schools list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {programs.slice(0, 6).map(p => {
+                        const isChosen = chosenSchools.some(c => c.name === p.name);
+                        return (
+                          <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f' }} />
+                              <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#16233f' }}>{p.name}</span>
+                              {isChosen && <span style={{ fontSize: 10, background: '#fef3c7', color: '#92400e', fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '.3px' }}>CHOSEN</span>}
+                            </div>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+                          </div>
+                        );
+                      })}
                       {programs.length > 6 && <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - 6} more schools in full portfolio</div>}
                     </div>
                   </div>
