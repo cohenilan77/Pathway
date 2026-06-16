@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="image-slot.js"></script>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#eef1fc;}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:#cfd6e6;border-radius:6px;}
+  @keyframes pwFade{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+  input::placeholder,textarea::placeholder{color:#9aa3b5;}
+</style>
+</helmet>
+
+<div style="font-family:'Public Sans',system-ui,sans-serif;color:#1c2433;min-height:100vh;background:#eef1fc;">
+
+<!-- ============ TOAST ============ -->
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#16233f;color:#fff;padding:12px 22px;border-radius:10px;font-size:14px;font-weight:600;box-shadow:0 12px 30px rgba(15,26,48,.32);z-index:9999;animation:pwFade .25s ease;">{{ toast }}</div>
+</sc-if>
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Login" style="display:flex;min-height:100vh;">
+  <div style="position:relative;width:44%;min-height:100vh;overflow:hidden;background:#1a1410;">
+    <image-slot id="login-hero" placeholder="Drop a library / campus interior photo" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(12,10,8,.42),rgba(12,10,8,.8));pointer-events:none;"></div>
+    <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:64px 56px;color:#fff;pointer-events:none;">
+      <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:800;letter-spacing:.5px;">Pathway</div>
+      <div style="width:54px;height:3px;background:#d8a83a;margin:12px 0 46px;"></div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:54px;line-height:1.08;font-weight:800;margin:0 0 22px;max-width:9ch;">Navigating the World's Elite Institutions.</h1>
+      <p style="font-size:17px;line-height:1.6;color:rgba(255,255,255,.82);max-width:34ch;margin:0;">Experience a personalized, high-touch admissions journey powered by strategic AI and global human expertise.</p>
+    </div>
+    <div style="position:absolute;left:56px;bottom:40px;font-size:12px;letter-spacing:1.5px;color:rgba(255,255,255,.6);font-weight:600;">EST. MMXXIV &nbsp;&nbsp;|&nbsp;&nbsp; HIGH-TOUCH ADMISSIONS ADVISOR</div>
+  </div>
+  <div style="flex:1;background:#eef1fc;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:48px;">
+    <div style="width:100%;max-width:440px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:38px;line-height:1.12;font-weight:800;color:#16233f;margin:0 0 10px;">Welcome Back to Your Private Office</h2>
+      <p style="font-size:15px;color:#6b7280;margin:0 0 30px;">Access your strategic admissions dashboard.</p>
+      <div style="display:flex;background:#e0e6f6;border-radius:12px;padding:5px;margin-bottom:26px;">
+        <sc-if value="{{ roleCandidate }}" hint-placeholder-val="{{ true }}"><button style="flex:1;padding:11px;border:none;border-radius:8px;background:#fff;color:#b8902f;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.1);font-family:inherit;">Candidate</button></sc-if>
+        <sc-if value="{{ roleConsultant }}" hint-placeholder-val="{{ false }}"><button onClick="{{ setCand }}" style="flex:1;padding:11px;border:none;border-radius:8px;background:transparent;color:#6b7280;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;">Candidate</button></sc-if>
+        <sc-if value="{{ roleConsultant }}" hint-placeholder-val="{{ false }}"><button style="flex:1;padding:11px;border:none;border-radius:8px;background:#fff;color:#b8902f;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.1);font-family:inherit;">Consultant</button></sc-if>
+        <sc-if value="{{ roleCandidate }}" hint-placeholder-val="{{ true }}"><button onClick="{{ setCons }}" style="flex:1;padding:11px;border:none;border-radius:8px;background:transparent;color:#6b7280;font-weight:600;font-size:14px;cursor:pointer;font-family:inherit;">Consultant</button></sc-if>
+      </div>
+      <label style="display:block;font-size:13px;font-weight:700;color:#1c2433;margin-bottom:8px;">Academic Email</label>
+      <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d7ddec;border-radius:10px;padding:0 14px;margin-bottom:20px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:#9aa3b5;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="m3 7 9 6 9-6"></path></svg>
+        <input type="email" placeholder="name@university.edu" style="flex:1;border:none;outline:none;background:none;padding:14px 0;font-size:15px;color:#1c2433;font-family:inherit;">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label style="font-size:13px;font-weight:700;color:#1c2433;">Security Key</label>
+        <button onClick="{{ forgot }}" style="font-size:13px;font-weight:600;color:#6b7280;background:none;border:none;cursor:pointer;font-family:inherit;">Forgot Password?</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #d7ddec;border-radius:10px;padding:0 14px;margin-bottom:22px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:#9aa3b5;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><rect x="4" y="11" width="16" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        <input type="{{ pwType }}" placeholder="Enter your security key" style="flex:1;border:none;outline:none;background:none;padding:14px 0;font-size:15px;color:#1c2433;font-family:inherit;">
+        <button onClick="{{ togglePw }}" style="background:none;border:none;cursor:pointer;color:#9aa3b5;display:flex;padding:0;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+      </div>
+      <button onClick="{{ toggleRemember }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;margin-bottom:26px;padding:0;">
+        <sc-if value="{{ rememberOn }}" hint-placeholder-val="{{ false }}"><span style="width:18px;height:18px;border-radius:5px;background:#16233f;display:flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="12" height="12" style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;"><path d="m5 12 5 5 9-11"></path></svg></span></sc-if>
+        <sc-if value="{{ rememberOff }}" hint-placeholder-val="{{ true }}"><span style="width:18px;height:18px;border-radius:5px;border:1.5px solid #c4cbdb;background:#fff;"></span></sc-if>
+        <span style="font-size:14px;color:#1c2433;">Secure this station for 30 days</span>
+      </button>
+      <button onClick="{{ enter }}" style="width:100%;background:#0f1a30;color:#fff;border:none;border-radius:10px;padding:16px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">Enter Office <svg viewBox="0 0 24 24" width="17" height="17" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+      <div style="text-align:center;margin:22px 0;font-size:14px;color:#1c2433;">New to the circle? <button onClick="{{ goLanding }}" style="background:none;border:none;color:#b8902f;font-weight:700;cursor:pointer;font-size:14px;font-family:inherit;">Request Access</button></div>
+      <div style="height:1px;background:#dde3f0;margin:8px 0 18px;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;font-size:12px;color:#9aa3b5;gap:16px;">
+        <span style="max-width:50%;">© 2024 Pathway Strategic Advising. All rights reserved.</span>
+        <span style="display:flex;gap:18px;flex-shrink:0;"><button onClick="{{ noop }}" style="background:none;border:none;color:#9aa3b5;cursor:pointer;font-size:12px;font-family:inherit;">Terms of Service</button><button onClick="{{ noop }}" style="background:none;border:none;color:#9aa3b5;cursor:pointer;font-size:12px;font-family:inherit;">Privacy Policy</button></span>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ CANDIDATE PORTAL ============ -->
+<sc-if value="{{ isCandidate }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Candidate Portal" style="display:flex;min-height:100vh;background:#f6f7fb;">
+  <!-- sidebar -->
+  <div style="width:264px;flex-shrink:0;background:#eef1fc;border-right:1px solid #e1e6f5;display:flex;flex-direction:column;padding:26px 18px;min-height:100vh;">
+    <div style="padding:0 8px 8px;">
+      <div style="font-family:'Playfair Display',serif;font-size:25px;font-weight:800;color:#16233f;">Pathway</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#8a93a3;margin-top:2px;">HIGH-TOUCH ADMISSIONS</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:26px;">
+      <button onClick="{{ goAdvisor }}" style="{{ navAdvisor }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"></path></svg>Admissions Advisor</button>
+      <button onClick="{{ goDocuments }}" style="{{ navDocuments }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6M9 13h6M9 17h6"></path></svg>Documents</button>
+      <button onClick="{{ goAnalysis }}" style="{{ navAnalysis }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 3v18h18"></path><rect x="7" y="11" width="3" height="6"></rect><rect x="12" y="7" width="3" height="10"></rect><rect x="17" y="13" width="3" height="4"></rect></svg>Analysis</button>
+      <button onClick="{{ goStrategy }}" style="{{ navStrategy }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 11l19-9-9 19-2-8-8-2Z"></path></svg>Narrative Strategy</button>
+      <button onClick="{{ goSettings }}" style="{{ navSettings }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z"></path></svg>Settings</button>
+    </div>
+    <div style="margin-top:auto;">
+      <div style="background:#16233f;border-radius:14px;padding:18px;margin-bottom:18px;">
+        <div style="font-size:12px;color:#9bb0d8;font-weight:600;margin-bottom:10px;">Tier: Private Office</div>
+        <button onClick="{{ noop }}" style="width:100%;background:#f5c94c;color:#42320a;border:none;border-radius:9px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Upgrade to Elite Strategy</button>
+      </div>
+      <div style="height:1px;background:#dde3f4;margin-bottom:14px;"></div>
+      <button onClick="{{ noop }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:#3a425a;font-weight:600;padding:8px;width:100%;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01"></path></svg>Help</button>
+      <button onClick="{{ signOut }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:#3a425a;font-weight:600;padding:8px;width:100%;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>Sign Out</button>
+    </div>
+  </div>
+
+  <!-- CANDIDATE: ADVISOR -->
+  <sc-if value="{{ candAdvisor }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:100vh;">
+    <div style="display:flex;align-items:center;gap:8px;padding:22px 36px;border-bottom:1px solid #e7eaf3;background:#fff;overflow-x:auto;">
+      <sc-for list="{{ stepList }}" as="step" hint-placeholder-count="6">
+        <div style="display:flex;align-items:center;gap:9px;flex-shrink:0;">
+          <span style="{{ step.circle }}">{{ step.num }}</span>
+          <span style="{{ step.labelStyle }}">{{ step.label }}</span>
+          <span style="width:34px;height:1px;background:#e1e6f0;margin:0 4px;"></span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 340px;background:#fff;">
+      <div style="display:flex;flex-direction:column;border-right:1px solid #eef1f6;">
+        <div style="flex:1;overflow-y:auto;padding:34px 40px;">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:26px;">
+            <span style="width:46px;height:46px;border-radius:50%;background:#16233f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">LS</span>
+            <h2 style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#16233f;margin:0;">Strategic Profile Initiation</h2>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px;max-width:600px;">
+            <sc-for list="{{ messages }}" as="m" hint-placeholder-count="2">
+              <sc-if value="{{ m.isAI }}" hint-placeholder-val="{{ true }}">
+                <div style="background:#f4f6fb;border:1px solid #e8ecf6;border-radius:4px 16px 16px 16px;padding:18px 20px;font-size:15px;line-height:1.6;color:#2a3447;">{{ m.text }}</div>
+              </sc-if>
+              <sc-if value="{{ m.isUser }}" hint-placeholder-val="{{ false }}">
+                <div style="align-self:flex-end;background:#16233f;color:#eef2fa;border-radius:16px 16px 4px 16px;padding:16px 20px;font-size:15px;line-height:1.6;max-width:80%;">{{ m.text }}</div>
+              </sc-if>
+            </sc-for>
+            <sc-if value="{{ showChips }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#16233f;margin:6px 0 12px;">What path are we formalizing today?</div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                  <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="4">
+                    <button onClick="{{ chip.onClick }}" style="background:#fff;border:1px solid #d7ddec;border-radius:9px;padding:10px 18px;font-size:14px;font-weight:600;color:#16233f;cursor:pointer;font-family:inherit;">{{ chip.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </div>
+        <div style="padding:18px 40px 14px;border-top:1px solid #eef1f6;">
+          <div style="display:flex;align-items:center;gap:10px;background:#f4f6fb;border:1px solid #e2e7f2;border-radius:12px;padding:6px 6px 6px 18px;">
+            <input value="{{ input }}" onInput="{{ onInput }}" onKeyDown="{{ onKey }}" placeholder="Inquire about your strategy..." style="flex:1;border:none;outline:none;background:none;font-size:15px;padding:10px 0;color:#1c2433;font-family:inherit;">
+            <button onClick="{{ noop }}" style="background:#eef1f7;border:none;border-radius:9px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#6b7280;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M21.4 11.05 12.25 20.2a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.48-8.49"></path></svg></button>
+            <button onClick="{{ send }}" style="background:#16233f;border:none;border-radius:9px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 19V5M5 12l7-7 7 7"></path></svg></button>
+          </div>
+          <div style="text-align:center;font-size:11px;color:#9aa3b5;margin-top:10px;">Confidential consultation active. End-to-end encrypted.</div>
+        </div>
+      </div>
+      <!-- right analysis rail -->
+      <div style="background:#fbfcfe;padding:32px 26px;overflow-y:auto;">
+        <h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#16233f;margin:0 0 6px;line-height:1.15;">Real-time Analysis</h3>
+        <p style="font-size:13px;color:#8a93a3;margin:0 0 30px;line-height:1.5;">Live profile calibration based on dialogue.</p>
+        <div style="display:flex;flex-direction:column;gap:30px;align-items:center;">
+          <div style="text-align:center;">
+            <svg width="116" height="116" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#eef1f7;stroke-width:9;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#16233f;stroke-width:9;stroke-linecap:round;stroke-dasharray:251 314;"></circle><text x="60" y="70" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">80</text></svg>
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#16233f;margin-top:8px;">ACADEMIC</div>
+            <div style="font-size:12px;color:#8a93a3;margin-top:2px;">Tier 1 Quantitative Baseline</div>
+          </div>
+          <div style="text-align:center;">
+            <svg width="116" height="116" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#eef1f7;stroke-width:9;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#b8902f;stroke-width:9;stroke-linecap:round;stroke-dasharray:298 314;"></circle><text x="60" y="70" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">95</text></svg>
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#16233f;margin-top:8px;">PROFESSIONAL</div>
+            <div style="font-size:12px;color:#8a93a3;margin-top:2px;">Elite Industry Positioning</div>
+          </div>
+          <div style="text-align:center;">
+            <svg width="116" height="116" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#eef1f7;stroke-width:9;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#aebde6;stroke-width:9;stroke-linecap:round;stroke-dasharray:188 314;"></circle><text x="60" y="70" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">60</text></svg>
+            <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#16233f;margin-top:8px;">STRATEGY</div>
+            <div style="font-size:12px;color:#8a93a3;margin-top:2px;">Narrative Under Development</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;color:#b8902f;font-size:14px;font-weight:700;border-top:1px solid #eef1f6;width:100%;justify-content:center;padding-top:22px;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7L22 9.2l-7.2-.6Z"></path></svg>Fit Index: 82%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- CANDIDATE: ANALYSIS -->
+  <sc-if value="{{ candAnalysis }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:100vh;background:#faf6ec;overflow-y:auto;">
+    <div style="max-width:980px;margin:0 auto;padding:44px 44px 64px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;margin-bottom:36px;">
+        <div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#b8902f;margin-bottom:10px;">CANDIDATE OVERVIEW</div>
+          <h1 style="font-family:'Playfair Display',serif;font-size:46px;line-height:1.05;font-weight:800;color:#16233f;margin:0;">Admissions<br>Competitiveness</h1>
+        </div>
+        <div style="display:flex;gap:12px;">
+          <button onClick="{{ goDocuments }}" style="background:#fff;border:1px solid #d3c9a8;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;color:#16233f;cursor:pointer;font-family:inherit;">Strengthen My CV</button>
+          <button onClick="{{ goAdvisor }}" style="background:#16233f;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;">Ask Advisor</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:24px;">
+        <div style="background:#fffdf7;border-radius:16px;padding:30px 22px;text-align:center;border:1px solid #efe7d4;">
+          <svg width="108" height="108" viewBox="0 0 120 120" style="display:block;margin:0 auto 8px;"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#efe7d2;stroke-width:7;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#c2962f;stroke-width:7;stroke-linecap:round;stroke-dasharray:126 314;"></circle><text x="60" y="58" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">40</text><text x="60" y="74" text-anchor="middle" style="font-size:10px;font-weight:700;letter-spacing:1px;fill:#9aa3b5;">PRC</text></svg>
+          <h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#16233f;margin:8px 0 8px;">Academic</h3>
+          <p style="font-size:13px;line-height:1.55;color:#7a8295;margin:0;">Exemplary GMAT and GPA metrics across target institutions.</p>
+        </div>
+        <div style="background:#fffdf7;border-radius:16px;padding:30px 22px;text-align:center;border:1px solid #efe7d4;">
+          <svg width="108" height="108" viewBox="0 0 120 120" style="display:block;margin:0 auto 8px;"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#e7eaf3;stroke-width:7;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#16233f;stroke-width:7;stroke-linecap:round;stroke-dasharray:107 314;"></circle><text x="60" y="58" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">34</text><text x="60" y="74" text-anchor="middle" style="font-size:10px;font-weight:700;letter-spacing:1px;fill:#9aa3b5;">PRC</text></svg>
+          <h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#16233f;margin:8px 0 8px;">Leadership</h3>
+          <p style="font-size:13px;line-height:1.55;color:#7a8295;margin:0;">Strong professional progression with emerging team management.</p>
+        </div>
+        <div style="background:#fffdf7;border-radius:16px;padding:30px 22px;text-align:center;border:1px solid #efe7d4;">
+          <svg width="108" height="108" viewBox="0 0 120 120" style="display:block;margin:0 auto 8px;"><circle cx="60" cy="60" r="50" style="fill:none;stroke:#efe7d2;stroke-width:7;"></circle><circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style="fill:none;stroke:#c2962f;stroke-width:7;stroke-linecap:round;stroke-dasharray:132 314;"></circle><text x="60" y="58" text-anchor="middle" style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;fill:#16233f;">42</text><text x="60" y="74" text-anchor="middle" style="font-size:10px;font-weight:700;letter-spacing:1px;fill:#9aa3b5;">PRC</text></svg>
+          <h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#16233f;margin:8px 0 8px;">Narrative</h3>
+          <p style="font-size:13px;line-height:1.55;color:#7a8295;margin:0;">Highly cohesive personal brand and unique industry perspective.</p>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:48px;">
+        <div style="background:#fffdf7;border-radius:16px;padding:30px;border:1px solid #efe7d4;">
+          <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid #efe7d2;padding-bottom:14px;margin-bottom:18px;"><span style="color:#c2962f;font-size:18px;">★</span><h3 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#16233f;margin:0;">Core Strengths</h3></div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#c2962f;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Quantitative Precision</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Top 2% scoring in logic and mathematical reasoning modules.</div></div></div>
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#c2962f;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Social Impact Track</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Significant contributions to education non-profits over 4 years.</div></div></div>
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#c2962f;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Global Versatility</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Work experience across 3 continents with fluent multi-lingual skills.</div></div></div>
+          </div>
+        </div>
+        <div style="background:#fffdf7;border-radius:16px;padding:30px;border:1px solid #efe7d4;">
+          <div style="display:flex;align-items:center;gap:10px;border-bottom:1px solid #efe7d2;padding-bottom:14px;margin-bottom:18px;"><span style="color:#d64545;font-size:18px;">◷</span><h3 style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#16233f;margin:0;">Growth Areas</h3></div>
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#d64545;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Extracurricular Depth</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Current activities lack deep long-term leadership commitment.</div></div></div>
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#d64545;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Strategic Networking</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Alumni engagement at target schools is currently below benchmark.</div></div></div>
+            <div style="display:flex;gap:12px;"><span style="width:7px;height:7px;border-radius:50%;background:#d64545;margin-top:6px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Essay Specificity</div><div style="font-size:13px;color:#7a8295;line-height:1.5;">Narrative requires more granular focus on 'Why Us' sections.</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#b8902f;margin-bottom:10px;">PORTFOLIO OPTIMIZATION</div>
+      <h2 style="font-family:'Playfair Display',serif;font-size:38px;font-weight:800;color:#16233f;margin:0 0 28px;">Strategic School Match</h2>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;">
+        <div style="position:relative;border-radius:16px;overflow:hidden;min-height:420px;border:2px solid #c2962f;">
+          <image-slot id="school-1" placeholder="Reach school photo" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,48,.05),rgba(15,26,48,.82));pointer-events:none;"></div>
+          <div style="position:absolute;left:22px;bottom:22px;right:22px;color:#fff;pointer-events:none;"><span style="display:inline-block;background:#c2962f;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:7px;margin-bottom:10px;">Reach</span><div style="display:flex;justify-content:space-between;align-items:flex-end;"><div><div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;">Harvard</div><div style="display:flex;align-items:center;gap:5px;font-size:13px;opacity:.85;margin-top:4px;">◍ Cambridge, MA</div></div><div style="font-family:'Playfair Display',serif;font-size:26px;font-weight:700;color:#f3d27e;">74% Fit</div></div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div style="position:relative;border-radius:16px;overflow:hidden;flex:1.3;min-height:200px;">
+            <image-slot id="school-2" placeholder="Target school photo" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,48,.04),rgba(15,26,48,.78));pointer-events:none;"></div>
+            <div style="position:absolute;left:18px;bottom:18px;right:18px;color:#fff;pointer-events:none;"><span style="display:inline-block;background:rgba(255,255,255,.22);font-size:11px;font-weight:700;padding:4px 11px;border-radius:6px;margin-bottom:8px;">Target</span><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;">Stanford GSB</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;"><span style="font-size:12px;opacity:.85;">◍ Palo Alto, CA</span><span style="font-size:13px;font-weight:700;color:#f3d27e;">89% Fit</span></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;flex:1;">
+            <div style="position:relative;border-radius:16px;overflow:hidden;min-height:160px;">
+              <image-slot id="school-3" placeholder="Safety" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,48,.06),rgba(15,26,48,.8));pointer-events:none;"></div>
+              <div style="position:absolute;left:14px;bottom:14px;right:14px;color:#fff;pointer-events:none;"><span style="display:inline-block;background:rgba(255,255,255,.22);font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;margin-bottom:7px;">Safety</span><div style="font-family:'Playfair Display',serif;font-size:21px;font-weight:700;">Columbia</div><div style="font-size:12px;color:#f3d27e;font-weight:700;margin-top:2px;">94% Fit</div></div>
+            </div>
+            <div style="position:relative;border-radius:16px;overflow:hidden;min-height:160px;">
+              <image-slot id="school-4" placeholder="Safety" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,26,48,.06),rgba(15,26,48,.8));pointer-events:none;"></div>
+              <div style="position:absolute;left:14px;bottom:14px;right:14px;color:#fff;pointer-events:none;"><span style="display:inline-block;background:rgba(255,255,255,.22);font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;margin-bottom:7px;">Safety</span><div style="font-family:'Playfair Display',serif;font-size:21px;font-weight:700;">INSEAD</div><div style="font-size:12px;color:#f3d27e;font-weight:700;margin-top:2px;">91% Fit</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="border-top:1px solid #e7ddc4;margin-top:40px;padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;font-size:13px;color:#9a8f74;">
+        <span>© 2024 Pathway Admissions Strategic Advisors. All rights reserved.</span>
+        <span style="display:flex;gap:24px;"><button onClick="{{ noop }}" style="background:none;border:none;color:#9a8f74;cursor:pointer;font-size:13px;font-family:inherit;">Methodology</button><button onClick="{{ noop }}" style="background:none;border:none;color:#9a8f74;cursor:pointer;font-size:13px;font-family:inherit;">Terms of Service</button><button onClick="{{ noop }}" style="background:none;border:none;color:#9a8f74;cursor:pointer;font-size:13px;font-family:inherit;">Contact</button></span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- CANDIDATE: DOCUMENTS -->
+  <sc-if value="{{ candDocuments }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:100vh;display:grid;grid-template-columns:320px 1fr 320px;background:#fff;">
+    <!-- recent assets + subnav -->
+    <div style="border-right:1px solid #eef1f6;display:flex;flex-direction:column;">
+      <div style="padding:24px 22px 16px;border-bottom:1px solid #eef1f6;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button onClick="{{ setDocDocs }}" style="{{ docNavDocuments }}"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M4 20V6a2 2 0 0 1 2-2h4l2 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"></path></svg>Documents</button>
+          <button onClick="{{ setDocEditor }}" style="{{ docNavEditor }}"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Essay Editor</button>
+          <button onClick="{{ setDocInsights }}" style="{{ docNavInsights }}"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"></path></svg>AI Insights</button>
+          <button onClick="{{ setDocHistory }}" style="{{ docNavHistory }}"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 3v6h6M3 9a9 9 0 1 0 2.6-5.6L3 9M12 8v4l3 2"></path></svg>Version History</button>
+          <button onClick="{{ setDocArchive }}" style="{{ docNavArchive }}"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"></path></svg>Archive</button>
+        </div>
+      </div>
+      <div style="padding:22px;overflow-y:auto;flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;"><h3 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#16233f;margin:0;">Recent Assets</h3><button onClick="{{ noop }}" style="background:none;border:none;color:#b8902f;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;">View All</button></div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#fff;border:1px solid #eaedf4;border-radius:14px;padding:18px;"><div style="display:flex;justify-content:space-between;margin-bottom:14px;"><span style="width:36px;height:36px;border-radius:8px;background:#eef1f7;display:flex;align-items:center;justify-content:center;color:#16233f;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg></span><span style="background:#dfe6f7;color:#3a4b6e;font-size:10px;font-weight:700;padding:5px 9px;border-radius:6px;height:fit-content;">AI REVIEWED</span></div><div style="font-size:15px;font-weight:700;color:#16233f;">CV_Draft_Final.docx</div><div style="font-size:12px;color:#8a93a3;margin:4px 0 10px;">Word Document • 2.4 MB</div><div style="font-size:12px;color:#9aa3b5;">Edited 2h ago</div></div>
+          <div style="background:#fffaf0;border:1px solid #ecd9a8;border-left:4px solid #c2962f;border-radius:14px;padding:18px;"><div style="display:flex;justify-content:space-between;margin-bottom:14px;"><span style="width:36px;height:36px;border-radius:8px;background:#fbf1d6;display:flex;align-items:center;justify-content:center;color:#16233f;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"></path></svg></span><span style="background:#f5c94c;color:#5a4410;font-size:10px;font-weight:700;padding:5px 9px;border-radius:6px;height:fit-content;">CURRENTLY EDITING</span></div><div style="font-size:15px;font-weight:700;color:#16233f;">Stanford_Essay_V3.pdf</div><div style="font-size:12px;color:#8a93a3;margin:4px 0 10px;">Portable Document • 1.1 MB</div><div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#b8902f;font-weight:700;">Active now <svg viewBox="0 0 24 24" width="14" height="14" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M7 17 17 7M9 7h8v8"></path></svg></div></div>
+          <div style="background:#fff;border:1px solid #eaedf4;border-radius:14px;padding:18px;"><div style="display:flex;justify-content:space-between;margin-bottom:14px;"><span style="width:36px;height:36px;border-radius:8px;background:#eef1f7;display:flex;align-items:center;justify-content:center;color:#16233f;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="m12 2 2.4 5 5.6.5-4.2 3.7 1.3 5.3L12 18.8 6.9 21.5l1.3-5.3L4 12.5l5.6-.5Z"></path></svg></span><span style="background:#dfeee4;color:#2c6c49;font-size:10px;font-weight:700;padding:5px 9px;border-radius:6px;height:fit-content;">VERIFIED</span></div><div style="font-size:15px;font-weight:700;color:#16233f;">Official_Transcripts.pdf</div><div style="font-size:12px;color:#8a93a3;margin:4px 0 10px;">Portable Document • 5.8 MB</div><div style="font-size:12px;color:#9aa3b5;">Edited Oct 12</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- editor -->
+    <div style="background:#f6f7fb;padding:40px;overflow-y:auto;display:flex;justify-content:center;">
+      <div style="background:#fff;max-width:560px;width:100%;border-radius:8px;box-shadow:0 10px 40px rgba(15,26,48,.08);padding:56px 60px;min-height:640px;">
+        <div style="text-align:center;font-size:12px;color:#b6bdcd;margin-bottom:34px;">Pathway Strategist Review Mode</div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:34px;line-height:1.2;font-weight:700;color:#16233f;margin:0 0 30px;">Personal Statement: Stanford University</h1>
+        <p style="font-size:15.5px;line-height:1.9;color:#33405a;margin:0 0 18px;"><span style="float:left;font-family:'Playfair Display',serif;font-size:56px;line-height:.8;font-weight:700;color:#16233f;margin:6px 10px 0 0;">T</span>he intersection of computational linguistics and social justice has always felt like a necessary collision rather than a forced marriage. Growing up in a community where language barriers often dictated the quality of legal representation, I witnessed firsthand how access is mediated by who gets to be understood.</p>
+        <p style="font-size:15.5px;line-height:1.9;color:#33405a;margin:0 0 18px;">My undergraduate research focused on bias mitigation in NLP systems deployed across immigration courts. What began as a technical curiosity matured into a conviction: that the tools we build are never neutral, and that designing them responsibly is itself a form of advocacy.</p>
+        <p style="font-size:15.5px;line-height:1.9;color:#33405a;margin:0;">At Stanford, I intend to bridge the Human-Centered AI Institute with the Law School's clinical programs — translating rigorous research into instruments that materially expand who the system can hear.</p>
+      </div>
+    </div>
+    <!-- strategist insights -->
+    <div style="border-left:1px solid #eef1f6;background:#fbfcfe;overflow-y:auto;display:flex;flex-direction:column;">
+      <div style="background:#eef1fc;padding:22px;border-bottom:1px solid #e1e6f5;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="color:#b8902f;">✦</span><span style="font-size:13px;font-weight:700;letter-spacing:.5px;color:#16233f;">STRATEGIST INSIGHTS</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#7a8295;"><span>Tone: Professional &amp; Academic</span><span style="color:#1f8a5b;font-weight:700;">92% MATCH</span></div>
+      </div>
+      <div style="padding:22px;flex:1;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#16233f;margin-bottom:8px;">WORD COUNT <span style="color:#7a8295;">850 / 1000</span></div>
+        <div style="height:6px;background:#e7eaf3;border-radius:3px;margin-bottom:24px;overflow:hidden;"><div style="width:85%;height:100%;background:#16233f;"></div></div>
+        <div style="background:#fffaf0;border:1px solid #ecd9a8;border-radius:12px;padding:16px;margin-bottom:14px;"><div style="font-size:12px;font-weight:700;color:#16233f;margin-bottom:6px;">STRENGTHEN VERBS</div><div style="font-size:13px;line-height:1.55;color:#5d6577;margin-bottom:10px;">Paragraph 2: Consider replacing "focused on" with "spearheaded" or "pioneered" to emphasize leadership.</div><button onClick="{{ noop }}" style="background:none;border:none;color:#b8902f;font-weight:700;font-size:12px;cursor:pointer;font-family:inherit;padding:0;">APPLY AUTOMATICALLY →</button></div>
+        <div style="background:#eef3fb;border:1px solid #d7e1f2;border-radius:12px;padding:16px;"><div style="font-size:12px;font-weight:700;color:#16233f;margin-bottom:6px;">CLARITY CHECK</div><div style="font-size:13px;line-height:1.55;color:#5d6577;">The sentence regarding 'Human-Centered AI' is quite complex. Try breaking it into two for better readability.</div></div>
+      </div>
+      <div style="padding:0 22px 22px;"><button onClick="{{ noop }}" style="width:100%;background:#16233f;color:#fff;border:none;border-radius:12px;padding:15px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;">✦ Rewrite with AI</button></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- CANDIDATE: NARRATIVE STRATEGY -->
+  <sc-if value="{{ candStrategy }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:100vh;background:#faf6ec;overflow-y:auto;">
+    <div style="max-width:1000px;margin:0 auto;padding:44px 44px 64px;">
+      <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#b8902f;margin-bottom:10px;">STEP 5 · BEFORE YOU WRITE</div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:46px;line-height:1.06;font-weight:800;color:#16233f;margin:0 0 14px;">Choose Your Narrative</h1>
+      <p style="font-size:16px;line-height:1.65;color:#5d6577;margin:0 0 36px;max-width:64ch;">Now that we have your programs and fit, we engineer the <em>story</em> that ties your resume, profile, grades and target program together. Admissions boards do not read achievements — they read <strong>narratives</strong>. Every candidate's arc bends toward one of two strategic postures.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:14px;">
+        <!-- UPGRADE -->
+        <div onClick="{{ pickUpgrade }}" style="{{ upgradeCard.card }}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+            <span style="{{ upgradeCard.badge }}"><svg viewBox="0 0 24 24" width="13" height="13" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><path d="M7 17 17 7M9 7h8v8"></path></svg>LOWER RISK</span>
+            <span style="{{ upgradeCard.check }}"><sc-if value="{{ upgradeCard.checkVisible }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="14" height="14" style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;"><path d="m5 12 5 5 9-11"></path></svg></sc-if></span>
+          </div>
+          <div style="width:50px;height:50px;border-radius:13px;background:#eef1fc;display:flex;align-items:center;justify-content:center;color:#16233f;margin-bottom:18px;"><svg viewBox="0 0 24 24" width="24" height="24" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 17l6-6 4 4 8-8"></path><path d="M14 7h7v7"></path></svg></div>
+          <h2 style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:#16233f;margin:0 0 8px;">The Upgrade</h2>
+          <p style="font-size:14.5px;line-height:1.65;color:#5d6577;margin:0 0 20px;">"I am already on a strong track — I need this program to give me the tools and credentials to rise faster within my field." You deepen an existing trajectory rather than redirect it.</p>
+          <div style="display:flex;flex-direction:column;gap:11px;border-top:1px solid #eef0f5;padding-top:18px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#2a3447;"><span style="color:#16233f;">▲</span>Continuity of industry &amp; function — a coherent, low-doubt story</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#2a3447;"><span style="color:#16233f;">▲</span>Easy to evidence with promotions &amp; metrics</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#8a93a3;"><span style="color:#9aa3b5;">▽</span>Risk: reads as <em>safe</em> — boards see it often</div>
+          </div>
+        </div>
+        <!-- PIVOT -->
+        <div onClick="{{ pickPivot }}" style="{{ pivotCard.card }}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+            <span style="{{ pivotCard.badge }}"><svg viewBox="0 0 24 24" width="13" height="13" style="fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"></path></svg>HIGHER REWARD</span>
+            <span style="{{ pivotCard.check }}"><sc-if value="{{ pivotCard.checkVisible }}" hint-placeholder-val="{{ false }}"><svg viewBox="0 0 24 24" width="14" height="14" style="fill:none;stroke:#fff;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;"><path d="m5 12 5 5 9-11"></path></svg></sc-if></span>
+          </div>
+          <div style="width:50px;height:50px;border-radius:13px;background:#faf0d6;display:flex;align-items:center;justify-content:center;color:#b8902f;margin-bottom:18px;"><svg viewBox="0 0 24 24" width="24" height="24" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7"></path></svg></div>
+          <h2 style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:#16233f;margin:0 0 8px;">The Pivot</h2>
+          <p style="font-size:14.5px;line-height:1.65;color:#5d6577;margin:0 0 20px;">"I am changing my career, my sector, or stepping out to build something of my own." A transformation story — you reframe past experience as the launchpad for a bold new direction.</p>
+          <div style="display:flex;flex-direction:column;gap:11px;border-top:1px solid #f0e9d6;padding-top:18px;">
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#2a3447;"><span style="color:#b8902f;">▲</span>Memorable, distinctive — boards reward conviction</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#2a3447;"><span style="color:#b8902f;">▲</span>Career-changer &amp; entrepreneur arcs signal ambition</div>
+            <div style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#8a93a3;"><span style="color:#9aa3b5;">▽</span>Risk: must justify the "why now" rigorously</div>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ hasNarrative }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#16233f;border-radius:18px;padding:30px 34px;margin-top:24px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;animation:pwFade .3s ease;">
+        <div style="flex:1;min-width:280px;">
+          <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#f5c94c;margin-bottom:8px;">NARRATIVE LOCKED</div>
+          <sc-if value="{{ pickedUpgrade }}" hint-placeholder-val="{{ true }}"><h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#fff;margin:0 0 6px;">Upgrade · Deepen the Trajectory</h3><p style="font-size:14px;line-height:1.6;color:#aab6cf;margin:0;">Your CV and essays will emphasize momentum, mastery of your craft, and the specific tools this program adds to an already-rising career.</p></sc-if>
+          <sc-if value="{{ pickedPivot }}" hint-placeholder-val="{{ false }}"><h3 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:#fff;margin:0 0 6px;">Pivot · Engineer the Transformation</h3><p style="font-size:14px;line-height:1.6;color:#aab6cf;margin:0;">Your CV and essays will reframe past experience as deliberate preparation for a bold change in career, sector, or venture.</p></sc-if>
+        </div>
+        <button onClick="{{ goDocuments }}" style="background:#f5c94c;color:#42320a;border:none;border-radius:10px;padding:15px 26px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px;flex-shrink:0;">Continue to CV &amp; Essays <svg viewBox="0 0 24 24" width="17" height="17" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+      </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:flex-start;gap:14px;background:#fffdf7;border:1px solid #efe7d4;border-radius:14px;padding:20px 22px;margin-top:24px;">
+        <span style="width:38px;height:38px;border-radius:50%;background:#16233f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">LS</span>
+        <div><div style="font-size:13px;font-weight:700;color:#16233f;margin-bottom:4px;">Strategist's note</div><p style="font-size:14px;line-height:1.6;color:#5d6577;margin:0;">There is no wrong answer — only the story we can defend most convincingly to your target boards. Once you choose, I will tailor every CV bullet and essay prompt to that posture. <button onClick="{{ goAdvisor }}" style="background:none;border:none;color:#b8902f;font-weight:700;cursor:pointer;font-size:14px;font-family:inherit;padding:0;">Discuss with your advisor →</button></p></div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- CANDIDATE: SETTINGS -->
+  <sc-if value="{{ candSettings }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;min-height:100vh;background:#f6f7fb;overflow-y:auto;">
+    <div style="max-width:680px;margin:0 auto;padding:48px 44px;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:38px;font-weight:800;color:#16233f;margin:0 0 8px;">Settings</h1>
+      <p style="font-size:15px;color:#7a8295;margin:0 0 32px;">Manage your private office preferences.</p>
+      <div style="background:#fff;border:1px solid #eaedf4;border-radius:16px;padding:28px;margin-bottom:18px;">
+        <h3 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#16233f;margin:0 0 18px;">Profile</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div><label style="display:block;font-size:13px;font-weight:700;margin-bottom:7px;">Full Name</label><input value="Julian Thorne" onInput="{{ noop }}" style="width:100%;border:1px solid #d7ddec;border-radius:9px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;"></div>
+          <div><label style="display:block;font-size:13px;font-weight:700;margin-bottom:7px;">Academic Email</label><input value="j.thorne@university.edu" onInput="{{ noop }}" style="width:100%;border:1px solid #d7ddec;border-radius:9px;padding:12px 14px;font-size:14px;font-family:inherit;outline:none;"></div>
+        </div>
+      </div>
+      <div style="background:#fff;border:1px solid #eaedf4;border-radius:16px;padding:28px;margin-bottom:24px;">
+        <h3 style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:#16233f;margin:0 0 6px;">Notifications</h3>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid #f0f2f7;"><div><div style="font-size:14px;font-weight:600;color:#16233f;">Strategist updates</div><div style="font-size:13px;color:#8a93a3;">Get notified when your advisor reviews a document.</div></div><span style="width:42px;height:24px;border-radius:12px;background:#16233f;position:relative;flex-shrink:0;"><span style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff;"></span></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;"><div><div style="font-size:14px;font-weight:600;color:#16233f;">Weekly score digest</div><div style="font-size:13px;color:#8a93a3;">A summary of your competitiveness metrics.</div></div><span style="width:42px;height:24px;border-radius:12px;background:#d7ddec;position:relative;flex-shrink:0;"><span style="position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;"></span></span></div>
+      </div>
+      <button onClick="{{ noop }}" style="background:#16233f;color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Save Changes</button>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+  <!-- ============ LANDING ============ -->
+<sc-if value="{{ isLanding }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Landing" style="background:#f3f4f9;">
+  <!-- nav -->
+  <div style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 44px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid #e7e9f2;">
+    <div style="display:flex;align-items:center;gap:40px;">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;color:#16233f;">Pathway</div>
+      <div style="display:flex;gap:28px;">
+        <button onClick="{{ goLogin }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:700;color:#16233f;border-bottom:2px solid #d8a83a;padding-bottom:3px;">Match</button>
+        <button onClick="{{ goLogin }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:#6b7280;">Documents</button>
+        <button onClick="{{ goLogin }}" style="background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;color:#6b7280;">Profile</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <button onClick="{{ goLogin }}" style="border:1px solid #d3d8e6;background:#fff;border-radius:9px;padding:9px 18px;font-size:14px;font-weight:600;color:#16233f;cursor:pointer;font-family:inherit;">Concierge</button>
+      <button onClick="{{ goLogin }}" style="width:38px;height:38px;border-radius:50%;background:#16233f;color:#fff;border:none;cursor:pointer;font-weight:700;font-size:14px;font-family:inherit;">AT</button>
+    </div>
+  </div>
+  <!-- hero -->
+  <div style="position:relative;overflow:hidden;background:#cdd7e8;">
+    <image-slot id="landing-hero" placeholder="Drop a campus / university building photo" shape="rect" style="position:absolute;inset:0;width:100%;height:100%;"></image-slot>
+    <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(238,241,252,.96) 30%,rgba(238,241,252,.5) 56%,rgba(238,241,252,.08) 100%);pointer-events:none;"></div>
+    <div style="position:relative;max-width:1200px;margin:0 auto;padding:96px 44px 120px;">
+      <div style="max-width:560px;">
+        <span style="display:inline-block;background:#f5c94c;color:#5a4410;font-size:12px;font-weight:700;letter-spacing:.4px;padding:7px 14px;border-radius:7px;">High-Touch Admissions Advisor</span>
+        <h1 style="font-family:'Playfair Display',serif;font-size:64px;line-height:1.05;font-weight:800;color:#16233f;margin:26px 0 22px;">Elite Graduate Admissions, Engineered.</h1>
+        <p style="font-size:18px;line-height:1.6;color:#414b5e;margin:0 0 36px;max-width:46ch;">Pathway combines world-class admissions strategy with advanced AI to architect your perfect application narrative.</p>
+        <div style="display:flex;gap:14px;">
+          <button onClick="{{ goLogin }}" style="background:#0f1a30;color:#fff;border:none;border-radius:10px;padding:16px 30px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Begin Your Consultation</button>
+          <button onClick="{{ goLogin }}" style="background:rgba(255,255,255,.7);color:#16233f;border:1px solid #c8cee0;border-radius:10px;padding:16px 30px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;">View Methodology</button>
+        </div>
+      </div>
+      <div style="position:absolute;right:44px;top:120px;width:330px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);border-radius:16px;padding:18px;box-shadow:0 24px 60px rgba(15,26,48,.22);">
+        <div style="display:flex;gap:6px;margin-bottom:14px;"><span style="width:9px;height:9px;border-radius:50%;background:#e26d5c;"></span><span style="width:9px;height:9px;border-radius:50%;background:#f0c050;"></span><span style="width:9px;height:9px;border-radius:50%;background:#67c08a;"></span><span style="margin-left:auto;font-size:11px;color:#9aa3b5;font-weight:600;">Pathway AI Advisor v4.2</span></div>
+        <div style="background:#f1f3fa;border-radius:10px;padding:12px 14px;margin-bottom:10px;"><div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:#9aa3b5;margin-bottom:5px;">STRATEGIC ANALYSIS</div><div style="font-size:13px;line-height:1.5;color:#2a3550;">"Your profile suggests a 94% narrative alignment with Harvard's John A. Paulson School."</div></div>
+        <div style="background:#16233f;border-radius:10px;padding:12px 14px;"><div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:#9bb0d8;margin-bottom:5px;">OPTIMIZATION TIP</div><div style="font-size:13px;line-height:1.5;color:#e5ebf6;">"Enhance the 'Social Impact' vector of your personal essay. Analyzing 500 successful admits..."</div></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:12px;"><span style="width:34px;height:6px;border-radius:3px;background:#16233f;"></span><span style="width:14px;height:6px;border-radius:3px;background:#d8dceb;"></span><span style="font-size:11px;color:#9aa3b5;margin-left:4px;">+12 Mentors Online</span></div>
+      </div>
+    </div>
+  </div>
+  <!-- features -->
+  <div style="max-width:1100px;margin:0 auto;padding:84px 44px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:40px;font-weight:800;color:#16233f;margin:0 0 12px;">Architecting Excellence</h2>
+      <p style="font-size:16px;color:#6b7280;margin:0 auto;max-width:52ch;line-height:1.6;">Precision engineering applied to human potential. Our methodology combines historical data with elite human insight.</p>
+    </div>
+    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:22px;margin-bottom:22px;">
+      <div style="background:#fff;border-radius:18px;padding:34px;border:1px solid #ebedf5;">
+        <div style="width:42px;height:42px;border-radius:10px;background:#eef1fc;display:flex;align-items:center;justify-content:center;color:#16233f;margin-bottom:18px;"><svg viewBox="0 0 24 24" width="20" height="20" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 3v18h18"></path><path d="m7 14 4-4 3 3 5-6"></path></svg></div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:23px;font-weight:700;color:#16233f;margin:0 0 12px;">Strategic Profile Initiation</h3>
+        <p style="font-size:14px;line-height:1.65;color:#6b7280;margin:0 0 22px;max-width:46ch;">A deep dive into your academic and professional trajectory. We do not just record your achievements; we weigh them against elite graduate program acceptance algorithms.</p>
+        <div style="display:flex;gap:12px;align-items:stretch;">
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;"><span style="height:54px;background:#eef1f7;border-radius:8px;"></span><span style="height:54px;background:#eef1f7;border-radius:8px;"></span><span style="height:54px;background:#eef1f7;border-radius:8px;"></span></div>
+          <image-slot id="feat-1" placeholder="Detail" shape="rounded" radius="8" style="width:120px;height:54px;"></image-slot>
+        </div>
+      </div>
+      <div style="background:#16233f;border-radius:18px;padding:34px;color:#fff;display:flex;flex-direction:column;">
+        <div style="color:#f5c94c;margin-bottom:18px;"><svg viewBox="0 0 24 24" width="26" height="26" style="fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v18M3 12h18M6 6l12 12M18 6 6 18"></path></svg></div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:23px;font-weight:700;margin:0 0 12px;">AI-Powered Matching</h3>
+        <p style="font-size:14px;line-height:1.65;color:#c5cee0;margin:0 0 24px;">Data-driven school selection based on competitive fit, historical yields, and cultural alignment.</p>
+        <button onClick="{{ goLogin }}" style="margin-top:auto;background:none;border:none;color:#f5c94c;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;text-align:left;padding:0;">Explore Logic →</button>
+      </div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:34px;border:1px solid #ebedf5;display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:center;">
+      <div>
+        <div style="color:#b8902f;margin-bottom:16px;"><svg viewBox="0 0 24 24" width="24" height="24" style="fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;"><path d="m12 3 2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2L12 3Z"></path></svg></div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:23px;font-weight:700;color:#16233f;margin:0 0 12px;">Narrative Excellence</h3>
+        <p style="font-size:14px;line-height:1.65;color:#6b7280;margin:0 0 20px;max-width:44ch;">Real-time essay and CV optimization. Our AI identifies "narrative gaps" and suggests strategic revisions that resonate with admissions officers at top-tier institutions.</p>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#2a3550;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:#1f8a5b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>Tone Consistency Analysis</div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:14px;color:#2a3550;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:#1f8a5b;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>Leadership Vocabulary Optimization</div>
+        </div>
+      </div>
+      <image-slot id="feat-2" placeholder="Workspace / desk photo" shape="rounded" radius="14" style="width:100%;height:240px;"></image-slot>
+    </div>
+  </div>
+  <!-- quote -->
+  <div style="background:#f7f3e9;padding:80px 44px;text-align:center;">
+    <div style="font-family:'Playfair Display',serif;font-size:60px;line-height:.4;color:#c2962f;margin-bottom:8px;">&rdquo;</div>
+    <p style="font-family:'Playfair Display',serif;font-size:30px;line-height:1.4;font-weight:700;color:#16233f;max-width:20ch;margin:0 auto 26px;">Admissions is no longer a lottery; it is a communication of rare potential to those who speak the language of prestige.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;">
+      <span style="width:42px;height:42px;border-radius:50%;background:#16233f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">AS</span>
+      <div style="text-align:left;"><div style="font-size:14px;font-weight:700;color:#16233f;">Arthur J. Sterling</div><div style="font-size:12px;color:#8a93a3;">Chief Strategist, Former Dean of Admissions</div></div>
+    </div>
+  </div>
+  <!-- CTA -->
+  <div style="background:#0f1a30;padding:72px 44px;">
+    <div style="max-width:880px;margin:0 auto;background:#16233f;border:1px solid #243559;border-radius:20px;padding:64px 44px;text-align:center;">
+      <h2 style="font-family:'Playfair Display',serif;font-size:42px;font-weight:800;color:#fff;margin:0 0 14px;">Ready to Engineer Your Future?</h2>
+      <p style="font-size:16px;color:#aab6cf;margin:0 auto 32px;max-width:50ch;line-height:1.6;">Our cohorts fill quickly. Secure your initial diagnostic session to begin your journey to the world's most elite universities.</p>
+      <button onClick="{{ goLogin }}" style="background:#f5c94c;color:#3f2f08;border:none;border-radius:10px;padding:16px 36px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">Begin Your Consultation</button>
+    </div>
+  </div>
+  <!-- footer -->
+  <div style="background:#0f1a30;padding:24px 44px 48px;">
+    <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.6fr 1fr 1fr 1fr;gap:32px;padding-bottom:32px;border-bottom:1px solid #243559;">
+      <div><div style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;color:#fff;margin-bottom:12px;">Pathway</div><p style="font-size:13px;line-height:1.6;color:#8294b5;margin:0;max-width:34ch;">Architecting narratives for the next generation of global leaders. High-touch, data-driven, results-oriented.</p></div>
+      <div><div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:#6b7c9c;margin-bottom:14px;">EXPLORATION</div><div style="display:flex;flex-direction:column;gap:10px;"><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Methodology</button><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Success Stories</button><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">The AI Engine</button></div></div>
+      <div><div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:#6b7c9c;margin-bottom:14px;">COMPANY</div><div style="display:flex;flex-direction:column;gap:10px;"><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Advisors</button><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Contact</button><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Careers</button></div></div>
+      <div><div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:#6b7c9c;margin-bottom:14px;">LEGAL</div><div style="display:flex;flex-direction:column;gap:10px;"><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Privacy Policy</button><button onClick="{{ noop }}" style="background:none;border:none;color:#aab6cf;text-align:left;cursor:pointer;font-size:13px;font-family:inherit;padding:0;">Terms of Service</button></div></div>
+    </div>
+    <div style="max-width:1100px;margin:20px auto 0;font-size:12px;color:#6b7c9c;">© 2024 Pathway Admissions. All Rights Reserved.</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ ADMIN PORTAL ============ -->
+<sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Admin Dashboard" style="display:flex;min-height:100vh;background:#f6f7fb;">
+  <!-- sidebar -->
+  <div style="width:258px;flex-shrink:0;background:#eef1fc;border-right:1px solid #e1e6f5;display:flex;flex-direction:column;padding:26px 18px;min-height:100vh;">
+    <div style="padding:0 8px 8px;">
+      <div style="font-family:'Playfair Display',serif;font-size:25px;font-weight:800;color:#16233f;">Pathway</div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#8a93a3;margin-top:2px;">ADMIN PORTAL</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-top:26px;">
+      <button onClick="{{ noop }}" style="{{ admNavAnalysis }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 3v18h18"></path><rect x="7" y="11" width="3" height="6"></rect><rect x="12" y="7" width="3" height="10"></rect><rect x="17" y="13" width="3" height="4"></rect></svg>Analysis</button>
+      <button onClick="{{ noop }}" style="{{ admNavAdvisor }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z"></path></svg>Admissions Advisor</button>
+      <button onClick="{{ noop }}" style="{{ admNavDocuments }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg>Documents</button>
+      <button onClick="{{ noop }}" style="{{ admNavSettings }}"><svg viewBox="0 0 24 24" width="19" height="19" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z"></path></svg>Settings</button>
+    </div>
+    <div style="margin-top:auto;">
+      <div style="height:1px;background:#dde3f4;margin-bottom:14px;"></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;"><span style="width:34px;height:34px;border-radius:9px;background:#16233f;color:#f5c94c;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✦</span><div><div style="font-size:13px;font-weight:700;color:#16233f;">Admin Panel</div><div style="font-size:11px;color:#8a93a3;letter-spacing:.5px;">IVY ADMISSIONS</div></div></div>
+      <button onClick="{{ noop }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:#3a425a;font-weight:600;padding:8px;width:100%;margin-top:8px;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01"></path></svg>Help</button>
+      <button onClick="{{ signOut }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:14px;color:#3a425a;font-weight:600;padding:8px;width:100%;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"></path></svg>Sign Out</button>
+    </div>
+  </div>
+
+  <!-- main -->
+  <div style="flex:1;display:flex;flex-direction:column;min-height:100vh;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 36px;border-bottom:1px solid #e7eaf3;background:#fff;">
+      <h1 style="font-family:'Playfair Display',serif;font-size:30px;font-weight:800;color:#16233f;margin:0;">Candidate Management</h1>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <div style="display:flex;align-items:center;gap:9px;background:#f1f3fa;border:1px solid #e2e7f2;border-radius:9px;padding:9px 14px;width:280px;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:#9aa3b5;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg><input placeholder="Search candidates..." style="flex:1;border:none;outline:none;background:none;font-size:14px;font-family:inherit;color:#1c2433;"></div>
+        <button onClick="{{ noop }}" style="background:#16233f;color:#fff;border:none;border-radius:9px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">+ New Candidate</button>
+      </div>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 388px;gap:0;">
+      <!-- table -->
+      <div style="padding:30px 36px;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <span style="font-size:12px;font-weight:700;letter-spacing:1px;color:#8a93a3;">ACTIVE CANDIDATES</span>
+          <div style="display:flex;gap:14px;color:#9aa3b5;"><button onClick="{{ noop }}" style="background:none;border:none;cursor:pointer;color:inherit;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 6h18M6 12h12M10 18h4"></path></svg></button><button onClick="{{ noop }}" style="background:none;border:none;cursor:pointer;color:inherit;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M3 7h12M3 12h9M3 17h6M18 8v9l3-3M18 17l-3-3"></path></svg></button></div>
+        </div>
+        <div style="background:#fff;border:1px solid #eaedf4;border-radius:16px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:2.1fr 1.2fr 1fr 0.9fr 24px;gap:14px;padding:15px 22px;border-bottom:1px solid #eef1f6;font-size:12px;font-weight:700;letter-spacing:.5px;color:#9aa3b5;"><span>Candidate Name</span><span>Pipeline Step</span><span>Score</span><span>Activity</span><span></span></div>
+          <sc-for list="{{ candList }}" as="c" hint-placeholder-count="4">
+            <div onClick="{{ c.onClick }}" style="{{ c.row }}">
+              <div style="display:flex;align-items:center;gap:12px;min-width:0;"><span style="{{ c.avatarStyle }}">{{ c.mono }}</span><div style="min-width:0;"><div style="font-size:15px;font-weight:700;color:#16233f;">{{ c.name }}</div><div style="font-size:12px;color:#8a93a3;">{{ c.sub }}</div></div></div>
+              <div><span style="{{ c.stepBadge }}">{{ c.step }}</span></div>
+              <div style="display:flex;align-items:center;gap:10px;"><span style="width:54px;height:6px;border-radius:3px;background:#eef1f6;overflow:hidden;display:inline-block;"><span style="display:block;height:100%;width:{{ c.barWidth }};background:{{ c.barColor }};"></span></span><span style="font-size:15px;font-weight:700;color:#16233f;">{{ c.score }}</span></div>
+              <div style="font-size:13px;color:#8a93a3;">{{ c.activity }}</div>
+              <div style="color:#c4cbdb;display:flex;justify-content:flex-end;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="m9 6 6 6-6 6"></path></svg></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- consultant control -->
+      <div style="background:#fbfcfe;border-left:1px solid #eef1f6;padding:30px 26px;overflow-y:auto;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:#8a93a3;margin-bottom:16px;">CONSULTANT CONTROL</div>
+        <div style="background:#fff;border:1px solid #eaedf4;border-radius:14px;padding:18px;display:flex;align-items:center;gap:13px;margin-bottom:18px;">
+          <span style="width:42px;height:42px;border-radius:50%;background:#eef1f7;color:#16233f;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg viewBox="0 0 24 24" width="20" height="20" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><circle cx="12" cy="8" r="4"></circle><path d="M4 21a8 8 0 0 1 16 0"></path></svg></span>
+          <div style="flex:1;min-width:0;"><div style="font-size:16px;font-weight:700;color:#16233f;">{{ selCand.name }}</div><div style="font-size:12px;color:#8a93a3;">{{ selCand.sub }}</div></div>
+          <button onClick="{{ noop }}" style="background:none;border:none;cursor:pointer;color:#9aa3b5;"><svg viewBox="0 0 24 24" width="18" height="18" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"></path></svg></button>
+        </div>
+        <div style="display:flex;gap:22px;border-bottom:1px solid #e7eaf3;margin-bottom:18px;">
+          <button onClick="{{ tabToFeed }}" style="{{ tabFeed }}">Live Feed</button>
+          <button onClick="{{ tabToAnalytics }}" style="{{ tabAnalytics }}">Analytics</button>
+          <button onClick="{{ tabToHistory }}" style="{{ tabHistory }}">History</button>
+        </div>
+        <sc-if value="{{ adminFeed }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="background:#eef3fb;border-radius:4px 12px 12px 12px;padding:14px 16px;margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:#8a93a3;margin-bottom:6px;">AI CONCIERGE</div><div style="font-size:13.5px;line-height:1.55;color:#2a3447;">How does your work at the NGO align with the "Social Leadership" pillar of the Wharton MBA or other top-tier graduate programs?</div></div>
+          <div style="background:#16233f;border-radius:12px 12px 4px 12px;padding:14px 16px;margin-bottom:18px;margin-left:32px;"><div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:#9bb0d8;margin-bottom:6px;">{{ selCand.name }}</div><div style="font-size:13.5px;line-height:1.55;color:#e5ebf6;">I led a team of 15 to secure $2M in funding. I think that demonstrates the scale of leadership they look for.</div></div>
+          <div style="text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;color:#b8902f;margin-bottom:14px;">— OVERRIDE ACTIVE —</div>
+          <div style="background:#f5c94c;border-radius:12px;padding:14px 16px;"><div style="font-size:10px;font-weight:700;letter-spacing:.5px;color:#5a4410;margin-bottom:6px;">CONSULTANT NOTE</div><div style="font-size:13.5px;line-height:1.55;color:#3f2f08;">Julian is missing the 'Emotional Intelligence' angle. Steer the narrative toward mentorship outcomes, not just dollars raised.</div></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ adminAnalytics }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="background:#fff;border:1px solid #eaedf4;border-radius:12px;padding:16px;"><div style="font-size:12px;color:#8a93a3;font-weight:600;margin-bottom:4px;">Pipeline completion</div><div style="font-size:26px;font-family:'Playfair Display',serif;font-weight:700;color:#16233f;">68%</div><div style="height:6px;background:#eef1f6;border-radius:3px;margin-top:8px;overflow:hidden;"><div style="width:68%;height:100%;background:#16233f;"></div></div></div>
+          <div style="background:#fff;border:1px solid #eaedf4;border-radius:12px;padding:16px;"><div style="font-size:12px;color:#8a93a3;font-weight:600;margin-bottom:4px;">Avg. fit index</div><div style="font-size:26px;font-family:'Playfair Display',serif;font-weight:700;color:#16233f;">82%</div></div>
+          <div style="background:#fff;border:1px solid #eaedf4;border-radius:12px;padding:16px;"><div style="font-size:12px;color:#8a93a3;font-weight:600;margin-bottom:4px;">Sessions this week</div><div style="font-size:26px;font-family:'Playfair Display',serif;font-weight:700;color:#16233f;">24</div></div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ adminHistory }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f0f2f7;"><span style="width:8px;height:8px;border-radius:50%;background:#16233f;margin-top:5px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Fit Analysis completed</div><div style="font-size:12px;color:#8a93a3;">Today, 10:42 AM</div></div></div>
+          <div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f0f2f7;"><span style="width:8px;height:8px;border-radius:50%;background:#c2962f;margin-top:5px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">Score override applied</div><div style="font-size:12px;color:#8a93a3;">Yesterday, 4:15 PM</div></div></div>
+          <div style="display:flex;gap:12px;padding:12px 0;"><span style="width:8px;height:8px;border-radius:50%;background:#aebde6;margin-top:5px;flex-shrink:0;"></span><div><div style="font-size:14px;font-weight:700;color:#16233f;">CV uploaded</div><div style="font-size:12px;color:#8a93a3;">Oct 12, 9:00 AM</div></div></div>
+        </div>
+        </sc-if>
+        <div style="border-top:1px solid #eef1f6;margin-top:20px;padding-top:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><span style="font-size:14px;font-weight:700;color:#16233f;">Score Override</span><div style="display:flex;align-items:center;gap:8px;"><button onClick="{{ bumpDown }}" style="width:30px;height:30px;border-radius:8px;border:1px solid #d7ddec;background:#f1f3fa;color:#16233f;font-size:18px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;">–</button><span style="font-size:17px;font-weight:700;color:#16233f;min-width:28px;text-align:center;">{{ override }}</span><button onClick="{{ bumpUp }}" style="width:30px;height:30px;border-radius:8px;border:1px solid #d7ddec;background:#f1f3fa;color:#16233f;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;line-height:1;">+</button></div></div>
+          <div style="display:flex;align-items:flex-end;gap:8px;background:#fff;border:1px solid #e2e7f2;border-radius:12px;padding:6px 6px 6px 14px;margin-bottom:18px;"><textarea placeholder="Send direct consultant message..." rows="2" style="flex:1;border:none;outline:none;background:none;resize:none;font-size:14px;font-family:inherit;color:#1c2433;padding:8px 0;"></textarea><button onClick="{{ noop }}" style="background:#16233f;border:none;border-radius:9px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;flex-shrink:0;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;"><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z"></path></svg></button></div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.5px;color:#8a93a3;margin-bottom:12px;">RELEVANT DOCUMENTS</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eaedf4;border-radius:10px;padding:11px 14px;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:#16233f;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg><span style="flex:1;font-size:13px;font-weight:600;color:#16233f;">CV_Final_v2.pdf</span><button onClick="{{ noop }}" style="background:none;border:none;cursor:pointer;color:#9aa3b5;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg></button></div>
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #eaedf4;border-radius:10px;padding:11px 14px;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:#16233f;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path></svg><span style="flex:1;font-size:13px;font-weight:600;color:#16233f;">Personal_Statement_Draft.docx</span><button onClick="{{ noop }}" style="background:none;border:none;cursor:pointer;color:#9aa3b5;"><svg viewBox="0 0 24 24" width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path></svg></button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:820},&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;login&quot;,&quot;landing&quot;,&quot;candidate&quot;,&quot;admin&quot;],&quot;default&quot;:&quot;login&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.state = {
+      screen: this.props.startScreen || 'login',
+      role: 'candidate',
+      showPw: false,
+      remember: false,
+      candTab: 'advisor',
+      docTab: 'editor',
+      stepIdx: 0,
+      input: '',
+      adminTab: 'feed',
+      sel: 0,
+      override: 88,
+      narrative: null,
+      toast: '',
+      chat: [
+        { role:'ai', text:'Welcome to your Pathway Private Office. I am your Lead Admissions Strategist. We are not just filling out forms — we are engineering a narrative that top-tier institutions cannot ignore.' },
+        { role:'ai', text:'To begin our calibration, I have analyzed your initial data points. Your professional trajectory is strong, but your academic narrative requires more aggressive positioning to match Elite graduate program benchmarks.' },
+      ],
+    };
+  }
+
+  STEPS = ['Profile','Recommender','Analysis','Programs','Narrative','Fit','CV'];
+  CANDIDATES = [
+    { name:'Julian Thorne', sub:'Economics @ Stanford', mono:'JT', step:'Fit Analysis', stepKind:'gold', score:88, activity:'2m ago', avatar:'#dbe3f5', avatarFg:'#2b3c63' },
+    { name:'Elena Rodriguez', sub:'Law @ Yale', mono:'ER', step:'Initial Intake', stepKind:'soft', score:72, activity:'14h ago', avatar:'#f6dcc0', avatarFg:'#a9682c' },
+    { name:'Marcus Chen', sub:'CS @ MIT', mono:'MC', step:'Interview Prep', stepKind:'navy', score:94, activity:'1d ago', avatar:'#1f2d4d', avatarFg:'#ffffff' },
+    { name:'Sophia Laurent', sub:'Fine Arts @ RISD', mono:'SL', step:'Risk Alert', stepKind:'red', score:45, activity:'3h ago', avatar:'#f3d97e', avatarFg:'#6b531a' },
+  ];
+
+  _scrollTop(){ try{ window.scrollTo(0,0); }catch(e){} }
+  go(screen){ this.setState({ screen }); this._scrollTop(); }
+  setRole(role){ this.setState({ role }); }
+  enter(){ this.setState({ screen: this.state.role === 'consultant' ? 'admin' : 'candidate' }); this._scrollTop(); }
+  signOut(){ this.setState({ screen:'login', candTab:'advisor' }); this._scrollTop(); }
+  setCandTab(candTab){ this.setState({ candTab }); this._scrollTop(); }
+  setDocTab(docTab){ this.setState({ docTab }); }
+  setAdminTab(adminTab){ this.setState({ adminTab }); }
+  selectCand(i){ this.setState({ sel:i, override:this.CANDIDATES[i].score }); }
+  selectNarrative(n){ this.setState({ narrative:n }); }
+  _narrCard(kind, sel){
+    const on = sel===kind;
+    const accent = kind==='pivot' ? '#c2962f' : '#16233f';
+    return {
+      card:{ position:'relative', background:'#fff', border: on ? '2px solid '+accent : '1.5px solid #e6e9f2', borderRadius:'18px', padding:'30px', cursor:'pointer', transition:'all .15s', boxShadow: on ? '0 18px 44px rgba(15,26,48,.14)' : '0 2px 10px rgba(15,26,48,.04)' },
+      badge:{ display:'inline-flex', alignItems:'center', gap:'6px', fontSize:'11px', fontWeight:'700', letterSpacing:'.5px', padding:'6px 12px', borderRadius:'7px', background: kind==='pivot' ? '#faf0d6' : '#eef1fc', color: kind==='pivot' ? '#7a5d12' : '#2b3c63' },
+      check:{ width:'26px', height:'26px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', background: on ? accent : '#fff', border: on ? 'none' : '1.5px solid #d7ddec', flexShrink:0 },
+      checkVisible: on,
+    };
+  }
+  bump(d){ this.setState(s=>({ override: Math.max(0, Math.min(100, s.override + d)) })); }
+  togglePw(){ this.setState(s=>({ showPw:!s.showPw })); }
+  toggleRemember(){ this.setState(s=>({ remember:!s.remember })); }
+  onInput(e){ this.setState({ input: e.target.value }); }
+  toast(msg){ this.setState({ toast:msg }); clearTimeout(this._t); this._t = setTimeout(()=>this.setState({ toast:'' }), 2200); }
+
+  send(text){
+    const t = (text != null ? text : this.state.input).trim();
+    if(!t) return;
+    const reply = 'Understood. I am recalibrating your profile against current admit benchmarks — your quantitative baseline holds, so let us now sharpen the leadership narrative before we map target programs.';
+    this.setState(s=>({
+      chat: [...s.chat, { role:'user', text:t }, { role:'ai', text:reply }],
+      input: '',
+      stepIdx: Math.min(s.stepIdx + 1, this.STEPS.length - 1),
+    }));
+  }
+  onKey(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); this.send(); } }
+
+  renderVals(){
+    const s = this.state;
+    const navy='#16233f', gold='#b8902f', border='#e3e7f0', muted='#7a8295', ink='#1c2433';
+
+    const sideItem = (active)=>({
+      display:'flex', alignItems:'center', gap:'12px', padding:'12px 14px', borderRadius:'10px',
+      fontSize:'14px', fontWeight: active?'700':'600', cursor:'pointer', width:'100%', textAlign:'left',
+      border:'none', fontFamily:'inherit', background: active?navy:'transparent', color: active?'#fff':'#3a4considera',
+    });
+    // fix color typo via explicit
+    const side = (active)=>({ display:'flex', alignItems:'center', gap:'12px', padding:'12px 14px', borderRadius:'10px', fontSize:'14px', fontWeight: active?'700':'600', cursor:'pointer', width:'100%', textAlign:'left', border:'none', fontFamily:'inherit', background: active?navy:'transparent', color: active?'#fff':'#3a425a' });
+
+    const docNav = (active)=>({ display:'flex', alignItems:'center', gap:'12px', padding:'11px 14px', borderRadius:'10px', fontSize:'14px', fontWeight: active?'700':'600', cursor:'pointer', width:'100%', textAlign:'left', border:'none', fontFamily:'inherit', background: active?'#fbf1d6':'transparent', color: active?'#16233f':'#3a425a' });
+
+    const adminTabStyle = (k)=>({ padding:'10px 2px', fontSize:'14px', fontWeight: s.adminTab===k?'700':'600', color: s.adminTab===k?navy:'#8a93a3', borderBottom: s.adminTab===k ? '2px solid '+navy : '2px solid transparent', cursor:'pointer', background:'none', border:'none', borderRadius:0, fontFamily:'inherit' });
+
+    const stepList = this.STEPS.map((label,i)=>{
+      const active = i===s.stepIdx, done = i<s.stepIdx;
+      const on = active||done;
+      return {
+        label, num:String(i+1),
+        circle:{ width:'28px', height:'28px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'13px', fontWeight:'700', flexShrink:0,
+          background: on?navy:'#fff', color: on?'#fff':'#9aa3b5', border: on?'none':'1.5px solid '+border },
+        labelStyle:{ fontSize:'14px', fontWeight: active?'700':'600', color: active?navy:'#9aa3b5', whiteSpace:'nowrap' },
+      };
+    });
+
+    const candList = this.CANDIDATES.map((c,i)=>{
+      const selected = i===s.sel;
+      const stepStyles = {
+        gold:{ background:'#f6e2a8', color:'#7a5d12' },
+        soft:{ background:'#dfe6f7', color:'#3a4b6e' },
+        navy:{ background:'#1f2d4d', color:'#fff' },
+        red:{ background:'#fbe0e0', color:'#b5403a' },
+      }[c.stepKind];
+      return {
+        ...c, selected,
+        row:{ display:'grid', gridTemplateColumns:'2.1fr 1.2fr 1fr 0.9fr 24px', alignItems:'center', gap:'14px', padding:'15px 22px', borderBottom:'1px solid #eef1f6', cursor:'pointer', background: selected?'#f4f6fc':'transparent' },
+        avatarStyle:{ width:'40px', height:'40px', borderRadius:'50%', background:c.avatar, color:c.avatarFg, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:'700', fontSize:'13px', flexShrink:0 },
+        stepBadge:{ display:'inline-block', padding:'6px 12px', borderRadius:'8px', fontSize:'12px', fontWeight:'700', lineHeight:1.25, ...stepStyles },
+        barColor: c.score>=50 ? '#9a7b1f' : '#d64545',
+        barWidth: c.score + '%',
+        onClick: ()=>this.selectCand(i),
+      };
+    });
+
+    const chips = [
+      { label:'MBA', onClick:()=>this.send('I am targeting an MBA at M7 schools.') },
+      { label:'Masters', onClick:()=>this.send('I am pursuing a specialized Masters degree.') },
+      { label:'PhD', onClick:()=>this.send('I am applying to PhD programs.') },
+      { label:'Undergrad', onClick:()=>this.send('I am applying for undergraduate admission.') },
+    ];
+
+    const messages = s.chat.map(m=>({ ...m, isAI: m.role==='ai', isUser: m.role==='user' }));
+
+    return {
+      // screen flags
+      isLogin: s.screen==='login', isLanding: s.screen==='landing',
+      isCandidate: s.screen==='candidate', isAdmin: s.screen==='admin',
+      candAdvisor: s.candTab==='advisor', candAnalysis: s.candTab==='analysis',
+      candDocuments: s.candTab==='documents', candSettings: s.candTab==='settings',
+      candStrategy: s.candTab==='strategy',
+      navStrategy: side(s.candTab==='strategy'),
+      narrative: s.narrative,
+      pickedUpgrade: s.narrative==='upgrade', pickedPivot: s.narrative==='pivot',
+      hasNarrative: !!s.narrative,
+      upgradeCard: this._narrCard('upgrade', s.narrative),
+      pivotCard: this._narrCard('pivot', s.narrative),
+      adminFeed: s.adminTab==='feed', adminAnalytics: s.adminTab==='analytics', adminHistory: s.adminTab==='history',
+      // login
+      roleCandidate: s.role==='candidate', roleConsultant: s.role==='consultant',
+      pwType: s.showPw ? 'text' : 'password',
+      rememberOn: s.remember, rememberOff: !s.remember,
+      // nav styles
+      navAdvisor: side(s.candTab==='advisor'), navAnalysis: side(s.candTab==='analysis'),
+      navDocuments: side(s.candTab==='documents'), navSettings: side(s.candTab==='settings'),
+      admNavAnalysis: side(true), admNavAdvisor: side(false), admNavDocuments: side(false), admNavSettings: side(false),
+      docNavDocuments: docNav(s.docTab==='documents'), docNavEditor: docNav(s.docTab==='editor'),
+      docNavInsights: docNav(s.docTab==='insights'), docNavHistory: docNav(s.docTab==='history'), docNavArchive: docNav(s.docTab==='archive'),
+      tabFeed: adminTabStyle('feed'), tabAnalytics: adminTabStyle('analytics'), tabHistory: adminTabStyle('history'),
+      // data
+      stepList, candList, chips, messages,
+      showChips: s.stepIdx===0,
+      input: s.input,
+      override: s.override,
+      selCand: candList[s.sel],
+      toast: s.toast,
+      // handlers
+      go:(x)=>this.go(x), goLogin:()=>this.go('login'), goLanding:()=>this.go('landing'),
+      setCand:()=>this.setRole('candidate'), setCons:()=>this.setRole('consultant'),
+      enter:()=>this.enter(), signOut:()=>this.signOut(),
+      togglePw:()=>this.togglePw(), toggleRemember:()=>this.toggleRemember(),
+      goAdvisor:()=>this.setCandTab('advisor'), goAnalysis:()=>this.setCandTab('analysis'),
+      goDocuments:()=>this.setCandTab('documents'), goSettings:()=>this.setCandTab('settings'),
+      goStrategy:()=>this.setCandTab('strategy'),
+      pickUpgrade:()=>this.selectNarrative('upgrade'), pickPivot:()=>this.selectNarrative('pivot'),
+      setDocDocs:()=>this.setDocTab('documents'), setDocEditor:()=>this.setDocTab('editor'),
+      setDocInsights:()=>this.setDocTab('insights'), setDocHistory:()=>this.setDocTab('history'), setDocArchive:()=>this.setDocTab('archive'),
+      tabToFeed:()=>this.setAdminTab('feed'), tabToAnalytics:()=>this.setAdminTab('analytics'), tabToHistory:()=>this.setAdminTab('history'),
+      bumpUp:()=>this.bump(1), bumpDown:()=>this.bump(-1),
+      onInput:(e)=>this.onInput(e), onKey:(e)=>this.onKey(e), send:()=>this.send(),
+      forgot:()=>this.toast('Password reset link sent to your academic email.'),
+      noop:()=>this.toast('This is a prototype — that section is not wired up yet.'),
+    };
+  }
+}
+</script>
+</body>
+</html>
