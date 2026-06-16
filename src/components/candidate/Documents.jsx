@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const docNavStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 10,
@@ -7,60 +7,24 @@ const docNavStyle = (active) => ({
   background: active ? '#fbf1d6' : 'transparent', color: active ? '#16233f' : '#3a425a',
 });
 
-export default function Documents({ docTab, setDocTab, noop }) {
-  const subNavItems = [
-    {
-      key: 'documents', label: 'Documents',
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 20V6a2 2 0 0 1 2-2h4l2 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /></svg>
-    },
-    {
-      key: 'editor', label: 'Essay Editor',
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
-    },
-    {
-      key: 'insights', label: 'AI Insights',
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg>
-    },
-    {
-      key: 'history', label: 'Version History',
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 3v6h6M3 9a9 9 0 1 0 2.6-5.6L3 9M12 8v4l3 2" /></svg>
-    },
-    {
-      key: 'archive', label: 'Archive',
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><rect x="3" y="4" width="18" height="4" rx="1" /><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4" /></svg>
-    },
-  ];
+export default function Documents({ docTab, setDocTab, cvText, setCvText, essayText, setEssayText, essaySchool, setEssaySchool, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, showToast, narrative }) {
+  const [editingCv, setEditingCv] = useState(false);
+  const [cvEdit, setCvEdit] = useState('');
 
-  const recentAssets = [
-    {
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>,
-      name: 'CV_Draft_Final.docx', type: 'Word Document • 2.4 MB', time: 'Edited 2h ago',
-      badge: 'AI REVIEWED', badgeStyle: { background: '#dfe6f7', color: '#3a4b6e' },
-      cardStyle: { background: '#fff', border: '1px solid #eaedf4' },
-      iconBg: '#eef1f7',
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" /></svg>,
-      name: 'Stanford_Essay_V3.pdf', type: 'Portable Document • 1.1 MB', time: null,
-      badge: 'CURRENTLY EDITING', badgeStyle: { background: '#f5c94c', color: '#5a4410' },
-      cardStyle: { background: '#fffaf0', border: '1px solid #ecd9a8', borderLeft: '4px solid #c2962f' },
-      iconBg: '#fbf1d6',
-      activeTime: true,
-    },
-    {
-      icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 2 2.4 5 5.6.5-4.2 3.7 1.3 5.3L12 18.8 6.9 21.5l1.3-5.3L4 12.5l5.6-.5Z" /></svg>,
-      name: 'Official_Transcripts.pdf', type: 'Portable Document • 5.8 MB', time: 'Edited Oct 12',
-      badge: 'VERIFIED', badgeStyle: { background: '#dfeee4', color: '#2c6c49' },
-      cardStyle: { background: '#fff', border: '1px solid #eaedf4' },
-      iconBg: '#eef1f7',
-    },
+  const wordCount = essayText ? essayText.trim().split(/\s+/).filter(Boolean).length : 0;
+  const essayPct = Math.min(100, Math.round((wordCount / 1000) * 100));
+
+  const subNavItems = [
+    { key: 'editor', label: 'Essay Editor', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg> },
+    { key: 'documents', label: 'My CV', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg> },
+    { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
   ];
 
   return (
-    <div style={{ flex: 1, minHeight: '100vh', display: 'grid', gridTemplateColumns: '320px 1fr 320px', background: '#fff' }}>
+    <div style={{ flex: 1, minHeight: '100vh', display: 'grid', gridTemplateColumns: '280px 1fr 300px', background: '#fff' }}>
       {/* Left nav */}
       <div style={{ borderRight: '1px solid #eef1f6', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '24px 22px 16px', borderBottom: '1px solid #eef1f6' }}>
+        <div style={{ padding: '24px 18px 16px', borderBottom: '1px solid #eef1f6' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {subNavItems.map(item => (
               <button key={item.key} onClick={() => setDocTab(item.key)} style={docNavStyle(docTab === item.key)}>
@@ -69,99 +33,227 @@ export default function Documents({ docTab, setDocTab, noop }) {
             ))}
           </div>
         </div>
-        <div style={{ padding: 22, overflowY: 'auto', flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: 0 }}>Recent Assets</h3>
-            <button onClick={noop} style={{ background: 'none', border: 'none', color: '#b8902f', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>View All</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {recentAssets.map(asset => (
-              <div key={asset.name} style={{ ...asset.cardStyle, borderRadius: 14, padding: 18 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <span style={{ width: 36, height: 36, borderRadius: 8, background: asset.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16233f' }}>
-                    {asset.icon}
-                  </span>
-                  <span style={{ ...asset.badgeStyle, fontSize: 10, fontWeight: 700, padding: '5px 9px', borderRadius: 6, height: 'fit-content' }}>
-                    {asset.badge}
-                  </span>
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#16233f' }}>{asset.name}</div>
-                <div style={{ fontSize: 12, color: '#8a93a3', margin: '4px 0 10px' }}>{asset.type}</div>
-                {asset.activeTime ? (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, color: '#b8902f', fontWeight: 700 }}>
-                    Active now
-                    <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                      <path d="M7 17 17 7M9 7h8v8" />
-                    </svg>
-                  </div>
-                ) : (
-                  <div style={{ fontSize: 12, color: '#9aa3b5' }}>{asset.time}</div>
-                )}
+        {/* Status panel */}
+        <div style={{ padding: 18, flex: 1 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginBottom: 14 }}>STATUS</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: cvText ? '#f0f7ea' : '#faf6ec', border: `1px solid ${cvText ? '#c8dba8' : '#efe7d4'}` }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#3a7d1e' : '#d3c9a8', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>CV / Resume</div>
+                <div style={{ fontSize: 11, color: '#8a93a3' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words` : 'Not uploaded'}</div>
               </div>
-            ))}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: essayText ? '#f0f7ea' : '#faf6ec', border: `1px solid ${essayText ? '#c8dba8' : '#efe7d4'}` }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: essayText ? '#3a7d1e' : '#d3c9a8', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>Personal Essay</div>
+                <div style={{ fontSize: 11, color: '#8a93a3' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: insights ? '#f0f7ea' : '#faf6ec', border: `1px solid ${insights ? '#c8dba8' : '#efe7d4'}` }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: insights ? '#3a7d1e' : '#d3c9a8', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>AI Insights</div>
+                <div style={{ fontSize: 11, color: '#8a93a3' }}>{insights ? `${insights.length} suggestions` : 'Submit essay to unlock'}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Editor */}
-      <div style={{ background: '#f6f7fb', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center' }}>
-        <div style={{ background: '#fff', maxWidth: 560, width: '100%', borderRadius: 8, boxShadow: '0 10px 40px rgba(15,26,48,.08)', padding: '56px 60px', minHeight: 640 }}>
-          <div style={{ textAlign: 'center', fontSize: 12, color: '#b6bdcd', marginBottom: 34 }}>Pathway Strategist Review Mode</div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, lineHeight: 1.2, fontWeight: 700, color: '#16233f', margin: '0 0 30px' }}>
-            Personal Statement: Stanford University
-          </h1>
-          <p style={{ fontSize: 15.5, lineHeight: 1.9, color: '#33405a', margin: '0 0 18px' }}>
-            <span style={{ float: 'left', fontFamily: "'Playfair Display',serif", fontSize: 56, lineHeight: .8, fontWeight: 700, color: '#16233f', margin: '6px 10px 0 0' }}>T</span>
-            he intersection of computational linguistics and social justice has always felt like a necessary collision rather than a forced marriage. Growing up in a community where language barriers often dictated the quality of legal representation, I witnessed firsthand how access is mediated by who gets to be understood.
-          </p>
-          <p style={{ fontSize: 15.5, lineHeight: 1.9, color: '#33405a', margin: '0 0 18px' }}>
-            My undergraduate research focused on bias mitigation in NLP systems deployed across immigration courts. What began as a technical curiosity matured into a conviction: that the tools we build are never neutral, and that designing them responsibly is itself a form of advocacy.
-          </p>
-          <p style={{ fontSize: 15.5, lineHeight: 1.9, color: '#33405a', margin: 0 }}>
-            At Stanford, I intend to bridge the Human-Centered AI Institute with the Law School's clinical programs — translating rigorous research into instruments that materially expand who the system can hear.
-          </p>
-        </div>
+      {/* Main content */}
+      <div style={{ background: '#f6f7fb', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        {docTab === 'editor' && (
+          <div style={{ background: '#fff', maxWidth: 580, width: '100%', borderRadius: 8, boxShadow: '0 10px 40px rgba(15,26,48,.08)', padding: '48px 52px', minHeight: 600 }}>
+            <div style={{ textAlign: 'center', fontSize: 12, color: '#b6bdcd', marginBottom: 28 }}>Pathway Strategist Review Mode</div>
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
+              <input
+                value={essaySchool}
+                onChange={e => setEssaySchool(e.target.value)}
+                placeholder="e.g. Harvard Business School"
+                style={{ width: '100%', border: '1px solid #e2e7f2', borderRadius: 9, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#1c2433', boxSizing: 'border-box' }}
+              />
+            </div>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: '#16233f', margin: '0 0 24px' }}>
+              Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
+            </h1>
+            {essayText ? (
+              <textarea
+                value={essayText}
+                onChange={e => setEssayText(e.target.value)}
+                style={{ width: '100%', minHeight: 380, border: '1px solid #e8ecf6', borderRadius: 8, padding: '16px', fontSize: 15.5, lineHeight: 1.9, color: '#33405a', fontFamily: "'Playfair Display',serif", resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+              />
+            ) : (
+              <div style={{ minHeight: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e7f2', borderRadius: 8, padding: 32, textAlign: 'center' }}>
+                <div style={{ fontSize: 15, color: '#9aa3b5', marginBottom: 18, lineHeight: 1.6 }}>
+                  Paste your personal statement or essay draft here to unlock AI analysis and rewriting.
+                </div>
+                <button
+                  onClick={() => {
+                    setEssayText('Write your personal statement here. Start with why you are pursuing this program and what you hope to achieve. Our AI will analyze your draft and suggest improvements.');
+                  }}
+                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Start Writing →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {docTab === 'documents' && (
+          <div style={{ width: '100%', maxWidth: 680 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>My CV</h2>
+              {cvText ? (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {!editingCv ? (
+                    <button onClick={() => { setEditingCv(true); setCvEdit(cvText); }}
+                      style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Edit
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => setEditingCv(false)}
+                        style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Cancel
+                      </button>
+                      <button onClick={() => { setCvText(cvEdit); setEditingCv(false); showToast('CV saved.'); }}
+                        style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Save
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <button onClick={() => setShowCvModal(true)}
+                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  + Upload CV
+                </button>
+              )}
+            </div>
+            {cvText ? (
+              editingCv ? (
+                <textarea
+                  value={cvEdit}
+                  onChange={e => setCvEdit(e.target.value)}
+                  style={{ width: '100%', minHeight: 500, border: '1px solid #d7ddec', borderRadius: 10, padding: '20px', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.7, color: '#1c2433', resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
+                />
+              ) : (
+                <div style={{ background: '#fff', borderRadius: 10, border: '1px solid #eaedf4', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#33405a', fontFamily: 'inherit', minHeight: 400 }}>
+                  {cvText}
+                </div>
+              )
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, border: '2px dashed #d7ddec', padding: 48, textAlign: 'center' }}>
+                <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 18, lineHeight: 1.6 }}>
+                  No CV uploaded yet. Paste your CV to unlock profile analysis and personalized strategy.
+                </div>
+                <button onClick={() => setShowCvModal(true)}
+                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Paste My CV →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {docTab === 'insights' && (
+          <div style={{ width: '100%', maxWidth: 580 }}>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: '0 0 24px' }}>AI Insights</h2>
+            {insights && insights.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {insights.map((item, i) => (
+                  <div key={i} style={{
+                    background: item.type === 'strength' ? '#f0f7ea' : '#fffaf0',
+                    border: `1px solid ${item.type === 'strength' ? '#c8dba8' : '#ecd9a8'}`,
+                    borderRadius: 12, padding: '16px 18px',
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: item.type === 'strength' ? '#3a7d1e' : '#7a5d12', marginBottom: 6, textTransform: 'uppercase' }}>
+                      {item.type === 'strength' ? '✓ Strength' : '→ Suggestion'}
+                    </div>
+                    <div style={{ fontSize: 14, lineHeight: 1.6, color: '#2a3447' }}>{item.text}</div>
+                  </div>
+                ))}
+                <button onClick={() => analyzeEssay()} disabled={busy}
+                  style={{ marginTop: 8, background: '#16233f', color: '#fff', border: 'none', borderRadius: 12, padding: '14px', fontSize: 14, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.6 : 1 }}>
+                  Re-analyze Essay
+                </button>
+              </div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, border: '2px dashed #d7ddec', padding: 48, textAlign: 'center' }}>
+                <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 18, lineHeight: 1.6 }}>
+                  Paste your essay in the Essay Editor, then click "Analyze with AI" to get specific, actionable feedback.
+                </div>
+                <button onClick={() => setDocTab('editor')}
+                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Go to Essay Editor →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Insights */}
+      {/* Right insights panel */}
       <div style={{ borderLeft: '1px solid #eef1f6', background: '#fbfcfe', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ background: '#eef1fc', padding: 22, borderBottom: '1px solid #e1e6f5' }}>
+        <div style={{ background: '#eef1fc', padding: 20, borderBottom: '1px solid #e1e6f5' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
             <span style={{ color: '#b8902f' }}>✦</span>
-            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.5px', color: '#16233f' }}>STRATEGIST INSIGHTS</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#7a8295' }}>
-            <span>Tone: Professional &amp; Academic</span>
-            <span style={{ color: '#1f8a5b', fontWeight: 700 }}>92% MATCH</span>
+            <span style={{ fontSize: 13, fontWeight: 700, letterSpacing: '.5px', color: '#16233f' }}>STRATEGIST TOOLS</span>
           </div>
         </div>
-        <div style={{ padding: 22, flex: 1 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>
-            WORD COUNT <span style={{ color: '#7a8295' }}>850 / 1000</span>
-          </div>
-          <div style={{ height: 6, background: '#e7eaf3', borderRadius: 3, marginBottom: 24, overflow: 'hidden' }}>
-            <div style={{ width: '85%', height: '100%', background: '#16233f' }} />
-          </div>
-          <div style={{ background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: 16, marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>STRENGTHEN VERBS</div>
-            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#5d6577', marginBottom: 10 }}>
-              Paragraph 2: Consider replacing "focused on" with "spearheaded" or "pioneered" to emphasize leadership.
+        <div style={{ padding: '20px 20px', flex: 1 }}>
+          {docTab === 'editor' && essayText && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>
+                WORD COUNT <span style={{ color: wordCount > 1000 ? '#d64545' : '#7a8295' }}>{wordCount} / 1000</span>
+              </div>
+              <div style={{ height: 6, background: '#e7eaf3', borderRadius: 3, marginBottom: 24, overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min(essayPct, 100)}%`, height: '100%', background: wordCount > 1000 ? '#d64545' : '#16233f' }} />
+              </div>
+            </>
+          )}
+
+          {insights && insights.slice(0, 2).map((item, i) => (
+            <div key={i} style={{
+              background: item.type === 'strength' ? '#f0f7ea' : '#fffaf0',
+              border: `1px solid ${item.type === 'strength' ? '#c8dba8' : '#ecd9a8'}`,
+              borderRadius: 12, padding: 14, marginBottom: 12,
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: item.type === 'strength' ? '#3a7d1e' : '#7a5d12', marginBottom: 5, textTransform: 'uppercase' }}>
+                {item.type === 'strength' ? '✓ Strength' : '→ Improve'}
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.55, color: '#5d6577' }}>{item.text}</div>
             </div>
-            <button onClick={noop} style={{ background: 'none', border: 'none', color: '#b8902f', fontWeight: 700, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-              APPLY AUTOMATICALLY →
+          ))}
+
+          {!insights && essayText && (
+            <div style={{ background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: 14, marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: '#7a8295', lineHeight: 1.5 }}>Click "Analyze with AI" to get specific feedback on your essay.</div>
+            </div>
+          )}
+        </div>
+        <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {essayText && (
+            <>
+              <button onClick={() => analyzeEssay()} disabled={busy}
+                style={{ width: '100%', background: 'none', border: '1px solid #16233f', color: '#16233f', borderRadius: 10, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1 }}>
+                ✦ Analyze with AI
+              </button>
+              <button onClick={() => rewriteEssay()} disabled={busy}
+                style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1 }}>
+                {busy ? 'Rewriting...' : '✦ Rewrite with AI'}
+              </button>
+            </>
+          )}
+          {!cvText && (
+            <button onClick={() => setShowCvModal(true)}
+              style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 10, padding: 13, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Upload CV →
             </button>
-          </div>
-          <div style={{ background: '#eef3fb', border: '1px solid #d7e1f2', borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>CLARITY CHECK</div>
-            <div style={{ fontSize: 13, lineHeight: 1.55, color: '#5d6577' }}>
-              The sentence regarding 'Human-Centered AI' is quite complex. Try breaking it into two for better readability.
-            </div>
-          </div>
-        </div>
-        <div style={{ padding: '0 22px 22px' }}>
-          <button onClick={noop} style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 12, padding: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            ✦ Rewrite with AI
-          </button>
+          )}
         </div>
       </div>
     </div>

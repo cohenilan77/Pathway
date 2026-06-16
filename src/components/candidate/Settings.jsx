@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Settings({ noop }) {
+export default function Settings({ noop, profile, resetSession, signOut }) {
   return (
     <div style={{ flex: 1, minHeight: '100vh', background: '#f6f7fb', overflowY: 'auto' }}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 44px' }}>
@@ -13,13 +13,25 @@ export default function Settings({ noop }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Full Name</label>
-              <input defaultValue="Julian Thorne" onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+              <input defaultValue={profile?.name || ''} placeholder="From your advisor conversation" onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Academic Email</label>
-              <input defaultValue="j.thorne@university.edu" onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Target Degree</label>
+              <input defaultValue={profile?.degree || ''} placeholder="MBA, Masters, PhD..." onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
             </div>
           </div>
+          {profile && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>GPA</label>
+                <input defaultValue={profile.gpa || ''} onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>GMAT / GRE</label>
+                <input defaultValue={profile.gmat || ''} onChange={noop} style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none' }} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Notifications */}
@@ -45,9 +57,17 @@ export default function Settings({ noop }) {
           </div>
         </div>
 
-        <button onClick={noop} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Save Changes
-        </button>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <button onClick={noop} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Save Changes
+          </button>
+          <button onClick={resetSession} style={{ background: 'none', color: '#d64545', border: '1.5px solid #d64545', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Clear Session Data
+          </button>
+          <button onClick={signOut} style={{ background: 'none', color: '#7a8295', border: '1.5px solid #d7ddec', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Sign Out
+          </button>
+        </div>
       </div>
     </div>
   );
