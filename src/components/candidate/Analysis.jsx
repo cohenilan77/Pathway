@@ -17,14 +17,28 @@ function ScoreDial({ score, stroke, title, desc }) {
   );
 }
 
-const TIER_COLORS = { reach: '#c2962f', target: 'rgba(255,255,255,.22)', safety: 'rgba(255,255,255,.22)' };
-const SCHOOL_GRADIENTS = [
-  'linear-gradient(135deg,#1a2f50 0%,#0d1a2f 100%)',
-  'linear-gradient(135deg,#2a4870 0%,#1a2f50 100%)',
-  'linear-gradient(135deg,#1f3560 0%,#0d1a2f 100%)',
-  'linear-gradient(135deg,#162844 0%,#0a1520 100%)',
-  'linear-gradient(135deg,#243560 0%,#111e3a 100%)',
-  'linear-gradient(135deg,#1c3050 0%,#0c1825 100%)',
+const TIERS = [
+  {
+    key: 'stretch',
+    label: 'STRETCH',
+    accent: '#d64545',
+    bg: '#fff5f5',
+    border: '#fecaca',
+  },
+  {
+    key: 'possible',
+    label: 'POSSIBLE',
+    accent: '#b8902f',
+    bg: '#fffbf0',
+    border: '#fde68a',
+  },
+  {
+    key: 'safe',
+    label: 'SAFE',
+    accent: '#2d7d46',
+    bg: '#f0fdf4',
+    border: '#86efac',
+  },
 ];
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile }) {
@@ -155,42 +169,77 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           </div>
         )}
 
-        {/* School match */}
+        {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
-            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 38, fontWeight: 800, color: '#16233f', margin: '0 0 28px' }}>Strategic School Match</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: displayPrograms.length > 1 ? '1.3fr 1fr' : '1fr', gap: 18 }}>
-              <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', minHeight: 420, border: '2px solid #c2962f', background: SCHOOL_GRADIENTS[0] }}>
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(15,26,48,.05),rgba(15,26,48,.82))', pointerEvents: 'none' }} />
-                <div style={{ position: 'absolute', left: 22, bottom: 22, right: 22, color: '#fff' }}>
-                  <span style={{ display: 'inline-block', background: '#c2962f', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 7, marginBottom: 10, textTransform: 'capitalize' }}>{displayPrograms[0].tier}</span>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div>
-                      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700 }}>{displayPrograms[0].name}</div>
-                      {displayPrograms[0].location && <div style={{ fontSize: 13, opacity: .85, marginTop: 4 }}>◍ {displayPrograms[0].location}</div>}
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 38, fontWeight: 800, color: '#16233f', margin: '0 0 28px' }}>Strategic School Portfolio</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {TIERS.map(tier => {
+                const schools = displayPrograms.filter(p => p.tier === tier.key);
+                if (schools.length === 0) return null;
+                return (
+                  <div key={tier.key} style={{ background: tier.bg, border: `1px solid ${tier.border}`, borderRadius: 16, overflow: 'hidden' }}>
+                    {/* Tier header */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 24px', borderBottom: `1px solid ${tier.border}` }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: tier.accent, flexShrink: 0, display: 'inline-block' }} />
+                      <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', color: tier.accent }}>{tier.label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#9a9a9a', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                     </div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#f3d27e' }}>{displayPrograms[0].fit}% Fit</div>
-                  </div>
-                </div>
-              </div>
-              {displayPrograms.length > 1 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  {displayPrograms.slice(1, 4).map((p, i) => (
-                    <div key={p.name} style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', flex: i === 0 ? '1.3' : '1', minHeight: i === 0 ? 200 : 140, background: SCHOOL_GRADIENTS[i + 1] || SCHOOL_GRADIENTS[0] }}>
-                      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(15,26,48,.04),rgba(15,26,48,.78))', pointerEvents: 'none' }} />
-                      <div style={{ position: 'absolute', left: 18, bottom: 18, right: 18, color: '#fff' }}>
-                        <span style={{ display: 'inline-block', background: 'rgba(255,255,255,.22)', fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 6, marginBottom: 7, textTransform: 'capitalize' }}>{p.tier}</span>
-                        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: i === 0 ? 24 : 20, fontWeight: 700 }}>{p.name}</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 3 }}>
-                          {p.location && <span style={{ fontSize: 12, opacity: .85 }}>◍ {p.location}</span>}
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#f3d27e' }}>{p.fit}% Fit</span>
+                    {/* School rows */}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {schools.map((school, idx) => (
+                        <div key={school.name || idx} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '18px 24px',
+                          borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none',
+                          gap: 16,
+                        }}>
+                          {/* Left: name, location, notes */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 15, fontWeight: 700, color: '#16233f', marginBottom: 3 }}>
+                              {school.name}
+                            </div>
+                            {school.location && (
+                              <div style={{ fontSize: 12, color: '#7a8295', marginBottom: school.notes ? 4 : 0 }}>
+                                ◍ {school.location}
+                              </div>
+                            )}
+                            {school.notes && (
+                              <div style={{ fontSize: 12, color: '#7a8295', lineHeight: 1.45 }}>
+                                {school.notes}
+                              </div>
+                            )}
+                          </div>
+                          {/* Right: stats */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+                            {school.avgGMAT != null && (
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#2a3447' }}>{school.avgGMAT}</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginTop: 1 }}>AVG GMAT</div>
+                              </div>
+                            )}
+                            {school.avgGPA != null && (
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#2a3447' }}>{school.avgGPA}</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginTop: 1 }}>AVG GPA</div>
+                              </div>
+                            )}
+                            {school.fit != null && (
+                              <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: tier.accent, lineHeight: 1 }}>{school.fit}%</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginTop: 3 }}>FIT</div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}

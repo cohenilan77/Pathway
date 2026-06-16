@@ -9,7 +9,7 @@ export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrati
 const INITIAL_CHAT = [
   {
     role: 'ai',
-    text: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to engineer a narrative that top-tier institutions can't ignore.\n\nWhat type of program are you targeting — MBA, Masters, PhD, or undergraduate? And to fast-track your analysis, feel free to paste your CV using the button below.",
+    text: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nWhich degree are you targeting?",
   },
 ];
 
@@ -164,6 +164,16 @@ export default function App() {
     send(`Here is my CV/resume:\n\n${draft}`);
   }, [cvDraft, send]);
 
+  const handleFileUpload = useCallback((e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setCvDraft(ev.target.result || '');
+    reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
+    reader.readAsText(file);
+    e.target.value = '';
+  }, [showToast]);
+
   const rewriteEssay = useCallback(async () => {
     if (!essayText.trim()) { showToast('Paste your essay text in the editor first.'); return; }
     setBusy(true);
@@ -205,7 +215,7 @@ export default function App() {
     essaySchool, setEssaySchool,
     showCvModal, setShowCvModal,
     cvDraft, setCvDraft,
-    go, enter, signOut, send, submitCv, rewriteEssay, analyzeEssay, resetSession, showToast,
+    go, enter, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };
@@ -223,26 +233,42 @@ export default function App() {
         </div>
       )}
 
-      {/* CV Paste Modal */}
+      {/* CV / Background Upload Modal */}
       {showCvModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,.6)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ background: '#fff', borderRadius: 18, padding: 36, width: '100%', maxWidth: 600, boxShadow: '0 24px 60px rgba(15,26,48,.28)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f', margin: 0 }}>Paste Your CV</h2>
-              <button onClick={() => setShowCvModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
+          <div style={{ background: '#fff', borderRadius: 18, padding: 36, width: '100%', maxWidth: 620, boxShadow: '0 24px 60px rgba(15,26,48,.28)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f', margin: 0 }}>Upload Your Profile</h2>
+              <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
-            <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>Paste your full CV or resume. Claude will extract your profile, score your competitiveness, and personalize your entire strategy in one step.</p>
-            <textarea
-              autoFocus
-              value={cvDraft}
-              onChange={e => setCvDraft(e.target.value)}
-              placeholder="Paste your full CV or resume text here..."
-              style={{ width: '100%', height: 260, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box' }}
-            />
-            <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'flex-end' }}>
-              <button onClick={() => setShowCvModal(false)} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+            <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
+              Paste your CV, upload a file, or paste any background info. Claude will extract your full profile, score your competitiveness, and personalize your strategy in one step.
+            </p>
+
+            {/* File upload row */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1.5px dashed #c5cde0', borderRadius: 10, padding: '11px 16px', cursor: 'pointer', marginBottom: 12, fontSize: 13, color: '#6b7280', fontWeight: 600, fontFamily: 'inherit' }}>
+              <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload file (.txt, .pdf, .doc, .docx)'}
+              <input type="file" accept=".txt,.pdf,.doc,.docx,.rtf" onChange={handleFileUpload} style={{ display: 'none' }} />
+            </label>
+
+            <div style={{ position: 'relative', marginBottom: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>OR PASTE TEXT BELOW</div>
+              <textarea
+                value={cvDraft}
+                onChange={e => setCvDraft(e.target.value)}
+                placeholder="Paste your CV, resume, or any background info (work history, education, test scores, goals)…"
+                style={{ width: '100%', height: 220, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, marginTop: 14, justifyContent: 'flex-end', alignItems: 'center' }}>
+              <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{cvDraft.trim().split(/\s+/).filter(Boolean).length} words</span>
+              <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={submitCv} disabled={!cvDraft.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: cvDraft.trim() ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: cvDraft.trim() ? 1 : 0.5 }}>
-                Analyze My CV →
+                Analyze →
               </button>
             </div>
           </div>

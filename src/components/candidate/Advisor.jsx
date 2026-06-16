@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 
 function RadialDial({ score, stroke, label, sublabel }) {
-  const pct = Math.max(0, Math.min(100, score));
+  const pct = Math.max(0, Math.min(100, score || 0));
   return (
     <div style={{ textAlign: 'center' }}>
       <svg width="116" height="116" viewBox="0 0 120 120">
@@ -20,6 +20,16 @@ function RadialDial({ score, stroke, label, sublabel }) {
   );
 }
 
+const PROGRAM_CHIPS = [
+  { label: 'MBA', text: 'MBA' },
+  { label: 'LLM', text: 'LLM' },
+  { label: 'PhD', text: 'PhD' },
+  { label: 'Masters', text: 'Masters' },
+  { label: 'MD', text: 'MD' },
+  { label: 'JD', text: 'JD' },
+  { label: 'Undergrad', text: 'Undergraduate' },
+];
+
 export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession }) {
   const messagesEndRef = useRef(null);
 
@@ -27,19 +37,13 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
 
-  const chips = [
-    { label: 'MBA', text: 'I am targeting an MBA at M7 schools.' },
-    { label: 'Masters', text: 'I am pursuing a specialized Masters degree.' },
-    { label: 'PhD', text: 'I am applying to PhD programs.' },
-    { label: 'Undergrad', text: 'I am applying for undergraduate admission.' },
-  ];
-
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
   const hasScores = !!scores;
-  const fitIndex = scores ? Math.round((scores.academic + scores.professional + (scores.leadership || scores.potential || 70)) / 3) : null;
+  // Show chips only before first user message
+  const showChips = !busy && chat.every(m => m.role === 'ai');
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -77,7 +81,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
                 <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>
-                  {profile?.name ? `${profile.name}'s Strategic Profile` : 'Strategic Profile Initiation'}
+                  {profile?.name ? `${profile.name}'s Strategic Profile` : 'Strategic Profile'}
                 </h2>
               </div>
               <button onClick={resetSession} style={{ background: 'none', border: '1px solid #e3e7f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#8a93a3', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
@@ -93,7 +97,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                   </div>
                 ) : (
                   <div key={i} style={{ alignSelf: 'flex-end', background: '#16233f', color: '#eef2fa', borderRadius: '16px 16px 4px 16px', padding: '16px 20px', fontSize: 15, lineHeight: 1.6, maxWidth: '82%', whiteSpace: 'pre-wrap' }}>
-                    {m.role === 'user' && m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
+                    {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
                   </div>
                 )
               ))}
@@ -109,14 +113,14 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 </div>
               )}
 
-              {/* Quick chips — only on first turn */}
-              {stepIdx === 0 && !busy && (
+              {/* Program type chips — shown only before first user message */}
+              {showChips && (
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f', margin: '6px 0 12px' }}>Quick start:</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', margin: '4px 0 12px' }}>SELECT YOUR PROGRAM</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    {chips.map(chip => (
+                    {PROGRAM_CHIPS.map(chip => (
                       <button key={chip.label} onClick={() => send(chip.text)} disabled={busy}
-                        style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '10px 18px', fontSize: 14, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: '#fff', border: '1.5px solid #d7ddec', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px' }}>
                         {chip.label}
                       </button>
                     ))}
@@ -124,7 +128,17 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 </div>
               )}
 
-              {/* Prompt to view analysis when scores are ready */}
+              {/* Upload CV prompt — shown after program type selected but before CV submitted */}
+              {!showChips && !hasScores && !busy && chat.some(m => m.role === 'user') && (
+                <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, color: '#7a5d12', fontWeight: 600 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
+                  <button onClick={() => setShowCvModal(true)} style={{ background: '#b8902f', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    Upload CV →
+                  </button>
+                </div>
+              )}
+
+              {/* Analysis ready banner */}
               {scores && stepIdx >= 2 && (
                 <div style={{ background: '#f0f5e8', border: '1px solid #c8dba8', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ fontSize: 14, color: '#3a5a1a', fontWeight: 600 }}>✓ Your profile analysis is ready</span>
@@ -141,9 +155,9 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           {/* Input bar */}
           <div style={{ padding: '18px 40px 18px', borderTop: '1px solid #eef1f6' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px' }}>
-              {/* Paste CV button */}
+              {/* Upload / paste CV button */}
               <button onClick={() => setShowCvModal(true)}
-                title="Paste your CV for instant analysis"
+                title="Upload or paste your CV / background info"
                 style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
                 <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
@@ -154,7 +168,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
                 disabled={busy}
-                placeholder={busy ? 'Analyzing...' : 'Inquire about your strategy...'}
+                placeholder={busy ? 'Analyzing...' : 'Type your answer or ask anything…'}
                 style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 15, padding: '10px 0', color: '#1c2433', fontFamily: 'inherit' }}
               />
               <button onClick={() => send()} disabled={busy || !input.trim()}
@@ -165,7 +179,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </button>
             </div>
             <div style={{ textAlign: 'center', fontSize: 11, color: '#9aa3b5', marginTop: 8 }}>
-              Confidential consultation active · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Paste CV for instant analysis</span>
+              Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV for instant analysis</span>
             </div>
           </div>
         </div>
@@ -179,8 +193,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
           {!hasScores ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', paddingTop: 20 }}>
-              {/* Placeholder dials */}
-              {[['ACADEMIC', '#e3e7f0'], ['PROFESSIONAL', '#e3e7f0'], ['STRATEGY', '#e3e7f0']].map(([label, color]) => (
+              {['ACADEMIC', 'PROFESSIONAL', 'LEADERSHIP'].map(label => (
                 <div key={label} style={{ textAlign: 'center', opacity: 0.4 }}>
                   <svg width="116" height="116" viewBox="0 0 120 120">
                     <circle cx="60" cy="60" r="50" fill="none" stroke="#eef1f7" strokeWidth="9" />
@@ -191,7 +204,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               ))}
               <button onClick={() => setShowCvModal(true)}
                 style={{ marginTop: 12, background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
-                Paste CV to Unlock →
+                Upload CV to Unlock →
               </button>
             </div>
           ) : (
@@ -199,12 +212,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               <RadialDial score={scores.academic || 0} stroke="#16233f" label="ACADEMIC" sublabel="Quantitative & Academic Baseline" />
               <RadialDial score={scores.professional || 0} stroke="#b8902f" label="PROFESSIONAL" sublabel="Career Trajectory & Impact" />
               <RadialDial score={scores.leadership || scores.potential || 0} stroke="#aebde6" label="LEADERSHIP" sublabel="Team & Influence Track Record" />
-              {fitIndex !== null && (
+              {scores.overall != null && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#b8902f', fontSize: 14, fontWeight: 700, borderTop: '1px solid #eef1f6', width: '100%', justifyContent: 'center', paddingTop: 22 }}>
                   <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.7', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7L22 9.2l-7.2-.6Z" />
                   </svg>
-                  Overall Score: {scores.overall}%
+                  Overall Score: {scores.overall}/100
                 </div>
               )}
               <button onClick={() => setCandTab('analysis')} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
