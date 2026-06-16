@@ -91,9 +91,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
                   Paste your personal statement or essay draft here to unlock AI analysis and rewriting.
                 </div>
                 <button
-                  onClick={() => {
-                    setEssayText('Write your personal statement here. Start with why you are pursuing this program and what you hope to achieve. Our AI will analyze your draft and suggest improvements.');
-                  }}
+                  onClick={() => setEssayText(' ')}
                   style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Start Writing →
                 </button>

@@ -14,8 +14,8 @@ const tabStyle = (active) => ({
   cursor: 'pointer', background: 'none', border: 'none', borderRadius: 0, fontFamily: 'inherit',
 });
 
-export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, showToast,
-  chat, scores, profile, programs, strengths, weaknesses, stepIdx, STEPS, narrative, cvText }) {
+export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, setScores, showToast,
+  chat, setChat, scores, profile, programs, strengths, weaknesses, stepIdx, STEPS, narrative, cvText }) {
   const [adminView, setAdminView] = useState('dashboard');
   const [msgInput, setMsgInput] = useState('');
 
@@ -24,7 +24,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
   const candidateName = profile?.name || 'Active Candidate';
   const candidateSub = profile ? [profile.degree, profile.industry].filter(Boolean).join(' · ') : 'Session in progress';
 
-  const handleOverride = (d) => setOverride(prev => Math.max(0, Math.min(100, prev + d)));
+  const handleOverride = (d) => {
+    const next = Math.max(0, Math.min(100, (override || 0) + d));
+    setOverride(next);
+    setScores(prev => prev ? { ...prev, overall: next } : prev);
+  };
+
+  const sendConsultantNote = () => {
+    if (!msgInput.trim()) return;
+    setChat(prev => [...prev, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }]);
+    showToast('Note sent to candidate session.');
+    setMsgInput('');
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
@@ -187,7 +198,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#fff', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 14px', marginBottom: 16 }}>
                     <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} placeholder="Send a note to this candidate's session..." rows="2"
                       style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#1c2433', padding: '8px 0' }} />
-                    <button onClick={() => { if (msgInput.trim()) { showToast('Note sent to candidate session.'); setMsgInput(''); } }}
+                    <button onClick={sendConsultantNote}
                       style={{ background: '#16233f', border: 'none', borderRadius: 9, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}>
                       <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" /></svg>
                     </button>

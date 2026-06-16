@@ -93,7 +93,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         </div>
 
         {/* Overall score banner */}
-        {scores.overall && (
+        {scores.overall != null && (
           <div style={{ background: '#16233f', borderRadius: 16, padding: '22px 28px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#9bb0d8', marginBottom: 4 }}>OVERALL COMPETITIVENESS SCORE</div>

@@ -40,8 +40,10 @@ function loadSession() {
   } catch { return null; }
 }
 
+const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
+
 export default function App() {
-  const saved = loadSession();
+  const [saved] = useState(loadSession); // called once, not on every render
 
   const [screen, setScreen] = useState('login');
   const [role, setRole] = useState('candidate');
@@ -66,7 +68,7 @@ export default function App() {
   const [essayText, setEssayText] = useState(saved?.essayText || '');
   const [essaySchool, setEssaySchool] = useState(saved?.essaySchool || '');
   const [insights, setInsights] = useState(saved?.insights || null);
-  const [override, setOverride] = useState(saved?.scores?.overall || 0);
+  const [override, setOverride] = useState(saved?.override ?? saved?.scores?.overall ?? 0);
   const [showCvModal, setShowCvModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
   const toastTimerRef = useRef(null);
@@ -76,10 +78,10 @@ export default function App() {
     if (chat.length > 1) {
       localStorage.setItem('pathway_session', JSON.stringify({
         chat, stepIdx, profile, scores, strengths, weaknesses,
-        programs, cvText, essayText, essaySchool, insights, narrative,
+        programs, cvText, essayText, essaySchool, insights, narrative, override,
       }));
     }
-  }, [chat, stepIdx, profile, scores, strengths, weaknesses, programs, cvText, essayText, essaySchool, insights, narrative]);
+  }, [chat, stepIdx, profile, scores, strengths, weaknesses, programs, cvText, essayText, essaySchool, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -106,7 +108,11 @@ export default function App() {
     if (!t || busy) return;
 
     const userMsg = { role: 'user', text: t };
-    const newChat = [...chat, userMsg];
+    // If re-submitting CV, replace the previous CV message to avoid duplicates in context
+    const baseChat = t.startsWith('Here is my CV')
+      ? chat.filter(m => !(m.role === 'user' && m.text.startsWith('Here is my CV')))
+      : chat;
+    const newChat = [...baseChat, userMsg];
     setChat(newChat);
     setInput('');
     setBusy(true);
@@ -124,8 +130,8 @@ export default function App() {
         const parsed = parseBlocks(raw);
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
-          const vals = Object.values(parsed.scores);
-          const overall = Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+          const vals = SCORE_KEYS.map(k => parsed.scores[k]).filter(v => typeof v === 'number' && !isNaN(v));
+          const overall = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
           setStepIdx(prev => Math.max(prev, 2));
@@ -139,9 +145,6 @@ export default function App() {
         if (parsed.insights) setInsights(parsed.insights);
         const displayText = parsed.clean || raw;
         setChat(prev => [...prev, { role: 'ai', text: displayText }]);
-        if (!parsed.scores && !parsed.programs) {
-          setStepIdx(prev => Math.min(prev + 1, STEPS.length - 1));
-        }
       } else {
         setChat(prev => [...prev, { role: 'ai', text: data.error || 'Connection issue. Please try again.' }]);
       }
@@ -194,9 +197,9 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
-    chat, input, setInput, busy,
+    chat, setChat, input, setInput, busy,
     STEPS, stepIdx,
-    profile, scores, strengths, weaknesses, programs, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, insights,
     cvText, setCvText,
     essayText, setEssayText,
     essaySchool, setEssaySchool,

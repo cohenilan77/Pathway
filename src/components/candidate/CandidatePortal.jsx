@@ -13,7 +13,16 @@ const sideStyle = (active) => ({
 });
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, noop } = props;
+  const { candTab, setCandTab, signOut, send, showToast } = props;
+
+  const handleHelp = () => {
+    setCandTab('advisor');
+    send('How do I use this platform? Give me a quick guide to the key features.');
+  };
+
+  const handleUpgrade = () => {
+    showToast('Elite Strategy tier coming soon — contact your advisor to learn more.');
+  };
 
   const navItems = [
     {
@@ -56,12 +65,12 @@ export default function CandidatePortal(props) {
         <div style={{ marginTop: 'auto' }}>
           <div style={{ background: '#16233f', borderRadius: 14, padding: 18, marginBottom: 18 }}>
             <div style={{ fontSize: 12, color: '#9bb0d8', fontWeight: 600, marginBottom: 10 }}>Tier: Private Office</div>
-            <button onClick={noop} style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={handleUpgrade} style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
               Upgrade to Elite Strategy
             </button>
           </div>
           <div style={{ height: 1, background: '#dde3f4', marginBottom: 14 }} />
-          <button onClick={noop} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%' }}>
+          <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
             Help
           </button>

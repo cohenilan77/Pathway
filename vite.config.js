@@ -82,7 +82,7 @@ export default defineConfig(({ mode }) => {
                 const client = new Anthropic({ apiKey });
                 const response = await client.messages.create({
                   model: 'claude-haiku-4-5-20251001',
-                  max_tokens: 800,
+                  max_tokens: 1500,
                   system: SYSTEM_PROMPT,
                   messages: messages.map(m => ({
                     role: m.role === 'ai' ? 'assistant' : 'user',
@@ -107,6 +107,11 @@ export default defineConfig(({ mode }) => {
             if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
 
             const apiKey = env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
+            if (!apiKey || apiKey === 'your_api_key_here') {
+              res.writeHead(500);
+              res.end(JSON.stringify({ error: 'Add ANTHROPIC_API_KEY to your .env file' }));
+              return;
+            }
             let body = '';
             req.on('data', chunk => { body += chunk; });
             req.on('end', async () => {
