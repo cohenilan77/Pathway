@@ -30,7 +30,7 @@ const PROGRAM_CHIPS = [
   { label: 'Undergrad', text: 'Undergraduate' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, programs }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {

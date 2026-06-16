@@ -263,8 +263,8 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload .txt file (for PDF/Word, paste text below)'}
-              <input type="file" accept=".txt,.rtf" onChange={handleFileUpload} style={{ display: 'none' }} />
+              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload file (.txt) or paste CV text below'}
+              <input type="file" accept=".txt,.rtf,.pdf,.doc,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
