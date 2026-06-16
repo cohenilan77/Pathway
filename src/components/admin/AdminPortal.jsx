@@ -8,7 +8,7 @@ const sideStyle = (active) => ({
 });
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, setScores, showToast,
-  chat, setChat, scores, profile, programs, strengths, weaknesses, stepIdx, STEPS, narrative, cvText }) {
+  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText }) {
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [msgInput, setMsgInput] = useState('');
@@ -57,10 +57,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
     safe: programs.filter(p => p.tier === 'safe').length,
   } : null;
 
-  // Detect which schools the candidate chose by finding their reply after the AI asks "which schools excite you most"
-  // Step 3 also mentions "Analysis tab" so we must match Step 4-specific phrasing only
-  const chosenSchools = (() => {
-    if (!programs || !chat || !chat.length) return [];
+  // Primary source: the AI-emitted CHOSEN_SCHOOLS block (structured, reliable).
+  // Fallback for older sessions recorded before that block existed: infer from the
+  // candidate's reply right after the AI asks "which schools excite you most".
+  const chosenPrograms = (() => {
+    if (!programs) return [];
+    if (chosenSchools && chosenSchools.length) {
+      return programs.filter(p => chosenSchools.includes(p.name));
+    }
+    if (!chat || !chat.length) return [];
     const portfolioMsgIdx = chat.findIndex(m =>
       m.role === 'ai' && (
         m.text.includes('excite you most') ||
@@ -256,11 +261,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                     </div>
 
                     {/* Candidate's chosen schools */}
-                    {chosenSchools.length > 0 && (
+                    {chosenPrograms.length > 0 && (
                       <div style={{ marginBottom: 16 }}>
                         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {chosenSchools.map(p => {
+                          {chosenPrograms.map(p => {
                             const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f';
                             const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : '#fffbf0';
                             const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : '#fde68a';
@@ -286,7 +291,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                     {/* All schools list */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {programs.slice(0, 6).map(p => {
-                        const isChosen = chosenSchools.some(c => c.name === p.name);
+                        const isChosen = chosenPrograms.some(c => c.name === p.name);
                         return (
                           <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

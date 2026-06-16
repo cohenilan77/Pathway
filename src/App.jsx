@@ -21,7 +21,7 @@ function parseBlocks(raw) {
     try { return JSON.parse(m[1].trim()); } catch { return null; }
   };
   const clean = raw
-    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|INSIGHTS)>[\s\S]*?<\/\1>/g, '')
+    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS)>[\s\S]*?<\/\1>/g, '')
     .trim();
   return {
     clean,
@@ -30,6 +30,7 @@ function parseBlocks(raw) {
     strengths: extract('STRENGTHS'),
     weaknesses: extract('WEAKNESSES'),
     programs: extract('PROGRAMS'),
+    chosenSchools: extract('CHOSEN_SCHOOLS'),
     insights: extract('INSIGHTS'),
   };
 }
@@ -65,6 +66,7 @@ export default function App() {
   const [strengths, setStrengths] = useState(saved?.strengths || null);
   const [weaknesses, setWeaknesses] = useState(saved?.weaknesses || null);
   const [programs, setPrograms] = useState(saved?.programs || null);
+  const [chosenSchools, setChosenSchools] = useState(saved?.chosenSchools || null);
   const [cvText, setCvText] = useState(saved?.cvText || '');
   const [essayText, setEssayText] = useState(saved?.essayText || '');
   const [essaySchool, setEssaySchool] = useState(saved?.essaySchool || '');
@@ -81,10 +83,10 @@ export default function App() {
     if (chat.length > 1) {
       localStorage.setItem('pathway_session', JSON.stringify({
         chat, stepIdx, profile, scores, strengths, weaknesses,
-        programs, cvText, essayText, essaySchool, insights, narrative, override,
+        programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override,
       }));
     }
-  }, [chat, stepIdx, profile, scores, strengths, weaknesses, programs, cvText, essayText, essaySchool, insights, narrative, override]);
+  }, [chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -101,7 +103,7 @@ export default function App() {
     setChat(INITIAL_CHAT);
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
-    setPrograms(null); setCvText(''); setEssayText(''); setEssaySchool('');
+    setPrograms(null); setChosenSchools(null); setCvText(''); setEssayText(''); setEssaySchool('');
     setInsights(null); setNarrative(null);
     showToast('Session cleared — starting fresh.');
   }, [showToast]);
@@ -149,6 +151,7 @@ export default function App() {
           setPrograms(parsed.programs);
           setStepIdx(prev => Math.max(prev, 3));
         }
+        if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
         const displayText = parsed.clean || raw;
 
@@ -264,7 +267,7 @@ export default function App() {
     narrative, setNarrative,
     chat, setChat, input, setInput, busy,
     STEPS, stepIdx,
-    profile, scores, setScores, strengths, weaknesses, programs, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
     cvText, setCvText,
     essayText, setEssayText,
     essaySchool, setEssaySchool,
