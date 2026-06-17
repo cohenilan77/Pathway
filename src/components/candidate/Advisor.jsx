@@ -30,7 +30,7 @@ const PROGRAM_CHIPS = [
   { label: 'Undergrad', text: 'Undergraduate' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, programs, narrative }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -171,16 +171,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                   <span style={{ fontSize: 14, color: '#3a5a1a', fontWeight: 600 }}>✓ Your profile analysis is ready</span>
                   <button onClick={() => setCandTab('analysis')} style={{ background: '#2a4a12', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                     View Analysis →
-                  </button>
-                </div>
-              )}
-
-              {/* Programs CTA — shown after scores but before programs are generated */}
-              {scores && !programs && !busy && (
-                <div style={{ background: '#fffbf0', border: '1px solid #fde68a', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, color: '#7a5d12', fontWeight: 600 }}>🎓 Ready to map your school portfolio?</span>
-                  <button onClick={() => send('Show me my recommended school portfolio based on my profile.')} style={{ background: '#b8902f', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    Show My Schools →
                   </button>
                 </div>
               )}
