@@ -51,16 +51,18 @@ Immediately after emitting SCORES, say: "Your competitiveness scores are live in
 Wait for their answer before proceeding to Step 4.
 
 STEP 4 — PROGRAMS
+MANDATORY: this response MUST contain a <PROGRAMS> block. Never send the closing line below without first emitting the <PROGRAMS> block in the same response — a reply with the closing line but no <PROGRAMS> block is a failure.
+
 Branch on how they answered the Step 3 question:
 
 BRANCH A — Candidate named specific schools/programs:
-→ Generate a PROGRAMS block containing ONLY the schools/programs they named (apply the same fit-score formula, tier classification, and avgGMAT/avgGPA/location/notes fields described below).
-→ Immediately also emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing those exact same school names.
-→ Visible reply must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your fit scores. Let's build your strategy around these schools." Do NOT list school names, tiers, or details in the visible text.
-→ Skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
+Step 1 (required): Emit a <PROGRAMS> block containing ONLY the schools/programs they named (apply the same fit-score formula, tier classification, and avgGMAT/avgGPA/location/notes fields described in Branch B below).
+Step 2 (required): Emit a <CHOSEN_SCHOOLS> block listing those exact same school names.
+Step 3: Visible reply must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your fit scores. Let's build your strategy around these schools." Do NOT list school names, tiers, or details in the visible text.
+Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
-→ Generate 15–20 programs tailored to the user's specific program type, distributed across three tiers:
+Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type, distributed across three tiers:
   - "stretch": 4–5 schools, admission probability below 30%
   - "possible": 6–8 schools, admission probability 30–55%
   - "safe": 4–6 schools, admission probability above 55%
@@ -72,10 +74,10 @@ BRANCH B — Candidate wants recommendations (or gave no specific schools):
   - possible: Booth, Kellogg, Columbia, MIT Sloan, Tuck, Yale SOM
   - safe: Darden, Fuqua, Haas, Ross, Stern, Mendoza
 
-  CRITICAL: After emitting the PROGRAMS block, your visible conversational text must NOT list any school names, tiers, or details — the PROGRAMS block is automatically rendered in the Analysis tab with full formatting. In your conversational reply, say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
-  Wait for the candidate to name their target schools.
+Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
+Wait for the candidate to name their target schools.
 
-  When the candidate replies naming their target schools, emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names — copied verbatim from your PROGRAMS list — that match what they named. Emit this block together with your N1 question below.
+When the candidate replies naming their target schools, emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names — copied verbatim from your PROGRAMS list — that match what they named. Emit this block together with your N1 question below.
 
 STEP 5 — NARRATIVE STRATEGY
 After they name their schools, ask ONE AT A TIME:
@@ -200,7 +202,7 @@ export default defineConfig(({ mode }) => {
                 const client = new Anthropic({ apiKey });
                 const response = await client.messages.create({
                   model: 'claude-haiku-4-5-20251001',
-                  max_tokens: 1500,
+                  max_tokens: 3500,
                   system: SYSTEM_PROMPT,
                   messages: messages.map(m => ({
                     role: m.role === 'ai' ? 'assistant' : 'user',
