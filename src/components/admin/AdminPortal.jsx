@@ -8,7 +8,7 @@ const sideStyle = (active) => ({
 });
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, setScores, showToast,
-  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText,
+  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText, essayText,
   aiConfig, setAiConfig }) {
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
@@ -76,6 +76,19 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
     showToast('Note sent to candidate session.');
     setMsgInput('');
   };
+
+  const downloadDoc = (text, filename) => {
+    const b = new Blob([text], { type: 'text/plain' });
+    const u = URL.createObjectURL(b);
+    const a = document.createElement('a');
+    a.href = u; a.download = filename; a.click();
+    URL.revokeObjectURL(u);
+  };
+
+  const documents = [
+    cvText && { label: 'CV / Resume', text: cvText, filename: 'candidate_cv.txt' },
+    essayText && { label: 'Essay Draft', text: essayText, filename: 'candidate_essay.txt' },
+  ].filter(Boolean);
 
   const generateSummary = async () => {
     setSummarizing(true);
@@ -146,10 +159,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
             <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>
             Live Session
           </button>
-          <button onClick={() => setAdminView('documents')} style={sideStyle(adminView === 'documents')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
-            Documents
-          </button>
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
             <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
             Settings
@@ -177,7 +186,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
           <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 800, color: '#16233f', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'session' && 'Live Session'}
-            {adminView === 'documents' && 'Candidate Documents'}
             {adminView === 'settings' && 'Settings'}
           </h1>
           {sessionActive && (
@@ -389,6 +397,35 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                   </div>
                 </div>
 
+                {/* Candidate documents */}
+                <div style={{ marginBottom: 22 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 10 }}>CANDIDATE DOCUMENTS</div>
+                  {documents.length === 0 ? (
+                    <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 12, padding: '18px 14px', textAlign: 'center', fontSize: 12.5, color: '#8a93a3' }}>
+                      No documents uploaded yet.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {documents.map(doc => (
+                        <div key={doc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e7f2', borderRadius: 10, padding: '10px 12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ width: 28, height: 28, borderRadius: 7, background: '#eef1f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16233f', flexShrink: 0 }}>
+                              <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
+                            </span>
+                            <div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>{doc.label}</div>
+                              <div style={{ fontSize: 11, color: '#8a93a3' }}>{doc.text.trim().split(/\s+/).length} words</div>
+                            </div>
+                          </div>
+                          <button onClick={() => downloadDoc(doc.text, doc.filename)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9aa3b5' }}>
+                            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {narrative && (
                   <div style={{ background: '#f4f6fc', border: '1px solid #d7ddec', borderRadius: 12, padding: 14, marginBottom: 18 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 5 }}>NARRATIVE STRATEGY</div>
@@ -452,38 +489,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── DOCUMENTS ── */}
-          {adminView === 'documents' && (
-            <div style={{ maxWidth: 680 }}>
-              {!cvText ? (
-                <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 40, textAlign: 'center' }}>
-                  <div style={{ fontSize: 15, color: '#8a93a3' }}>No documents uploaded yet in this session.</div>
-                </div>
-              ) : (
-                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 14, padding: 22 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ width: 36, height: 36, borderRadius: 8, background: '#eef1f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16233f' }}>
-                        <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
-                      </span>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#16233f' }}>CV / Resume</div>
-                        <div style={{ fontSize: 12, color: '#8a93a3' }}>{cvText.trim().split(/\s+/).length} words</div>
-                      </div>
-                    </div>
-                    <button onClick={() => { const b = new Blob([cvText], { type: 'text/plain' }); const u = URL.createObjectURL(b); const a = document.createElement('a'); a.href = u; a.download = 'candidate_cv.txt'; a.click(); }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9aa3b5' }}>
-                      <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
-                    </button>
-                  </div>
-                  <div style={{ background: '#f6f7fb', borderRadius: 8, padding: '14px 16px', fontSize: 13, lineHeight: 1.7, color: '#5d6577', whiteSpace: 'pre-wrap', maxHeight: 300, overflowY: 'auto' }}>
-                    {cvText}
-                  </div>
                 </div>
               )}
             </div>
