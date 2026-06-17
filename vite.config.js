@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import Anthropic from '@anthropic-ai/sdk';
 import contactHandler from './api/contact.js';
+import helpHandler from './api/help.js';
 import registerHandler from './api/register.js';
 import loginHandler from './api/login.js';
 import sessionHandler from './api/session.js';
@@ -309,6 +310,7 @@ export default defineConfig(({ mode }) => {
   if (env.KV_REST_API_URL) process.env.KV_REST_API_URL = env.KV_REST_API_URL;
   if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
   if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
+  if (env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
 
   return {
     plugins: [
@@ -428,6 +430,9 @@ export default defineConfig(({ mode }) => {
 
           // Contact form email endpoint
           server.middlewares.use('/api/contact', withApiAdapter(contactHandler));
+
+          // Help summary endpoint
+          server.middlewares.use('/api/help', withApiAdapter(helpHandler));
 
           // Essay rewrite endpoint
           server.middlewares.use('/api/rewrite', (req, res) => {

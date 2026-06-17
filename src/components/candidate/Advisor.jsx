@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { renderFormattedText } from '../../lib/formatText.jsx';
 
 function RadialDial({ score, stroke, label, sublabel }) {
   const pct = Math.max(0, Math.min(100, score || 0));
@@ -120,7 +121,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               {chat.map((m, i) => (
                 m.role === 'ai' ? (
                   <div key={i} style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '18px 20px', fontSize: 15, lineHeight: 1.65, color: '#2a3447', whiteSpace: 'pre-wrap' }}>
-                    {m.text}
+                    {renderFormattedText(m.text)}
                   </div>
                 ) : (
                   <div key={i} style={{ alignSelf: 'flex-end', background: '#16233f', color: '#eef2fa', borderRadius: '16px 16px 4px 16px', padding: '16px 20px', fontSize: 15, lineHeight: 1.6, maxWidth: '82%', whiteSpace: 'pre-wrap' }}>

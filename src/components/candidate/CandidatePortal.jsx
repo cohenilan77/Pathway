@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
 import NarrativeStrategy from './NarrativeStrategy.jsx';
 import Settings from './Settings.jsx';
+import HelpModal from './HelpModal.jsx';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -13,12 +14,10 @@ const sideStyle = (active) => ({
 });
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, send, showToast, setShowContactModal } = props;
+  const { candTab, setCandTab, signOut, showToast, setShowContactModal } = props;
+  const [showHelp, setShowHelp] = useState(false);
 
-  const handleHelp = () => {
-    setCandTab('advisor');
-    send('How do I use this platform? Give me a quick guide to the key features.');
-  };
+  const handleHelp = () => setShowHelp(true);
 
   const handleUpgrade = () => {
     setShowContactModal(true);
@@ -87,6 +86,8 @@ export default function CandidatePortal(props) {
       {candTab === 'documents' && <Documents {...props} />}
       {candTab === 'strategy' && <NarrativeStrategy {...props} />}
       {candTab === 'settings' && <Settings {...props} />}
+
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

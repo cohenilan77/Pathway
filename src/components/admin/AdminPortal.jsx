@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { renderFormattedText } from '../../lib/formatText.jsx';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -491,7 +492,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       <div style={{ fontSize: 13, color: '#8a93a3', fontStyle: 'italic' }}>Analyzing conversation…</div>
                     )}
                     {summary && (
-                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap', background: '#fafbfd', borderRadius: 10, padding: '14px 16px', border: '1px solid #eaedf4' }}>{summary}</div>
+                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap', background: '#fafbfd', borderRadius: 10, padding: '14px 16px', border: '1px solid #eaedf4' }}>{renderFormattedText(summary)}</div>
                     )}
                   </div>
                 )}
@@ -589,7 +590,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {summary && (
                 <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 10 }}>SESSION SUMMARY</div>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap' }}>{summary}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap' }}>{renderFormattedText(summary)}</div>
                 </div>
               )}
 
@@ -609,7 +610,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         {m.role === 'ai' ? 'AI ADVISOR' : candidateName.toUpperCase()}
                       </div>
                       <div style={{ fontSize: 13, lineHeight: 1.55, color: m.role === 'ai' ? '#2a3447' : '#e5ebf6', whiteSpace: 'pre-wrap' }}>
-                        {m.role === 'user' && m.text.startsWith('Here is my CV') ? '📄 [CV submitted for analysis]' : m.text}
+                        {m.role === 'user' && m.text.startsWith('Here is my CV')
+                          ? '📄 [CV submitted for analysis]'
+                          : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
                       </div>
                     </div>
                   ))}
