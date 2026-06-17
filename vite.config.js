@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import Anthropic from '@anthropic-ai/sdk';
-import nodemailer from 'nodemailer';
+import contactHandler from './api/contact.js';
 import registerHandler from './api/register.js';
 import loginHandler from './api/login.js';
 import sessionHandler from './api/session.js';
@@ -308,6 +308,7 @@ export default defineConfig(({ mode }) => {
   if (env.ADMIN_SECRET) process.env.ADMIN_SECRET = env.ADMIN_SECRET;
   if (env.KV_REST_API_URL) process.env.KV_REST_API_URL = env.KV_REST_API_URL;
   if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
+  if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
 
   return {
     plugins: [
@@ -426,33 +427,7 @@ export default defineConfig(({ mode }) => {
           });
 
           // Contact form email endpoint
-          server.middlewares.use('/api/contact', (req, res) => {
-            res.setHeader('Content-Type', 'application/json');
-            if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const { name, email, phone, program, message } = JSON.parse(body);
-                const user = env.EMAIL_USER || process.env.EMAIL_USER;
-                const pass = env.EMAIL_PASS || process.env.EMAIL_PASS;
-                if (!user || !pass) {
-                  console.log('[Contact inquiry - no email creds set]', { name, email, program });
-                  res.writeHead(200); res.end(JSON.stringify({ success: true })); return;
-                }
-                const transporter = nodemailer.createTransport({ service: 'gmail', auth: { user, pass } });
-                await transporter.sendMail({
-                  from: `"Pathway Admissions" <${user}>`,
-                  to: 'cohenilan@gmail.com',
-                  subject: 'Pathway Elite Strategy — Upgrade Inquiry',
-                  html: `<h2>New inquiry from ${name}</h2><p><b>Email:</b> ${email}<br><b>Phone:</b> ${phone || '—'}<br><b>Program:</b> ${program || '—'}</p><p><b>Message:</b><br>${(message || '').replace(/\n/g, '<br>')}</p>`,
-                });
-                res.writeHead(200); res.end(JSON.stringify({ success: true }));
-              } catch (err) {
-                res.writeHead(500); res.end(JSON.stringify({ error: err.message }));
-              }
-            });
-          });
+          server.middlewares.use('/api/contact', withApiAdapter(contactHandler));
 
           // Essay rewrite endpoint
           server.middlewares.use('/api/rewrite', (req, res) => {

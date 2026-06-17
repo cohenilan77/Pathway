@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -9,22 +9,17 @@ export default async function handler(req, res) {
 
   const { name, email, phone, program, message } = req.body || {};
 
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
+  const apiKey = process.env.RESEND_API_KEY;
 
-  if (!user || !pass) {
-    console.log('[Contact inquiry - EMAIL_USER/EMAIL_PASS not set]', { name, email, phone, program, message });
+  if (!apiKey) {
+    console.log('[Contact inquiry - RESEND_API_KEY not set]', { name, email, phone, program, message });
     return res.status(500).json({ error: 'Email not configured', mailto: true });
   }
 
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user, pass },
-    });
-
-    await transporter.sendMail({
-      from: `"Pathway Admissions" <${user}>`,
+    const resend = new Resend(apiKey);
+    const { error } = await resend.emails.send({
+      from: 'Pathway Admissions <onboarding@resend.dev>',
       to: 'cohenilan@gmail.com',
       subject: 'Pathway Elite Strategy — Upgrade Inquiry',
       html: `
@@ -40,6 +35,11 @@ export default async function handler(req, res) {
         <p style="font-family:Arial,sans-serif;font-size:11px;color:#999">Sent via Pathway Private Office</p>
       `,
     });
+
+    if (error) {
+      console.error('Resend error:', error);
+      return res.status(500).json({ error: 'Failed to send email' });
+    }
 
     return res.status(200).json({ success: true });
   } catch (err) {
