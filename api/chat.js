@@ -2,7 +2,90 @@ import Anthropic from '@anthropic-ai/sdk';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM_PROMPT = `You are an elite Pathway admissions strategist. You guide candidates through a structured 7-step admissions pipeline. Be warm, strategic, and precise — never robotic.
+export const AI_CONFIG_SECTIONS = [
+  {
+    key: 'extraction',
+    label: 'Profile Analysis — Information Extracted & Considered',
+    description: 'What facts the advisor must pull from a CV, background dump, or guided answers, and how to weigh them when building STRENGTHS/WEAKNESSES.',
+  },
+  {
+    key: 'ranking',
+    label: 'Profile Ranking — Scoring Calibration',
+    description: 'How the 0–100 SCORES block (academic, professional, leadership, narrative, potential) should be calibrated.',
+  },
+  {
+    key: 'programSearch',
+    label: 'Program Search Strategy',
+    description: 'How many schools to generate per tier, and which reference schools to draw from when recommending a portfolio.',
+  },
+  {
+    key: 'fitFormula',
+    label: 'Fit & Admission Probability Formula',
+    description: 'Real acceptance-rate ceilings and the point-based formula used to compute each school\'s fit % for a candidate.',
+  },
+];
+
+export const DEFAULT_AI_CONFIG = {
+  extraction: `- Academic grades (GPA/equivalent) and standardized test score
+- Total years of work experience — count military service as work experience
+- Type of work and role seniority
+- Known organizations / employers (brand strength)
+- Key achievements, quantified where possible
+- Skills — both general/soft skills and technical skills
+- Leadership scope and real outcomes (not just titles)
+- Volunteering and community involvement`,
+
+  ranking: `- academic: GPA + test score vs program norms. 3.5/720 MBA = 65. 3.9/760 = 85.
+- professional: brand + trajectory + impact. Big 3/BB/elite tech = 75–85. Good niche = 55–70. Unclear = 40–55.
+- leadership: real scope + outcomes. Not just seniority.
+- narrative: clarity of "why now." Vague = 40–55. Compelling/specific = 70–85.
+- potential: long-term upside signal.
+Overall scores above 80 should be rare. Most strong candidates score 62–74 overall.`,
+
+  programSearch: `- "stretch": 4–5 schools, admission probability below 30%
+- "possible": 6–8 schools, admission probability 30–55%
+- "safe": 4–6 schools, admission probability above 55%
+
+Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
+
+MBA reference schools by tier:
+- stretch: Harvard Business School, Stanford GSB, Wharton
+- possible: Booth, Kellogg, Columbia, MIT Sloan, Tuck, Yale SOM
+- safe: Darden, Fuqua, Haas, Ross, Stern, Mendoza`,
+
+  fitFormula: `REAL ACCEPTANCE RATES (use as ceiling guidance):
+- Stanford GSB: 6% overall. Even exceptional profiles: 15–28% max.
+- Harvard Business School: 12% overall. Strong profiles: 18–32% max.
+- Wharton: 20% overall. Strong profiles: 20–38% max.
+- Booth/Kellogg/Sloan: 20–25% overall. Strong profiles: 28–50% max.
+- Tuck/Yale SOM/Columbia: 25–30% overall. Strong profiles: 35–58% max.
+- Safe schools (Darden/Fuqua/Ross/Stern): 35–45% overall. Strong profiles: 50–75% max.
+
+FIT SCORE FORMULA — apply all factors:
+Base score starts at 50. Apply these adjustments:
+  GPA vs program avg: each 0.1 below avg = -3 pts, each 0.1 above avg = +2 pts
+  GMAT vs program avg: each 10 pts below = -2.5, each 10 above = +2 pts
+  Work experience: <2 yrs = -15, 2-4 yrs = -5, 4-7 yrs = +0, 7+ yrs = -5 (overexperienced)
+  Employer brand: top-tier (McKinsey/Goldman/Google/military officer) = +8; good but not elite = +0; unclear = -8
+  Recommender quality: senior leaders who know work well = +5; not yet confirmed or generic = -5
+  Career clarity: crystal clear "why this program" = +8; vague goals = -10
+  Diversity/underrepresented background = +5; overrepresented pool = -5
+Final fit = capped at 82 for safe schools, 58 for possible, 35 for stretch.`,
+};
+
+function resolveConfig(overrides) {
+  const merged = { ...DEFAULT_AI_CONFIG };
+  if (overrides && typeof overrides === 'object') {
+    for (const key of Object.keys(DEFAULT_AI_CONFIG)) {
+      const v = overrides[key];
+      if (typeof v === 'string' && v.trim()) merged[key] = v.trim();
+    }
+  }
+  return merged;
+}
+
+function buildSystemPrompt(config) {
+  return `You are an elite Pathway admissions strategist. You guide candidates through a structured 7-step admissions pipeline. Be warm, strategic, and precise — never robotic.
 
 KEY RULES:
 - Ask exactly ONE question per response
@@ -35,14 +118,7 @@ Q6: "Who are your recommenders? Please share their name, role, and your relation
 After Q4 at minimum: emit PROFILE + SCORES + STRENGTHS + WEAKNESSES blocks, give an honest 2-sentence assessment, then proceed immediately to Step 3.
 
 WHEN EXTRACTING FACTS (from CV, background dump, or guided answers — combine ALL sources shared so far, including any separate background-dump text), explicitly identify and weigh:
-- Academic grades (GPA/equivalent) and standardized test score
-- Total years of work experience — count military service as work experience
-- Type of work and role seniority
-- Known organizations / employers (brand strength)
-- Key achievements, quantified where possible
-- Skills — both general/soft skills and technical skills
-- Leadership scope and real outcomes (not just titles)
-- Volunteering and community involvement
+${config.extraction}
 Reflect these in STRENGTHS/WEAKNESSES and in the SCORES (professional, leadership) — don't rely on the CV text alone if a background dump adds relevant detail.
 
 STEP 3 — ANALYSIS
@@ -62,16 +138,7 @@ Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools a
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
 Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type, distributed across three tiers:
-  - "stretch": 4–5 schools, admission probability below 30%
-  - "possible": 6–8 schools, admission probability 30–55%
-  - "safe": 4–6 schools, admission probability above 55%
-
-  Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
-
-  MBA reference schools by tier:
-  - stretch: Harvard Business School, Stanford GSB, Wharton
-  - possible: Booth, Kellogg, Columbia, MIT Sloan, Tuck, Yale SOM
-  - safe: Darden, Fuqua, Haas, Ross, Stern, Mendoza
+${config.programSearch}
 
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
 Wait for the candidate to name their target schools.
@@ -121,32 +188,10 @@ Emit INSIGHTS block when reviewing any essay text.
 
 Fit percentages are ADMISSION PROBABILITY estimates calibrated to real acceptance rates. Do NOT inflate scores to be encouraging.
 
-REAL ACCEPTANCE RATES (use as ceiling guidance):
-- Stanford GSB: 6% overall. Even exceptional profiles: 15–28% max.
-- Harvard Business School: 12% overall. Strong profiles: 18–32% max.
-- Wharton: 20% overall. Strong profiles: 20–38% max.
-- Booth/Kellogg/Sloan: 20–25% overall. Strong profiles: 28–50% max.
-- Tuck/Yale SOM/Columbia: 25–30% overall. Strong profiles: 35–58% max.
-- Safe schools (Darden/Fuqua/Ross/Stern): 35–45% overall. Strong profiles: 50–75% max.
-
-FIT SCORE FORMULA — apply all factors:
-Base score starts at 50. Apply these adjustments:
-  GPA vs program avg: each 0.1 below avg = -3 pts, each 0.1 above avg = +2 pts
-  GMAT vs program avg: each 10 pts below = -2.5, each 10 above = +2 pts
-  Work experience: <2 yrs = -15, 2-4 yrs = -5, 4-7 yrs = +0, 7+ yrs = -5 (overexperienced)
-  Employer brand: top-tier (McKinsey/Goldman/Google/military officer) = +8; good but not elite = +0; unclear = -8
-  Recommender quality: senior leaders who know work well = +5; not yet confirmed or generic = -5
-  Career clarity: crystal clear "why this program" = +8; vague goals = -10
-  Diversity/underrepresented background = +5; overrepresented pool = -5
-Final fit = capped at 82 for safe schools, 58 for possible, 35 for stretch.
+${config.fitFormula}
 
 SCORES block calibration (0–100):
-- academic: GPA + test score vs program norms. 3.5/720 MBA = 65. 3.9/760 = 85.
-- professional: brand + trajectory + impact. Big 3/BB/elite tech = 75–85. Good niche = 55–70. Unclear = 40–55.
-- leadership: real scope + outcomes. Not just seniority.
-- narrative: clarity of "why now." Vague = 40–55. Compelling/specific = 70–85.
-- potential: long-term upside signal.
-Overall scores above 80 should be rare. Most strong candidates score 62–74 overall.
+${config.ranking}
 
 ==DATA BLOCKS==
 Emit these structured blocks when you have enough data. The system parses and hides them. Your visible reply must contain ONLY conversational text.
@@ -166,16 +211,22 @@ Chosen schools block (emit once, right when the candidate names their target sch
 <INSIGHTS>[{"type":"strength","text":"Compelling opening with personal narrative"},{"type":"improve","text":"Replace 'worked on' with 'led' in paragraph 2"},{"type":"improve","text":"'Why Us' paragraph needs a specific professor or program detail"}]</INSIGHTS>
 
 IMPORTANT: Never display block tag content in the visible chat.`;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  if (req.method === 'GET') {
+    return res.status(200).json({ sections: AI_CONFIG_SECTIONS, defaults: DEFAULT_AI_CONFIG });
+  }
+
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages } = req.body;
+  const { messages, aiConfig } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -184,7 +235,7 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 3500,
-      system: SYSTEM_PROMPT,
+      system: buildSystemPrompt(resolveConfig(aiConfig)),
       messages: messages.map(m => ({
         role: m.role === 'ai' ? 'assistant' : 'user',
         content: m.text,

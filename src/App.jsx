@@ -42,6 +42,13 @@ function loadSession() {
   } catch { return null; }
 }
 
+function loadAiConfig() {
+  try {
+    const s = localStorage.getItem('pathway_ai_config');
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
 const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
 
 export default function App() {
@@ -76,7 +83,17 @@ export default function App() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
   const [cvExtra, setCvExtra] = useState('');
+  const [aiConfig, setAiConfigState] = useState(loadAiConfig);
   const toastTimerRef = useRef(null);
+
+  const setAiConfig = useCallback((next) => {
+    setAiConfigState(next);
+    if (next && Object.keys(next).length) {
+      localStorage.setItem('pathway_ai_config', JSON.stringify(next));
+    } else {
+      localStorage.removeItem('pathway_ai_config');
+    }
+  }, []);
 
   // Persist session on every meaningful change
   useEffect(() => {
@@ -130,7 +147,7 @@ export default function App() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newChat }),
+        body: JSON.stringify({ messages: newChat, aiConfig }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';
@@ -176,7 +193,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy]);
+  }, [input, chat, busy, aiConfig]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -274,6 +291,7 @@ export default function App() {
     showCvModal, setShowCvModal,
     showContactModal, setShowContactModal,
     cvDraft, setCvDraft,
+    aiConfig, setAiConfig,
     go, enter, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),

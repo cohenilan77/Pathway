@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -8,13 +8,55 @@ const sideStyle = (active) => ({
 });
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, setScores, showToast,
-  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText }) {
+  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText,
+  aiConfig, setAiConfig }) {
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [msgInput, setMsgInput] = useState('');
   const [summary, setSummary] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
+  const [aiSections, setAiSections] = useState([]);
+  const [aiDefaults, setAiDefaults] = useState({});
+  const [aiDrafts, setAiDrafts] = useState({});
+  const [aiConfigLoaded, setAiConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/chat').then(r => r.json()).then(data => {
+      setAiSections(data.sections || []);
+      setAiDefaults(data.defaults || {});
+      setAiConfigLoaded(true);
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!aiConfigLoaded) return;
+    const initial = {};
+    for (const s of aiSections) {
+      initial[s.key] = (aiConfig && aiConfig[s.key]) || aiDefaults[s.key] || '';
+    }
+    setAiDrafts(initial);
+  }, [aiConfigLoaded, aiSections, aiDefaults]);
+
+  const saveAiSection = (key) => {
+    const next = { ...(aiConfig || {}) };
+    const draftVal = (aiDrafts[key] || '').trim();
+    if (draftVal && draftVal !== (aiDefaults[key] || '').trim()) {
+      next[key] = draftVal;
+    } else {
+      delete next[key];
+    }
+    setAiConfig(next);
+    showToast('AI configuration saved — applies to the candidate\'s next message.');
+  };
+
+  const resetAiSection = (key) => {
+    setAiDrafts(prev => ({ ...prev, [key]: aiDefaults[key] || '' }));
+    const next = { ...(aiConfig || {}) };
+    delete next[key];
+    setAiConfig(next);
+    showToast('Reset to default.');
+  };
 
   const sessionActive = chat && chat.length > 1;
   const stepLabel = STEPS[stepIdx] || 'Profile';
@@ -449,7 +491,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
 
           {/* ── SETTINGS ── */}
           {adminView === 'settings' && (
-            <div style={{ maxWidth: 500 }}>
+            <div style={{ maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
                 <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 18px' }}>Portal Settings</h3>
                 <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 18 }}>
@@ -461,6 +503,52 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                   <div>• API: Anthropic Claude via /api/chat</div>
                   <div>• Email: /api/contact (requires EMAIL_USER + EMAIL_PASS)</div>
                   <div>• PDF parse: /api/parse-file (Anthropic document API)</div>
+                </div>
+              </div>
+
+              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
+                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>AI Process Configuration</h3>
+                <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 22 }}>
+                  Edit how the advisor analyzes profiles, ranks candidates, searches programs, and scores fit. Saved changes apply to every candidate message going forward.
+                </div>
+
+                {!aiConfigLoaded && (
+                  <div style={{ fontSize: 13, color: '#8a93a3' }}>Loading configuration…</div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
+                  {aiSections.map(s => {
+                    const isCustom = !!(aiConfig && aiConfig[s.key]);
+                    return (
+                      <div key={s.key}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{s.label}</div>
+                          {isCustom && (
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#7a5d12', background: '#fffbf0', border: '1px solid #fde68a', borderRadius: 6, padding: '2px 8px' }}>CUSTOM</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: 12.5, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>{s.description}</div>
+                        <textarea
+                          value={aiDrafts[s.key] || ''}
+                          onChange={(e) => setAiDrafts(prev => ({ ...prev, [s.key]: e.target.value }))}
+                          rows={8}
+                          style={{
+                            width: '100%', fontFamily: "'SF Mono',Consolas,monospace", fontSize: 12.5, lineHeight: 1.6,
+                            color: '#3a425a', background: '#f6f7fb', border: '1px solid #eaedf4', borderRadius: 10,
+                            padding: '12px 14px', resize: 'vertical', boxSizing: 'border-box',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+                          <button onClick={() => saveAiSection(s.key)} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Save
+                          </button>
+                          <button onClick={() => resetAiSection(s.key)} style={{ background: 'transparent', color: '#7a8295', border: '1px solid #eaedf4', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Reset to Default
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
