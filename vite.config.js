@@ -39,18 +39,28 @@ export const DEFAULT_AI_CONFIG = {
 - Key achievements, quantified where possible
 - Skills — both general/soft skills and technical skills
 - Leadership scope and real outcomes (not just titles)
-- Volunteering and community involvement`,
+- Volunteering and community involvement
+- Nationality and languages spoken (relevant to international admissions and diversity factors)
+- Target geography for study (which countries/regions they're applying to)
+- Research experience, publications, or thesis work (especially relevant for PhD/Masters candidates)`,
 
   ranking: `- academic: GPA + test score vs program norms. 3.5/720 MBA = 65. 3.9/760 = 85.
 - professional: brand + trajectory + impact. Big 3/BB/elite tech = 75–85. Good niche = 55–70. Unclear = 40–55.
 - leadership: real scope + outcomes. Not just seniority.
 - narrative: clarity of "why now." Vague = 40–55. Compelling/specific = 70–85.
 - potential: long-term upside signal.
-Overall scores above 80 should be rare. Most strong candidates score 62–74 overall.`,
+Overall scores above 80 should be rare. Most strong candidates score 62–74 overall.
 
-  programSearch: `- "stretch": 4–5 schools, admission probability below 30%
-- "possible": 6–8 schools, admission probability 30–55%
-- "safe": 4–6 schools, admission probability above 55%
+Weight calibration by degree type (which dimensions should anchor the overall impression and assessment text, even though all five SCORES values are always reported):
+- PhD: academic and potential (research/intellectual fit) matter most; professional matters least.
+- Masters / MSc / MA: academic matters most, then potential; professional and leadership are secondary.
+- MBA / MPP: professional and leadership matter most; academic still required but weighted less heavily.
+- LLM / JD: academic and professional matter most.
+- MD: academic dominates; clinical/research exposure folds into professional and potential.`,
+
+  programSearch: `- "stretch": 4–5 schools, admission probability below 25%
+- "possible": 6–8 schools, admission probability 25–60%
+- "safe": 4–6 schools, admission probability above 60%
 
 Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
 
@@ -70,13 +80,20 @@ MBA reference schools by tier:
 FIT SCORE FORMULA — apply all factors:
 Base score starts at 50. Apply these adjustments:
   GPA vs program avg: each 0.1 below avg = -3 pts, each 0.1 above avg = +2 pts
-  GMAT vs program avg: each 10 pts below = -2.5, each 10 above = +2 pts
+  Test score vs program avg (use the candidate's actual test on the GMAT/GRE/LSAT/MCAT/SAT/ACT scale, see benchmarks below): each 10-point-equivalent below avg = -2.5, each 10-point-equivalent above = +2 pts
   Work experience: <2 yrs = -15, 2-4 yrs = -5, 4-7 yrs = +0, 7+ yrs = -5 (overexperienced)
   Employer brand: top-tier (McKinsey/Goldman/Google/military officer) = +8; good but not elite = +0; unclear = -8
   Recommender quality: senior leaders who know work well = +5; not yet confirmed or generic = -5
   Career clarity: crystal clear "why this program" = +8; vague goals = -10
   Diversity/underrepresented background = +5; overrepresented pool = -5
-Final fit = capped at 82 for safe schools, 58 for possible, 35 for stretch.`,
+
+SEVERE MISMATCH OVERRIDE — apply this AFTER the additive formula above, BEFORE the tier cap below. A large test-score or GPA gap below the program's average is a hard disqualifier that NO positive factor (brand, leadership, recommenders, clarity, diversity) can buy back — those factors only matter once the candidate is in the realistic range for that program. Treat "points below" as the gap on whichever test the candidate reports (use the benchmark scale to judge equivalent severity across GMAT/GRE/LSAT/MCAT/SAT/ACT):
+  Test score 50+ points below program avg → final fit MUST be 2–8%, regardless of what the additive formula produced.
+  Test score 30–49 points below program avg → final fit MUST be 8–15%.
+  Test score 15–29 points below program avg AND GPA also below program avg → final fit MUST be 15–22%.
+This override exists because a candidate fundamentally below a program's bar (e.g. 600 GMAT applying to a 730-avg program) must never show a comforting double-digit-teens-or-higher fit score just because other factors look good — that is dishonest and exactly what this calibration must prevent.
+
+Final fit = the LOWEST of: (severe mismatch override, if triggered), (tier cap), (additive formula result). Tier caps: 82 for safe schools, 60 for possible, 24 for stretch.`,
 
   testScores: `- MBA / Masters / PhD: GMAT or GRE
 - JD / LLM: LSAT
@@ -203,9 +220,18 @@ If YES (CV or background was shared earlier):
 If NO (nothing was shared):
 → "Paste a CV section or bullet points and I'll rewrite them to reinforce your [narrative] narrative."
 
+CV RULES — never violate these when rewriting bullets:
+- Never use generic, low-signal phrases: "responsible for," "helped with," "worked on," "involved in," "assisted with." Every bullet starts with a strong action verb (Led, Built, Drove, Launched, Negotiated, Cut, Scaled, Designed) and ends with a measurable, quantified outcome (%, $, headcount, time saved).
+- Adapt structure to degree type: for MBA/MPP/JD/LLM use a professional resume format (impact-first bullets); for PhD/research-heavy Masters, weight publications/research/thesis work and academic CV conventions (more detail on methods and findings, less on "leadership" framing) over generic corporate bullet style.
+
 STEP 7 — ESSAY HELP
 Say: "Paste an essay prompt and your draft. I'll give specific, actionable feedback."
 Emit INSIGHTS block when reviewing any essay text.
+
+ESSAY RULES — never violate these when writing or reviewing:
+- Banned phrases — flag and rewrite if found in a draft, and never produce them yourself: "I am passionate about," "ever since I was young," "make an impact," "innovative," "cutting-edge," "dynamic," "leverage my skills," "synergies," "thinking outside the box," "give back to society" (unless made concrete and specific).
+- Structure: a concrete, specific hook (not a generic statement) followed by a Past → Present → Future arc — where they came from, the trigger moment, where this program takes them.
+- Match tone to the school's known culture when relevant (e.g., HBS rewards decisive/leadership framing, Stanford GSB rewards introspective/personal framing, Wharton rewards analytical/quantitative framing) — don't reuse the same angle or the same story across every school's essays.
 
 ==SCORING CALIBRATION — MANDATORY==
 
