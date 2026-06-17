@@ -299,6 +299,24 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                   </div>
                 )}
 
+                {/* Risk profile */}
+                {weaknesses && weaknesses.length > 0 && (
+                  <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: 16, padding: 22, marginBottom: 20 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                      <span style={{ color: '#d64545', fontSize: 15 }}>⚠</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#d64545' }}>RISK PROFILE</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {weaknesses.map((w, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d64545', marginTop: 6, flexShrink: 0 }} />
+                          <span style={{ fontSize: 13.5, color: '#2a3447', lineHeight: 1.55 }}>{w}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* School portfolio */}
                 {programs && programs.length > 0 && (
                   <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22 }}>
@@ -307,7 +325,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                     {/* Tier counts */}
                     <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
                       {[{ key: 'stretch', label: 'STRETCH', color: '#d64545', bg: '#fff5f5' },
-                        { key: 'possible', label: 'POSSIBLE', color: '#b8902f', bg: '#fffbf0' },
+                        { key: 'possible', label: 'POSSIBLE', color: '#ca8a04', bg: '#fffbf0' },
                         { key: 'safe', label: 'SAFE', color: '#2d7d46', bg: '#f0fdf4' }].map(t => {
                         const n = programs.filter(p => p.tier === t.key).length;
                         if (!n) return null;
@@ -326,7 +344,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {chosenPrograms.map(p => {
-                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#b8902f' : '#9aa3b5';
+                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#ca8a04' : '#9aa3b5';
                             const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : p.tier === 'possible' ? '#fffbf0' : '#f6f7fb';
                             const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : p.tier === 'possible' ? '#fde68a' : '#e2e7f2';
                             return (
@@ -355,7 +373,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                         return (
                           <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#b8902f' : '#9aa3b5' }} />
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#ca8a04' : '#9aa3b5' }} />
                               <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#16233f' }}>{p.name}</span>
                               {isChosen && <span style={{ fontSize: 10, background: '#fef3c7', color: '#92400e', fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '.3px' }}>CHOSEN</span>}
                             </div>

@@ -28,7 +28,7 @@ const TIERS = [
   {
     key: 'possible',
     label: 'POSSIBLE',
-    accent: '#b8902f',
+    accent: '#ca8a04',
     bg: '#fffbf0',
     border: '#fde68a',
   },
