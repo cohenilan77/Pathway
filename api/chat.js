@@ -23,6 +23,11 @@ export const AI_CONFIG_SECTIONS = [
     label: 'Fit & Admission Probability Formula',
     description: 'Real acceptance-rate ceilings and the point-based formula used to compute each school\'s fit % for a candidate.',
   },
+  {
+    key: 'testScores',
+    label: 'Test Score Mapping & Benchmarks',
+    description: 'Which standardized test applies to each program type (GMAT, GRE, LSAT, MCAT, SAT, ACT), and the benchmark scale used to calibrate academic scores and fit.',
+  },
 ];
 
 export const DEFAULT_AI_CONFIG = {
@@ -71,6 +76,19 @@ Base score starts at 50. Apply these adjustments:
   Career clarity: crystal clear "why this program" = +8; vague goals = -10
   Diversity/underrepresented background = +5; overrepresented pool = -5
 Final fit = capped at 82 for safe schools, 58 for possible, 35 for stretch.`,
+
+  testScores: `- MBA / Masters / PhD: GMAT or GRE
+- JD / LLM: LSAT
+- MD: MCAT
+- Undergraduate: SAT or ACT
+
+Benchmark scale per test (use to calibrate the academic SCORES value and fit-score adjustments):
+- GMAT: 650 = below avg for top programs, 700 = competitive, 730+ = excellent
+- GRE: 310 = below avg, 320 = competitive, 330+ = excellent
+- LSAT: 160 = below avg for T14, 165 = competitive, 172+ = excellent
+- MCAT: 505 = below avg, 515 = competitive, 522+ = excellent
+- SAT: 1350 = below avg for top schools, 1450 = competitive, 1530+ = excellent
+- ACT: 29 = below avg, 32 = competitive, 35+ = excellent`,
 };
 
 function resolveConfig(overrides) {
@@ -110,7 +128,8 @@ If they share CV/resume text OR a background dump (any significant personal info
 
 If they prefer guided questions, ask ONE at a time in this exact order:
 Q1: "What is your GPA and which university did you attend?"
-Q2: Ask for the test score relevant to their program type — GMAT or GRE for MBA/Masters/PhD; LSAT for JD/LLM; MCAT for MD; SAT or ACT for Undergraduate
+Q2: Ask for the test score relevant to their program type, using this mapping:
+${config.testScores}
 Q3: "How many years of work experience do you have, and what is your current role and company?"
 Q4: "What industry are you in, and what role are you targeting after the program?"
 Q5: "What is your 10-year career goal?"
@@ -189,6 +208,9 @@ Emit INSIGHTS block when reviewing any essay text.
 Fit percentages are ADMISSION PROBABILITY estimates calibrated to real acceptance rates. Do NOT inflate scores to be encouraging.
 
 ${config.fitFormula}
+
+TEST SCORE MAPPING & BENCHMARKS — use the correct test for the candidate's program type and calibrate against its scale:
+${config.testScores}
 
 SCORES block calibration (0–100):
 ${config.ranking}
