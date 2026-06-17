@@ -115,12 +115,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
   // Primary source: the AI-emitted CHOSEN_SCHOOLS block (structured, reliable).
   // Fallback for older sessions recorded before that block existed: infer from the
   // candidate's reply right after the AI asks "which schools excite you most".
+  const norm = (s) => (s || '').trim().toLowerCase();
   const chosenPrograms = (() => {
-    if (!programs) return [];
     if (chosenSchools && chosenSchools.length) {
-      return programs.filter(p => chosenSchools.includes(p.name));
+      // Map every chosen name to its program match — never drop a name the candidate
+      // chose just because it doesn't exactly match the PROGRAMS list.
+      return chosenSchools.map(name => {
+        const match = (programs || []).find(p => norm(p.name) === norm(name));
+        return match || { name, tier: null, fit: null };
+      });
     }
-    if (!chat || !chat.length) return [];
+    if (!programs || !chat || !chat.length) return [];
     const portfolioMsgIdx = chat.findIndex(m =>
       m.role === 'ai' && (
         m.text.includes('excite you most') ||
@@ -321,9 +326,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {chosenPrograms.map(p => {
-                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f';
-                            const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : '#fffbf0';
-                            const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : '#fde68a';
+                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#b8902f' : '#9aa3b5';
+                            const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : p.tier === 'possible' ? '#fffbf0' : '#f6f7fb';
+                            const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : p.tier === 'possible' ? '#fde68a' : '#e2e7f2';
                             return (
                               <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tierBg, border: `1.5px solid ${tierBorder}`, borderRadius: 9, padding: '9px 12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -331,8 +336,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                                   <span style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f' }}>{p.name}</span>
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <span style={{ fontSize: 10, fontWeight: 700, color: tierColor, letterSpacing: '.5px', textTransform: 'uppercase' }}>{p.tier}</span>
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: tierColor }}>{p.fit}%</span>
+                                  {p.tier && <span style={{ fontSize: 10, fontWeight: 700, color: tierColor, letterSpacing: '.5px', textTransform: 'uppercase' }}>{p.tier}</span>}
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: tierColor }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
                                 </div>
                               </div>
                             );
@@ -350,11 +355,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                         return (
                           <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : '#b8902f' }} />
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#b8902f' : '#9aa3b5' }} />
                               <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#16233f' }}>{p.name}</span>
                               {isChosen && <span style={{ fontSize: 10, background: '#fef3c7', color: '#92400e', fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '.3px' }}>CHOSEN</span>}
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit}%</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
                           </div>
                         );
                       })}
