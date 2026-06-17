@@ -142,6 +142,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
     });
   })();
 
+  // Chosen schools first (in full, regardless of fit), then the rest of the portfolio.
+  const sortedPrograms = programs
+    ? [...chosenPrograms, ...programs.filter(p => !chosenPrograms.some(c => c.name === p.name))]
+    : [];
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
       {/* Sidebar */}
@@ -338,9 +343,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                       </div>
                     )}
 
-                    {/* All schools list */}
+                    {/* All schools list — chosen schools first, then the rest */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {programs.slice(0, 6).map(p => {
+                      {sortedPrograms.slice(0, Math.max(6, chosenPrograms.length)).map(p => {
                         const isChosen = chosenPrograms.some(c => c.name === p.name);
                         return (
                           <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
@@ -353,7 +358,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                           </div>
                         );
                       })}
-                      {programs.length > 6 && <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - 6} more schools in full portfolio</div>}
+                      {programs.length > Math.max(6, chosenPrograms.length) && (
+                        <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - Math.max(6, chosenPrograms.length)} more schools in full portfolio</div>
+                      )}
                     </div>
                   </div>
                 )}
