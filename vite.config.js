@@ -2,6 +2,42 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import Anthropic from '@anthropic-ai/sdk';
 import nodemailer from 'nodemailer';
+import registerHandler from './api/register.js';
+import loginHandler from './api/login.js';
+import sessionHandler from './api/session.js';
+import adminAuthHandler from './api/admin-auth.js';
+import adminUsersHandler from './api/admin-users.js';
+import adminSessionHandler from './api/admin-session.js';
+
+function withApiAdapter(handler) {
+  return (req, res) => {
+    if (req.method === 'OPTIONS') { res.writeHead(200); res.end(); return; }
+    res.setHeader('Content-Type', 'application/json');
+    res.status = (code) => { res.statusCode = code; return res; };
+    res.json = (obj) => { res.end(JSON.stringify(obj)); return res; };
+
+    const finish = (fn) => fn().catch((err) => {
+      res.statusCode = 500;
+      res.end(JSON.stringify({ error: err.message || 'Internal error' }));
+    });
+
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      finish(() => handler(req, res));
+      return;
+    }
+
+    let body = '';
+    req.on('data', (chunk) => { body += chunk; });
+    req.on('end', () => {
+      try {
+        req.body = body ? JSON.parse(body) : {};
+      } catch {
+        req.body = {};
+      }
+      finish(() => handler(req, res));
+    });
+  };
+}
 
 export const AI_CONFIG_SECTIONS = [
   {
@@ -269,6 +305,9 @@ IMPORTANT: Never display block tag content in the visible chat.`;
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  if (env.ADMIN_SECRET) process.env.ADMIN_SECRET = env.ADMIN_SECRET;
+  if (env.KV_REST_API_URL) process.env.KV_REST_API_URL = env.KV_REST_API_URL;
+  if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
 
   return {
     plugins: [
@@ -276,6 +315,13 @@ export default defineConfig(({ mode }) => {
       {
         name: 'anthropic-api',
         configureServer(server) {
+          server.middlewares.use('/api/register', withApiAdapter(registerHandler));
+          server.middlewares.use('/api/login', withApiAdapter(loginHandler));
+          server.middlewares.use('/api/session', withApiAdapter(sessionHandler));
+          server.middlewares.use('/api/admin-auth', withApiAdapter(adminAuthHandler));
+          server.middlewares.use('/api/admin-users', withApiAdapter(adminUsersHandler));
+          server.middlewares.use('/api/admin-session', withApiAdapter(adminSessionHandler));
+
           server.middlewares.use('/api/chat', (req, res) => {
             res.setHeader('Content-Type', 'application/json');
 

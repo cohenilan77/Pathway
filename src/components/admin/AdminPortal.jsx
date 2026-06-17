@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -7,8 +7,7 @@ const sideStyle = (active) => ({
   background: active ? '#16233f' : 'transparent', color: active ? '#fff' : '#3a425a',
 });
 
-export default function AdminPortal({ adminTab, setAdminTab, signOut, override, setOverride, setScores, showToast,
-  chat, setChat, scores, profile, programs, chosenSchools, strengths, weaknesses, stepIdx, STEPS, narrative, cvText, essayText,
+export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, adminSecret,
   aiConfig, setAiConfig }) {
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
@@ -20,6 +19,75 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
   const [aiDefaults, setAiDefaults] = useState({});
   const [aiDrafts, setAiDrafts] = useState({});
   const [aiConfigLoaded, setAiConfigLoaded] = useState(false);
+
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedData, setSelectedData] = useState(null); // { user, data }
+  const [selectedLoading, setSelectedLoading] = useState(false);
+
+  const adminHeaders = { 'X-Admin-Secret': adminSecret };
+
+  const fetchUsers = useCallback(() => {
+    setUsersLoading(true);
+    setUsersError('');
+    fetch('/api/admin-users', { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => {
+        if (d.users) setUsers(d.users);
+        else setUsersError(d.error || 'Failed to load candidates.');
+      })
+      .catch(() => setUsersError('Failed to load candidates.'))
+      .finally(() => setUsersLoading(false));
+  }, [adminSecret]);
+
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const openCandidate = (userId) => {
+    setSelectedUserId(userId);
+    setCandidateOpen(true);
+    setSelectedLoading(true);
+    setSummary(''); setSummaryVisible(false);
+    fetch(`/api/admin-session?userId=${userId}`, { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => setSelectedData(d))
+      .catch(() => showToast('Failed to load candidate session.'))
+      .finally(() => setSelectedLoading(false));
+  };
+
+  const closeCandidate = () => {
+    setCandidateOpen(false);
+    setSelectedUserId(null);
+    setSelectedData(null);
+    fetchUsers();
+  };
+
+  const patchSelected = useCallback((patch) => {
+    if (!selectedUserId) return;
+    setSelectedData(prev => prev ? { ...prev, data: { ...prev.data, ...patch } } : prev);
+    fetch('/api/admin-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...adminHeaders },
+      body: JSON.stringify({ userId: selectedUserId, patch }),
+    }).catch(() => showToast('Failed to save change.'));
+  }, [selectedUserId, adminSecret, showToast]);
+
+  // Derived view of the currently selected candidate's session
+  const selUser = selectedData?.user || null;
+  const sd = selectedData?.data || {};
+  const chat = sd.chat || [];
+  const scores = sd.scores || null;
+  const profile = sd.profile || null;
+  const programs = sd.programs || null;
+  const chosenSchools = sd.chosenSchools || null;
+  const strengths = sd.strengths || null;
+  const weaknesses = sd.weaknesses || null;
+  const stepIdx = sd.stepIdx || 0;
+  const narrative = sd.narrative || null;
+  const cvText = sd.cvText || '';
+  const essayText = sd.essayText || '';
+  const override = sd.override ?? scores?.overall ?? 0;
 
   useEffect(() => {
     fetch('/api/chat').then(r => r.json()).then(data => {
@@ -60,19 +128,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
 
   const sessionActive = chat && chat.length > 1;
   const stepLabel = STEPS[stepIdx] || 'Profile';
-  const candidateName = profile?.name || 'Active Candidate';
-  const candidateSub = profile ? [profile.degree, profile.industry].filter(Boolean).join(' · ') : 'Session in progress';
+  const candidateName = selUser?.name || profile?.name || 'Candidate';
+  const candidateSub = [selUser?.residency, profile?.degree, profile?.industry].filter(Boolean).join(' · ') || 'Session in progress';
   const initials = candidateName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   const handleOverride = (d) => {
     const next = Math.max(0, Math.min(100, (override || 0) + d));
-    setOverride(next);
-    setScores(prev => prev ? { ...prev, overall: next } : prev);
+    patchSelected({ override: next, scores: scores ? { ...scores, overall: next } : scores });
   };
 
   const sendConsultantNote = () => {
     if (!msgInput.trim()) return;
-    setChat(prev => [...prev, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }]);
+    patchSelected({ chat: [...chat, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }] });
     showToast('Note sent to candidate session.');
     setMsgInput('');
   };
@@ -211,37 +278,51 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
           {/* ── CANDIDATES LIST ── */}
           {adminView === 'candidates' && !candidateOpen && (
             <div>
-              {!sessionActive ? (
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                <button onClick={fetchUsers} disabled={usersLoading} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#3a425a', cursor: usersLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  {usersLoading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+              {usersError ? (
+                <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 16, padding: 24, textAlign: 'center', color: '#b42318', fontSize: 14, fontWeight: 600 }}>
+                  {usersError}
+                </div>
+              ) : !users.length ? (
                 <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 8 }}>No active candidate session.</div>
-                  <div style={{ fontSize: 13, color: '#b6bdcd' }}>Sign in as a candidate and start the advisor to see session data here.</div>
+                  <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 8 }}>{usersLoading ? 'Loading candidates…' : 'No registered candidates yet.'}</div>
+                  <div style={{ fontSize: 13, color: '#b6bdcd' }}>Once candidates register and start the advisor, they'll appear here.</div>
                 </div>
               ) : (
                 <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
                     <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span></span>
                   </div>
-                  <button onClick={() => setCandidateOpen(true)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{initials}</span>
-                      <div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{candidateName}</div>
-                        <div style={{ fontSize: 12, color: '#8a93a3' }}>{candidateSub}</div>
-                      </div>
-                    </div>
-                    <div>
-                      {scores ? (
-                        <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: scores.overall >= 70 ? '#2d7d46' : scores.overall >= 50 ? '#b8902f' : '#d64545' }}>{scores.overall}</span>
-                      ) : <span style={{ fontSize: 13, color: '#b6bdcd' }}>—</span>}
-                    </div>
-                    <div>
-                      <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>{stepLabel}</span>
-                    </div>
-                    <div style={{ fontSize: 13, color: '#5d6577', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {strengths?.[0] || (profile ? `${profile.degree || ''} candidate` : 'Session in progress')}
-                    </div>
-                    <div style={{ color: '#b8902f', fontSize: 18, fontWeight: 700 }}>→</div>
-                  </button>
+                  {users.map(u => {
+                    const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
+                            <div style={{ fontSize: 12, color: '#8a93a3' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
+                          </div>
+                        </div>
+                        <div>
+                          {u.scores ? (
+                            <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: u.scores.overall >= 70 ? '#2d7d46' : u.scores.overall >= 50 ? '#b8902f' : '#d64545' }}>{u.scores.overall}</span>
+                          ) : <span style={{ fontSize: 13, color: '#b6bdcd' }}>—</span>}
+                        </div>
+                        <div>
+                          <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>{STEPS[u.stepIdx] || 'Profile'}</span>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#5d6577', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
+                        </div>
+                        <div style={{ color: '#b8902f', fontSize: 18, fontWeight: 700 }}>→</div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -251,10 +332,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
           {adminView === 'candidates' && candidateOpen && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
               <div>
-                <button onClick={() => setCandidateOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
+                <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
                   <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
                   All Candidates
                 </button>
+
+                {selectedLoading && (
+                  <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 32, textAlign: 'center', color: '#8a93a3', fontSize: 14, marginBottom: 20 }}>
+                    Loading candidate session…
+                  </div>
+                )}
 
                 {/* Candidate card */}
                 <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 24, marginBottom: 20 }}>
@@ -480,8 +567,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
           )}
 
           {/* ── LIVE SESSION FEED ── */}
-          {adminView === 'session' && (
+          {adminView === 'session' && !selectedUserId && (
+            <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
+              <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 8 }}>No candidate selected.</div>
+              <div style={{ fontSize: 13, color: '#b6bdcd' }}>Open a candidate from the Candidates list to view their live session.</div>
+            </div>
+          )}
+          {adminView === 'session' && selectedUserId && (
             <div style={{ maxWidth: 800 }}>
+              <div style={{ fontSize: 13, color: '#8a93a3', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
               {/* Summarize button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
                 <div style={{ fontSize: 13, color: '#8a93a3', fontWeight: 600 }}>{chat.length} messages in session</div>
@@ -533,7 +627,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, override, 
                   This admin panel shows live session data from the active candidate. In a production deployment, this would connect to a database with historical sessions and multi-consultant features.
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#8a93a3' }}>
-                  <div>• Session persistence: localStorage (single device)</div>
+                  <div>• Session persistence: server-side per account (any device)</div>
                   <div>• AI model: claude-haiku-4-5-20251001</div>
                   <div>• API: Anthropic Claude via /api/chat</div>
                   <div>• Email: /api/contact (requires EMAIL_USER + EMAIL_PASS)</div>

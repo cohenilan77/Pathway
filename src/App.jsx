@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Login from './components/Login.jsx';
+import Register from './components/Register.jsx';
 import Landing from './components/Landing.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
@@ -35,9 +36,9 @@ function parseBlocks(raw) {
   };
 }
 
-function loadSession() {
+function loadAuth() {
   try {
-    const s = localStorage.getItem('pathway_session');
+    const s = localStorage.getItem('pathway_auth');
     return s ? JSON.parse(s) : null;
   } catch { return null; }
 }
@@ -52,9 +53,9 @@ function loadAiConfig() {
 const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
 
 export default function App() {
-  const [saved] = useState(loadSession); // called once, not on every render
+  const [auth, setAuthState] = useState(loadAuth); // {token, user} | null
 
-  const [screen, setScreen] = useState('login');
+  const [screen, setScreen] = useState(() => (loadAuth() ? 'candidate' : 'login'));
   const [role, setRole] = useState('candidate');
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -62,29 +63,33 @@ export default function App() {
   const [docTab, setDocTab] = useState('editor');
   const [adminTab, setAdminTab] = useState('feed');
   const [sel, setSel] = useState(0);
-  const [narrative, setNarrative] = useState(saved?.narrative || null);
+  const [narrative, setNarrative] = useState(null);
   const [toast, setToast] = useState('');
-  const [chat, setChat] = useState(saved?.chat || INITIAL_CHAT);
+  const [chat, setChat] = useState(INITIAL_CHAT);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const [stepIdx, setStepIdx] = useState(saved?.stepIdx || 0);
-  const [profile, setProfile] = useState(saved?.profile || null);
-  const [scores, setScores] = useState(saved?.scores || null);
-  const [strengths, setStrengths] = useState(saved?.strengths || null);
-  const [weaknesses, setWeaknesses] = useState(saved?.weaknesses || null);
-  const [programs, setPrograms] = useState(saved?.programs || null);
-  const [chosenSchools, setChosenSchools] = useState(saved?.chosenSchools || null);
-  const [cvText, setCvText] = useState(saved?.cvText || '');
-  const [essayText, setEssayText] = useState(saved?.essayText || '');
-  const [essaySchool, setEssaySchool] = useState(saved?.essaySchool || '');
-  const [insights, setInsights] = useState(saved?.insights || null);
-  const [override, setOverride] = useState(saved?.override ?? saved?.scores?.overall ?? 0);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [profile, setProfile] = useState(null);
+  const [scores, setScores] = useState(null);
+  const [strengths, setStrengths] = useState(null);
+  const [weaknesses, setWeaknesses] = useState(null);
+  const [programs, setPrograms] = useState(null);
+  const [chosenSchools, setChosenSchools] = useState(null);
+  const [cvText, setCvText] = useState('');
+  const [essayText, setEssayText] = useState('');
+  const [essaySchool, setEssaySchool] = useState('');
+  const [insights, setInsights] = useState(null);
+  const [override, setOverride] = useState(0);
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
+  const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
   const toastTimerRef = useRef(null);
+  const saveTimerRef = useRef(null);
 
   const setAiConfig = useCallback((next) => {
     setAiConfigState(next);
@@ -95,15 +100,59 @@ export default function App() {
     }
   }, []);
 
-  // Persist session on every meaningful change
+  const setAuth = useCallback((next) => {
+    setAuthState(next);
+    if (next) localStorage.setItem('pathway_auth', JSON.stringify(next));
+    else localStorage.removeItem('pathway_auth');
+  }, []);
+
+  // Hydrate the candidate's session from the server whenever we have a token
+  // (on initial load with a remembered token, and right after login/register).
   useEffect(() => {
-    if (chat.length > 1) {
-      localStorage.setItem('pathway_session', JSON.stringify({
-        chat, stepIdx, profile, scores, strengths, weaknesses,
-        programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override,
-      }));
-    }
-  }, [chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override]);
+    if (!auth?.token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch('/api/session', { headers: { Authorization: `Bearer ${auth.token}` } });
+        if (!res.ok) throw new Error('unauthorized');
+        const { data } = await res.json();
+        if (cancelled) return;
+        setChat(data?.chat?.length ? data.chat : INITIAL_CHAT);
+        setStepIdx(data?.stepIdx || 0);
+        setProfile(data?.profile || null);
+        setScores(data?.scores || null);
+        setStrengths(data?.strengths || null);
+        setWeaknesses(data?.weaknesses || null);
+        setPrograms(data?.programs || null);
+        setChosenSchools(data?.chosenSchools || null);
+        setCvText(data?.cvText || '');
+        setEssayText(data?.essayText || '');
+        setEssaySchool(data?.essaySchool || '');
+        setInsights(data?.insights || null);
+        setNarrative(data?.narrative || null);
+        setOverride(data?.override ?? data?.scores?.overall ?? 0);
+      } catch {
+        if (!cancelled) { setAuth(null); setScreen('login'); }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [auth?.token, setAuth]);
+
+  // Persist the candidate's session to their account, debounced
+  useEffect(() => {
+    if (!auth?.token || chat.length <= 1) return;
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override },
+        }),
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -112,18 +161,76 @@ export default function App() {
   }, []);
 
   const go = useCallback((s) => { setScreen(s); window.scrollTo(0, 0); }, []);
-  const enter = useCallback(() => { setScreen(role === 'consultant' ? 'admin' : 'candidate'); window.scrollTo(0, 0); }, [role]);
-  const signOut = useCallback(() => { setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0); }, []);
+
+  const login = useCallback(async (email, password) => {
+    setAuthBusy(true); setAuthError('');
+    try {
+      const res = await fetch('/api/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAuthError(data.error || 'Login failed.'); return; }
+      setAuth({ token: data.token, user: data.user });
+      setScreen('candidate'); window.scrollTo(0, 0);
+    } catch { setAuthError('Connection issue. Please try again.'); }
+    finally { setAuthBusy(false); }
+  }, [setAuth]);
+
+  const register = useCallback(async ({ name, residency, email, age, password }) => {
+    setAuthBusy(true); setAuthError('');
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, residency, email, age, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAuthError(data.error || 'Registration failed.'); return; }
+      setAuth({ token: data.token, user: data.user });
+      setScreen('candidate'); window.scrollTo(0, 0);
+    } catch { setAuthError('Connection issue. Please try again.'); }
+    finally { setAuthBusy(false); }
+  }, [setAuth]);
+
+  const adminAuth = useCallback(async (secret) => {
+    setAuthBusy(true); setAuthError('');
+    try {
+      const res = await fetch('/api/admin-auth', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ secret }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setAuthError(data.error || 'Invalid access code.'); return; }
+      setAdminSecret(secret);
+      sessionStorage.setItem('pathway_admin_secret', secret);
+      setScreen('admin'); window.scrollTo(0, 0);
+    } catch { setAuthError('Connection issue. Please try again.'); }
+    finally { setAuthBusy(false); }
+  }, []);
+
+  const signOut = useCallback(() => {
+    setAuth(null);
+    sessionStorage.removeItem('pathway_admin_secret');
+    setAdminSecret('');
+    setAuthError('');
+    setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0);
+  }, [setAuth]);
 
   const resetSession = useCallback(() => {
-    localStorage.removeItem('pathway_session');
     setChat(INITIAL_CHAT);
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
     setPrograms(null); setChosenSchools(null); setCvText(''); setEssayText(''); setEssaySchool('');
-    setInsights(null); setNarrative(null);
+    setInsights(null); setNarrative(null); setOverride(0);
+    if (auth?.token) {
+      fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ data: {} }),
+      }).catch(() => {});
+    }
     showToast('Session cleared — starting fresh.');
-  }, [showToast]);
+  }, [auth?.token, showToast]);
 
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
@@ -292,7 +399,9 @@ export default function App() {
     showContactModal, setShowContactModal,
     cvDraft, setCvDraft,
     aiConfig, setAiConfig,
-    go, enter, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
+    authUser: auth?.user || null, authError, authBusy, adminSecret,
+    login, register, adminAuth,
+    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };
@@ -368,6 +477,7 @@ export default function App() {
       {showContactModal && <ContactModal onClose={() => setShowContactModal(false)} profile={profile} />}
 
       {screen === 'login' && <Login {...sharedProps} />}
+      {screen === 'register' && <Register {...sharedProps} />}
       {screen === 'landing' && <Landing {...sharedProps} />}
       {screen === 'candidate' && <CandidatePortal {...sharedProps} />}
       {screen === 'admin' && <AdminPortal {...sharedProps} />}
