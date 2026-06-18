@@ -13,15 +13,15 @@ const sideStyle = (active) => ({
   background: active ? '#16233f' : 'transparent', color: active ? '#fff' : '#3a425a',
 });
 
+const PLAN_LABELS = { free: 'Free', pathwayAI: 'Pathway AI', aiStrategist: 'AI + Strategist' };
+
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, showToast, setShowContactModal } = props;
+  const { candTab, setCandTab, signOut, showToast, plan } = props;
   const [showHelp, setShowHelp] = useState(false);
 
   const handleHelp = () => setShowHelp(true);
 
-  const handleUpgrade = () => {
-    setShowContactModal(true);
-  };
+  const handleUpgrade = () => setCandTab('settings');
 
   const navItems = [
     {
@@ -63,10 +63,12 @@ export default function CandidatePortal(props) {
         </div>
         <div style={{ marginTop: 'auto' }}>
           <div style={{ background: '#16233f', borderRadius: 14, padding: 18, marginBottom: 18 }}>
-            <div style={{ fontSize: 12, color: '#9bb0d8', fontWeight: 600, marginBottom: 10 }}>Tier: Private Office</div>
-            <button onClick={handleUpgrade} style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-              Upgrade to Elite Strategy
-            </button>
+            <div style={{ fontSize: 12, color: '#9bb0d8', fontWeight: 600, marginBottom: 10 }}>Plan: {PLAN_LABELS[plan] || 'Pathway AI'}</div>
+            {plan !== 'aiStrategist' && (
+              <button onClick={handleUpgrade} style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Upgrade Plan
+              </button>
+            )}
           </div>
           <div style={{ height: 1, background: '#dde3f4', marginBottom: 14 }} />
           <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%' }}>

@@ -8,6 +8,14 @@ import ContactModal from './components/ContactModal.jsx';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 
+export const PLANS = {
+  free: { label: 'Free' },
+  pathwayAI: { label: 'Pathway AI' },
+  aiStrategist: { label: 'AI + Strategist' },
+};
+
+const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — program selection is as far as it goes. Upgrade to Pathway AI or AI + Strategist in Settings to unlock your narrative strategy, CV, essays, and mock interviews.";
+
 const INITIAL_CHAT = [
   {
     role: 'ai',
@@ -52,6 +60,13 @@ function loadAiConfig() {
   } catch { return null; }
 }
 
+function loadPlan() {
+  try {
+    const s = localStorage.getItem('pathway_plan');
+    return s && PLANS[s] ? s : 'pathwayAI';
+  } catch { return 'pathwayAI'; }
+}
+
 const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
 
 export default function App() {
@@ -90,6 +105,7 @@ export default function App() {
   const [cvDraft, setCvDraft] = useState('');
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
+  const [plan, setPlanState] = useState(loadPlan);
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
@@ -103,6 +119,11 @@ export default function App() {
     } else {
       localStorage.removeItem('pathway_ai_config');
     }
+  }, []);
+
+  const setPlan = useCallback((next) => {
+    setPlanState(next);
+    localStorage.setItem('pathway_plan', next);
   }, []);
 
   const setAuth = useCallback((next) => {
@@ -244,6 +265,13 @@ export default function App() {
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
+
+    if (plan === 'free' && chosenSchools && chosenSchools.length > 0) {
+      setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
+      setInput('');
+      return;
+    }
+
     const NEXT_KEYWORDS = /^(next|continue|move on|proceed|next step|go on)$/i;
     const t = NEXT_KEYWORDS.test(raw_t)
       ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
@@ -331,7 +359,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig]);
+  }, [input, chat, busy, aiConfig, plan, chosenSchools]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -446,6 +474,7 @@ export default function App() {
     showContactModal, setShowContactModal,
     cvDraft, setCvDraft,
     aiConfig, setAiConfig,
+    plan, setPlan,
     authUser: auth?.user || null, authError, authBusy, adminSecret,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,

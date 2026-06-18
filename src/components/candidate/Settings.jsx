@@ -1,6 +1,24 @@
 import React, { useState } from 'react';
 
-export default function Settings({ profile, resetSession, signOut, showToast }) {
+const PLAN_DETAILS = [
+  {
+    key: 'free',
+    label: 'Free',
+    description: 'Chat through profile, analysis, and program selection.',
+  },
+  {
+    key: 'pathwayAI',
+    label: 'Pathway AI',
+    description: 'The full AI-guided process — narrative, CV, essays, and mock interviews.',
+  },
+  {
+    key: 'aiStrategist',
+    label: 'AI + Strategist',
+    description: 'Everything in Pathway AI, plus 1:1 access to a human admissions consultant.',
+  },
+];
+
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -20,6 +38,18 @@ export default function Settings({ profile, resetSession, signOut, showToast }) 
     }
   };
 
+  const handleSelectPlan = (key) => {
+    if (key === plan) return;
+    setPlan(key);
+    const label = PLAN_DETAILS.find(p => p.key === key)?.label || key;
+    if (key === 'aiStrategist') {
+      showToast('AI + Strategist selected — connecting you with a consultant.');
+      setShowContactModal(true);
+    } else {
+      showToast(`Plan updated to ${label}.`);
+    }
+  };
+
   const Toggle = ({ on, onToggle }) => (
     <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? '#16233f' : '#d7ddec', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s' }}>
       <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
@@ -31,6 +61,37 @@ export default function Settings({ profile, resetSession, signOut, showToast }) 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 44px' }}>
         <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 38, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>Settings</h1>
         <p style={{ fontSize: 15, color: '#7a8295', margin: '0 0 32px' }}>Manage your private office preferences.</p>
+
+        {/* Plan */}
+        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Plan</h3>
+          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
+            {PLAN_DETAILS.map(p => {
+              const active = plan === p.key;
+              return (
+                <div key={p.key} style={{
+                  display: 'flex', flexDirection: 'column',
+                  border: active ? '2px solid #16233f' : '1px solid #e2e7f2',
+                  background: active ? '#f6f7fb' : '#fff',
+                  borderRadius: 14, padding: '20px 18px',
+                }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>{p.label}</div>
+                  <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
+                  <button onClick={() => handleSelectPlan(p.key)} disabled={active} style={{
+                    background: active ? 'none' : '#16233f',
+                    color: active ? '#8a93a3' : '#fff',
+                    border: active ? '1px solid #d7ddec' : 'none',
+                    borderRadius: 9, padding: '10px 0', fontSize: 13, fontWeight: 700,
+                    cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
+                  }}>
+                    {active ? 'Current Plan' : 'Select'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Profile */}
         <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
