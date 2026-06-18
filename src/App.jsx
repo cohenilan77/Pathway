@@ -6,7 +6,7 @@ import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 
-export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV'];
+export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 
 const INITIAL_CHAT = [
   {
@@ -22,7 +22,7 @@ function parseBlocks(raw) {
     try { return JSON.parse(m[1].trim()); } catch { return null; }
   };
   const clean = raw
-    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS)>[\s\S]*?<\/\1>/g, '')
+    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT)>[\s\S]*?<\/\1>/g, '')
     .trim();
   return {
     clean,
@@ -33,6 +33,8 @@ function parseBlocks(raw) {
     programs: extract('PROGRAMS'),
     chosenSchools: extract('CHOSEN_SCHOOLS'),
     insights: extract('INSIGHTS'),
+    essay: extract('ESSAY'),
+    interviewResult: extract('INTERVIEW_RESULT'),
   };
 }
 
@@ -78,6 +80,9 @@ export default function App() {
   const [cvText, setCvText] = useState('');
   const [essayText, setEssayText] = useState('');
   const [essaySchool, setEssaySchool] = useState('');
+  const [essayQuestion, setEssayQuestion] = useState('');
+  const [essays, setEssays] = useState({});
+  const [interviews, setInterviews] = useState({});
   const [insights, setInsights] = useState(null);
   const [override, setOverride] = useState(0);
   const [showCvModal, setShowCvModal] = useState(false);
@@ -128,6 +133,9 @@ export default function App() {
         setCvText(data?.cvText || '');
         setEssayText(data?.essayText || '');
         setEssaySchool(data?.essaySchool || '');
+        setEssayQuestion(data?.essayQuestion || '');
+        setEssays(data?.essays || {});
+        setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
@@ -147,12 +155,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override },
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, insights, narrative, override]);
+  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -221,6 +229,7 @@ export default function App() {
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
     setPrograms(null); setChosenSchools(null); setCvText(''); setEssayText(''); setEssaySchool('');
+    setEssayQuestion(''); setEssays({}); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
@@ -277,6 +286,25 @@ export default function App() {
         }
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
+        if (parsed.essay && parsed.essay.school) {
+          setEssays(prev => ({ ...prev, [parsed.essay.school]: { question: parsed.essay.question || '', text: parsed.essay.text || '' } }));
+          setEssaySchool(parsed.essay.school);
+          setEssayQuestion(parsed.essay.question || '');
+          setEssayText(parsed.essay.text || '');
+          setStepIdx(prev => Math.max(prev, 7));
+        }
+        if (parsed.interviewResult && parsed.interviewResult.school) {
+          setInterviews(prev => ({
+            ...prev,
+            [parsed.interviewResult.school]: {
+              school: parsed.interviewResult.school,
+              rating: parsed.interviewResult.rating,
+              feedback: parsed.interviewResult.feedback,
+              nextSteps: parsed.interviewResult.nextSteps || [],
+            },
+          }));
+          setStepIdx(prev => Math.max(prev, 8));
+        }
         const displayText = parsed.clean || raw;
 
         // Auto-advance stepper based on AI response keywords
@@ -287,8 +315,11 @@ export default function App() {
         if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
           setStepIdx(prev => Math.max(prev, 5));
         }
-        if (lc.includes('paste an essay') || (lc.includes('essay prompt') && lc.includes('draft'))) {
+        if (lc.includes("let's craft your essays") || (lc.includes('essay prompt') && lc.includes('school'))) {
           setStepIdx(prev => Math.max(prev, 6));
+        }
+        if (lc.includes('time for your mock interview') || lc.includes('simulate the admissions interview')) {
+          setStepIdx(prev => Math.max(prev, 7));
         }
 
         setChat(prev => [...prev, { role: 'ai', text: displayText }]);
@@ -366,18 +397,32 @@ export default function App() {
         body: JSON.stringify({ text: essayText, school: essaySchool, narrative }),
       });
       const data = await res.json();
-      if (data.result) { setEssayText(data.result); showToast('Essay rewritten by AI.'); }
+      if (data.result) {
+        setEssayText(data.result);
+        if (essaySchool) setEssays(prev => ({ ...prev, [essaySchool]: { question: essayQuestion, text: data.result } }));
+        showToast('Essay rewritten by AI.');
+      }
       else showToast('Rewrite failed. Check your API key.');
     } catch { showToast('Rewrite failed. Please try again.'); }
     finally { setBusy(false); }
-  }, [essayText, essaySchool, narrative, showToast]);
+  }, [essayText, essaySchool, essayQuestion, narrative, showToast]);
 
   const analyzeEssay = useCallback(() => {
     if (!essayText.trim()) { showToast('Paste your essay text first.'); return; }
-    const msg = `Please analyze this essay draft${essaySchool ? ` for ${essaySchool}` : ''} and give me specific, actionable feedback:\n\n${essayText}`;
+    const msg = `Please analyze this essay draft${essaySchool ? ` for ${essaySchool}` : ''}${essayQuestion ? ` (prompt: "${essayQuestion}")` : ''} and give me specific, actionable feedback:\n\n${essayText}`;
     setCandTab('advisor');
     send(msg);
-  }, [essayText, essaySchool, send, showToast]);
+  }, [essayText, essaySchool, essayQuestion, send, showToast]);
+
+  const selectEssaySchool = useCallback((school) => {
+    if (essaySchool && essaySchool !== school) {
+      setEssays(prev => ({ ...prev, [essaySchool]: { question: essayQuestion, text: essayText } }));
+    }
+    setEssaySchool(school);
+    const existing = essays[school];
+    setEssayQuestion(existing?.question || '');
+    setEssayText(existing?.text || '');
+  }, [essaySchool, essayQuestion, essayText, essays]);
 
   const sharedProps = {
     screen, role, setRole,
@@ -395,13 +440,15 @@ export default function App() {
     cvText, setCvText,
     essayText, setEssayText,
     essaySchool, setEssaySchool,
+    essayQuestion, setEssayQuestion,
+    essays, interviews,
     showCvModal, setShowCvModal,
     showContactModal, setShowContactModal,
     cvDraft, setCvDraft,
     aiConfig, setAiConfig,
     authUser: auth?.user || null, authError, authBusy, adminSecret,
     login, register, adminAuth,
-    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, resetSession, showToast,
+    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };

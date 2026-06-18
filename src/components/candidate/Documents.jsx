@@ -7,16 +7,24 @@ const docNavStyle = (active) => ({
   background: active ? '#fbf1d6' : 'transparent', color: active ? '#16233f' : '#3a425a',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, essayText, setEssayText, essaySchool, setEssaySchool, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, showToast, narrative }) {
+export default function Documents({ docTab, setDocTab, cvText, setCvText, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative }) {
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
 
   const wordCount = essayText ? essayText.trim().split(/\s+/).filter(Boolean).length : 0;
   const essayPct = Math.min(100, Math.round((wordCount / 1000) * 100));
+  const savedSchools = Array.from(new Set([...(chosenSchools || []), ...Object.keys(essays || {})]));
+  const interviewSchools = Array.from(new Set([...(chosenSchools || []), ...Object.keys(interviews || {})]));
+
+  const startInterview = (school) => {
+    setCandTab('advisor');
+    send(`I'd like to do my mock interview for ${school}.`);
+  };
 
   const subNavItems = [
     { key: 'editor', label: 'Essay Editor', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg> },
     { key: 'documents', label: 'My CV', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg> },
+    { key: 'interview', label: 'Mock Interview', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg> },
     { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
   ];
 
@@ -67,6 +75,26 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
         {docTab === 'editor' && (
           <div style={{ background: '#fff', maxWidth: 580, width: '100%', borderRadius: 8, boxShadow: '0 10px 40px rgba(15,26,48,.08)', padding: '48px 52px', minHeight: 600 }}>
             <div style={{ textAlign: 'center', fontSize: 12, color: '#b6bdcd', marginBottom: 28 }}>Pathway Strategist Review Mode</div>
+
+            {savedSchools.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', display: 'block', marginBottom: 8 }}>YOUR SCHOOLS</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {savedSchools.map(school => (
+                    <button key={school} onClick={() => selectEssaySchool(school)}
+                      style={{
+                        background: essaySchool === school ? '#16233f' : '#fff',
+                        color: essaySchool === school ? '#fff' : '#16233f',
+                        border: '1.5px solid #d7ddec', borderRadius: 9, padding: '7px 14px',
+                        fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                      }}>
+                      {school}{essays?.[school]?.text ? ' ✓' : ''}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
               <input
@@ -76,6 +104,17 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
                 style={{ width: '100%', border: '1px solid #e2e7f2', borderRadius: 9, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#1c2433', boxSizing: 'border-box' }}
               />
             </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', display: 'block', marginBottom: 8 }}>ESSAY QUESTION</label>
+              <textarea
+                value={essayQuestion}
+                onChange={e => setEssayQuestion(e.target.value)}
+                placeholder="Paste the exact essay prompt/question for this school…"
+                style={{ width: '100%', minHeight: 60, border: '1px solid #e2e7f2', borderRadius: 9, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#1c2433', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5 }}
+              />
+            </div>
+
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, lineHeight: 1.2, fontWeight: 700, color: '#16233f', margin: '0 0 24px' }}>
               Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
             </h1>
@@ -151,6 +190,62 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
                 <button onClick={() => setShowCvModal(true)}
                   style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Paste My CV →
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {docTab === 'interview' && (
+          <div style={{ width: '100%', maxWidth: 680 }}>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>Mock Interview</h2>
+            <p style={{ fontSize: 14, color: '#8a93a3', margin: '0 0 24px', lineHeight: 1.5 }}>
+              Run a realistic ~10-minute admissions interview in chat, school by school. Each one ends with a rating, feedback, and next steps.
+            </p>
+
+            {interviewSchools.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {interviewSchools.map(school => {
+                  const result = interviews?.[school];
+                  return (
+                    <div key={school} style={{ background: '#fff', borderRadius: 12, border: '1px solid #eaedf4', padding: '20px 22px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
+                        <div style={{ fontSize: 16, fontWeight: 700, color: '#16233f' }}>{school}</div>
+                        {result?.rating != null && (
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#b8902f' }}>{result.rating}/10</div>
+                        )}
+                      </div>
+                      {result ? (
+                        <>
+                          <div style={{ fontSize: 14, lineHeight: 1.6, color: '#33405a', marginBottom: result.nextSteps?.length ? 12 : 0 }}>{result.feedback}</div>
+                          {result.nextSteps?.length > 0 && (
+                            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: '#5d6577' }}>
+                              {result.nextSteps.map((step, i) => <li key={i}>{step}</li>)}
+                            </ul>
+                          )}
+                          <button onClick={() => startInterview(school)}
+                            style={{ marginTop: 14, background: 'none', border: '1px solid #16233f', color: '#16233f', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Redo Interview →
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => startInterview(school)}
+                          style={{ marginTop: 6, background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Start Mock Interview →
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, border: '2px dashed #d7ddec', padding: 48, textAlign: 'center' }}>
+                <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 18, lineHeight: 1.6 }}>
+                  Choose your target schools in the chat first, then come back here to start a mock interview for each one.
+                </div>
+                <button onClick={() => setCandTab('advisor')}
+                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Go to Chat →
                 </button>
               </div>
             )}
