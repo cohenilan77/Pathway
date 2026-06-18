@@ -72,7 +72,7 @@ const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'pote
 export default function App() {
   const [auth, setAuthState] = useState(loadAuth); // {token, user} | null
 
-  const [screen, setScreen] = useState(() => (loadAuth() ? 'candidate' : 'login'));
+  const [screen, setScreen] = useState(() => (loadAuth() ? 'candidate' : 'landing'));
   const [role, setRole] = useState('candidate');
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
