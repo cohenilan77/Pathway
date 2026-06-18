@@ -1,6 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
+import mammoth from 'mammoth';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+const DOCX_MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 export const config = { api: { bodyParser: { sizeLimit: '10mb' } } };
 
@@ -12,11 +15,16 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { base64, mediaType } = req.body;
-  if (!base64 || mediaType !== 'application/pdf') {
-    return res.status(400).json({ error: 'Only PDF files are supported' });
+  if (!base64 || (mediaType !== 'application/pdf' && mediaType !== DOCX_MEDIA_TYPE)) {
+    return res.status(400).json({ error: 'Only PDF and Word (.docx) files are supported' });
   }
 
   try {
+    if (mediaType === DOCX_MEDIA_TYPE) {
+      const { value: text } = await mammoth.extractRawText({ buffer: Buffer.from(base64, 'base64') });
+      return res.status(200).json({ text });
+    }
+
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 4000,
