@@ -99,7 +99,7 @@ export const PROGRAMS = [
   },
   {
     title: 'Undergraduate Admissions',
-    desc: 'College lists, the Common App, essays, and a profile that stands out — for the right reasons.',
+    desc: "Real undergrad support isn't a one-off essay edit — it's a steady, 3-year partnership that keeps you on track toward your goals.",
   },
   {
     title: 'Graduate & MBA',
