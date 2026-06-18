@@ -380,14 +380,17 @@ export default function App() {
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
 
-    if (['doc', 'docx'].includes(ext)) {
-      showToast('Word files not supported — save as PDF, or paste the text directly.');
+    if (ext === 'doc') {
+      showToast('Legacy .doc format not supported — please save as .docx or PDF.');
       e.target.value = '';
       return;
     }
 
-    if (ext === 'pdf') {
-      showToast('Extracting text from PDF…');
+    if (ext === 'pdf' || ext === 'docx') {
+      const mediaType = ext === 'pdf'
+        ? 'application/pdf'
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      showToast(ext === 'pdf' ? 'Extracting text from PDF…' : 'Extracting text from Word document…');
       const reader = new FileReader();
       reader.onload = async (ev) => {
         const base64 = ev.target.result.split(',')[1];
@@ -395,12 +398,12 @@ export default function App() {
           const res = await fetch('/api/parse-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ base64, mediaType: 'application/pdf' }),
+            body: JSON.stringify({ base64, mediaType }),
           });
           const data = await res.json();
-          if (data.text) { setCvDraft(data.text); showToast('PDF loaded — review the text below.'); }
-          else showToast('Could not extract PDF text — please paste it manually.');
-        } catch { showToast('PDF extraction failed — please paste the text manually.'); }
+          if (data.text) { setCvDraft(data.text); showToast(ext === 'pdf' ? 'PDF loaded — review the text below.' : 'Word document loaded — review the text below.'); }
+          else showToast('Could not extract text — please paste it manually.');
+        } catch { showToast('Extraction failed — please paste the text manually.'); }
       };
       reader.readAsDataURL(file);
       e.target.value = '';
@@ -512,8 +515,8 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload PDF or .txt file (or paste text below)'}
-              <input type="file" accept=".txt,.rtf,.pdf,.doc,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
+              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload PDF, Word (.docx), or .txt file (or paste text below)'}
+              <input type="file" accept=".txt,.rtf,.pdf,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 
             <div style={{ position: 'relative', marginBottom: 6 }}>

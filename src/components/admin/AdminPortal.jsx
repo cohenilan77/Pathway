@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
+import jsPDF from 'jspdf';
+import { Document, Packer, Paragraph } from 'docx';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -150,17 +152,42 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     setMsgInput('');
   };
 
-  const downloadDoc = (text, filename) => {
-    const b = new Blob([text], { type: 'text/plain' });
-    const u = URL.createObjectURL(b);
+  const saveBlob = (blob, filename) => {
+    const u = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = u; a.download = filename; a.click();
     URL.revokeObjectURL(u);
   };
 
+  const downloadAsPdf = (text, baseName) => {
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const margin = 48;
+    const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
+    const pageHeight = doc.internal.pageSize.getHeight();
+    doc.setFont('helvetica');
+    doc.setFontSize(11);
+    let y = margin;
+    text.split('\n').forEach((paragraph) => {
+      const lines = doc.splitTextToSize(paragraph || ' ', maxWidth);
+      lines.forEach((line) => {
+        if (y > pageHeight - margin) { doc.addPage(); y = margin; }
+        doc.text(line, margin, y);
+        y += 14;
+      });
+    });
+    doc.save(`${baseName}.pdf`);
+  };
+
+  const downloadAsDocx = async (text, baseName) => {
+    const doc = new Document({
+      sections: [{ children: text.split('\n').map((line) => new Paragraph(line)) }],
+    });
+    saveBlob(await Packer.toBlob(doc), `${baseName}.docx`);
+  };
+
   const documents = [
-    cvText && { label: 'CV / Resume', text: cvText, filename: 'candidate_cv.txt' },
-    essayText && { label: 'Essay Draft', text: essayText, filename: 'candidate_essay.txt' },
+    cvText && { label: 'CV / Resume', text: cvText, baseName: 'candidate_cv' },
+    essayText && { label: 'Essay Draft', text: essayText, baseName: 'candidate_essay' },
   ].filter(Boolean);
 
   const generateSummary = async () => {
@@ -540,9 +567,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                               <div style={{ fontSize: 11, color: '#8a93a3' }}>{doc.text.trim().split(/\s+/).length} words</div>
                             </div>
                           </div>
-                          <button onClick={() => downloadDoc(doc.text, doc.filename)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9aa3b5' }}>
-                            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
-                          </button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>PDF</button>
+                            <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>Word</button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -648,7 +676,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   <div>• AI model: claude-haiku-4-5-20251001</div>
                   <div>• API: Anthropic Claude via /api/chat</div>
                   <div>• Email: /api/contact (requires EMAIL_USER + EMAIL_PASS)</div>
-                  <div>• PDF parse: /api/parse-file (Anthropic document API)</div>
+                  <div>• File parse: /api/parse-file (PDF via Anthropic document API, .docx via mammoth)</div>
                 </div>
               </div>
 

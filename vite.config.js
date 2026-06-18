@@ -9,6 +9,7 @@ import sessionHandler from './api/session.js';
 import adminAuthHandler from './api/admin-auth.js';
 import adminUsersHandler from './api/admin-users.js';
 import adminSessionHandler from './api/admin-session.js';
+import parseFileHandler from './api/parse-file.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -429,36 +430,8 @@ export default defineConfig(({ mode }) => {
             });
           });
 
-          // PDF parse endpoint
-          server.middlewares.use('/api/parse-file', (req, res) => {
-            res.setHeader('Content-Type', 'application/json');
-            if (req.method !== 'POST') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return; }
-            const apiKey = env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
-            let body = '';
-            req.on('data', chunk => { body += chunk; });
-            req.on('end', async () => {
-              try {
-                const { base64, mediaType } = JSON.parse(body);
-                if (!base64 || mediaType !== 'application/pdf') {
-                  res.writeHead(400); res.end(JSON.stringify({ error: 'Only PDF supported' })); return;
-                }
-                const client = new Anthropic({ apiKey });
-                const response = await client.messages.create({
-                  model: 'claude-haiku-4-5-20251001',
-                  max_tokens: 4000,
-                  messages: [{ role: 'user', content: [
-                    { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                    { type: 'text', text: 'Extract all text from this document as plain text. Preserve structure. Return only the text, no commentary.' },
-                  ]}],
-                });
-                res.writeHead(200);
-                res.end(JSON.stringify({ text: response.content[0]?.text || '' }));
-              } catch (err) {
-                res.writeHead(500);
-                res.end(JSON.stringify({ error: err.message }));
-              }
-            });
-          });
+          // File parse endpoint (PDF + .docx)
+          server.middlewares.use('/api/parse-file', withApiAdapter(parseFileHandler));
 
           // Contact form email endpoint
           server.middlewares.use('/api/contact', withApiAdapter(contactHandler));
