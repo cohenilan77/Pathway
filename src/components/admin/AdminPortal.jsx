@@ -29,6 +29,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedData, setSelectedData] = useState(null); // { user, data }
   const [selectedLoading, setSelectedLoading] = useState(false);
+  const [userDetailId, setUserDetailId] = useState(null);
+  const [userActionBusy, setUserActionBusy] = useState(null);
 
   const adminHeaders = { 'X-Admin-Secret': adminSecret };
 
@@ -65,6 +67,47 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     setSelectedData(null);
     fetchUsers();
   };
+
+  const formatDateTime = (ts) => ts ? new Date(ts).toLocaleString() : '—';
+
+  const formatDuration = (ms) => {
+    if (ms == null) return '—';
+    const mins = Math.round(ms / 60000);
+    if (mins < 1) return '<1 min';
+    if (mins < 60) return `${mins} min`;
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return rem ? `${hrs}h ${rem}m` : `${hrs}h`;
+  };
+
+  const performUserAction = async (userId, action) => {
+    setUserActionBusy(`${userId}:${action}`);
+    try {
+      const res = await fetch('/api/admin-user-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ userId, action }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Action failed.');
+      showToast(
+        action === 'delete' ? 'User deleted.' :
+        action === 'suspend' ? 'User suspended.' : 'User reinstated.'
+      );
+      if (action === 'delete' && userDetailId === userId) setUserDetailId(null);
+      fetchUsers();
+    } catch (e) {
+      showToast(e.message || 'Action failed.');
+    } finally {
+      setUserActionBusy(null);
+    }
+  };
+
+  const confirmUserAction = (userId, action, confirmMsg) => {
+    if (window.confirm(confirmMsg)) performUserAction(userId, action);
+  };
+
+  const userDetail = users.find(u => u.id === userDetailId) || null;
 
   const patchSelected = useCallback((patch) => {
     if (!selectedUserId) return;
@@ -265,6 +308,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></svg>
             Candidates
           </button>
+          <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
+            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            Users
+          </button>
           <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
             <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>
             Live Session
@@ -295,6 +342,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '26px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff' }}>
           <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 800, color: '#16233f', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
+            {adminView === 'users' && 'Users'}
             {adminView === 'session' && 'Live Session'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -597,6 +645,155 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── USERS ── */}
+          {adminView === 'users' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 18 }}>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>TOTAL USERS</div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#16233f' }}>{users.length}</div>
+                  </div>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>ACTIVE</div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#2d7d46' }}>{users.filter(u => !u.suspended).length}</div>
+                  </div>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>SUSPENDED</div>
+                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#d64545' }}>{users.filter(u => u.suspended).length}</div>
+                  </div>
+                </div>
+                <button onClick={fetchUsers} disabled={usersLoading} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#3a425a', cursor: usersLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                  {usersLoading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+
+              {usersError ? (
+                <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 16, padding: 24, textAlign: 'center', color: '#b42318', fontSize: 14, fontWeight: 600 }}>
+                  {usersError}
+                </div>
+              ) : !users.length ? (
+                <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, color: '#8a93a3' }}>{usersLoading ? 'Loading users…' : 'No registered users yet.'}</div>
+                </div>
+              ) : (
+                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
+                    <span>USER</span><span>LAST LOGIN</span><span>SESSION DURATION</span><span>STATUS</span><span>ACTIONS</span>
+                  </div>
+                  {users.map(u => {
+                    const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    const busySuspend = userActionBusy === `${u.id}:suspend` || userActionBusy === `${u.id}:unsuspend`;
+                    const busyDelete = userActionBusy === `${u.id}:delete`;
+                    return (
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '16px 20px', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
+                        <button onClick={() => setUserDetailId(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
+                          <span style={{ width: 38, height: 38, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{uInitials}</span>
+                          <div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
+                            <div style={{ fontSize: 12, color: '#8a93a3' }}>{u.email}</div>
+                          </div>
+                        </button>
+                        <div style={{ fontSize: 13, color: '#3a425a' }}>{formatDateTime(u.lastLoginAt)}</div>
+                        <div style={{ fontSize: 13, color: '#3a425a' }}>{formatDuration(u.sessionDurationMs)}</div>
+                        <div>
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 7, letterSpacing: '.3px',
+                            background: u.suspended ? '#fff5f5' : '#f0fdf4',
+                            color: u.suspended ? '#d64545' : '#2d7d46',
+                            border: `1px solid ${u.suspended ? '#fecaca' : '#bbf0cb'}`,
+                          }}>{u.suspended ? 'SUSPENDED' : 'ACTIVE'}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => u.suspended
+                              ? performUserAction(u.id, 'unsuspend')
+                              : confirmUserAction(u.id, 'suspend', `Suspend ${u.name}? They will be unable to log in until reinstated.`)}
+                            disabled={busySuspend}
+                            style={{ background: '#eef1f7', border: 'none', borderRadius: 7, padding: '7px 12px', cursor: busySuspend ? 'not-allowed' : 'pointer', color: '#16233f', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busySuspend ? 0.5 : 1 }}>
+                            {u.suspended ? 'Reinstate' : 'Suspend'}
+                          </button>
+                          <button
+                            onClick={() => confirmUserAction(u.id, 'delete', `Permanently delete ${u.name} (${u.email})? This cannot be undone.`)}
+                            disabled={busyDelete}
+                            style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 7, padding: '7px 12px', cursor: busyDelete ? 'not-allowed' : 'pointer', color: '#d64545', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busyDelete ? 0.5 : 1 }}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* User detail overlay */}
+              {userDetail && (
+                <div onClick={() => setUserDetailId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,35,63,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 28, width: 460, maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+                      <span style={{ width: 48, height: 48, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
+                        {(userDetail.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f' }}>{userDetail.name}</div>
+                        <div style={{ fontSize: 13, color: '#8a93a3' }}>{userDetail.email}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+                      {[
+                        ['Status', userDetail.suspended ? 'Suspended' : 'Active'],
+                        ['Residency', userDetail.residency || '—'],
+                        ['Joined', formatDateTime(userDetail.createdAt)],
+                        ['Total logins', userDetail.loginCount || 0],
+                        ['Last login', formatDateTime(userDetail.lastLoginAt)],
+                        ['Last active', formatDateTime(userDetail.lastActiveAt)],
+                        ['Session duration', formatDuration(userDetail.sessionDurationMs)],
+                        ['Pipeline step', STEPS[userDetail.stepIdx] || 'Profile'],
+                      ].map(([label, val]) => (
+                        <div key={label} style={{ background: '#f6f7fb', borderRadius: 10, padding: '10px 12px' }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#8a93a3', marginBottom: 3 }}>{label.toUpperCase()}</div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f' }}>{val}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {userDetail.loginHistory && userDetail.loginHistory.length > 0 && (
+                      <div style={{ marginBottom: 22 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 8 }}>RECENT LOGIN ACTIVITY</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
+                          {[...userDetail.loginHistory].reverse().map((h, i) => (
+                            <div key={i} style={{ fontSize: 12.5, color: '#3a425a', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f5f6fa', padding: '4px 0' }}>
+                              <span>Login</span><span style={{ color: '#8a93a3' }}>{formatDateTime(h.at)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button
+                        onClick={() => userDetail.suspended
+                          ? performUserAction(userDetail.id, 'unsuspend')
+                          : confirmUserAction(userDetail.id, 'suspend', `Suspend ${userDetail.name}? They will be unable to log in until reinstated.`)}
+                        style={{ flex: 1, background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        {userDetail.suspended ? 'Reinstate User' : 'Suspend User'}
+                      </button>
+                      <button
+                        onClick={() => confirmUserAction(userDetail.id, 'delete', `Permanently delete ${userDetail.name} (${userDetail.email})? This cannot be undone.`)}
+                        style={{ flex: 1, background: '#fff5f5', border: '1px solid #fecaca', color: '#d64545', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Delete User
+                      </button>
+                    </div>
+                    <button onClick={() => setUserDetailId(null)} style={{ marginTop: 14, width: '100%', background: 'none', border: 'none', color: '#8a93a3', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 6 }}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

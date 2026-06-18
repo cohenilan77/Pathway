@@ -23,6 +23,14 @@ export default async function handler(req, res) {
         scores: data?.scores || null,
         degree: data?.profile?.degree || null,
         topInsight: data?.strengths?.[0] || null,
+        suspended: !!user.suspended,
+        lastLoginAt: user.lastLoginAt || null,
+        lastActiveAt: user.lastActiveAt || null,
+        loginCount: user.loginCount || 0,
+        loginHistory: user.loginHistory || [],
+        sessionDurationMs: (user.lastLoginAt && user.lastActiveAt)
+          ? Math.max(0, user.lastActiveAt - user.lastLoginAt)
+          : null,
       };
     })
   );

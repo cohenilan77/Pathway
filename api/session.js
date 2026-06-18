@@ -1,4 +1,4 @@
-import { getUserIdByToken, getUserData, setUserData, getUserById, publicUser } from '../lib/db.js';
+import { getUserIdByToken, getUserData, setUserData, getUserById, publicUser, touchActivity } from '../lib/db.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -16,14 +16,33 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const user = await getUserById(userId);
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated.' });
+      return;
+    }
+    if (user.suspended) {
+      res.status(403).json({ error: 'This account has been suspended.' });
+      return;
+    }
     const data = await getUserData(userId);
+    await touchActivity(userId);
     res.status(200).json({ user: publicUser(user), data });
     return;
   }
 
   if (req.method === 'POST') {
+    const user = await getUserById(userId);
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated.' });
+      return;
+    }
+    if (user.suspended) {
+      res.status(403).json({ error: 'This account has been suspended.' });
+      return;
+    }
     const { data } = req.body || {};
     await setUserData(userId, data || {});
+    await touchActivity(userId);
     res.status(200).json({ ok: true });
     return;
   }
