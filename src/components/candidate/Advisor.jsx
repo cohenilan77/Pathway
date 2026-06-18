@@ -41,9 +41,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   }, [chat, busy]);
 
   useEffect(() => {
-    const onScroll = () => setShowScrollTop(window.scrollY > 200);
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowScrollTop(el.scrollTop > 200);
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
   const handleKey = (e) => {
@@ -58,9 +60,9 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       {/* Stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
         {STEPS.map((label, i) => {
           const active = i === stepIdx;
           const done = i < stepIdx;
@@ -85,12 +87,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
       </div>
 
       {/* Chat + Right rail */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', background: '#fff' }}>
+      <div className="pw-advisor-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', background: '#fff', minHeight: 0, overflow: 'hidden' }}>
         {/* Chat area */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative', minHeight: 0, overflow: 'hidden' }}>
           {showScrollTop && (
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
               title="Scroll to top"
               style={{
                 position: 'fixed', bottom: 90, right: 32, zIndex: 100,
@@ -104,7 +106,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </svg>
             </button>
           )}
-          <div ref={chatScrollRef} style={{ flex: 1, overflowY: 'auto', padding: '34px 40px' }}>
+          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '34px 40px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                 <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
@@ -194,7 +196,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           </div>
 
           {/* Input bar */}
-          <div style={{ padding: '18px 40px 18px', borderTop: '1px solid #eef1f6' }}>
+          <div style={{ padding: '18px 40px 18px', borderTop: '1px solid #eef1f6', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px' }}>
               {/* Upload / paste CV button */}
               <button onClick={() => setShowCvModal(true)}
@@ -221,7 +223,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             </div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: '#9aa3b5' }}>
               <span>Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV</span></span>
-              <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 19V5M5 12l7-7 7 7" /></svg>
                 Top
               </button>
@@ -230,7 +232,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
         </div>
 
         {/* Right analysis rail */}
-        <div style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto' }}>
+        <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Real-time Analysis</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 30px', lineHeight: 1.5 }}>
             {hasScores ? 'Profile calibrated from your conversation.' : 'Share your background or paste your CV to unlock.'}
