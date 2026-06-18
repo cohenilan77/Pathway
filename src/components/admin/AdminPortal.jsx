@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 
 const sideStyle = (active) => ({
@@ -132,6 +132,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const candidateName = selUser?.name || profile?.name || 'Candidate';
   const candidateSub = [selUser?.residency, profile?.degree, profile?.industry].filter(Boolean).join(' · ') || 'Session in progress';
   const initials = candidateName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
+  const chatLogEndRef = useRef(null);
+  useEffect(() => {
+    if (adminView === 'session') chatLogEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chat, adminView, selectedUserId]);
 
   const handleOverride = (d) => {
     const next = Math.max(0, Math.min(100, (override || 0) + d));
@@ -598,13 +603,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {!sessionActive ? (
                 <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#8a93a3', border: '1px solid #eaedf4' }}>No session data. Have a candidate log in and start the advisor.</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div
+                  style={{
+                    display: 'flex', flexDirection: 'column', gap: 10,
+                    height: '55vh', minHeight: 280, maxHeight: 640,
+                    overflowY: 'auto', overscrollBehavior: 'contain',
+                    background: '#fff', border: '1px solid #eaedf4', borderRadius: 14, padding: 18,
+                  }}
+                >
                   {chat.map((m, i) => (
                     <div key={i} style={{
                       borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '4px 12px 12px 12px',
                       padding: '12px 16px', maxWidth: '88%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
                       background: m.role === 'ai' ? '#eef3fb' : '#16233f',
                       border: m.role === 'ai' ? '1px solid #d7e1f2' : 'none',
+                      flexShrink: 0,
                     }}>
                       <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: m.role === 'ai' ? '#8a93a3' : '#9bb0d8', marginBottom: 4 }}>
                         {m.role === 'ai' ? 'AI ADVISOR' : candidateName.toUpperCase()}
@@ -616,6 +629,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       </div>
                     </div>
                   ))}
+                  <div ref={chatLogEndRef} />
                 </div>
               )}
             </div>
