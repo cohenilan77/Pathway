@@ -5,6 +5,7 @@ import Landing from './components/Landing.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
+import { LANGUAGES } from './constants.js';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
@@ -69,6 +70,13 @@ function loadPlan() {
   } catch { return 'pathwayAI'; }
 }
 
+function loadLanguage() {
+  try {
+    const s = localStorage.getItem('pathway_language');
+    return s && LANGUAGES.includes(s) ? s : 'English';
+  } catch { return 'English'; }
+}
+
 const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
 
 export default function App() {
@@ -110,6 +118,7 @@ export default function App() {
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
   const [plan, setPlanState] = useState(loadPlan);
+  const [language, setLanguageState] = useState(loadLanguage);
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
@@ -128,6 +137,13 @@ export default function App() {
   const setPlan = useCallback((next) => {
     setPlanState(next);
     localStorage.setItem('pathway_plan', next);
+  }, []);
+
+  // Switching language only changes the language the AI replies in going
+  // forward — it must never clear or reset the existing chat history.
+  const setLanguage = useCallback((next) => {
+    setLanguageState(next);
+    localStorage.setItem('pathway_language', next);
   }, []);
 
   const setAuth = useCallback((next) => {
@@ -298,7 +314,7 @@ export default function App() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newChat, aiConfig }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';
@@ -396,7 +412,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile, completedTasks]);
+  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile, completedTasks, language]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -516,6 +532,7 @@ export default function App() {
     cvDraft, setCvDraft,
     aiConfig, setAiConfig,
     plan, setPlan,
+    language, setLanguage,
     authUser: auth?.user || null, authError, authBusy, adminSecret,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,

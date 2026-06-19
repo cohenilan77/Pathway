@@ -5,6 +5,7 @@ import Documents from './Documents.jsx';
 import NarrativeStrategy from './NarrativeStrategy.jsx';
 import Settings from './Settings.jsx';
 import HelpModal from './HelpModal.jsx';
+import { LANGUAGES } from '../../constants.js';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -16,7 +17,7 @@ const sideStyle = (active) => ({
 const PLAN_LABELS = { free: 'Free', pathwayAI: 'Pathway AI', aiStrategist: 'AI + Strategist' };
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, showToast, plan } = props;
+  const { candTab, setCandTab, signOut, showToast, plan, language, setLanguage } = props;
   const [showHelp, setShowHelp] = useState(false);
 
   const handleHelp = () => setShowHelp(true);
@@ -50,9 +51,19 @@ export default function CandidatePortal(props) {
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f6f7fb' }}>
       {/* Sidebar */}
       <div className="pw-sidebar" style={{ width: 264, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', height: '100%' }}>
-        <div style={{ padding: '0 8px 8px' }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>HIGH-TOUCH ADMISSIONS</div>
+        <div style={{ padding: '0 8px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>HIGH-TOUCH ADMISSIONS</div>
+          </div>
+          <select
+            value={language}
+            onChange={e => setLanguage(e.target.value)}
+            aria-label="Chat language"
+            style={{ border: '1px solid #d7ddec', borderRadius: 8, padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#3a425a', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+          </select>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
           {navItems.map(item => (

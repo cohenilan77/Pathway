@@ -119,8 +119,11 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config) {
-  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.
+function buildSystemPrompt(config, language) {
+  const languageInstruction = language && language !== 'English'
+    ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
+    : '';
+  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
 
 You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
 1. The GRADUATE / POSTGRADUATE-DOCTORAL / PERSONAL DEVELOPMENT pipeline — a structured 9-step admissions/career process (STEP 2 through STEP 8 below).
@@ -386,7 +389,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig } = req.body;
+  const { messages, aiConfig, language } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -395,7 +398,7 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 3500,
-      system: buildSystemPrompt(resolveConfig(aiConfig)),
+      system: buildSystemPrompt(resolveConfig(aiConfig), language),
       messages: messages.map(m => ({
         role: m.role === 'ai' ? 'assistant' : 'user',
         content: m.text,
