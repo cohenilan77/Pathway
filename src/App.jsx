@@ -255,6 +255,7 @@ export default function App() {
     setChat(INITIAL_CHAT);
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
+    setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
@@ -316,7 +317,13 @@ export default function App() {
         }
         if (parsed.strengths) setStrengths(parsed.strengths);
         if (parsed.weaknesses) setWeaknesses(parsed.weaknesses);
-        if (parsed.tasks) setTasks(parsed.tasks);
+        if (parsed.tasks) {
+          // Once a task is marked done it's treated as deleted — drop it permanently
+          // the next time the AI refreshes the task list, instead of letting it reappear.
+          const next = parsed.tasks.filter(t => !completedTasks[t]);
+          setTasks(next);
+          setCompletedTasks({});
+        }
         if (parsed.programs) {
           setPrograms(parsed.programs);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 4 : 3));
@@ -389,7 +396,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile]);
+  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile, completedTasks]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
