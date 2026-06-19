@@ -9,6 +9,30 @@ const CATEGORY_CHIPS = [
   { label: 'Personal Development', text: 'Personal Development' },
 ];
 
+// Action items for the candidate to complete at each pipeline stage — these are
+// "to-dos" for the candidate, not a readout of system/AI progress.
+const GRAD_TASKS = [
+  'Share your background, CV, or complete the guided profile questions',
+  'Decide whether you already have target schools in mind',
+  'Review your competitiveness scores in the Analysis tab',
+  'Name your 3–5 target schools',
+  'Choose your Upgrade or Pivot narrative direction',
+  'Polish your CV bullet points',
+  'Draft your school-specific essays',
+  'Refine your essay drafts',
+  'Complete your mock interview prep',
+];
+
+const UNDERGRAD_TASKS = [
+  'Tell us your school and the subjects or activities you’re interested in',
+  'Share your GPA and your honors/AP/IB course plan',
+  'List your extracurriculars and leadership roles',
+  'Share your SAT/ACT score or testing timeline',
+  'Pick your 3–5 target universities',
+  'Draft your college application essays',
+  'Track your application deadlines and checklist',
+];
+
 export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
@@ -37,10 +61,13 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
 
-  // Tasks rail: each step reached so far becomes a task; manual checks override the auto-progress default
+  // Tasks rail: action items for the candidate to complete, revealed as the conversation reaches each stage.
+  // Completion is entirely manual — the candidate checks a task off themselves when they've done it.
   const [checkedTasks, setCheckedTasks] = useState({});
-  const taskSteps = STEPS.slice(0, stepIdx + 1);
-  const toggleTask = (i) => setCheckedTasks(prev => ({ ...prev, [i]: !(prev[i] ?? i < stepIdx) }));
+  const isUndergrad = profile?.category === 'Undergraduate';
+  const taskList = isUndergrad ? UNDERGRAD_TASKS : GRAD_TASKS;
+  const taskSteps = taskList.slice(0, stepIdx + 1);
+  const toggleTask = (i) => setCheckedTasks(prev => ({ ...prev, [i]: !prev[i] }));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
@@ -225,13 +252,13 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             <div style={{ fontSize: 13, color: '#9aa3b5' }}>Tasks will appear here as we progress.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {taskSteps.map((label, i) => {
-                const done = checkedTasks[i] ?? i < stepIdx;
+              {taskSteps.map((text, i) => {
+                const done = !!checkedTasks[i];
                 return (
-                  <div key={label} onClick={() => toggleTask(i)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 6px', borderRadius: 8, cursor: 'pointer' }}>
+                  <div key={text} onClick={() => toggleTask(i)}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 6px', borderRadius: 8, cursor: 'pointer' }}>
                     <span style={{
-                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
                       border: done ? 'none' : '1.5px solid #d7ddec',
                       background: done ? '#2d7d46' : '#fff',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -242,8 +269,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                         </svg>
                       )}
                     </span>
-                    <span style={{ fontSize: 14, fontWeight: 600, color: done ? '#8a93a3' : '#16233f', textDecoration: done ? 'line-through' : 'none' }}>
-                      {label}
+                    <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, color: done ? '#8a93a3' : '#16233f', textDecoration: done ? 'line-through' : 'none' }}>
+                      {text}
                     </span>
                   </div>
                 );
