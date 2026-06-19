@@ -97,7 +97,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Profile</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Full Name</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />

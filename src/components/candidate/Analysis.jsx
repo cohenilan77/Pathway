@@ -125,7 +125,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score dials */}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(scoreItems.length, 3)}, 1fr)`, gap: 18, marginBottom: 24 }}>
+        <div className="pw-analysis-dials" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(scoreItems.length, 3)}, 1fr)`, gap: 18, marginBottom: 24 }}>
           {scoreItems.slice(0, 3).map(item => (
             <ScoreDial key={item.key} score={scores[item.key]} stroke={item.stroke} title={item.title} desc={item.desc} />
           ))}
@@ -133,7 +133,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
         {/* Strengths / Growth areas */}
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 48 }}>
+          <div className="pw-analysis-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 48 }}>
             {displayStrengths.length > 0 && (
               <div style={{ background: '#fffdf7', borderRadius: 16, padding: 30, border: '1px solid #efe7d4' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe7d2', paddingBottom: 14, marginBottom: 18 }}>

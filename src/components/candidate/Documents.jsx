@@ -29,7 +29,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
   ];
 
   return (
-    <div style={{ flex: 1, minHeight: '100vh', display: 'grid', gridTemplateColumns: '280px 1fr 300px', background: '#fff' }}>
+    <div className="pw-doc-grid" style={{ flex: 1, minHeight: '100vh', display: 'grid', gridTemplateColumns: '280px 1fr 300px', background: '#fff' }}>
       {/* Left nav */}
       <div style={{ borderRight: '1px solid #eef1f6', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '24px 18px 16px', borderBottom: '1px solid #eef1f6' }}>

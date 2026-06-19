@@ -21,4 +21,9 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
   .pw-advisor-rail { display: none !important; }
   .pw-advisor-grid { grid-template-columns: 1fr !important; }
+  .pw-doc-grid { grid-template-columns: 1fr !important; min-height: 0 !important; }
+  .pw-analysis-dials { grid-template-columns: 1fr !important; }
+  .pw-analysis-grid { grid-template-columns: 1fr !important; }
+  .pw-narrative-grid { grid-template-columns: 1fr !important; }
+  .pw-settings-grid { grid-template-columns: 1fr !important; }
 }

@@ -40,7 +40,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
           Now that we have your programs and fit, we engineer the <em>story</em> that ties your resume, profile, grades and target program together. Admissions boards do not read achievements — they read <strong>narratives</strong>. Every candidate's arc bends toward one of two strategic postures.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22, marginBottom: 14 }}>
+        <div className="pw-narrative-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22, marginBottom: 14 }}>
           {/* Upgrade card */}
           <div onClick={() => { setNarrative('upgrade'); send && send("I've chosen the Upgrade narrative. Please craft my complete narrative strategy now for my chosen schools."); setCandTab('advisor'); }} style={upgrade.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
