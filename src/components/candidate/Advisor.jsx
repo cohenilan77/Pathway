@@ -1,25 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 
-function RadialDial({ score, stroke, label, sublabel }) {
-  const pct = Math.max(0, Math.min(100, score || 0));
-  return (
-    <div style={{ textAlign: 'center' }}>
-      <svg width="116" height="116" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="50" fill="none" stroke="#eef1f7" strokeWidth="9" />
-        <circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" fill="none"
-          stroke={stroke} strokeWidth="9" strokeLinecap="round"
-          strokeDasharray={`${pct * 3.14} 314`} />
-        <text x="60" y="70" textAnchor="middle"
-          style={{ fontFamily: "'Playfair Display',serif", fontSize: '30px', fontWeight: 700, fill: '#16233f' }}>
-          {pct}
-        </text>
-      </svg>
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#16233f', marginTop: 8 }}>{label}</div>
-      <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 2 }}>{sublabel}</div>
-    </div>
-  );
-}
 
 const CATEGORY_CHIPS = [
   { label: 'Undergraduate', text: 'Undergraduate' },
@@ -55,6 +36,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   // Detect when AI has presented narrative choice (mentions "Narrative Strategy tab")
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
+
+  // Tasks rail: each step reached so far becomes a task; manual checks override the auto-progress default
+  const [checkedTasks, setCheckedTasks] = useState({});
+  const taskSteps = STEPS.slice(0, stepIdx + 1);
+  const toggleTask = (i) => setCheckedTasks(prev => ({ ...prev, [i]: !(prev[i] ?? i < stepIdx) }));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
@@ -228,45 +214,40 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           </div>
         </div>
 
-        {/* Right analysis rail */}
+        {/* Right tasks rail */}
         <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Real-time Analysis</h3>
-          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 30px', lineHeight: 1.5 }}>
-            {hasScores ? 'Profile calibrated from your conversation.' : 'Share your background or paste your CV to unlock.'}
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Tasks</h3>
+          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 26px', lineHeight: 1.5 }}>
+            Your roadmap, updated as we move through each step.
           </p>
 
-          {!hasScores ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', paddingTop: 20 }}>
-              {['ACADEMIC', 'PROFESSIONAL', 'LEADERSHIP'].map(label => (
-                <div key={label} style={{ textAlign: 'center', opacity: 0.4 }}>
-                  <svg width="116" height="116" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="50" fill="none" stroke="#eef1f7" strokeWidth="9" />
-                    <text x="60" y="70" textAnchor="middle" style={{ fontFamily: "'Playfair Display',serif", fontSize: '20px', fill: '#9aa3b5' }}>—</text>
-                  </svg>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#9aa3b5', marginTop: 8 }}>{label}</div>
-                </div>
-              ))}
-              <button onClick={() => setShowCvModal(true)}
-                style={{ marginTop: 12, background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
-                Upload CV to Unlock →
-              </button>
-            </div>
+          {taskSteps.length === 0 ? (
+            <div style={{ fontSize: 13, color: '#9aa3b5' }}>Tasks will appear here as we progress.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 30, alignItems: 'center' }}>
-              <RadialDial score={scores.academic || 0} stroke="#16233f" label="ACADEMIC" sublabel="Quantitative & Academic Baseline" />
-              <RadialDial score={scores.professional || 0} stroke="#b8902f" label="PROFESSIONAL" sublabel="Career Trajectory & Impact" />
-              <RadialDial score={scores.leadership || scores.potential || 0} stroke="#aebde6" label="LEADERSHIP" sublabel="Team & Influence Track Record" />
-              {scores.overall != null && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#b8902f', fontSize: 14, fontWeight: 700, borderTop: '1px solid #eef1f6', width: '100%', justifyContent: 'center', paddingTop: 22 }}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.7', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                    <path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7L22 9.2l-7.2-.6Z" />
-                  </svg>
-                  Overall Score: {scores.overall}/100
-                </div>
-              )}
-              <button onClick={() => setCandTab('analysis')} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', width: '100%' }}>
-                View Full Analysis →
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {taskSteps.map((label, i) => {
+                const done = checkedTasks[i] ?? i < stepIdx;
+                return (
+                  <div key={label} onClick={() => toggleTask(i)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 6px', borderRadius: 8, cursor: 'pointer' }}>
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                      border: done ? 'none' : '1.5px solid #d7ddec',
+                      background: done ? '#2d7d46' : '#fff',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {done && (
+                        <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: done ? '#8a93a3' : '#16233f', textDecoration: done ? 'line-through' : 'none' }}>
+                      {label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
