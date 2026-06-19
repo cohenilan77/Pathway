@@ -432,4 +432,7 @@
   .auth__brand {
     display: none;
   }
+  .auth__form-side {
+    padding: 32px 22px;
+  }
 }

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-auth.css';
+import useIsMobile from '../hooks/useIsMobile.js';
 
 export default function Register({ go, register, authError, authBusy }) {
+  const isMobile = useIsMobile();
   const [name, setName] = useState('');
   const [residency, setResidency] = useState('');
   const [email, setEmail] = useState('');
@@ -87,30 +89,32 @@ export default function Register({ go, register, authError, authBusy }) {
         </div>
       </div>
 
-      <div className="auth__brand auth__brand--copper" style={{ order: 2 }}>
-        <div className="auth__brand-glow auth__brand-glow--copper" />
-        <button className="auth__logo" onClick={() => go('landing')} title="Back to home">
-          <span className="auth__logo-dot auth__logo-dot--forest" />
-          <span className="serif auth__logo-text">Pathway</span>
-        </button>
-        <div className="auth__pitch-wrap">
-          <h2 className="serif auth__pitch-title">
-            Join 180+ students building their path with AI — and people when it counts.
-          </h2>
-          <div className="auth__pitch-list">
-            <div className="auth__pitch-item">
-              <span className="auth__pitch-check">✓</span>Your AI guide, free to start
-            </div>
-            <div className="auth__pitch-item">
-              <span className="auth__pitch-check">✓</span>A senior strategist when you want one
-            </div>
-            <div className="auth__pitch-item">
-              <span className="auth__pitch-check">✓</span>Support before, during &amp; after university
+      {!isMobile && (
+        <div className="auth__brand auth__brand--copper" style={{ order: 2 }}>
+          <div className="auth__brand-glow auth__brand-glow--copper" />
+          <button className="auth__logo" onClick={() => go('landing')} title="Back to home">
+            <span className="auth__logo-dot auth__logo-dot--forest" />
+            <span className="serif auth__logo-text">Pathway</span>
+          </button>
+          <div className="auth__pitch-wrap">
+            <h2 className="serif auth__pitch-title">
+              Join 180+ students building their path with AI — and people when it counts.
+            </h2>
+            <div className="auth__pitch-list">
+              <div className="auth__pitch-item">
+                <span className="auth__pitch-check">✓</span>Your AI guide, free to start
+              </div>
+              <div className="auth__pitch-item">
+                <span className="auth__pitch-check">✓</span>A senior strategist when you want one
+              </div>
+              <div className="auth__pitch-item">
+                <span className="auth__pitch-check">✓</span>Support before, during &amp; after university
+              </div>
             </div>
           </div>
+          <div className="auth__copy auth__copy--copper">© 2026 Pathway Admissions</div>
         </div>
-        <div className="auth__copy auth__copy--copper">© 2026 Pathway Admissions</div>
-      </div>
+      )}
     </div>
   );
 }
