@@ -10,8 +10,9 @@ const sideStyle = (active) => ({
   background: active ? '#16233f' : 'transparent', color: active ? '#fff' : '#3a425a',
 });
 
-export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, adminSecret,
+export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
   aiConfig, setAiConfig }) {
+  const stepsFor = (category) => (category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS);
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [msgInput, setMsgInput] = useState('');
@@ -173,7 +174,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   };
 
   const sessionActive = chat && chat.length > 1;
-  const stepLabel = STEPS[stepIdx] || 'Profile';
+  const stepLabel = stepsFor(profile?.category)[stepIdx] || 'Profile';
   const candidateName = selUser?.name || profile?.name || 'Candidate';
   const candidateSub = [selUser?.residency, profile?.degree, profile?.industry].filter(Boolean).join(' · ') || 'Session in progress';
   const initials = candidateName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
@@ -395,7 +396,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           ) : <span style={{ fontSize: 13, color: '#b6bdcd' }}>—</span>}
                         </div>
                         <div>
-                          <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>{STEPS[u.stepIdx] || 'Profile'}</span>
+                          <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
                         </div>
                         <div style={{ fontSize: 13, color: '#5d6577', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
@@ -752,7 +753,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         ['Last login', formatDateTime(userDetail.lastLoginAt)],
                         ['Last active', formatDateTime(userDetail.lastActiveAt)],
                         ['Session duration', formatDuration(userDetail.sessionDurationMs)],
-                        ['Pipeline step', STEPS[userDetail.stepIdx] || 'Profile'],
+                        ['Pipeline step', stepsFor(userDetail.category)[userDetail.stepIdx] || 'Profile'],
                       ].map(([label, val]) => (
                         <div key={label} style={{ background: '#f6f7fb', borderRadius: 10, padding: '10px 12px' }}>
                           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#8a93a3', marginBottom: 3 }}>{label.toUpperCase()}</div>

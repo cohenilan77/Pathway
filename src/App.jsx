@@ -7,6 +7,7 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
+export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
 
 export const PLANS = {
   free: { label: 'Free' },
@@ -19,7 +20,7 @@ const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — progra
 const INITIAL_CHAT = [
   {
     role: 'ai',
-    text: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nWhich degree are you targeting?",
+    text: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you?\nUndergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
   },
 ];
 
@@ -298,19 +299,21 @@ export default function App() {
 
       if (raw) {
         const parsed = parseBlocks(raw);
+        const category = parsed.profile?.category || profile?.category;
+        const isUndergrad = category === 'Undergraduate';
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
           const vals = SCORE_KEYS.map(k => parsed.scores[k]).filter(v => typeof v === 'number' && !isNaN(v));
           const overall = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
-          setStepIdx(prev => Math.max(prev, 2));
+          setStepIdx(prev => Math.max(prev, isUndergrad ? 1 : 2));
         }
         if (parsed.strengths) setStrengths(parsed.strengths);
         if (parsed.weaknesses) setWeaknesses(parsed.weaknesses);
         if (parsed.programs) {
           setPrograms(parsed.programs);
-          setStepIdx(prev => Math.max(prev, 3));
+          setStepIdx(prev => Math.max(prev, isUndergrad ? 4 : 3));
         }
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
@@ -319,7 +322,7 @@ export default function App() {
           setEssaySchool(parsed.essay.school);
           setEssayQuestion(parsed.essay.question || '');
           setEssayText(parsed.essay.text || '');
-          setStepIdx(prev => Math.max(prev, 7));
+          setStepIdx(prev => Math.max(prev, isUndergrad ? 5 : 7));
         }
         if (parsed.interviewResult && parsed.interviewResult.school) {
           setInterviews(prev => ({
@@ -337,17 +340,38 @@ export default function App() {
 
         // Auto-advance stepper based on AI response keywords
         const lc = displayText.toLowerCase();
-        if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
-          setStepIdx(prev => Math.max(prev, 4));
-        }
-        if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
-          setStepIdx(prev => Math.max(prev, 5));
-        }
-        if (lc.includes("let's craft your essays") || (lc.includes('essay prompt') && lc.includes('school'))) {
-          setStepIdx(prev => Math.max(prev, 6));
-        }
-        if (lc.includes('time for your mock interview') || lc.includes('simulate the admissions interview')) {
-          setStepIdx(prev => Math.max(prev, 7));
+        if (isUndergrad) {
+          if (lc.includes("let's map your academic plan")) {
+            setStepIdx(prev => Math.max(prev, 1));
+          }
+          if (lc.includes("let's build your extracurricular profile")) {
+            setStepIdx(prev => Math.max(prev, 2));
+          }
+          if (lc.includes("let's plan your testing timeline")) {
+            setStepIdx(prev => Math.max(prev, 3));
+          }
+          if (lc.includes("let's build your university list")) {
+            setStepIdx(prev => Math.max(prev, 4));
+          }
+          if (lc.includes("let's begin your essay workshop")) {
+            setStepIdx(prev => Math.max(prev, 5));
+          }
+          if (lc.includes("let's finalize your application strategy")) {
+            setStepIdx(prev => Math.max(prev, 6));
+          }
+        } else {
+          if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
+            setStepIdx(prev => Math.max(prev, 4));
+          }
+          if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
+            setStepIdx(prev => Math.max(prev, 5));
+          }
+          if (lc.includes("let's craft your essays") || (lc.includes('essay prompt') && lc.includes('school'))) {
+            setStepIdx(prev => Math.max(prev, 6));
+          }
+          if (lc.includes('time for your mock interview') || lc.includes('simulate the admissions interview')) {
+            setStepIdx(prev => Math.max(prev, 7));
+          }
         }
 
         setChat(prev => [...prev, { role: 'ai', text: displayText }]);
@@ -359,7 +383,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, chosenSchools]);
+  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -466,7 +490,7 @@ export default function App() {
     override, setOverride,
     narrative, setNarrative,
     chat, setChat, input, setInput, busy,
-    STEPS, stepIdx,
+    STEPS: profile?.category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS, UNDERGRAD_STEPS, stepIdx,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
     cvText, setCvText,
     essayText, setEssayText,

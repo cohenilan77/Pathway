@@ -21,14 +21,11 @@ function RadialDial({ score, stroke, label, sublabel }) {
   );
 }
 
-const PROGRAM_CHIPS = [
-  { label: 'MBA', text: 'MBA' },
-  { label: 'LLM', text: 'LLM' },
-  { label: 'PhD', text: 'PhD' },
-  { label: 'Masters', text: 'Masters' },
-  { label: 'MD', text: 'MD' },
-  { label: 'JD', text: 'JD' },
-  { label: 'Undergrad', text: 'Undergraduate' },
+const CATEGORY_CHIPS = [
+  { label: 'Undergraduate', text: 'Undergraduate' },
+  { label: 'Graduate', text: 'Graduate' },
+  { label: 'Postgraduate / Doctoral', text: 'Postgraduate / Doctoral' },
+  { label: 'Personal Development', text: 'Personal Development' },
 ];
 
 export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative }) {
@@ -146,9 +143,9 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               {/* Program type chips — shown only before first user message */}
               {showChips && (
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', margin: '4px 0 12px' }}>SELECT YOUR PROGRAM</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', margin: '4px 0 12px' }}>SELECT YOUR PATH</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    {PROGRAM_CHIPS.map(chip => (
+                    {CATEGORY_CHIPS.map(chip => (
                       <button key={chip.label} onClick={() => send(chip.text)} disabled={busy}
                         style={{ background: '#fff', border: '1.5px solid #d7ddec', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px' }}>
                         {chip.label}

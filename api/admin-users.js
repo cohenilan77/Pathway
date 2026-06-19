@@ -22,6 +22,7 @@ export default async function handler(req, res) {
         stepIdx: data?.stepIdx || 0,
         scores: data?.scores || null,
         degree: data?.profile?.degree || null,
+        category: data?.profile?.category || null,
         topInsight: data?.strengths?.[0] || null,
         suspended: !!user.suspended,
         lastLoginAt: user.lastLoginAt || null,
