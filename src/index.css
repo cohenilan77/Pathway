@@ -1,6 +1,6 @@
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; }
-html, body { margin: 0; padding: 0; background: #eef1fc; }
+html, body { margin: 0; padding: 0; background: #eef1fc; overflow-x: hidden; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-thumb { background: #cfd6e6; border-radius: 6px; }
 input::placeholder, textarea::placeholder { color: #9aa3b5; }

@@ -808,4 +808,44 @@
   .hero__img {
     height: 360px;
   }
+  .nav__inner,
+  .marquee-section__inner,
+  .hero,
+  .stats__inner,
+  .process,
+  .services__inner,
+  .why__inner,
+  .packages__inner,
+  .results__inner,
+  .results__track,
+  .cta-final__inner,
+  .footer__inner {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+  .nav__links {
+    display: none !important;
+  }
+  .hero__stat-card {
+    left: 0 !important;
+  }
+  .hero__ai-badge {
+    right: 0 !important;
+  }
+}
+
+@media (max-width: 540px) {
+  .hero__title {
+    font-size: 36px;
+  }
+  .results__title,
+  .process__title,
+  .services__title,
+  .packages__title,
+  .why__title {
+    font-size: 32px !important;
+  }
+  .cta-final__title {
+    font-size: 38px !important;
+  }
 }
