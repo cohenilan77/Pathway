@@ -139,11 +139,10 @@ export default function App() {
     localStorage.setItem('pathway_plan', next);
   }, []);
 
-  // Switching language only changes the language the AI replies in going
-  // forward — it must never clear or reset the existing chat history.
   const setLanguage = useCallback((next) => {
     setLanguageState(next);
     localStorage.setItem('pathway_language', next);
+    setChat(INITIAL_CHAT);
   }, []);
 
   const setAuth = useCallback((next) => {

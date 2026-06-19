@@ -51,21 +51,19 @@ export default function CandidatePortal(props) {
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f6f7fb' }}>
       {/* Sidebar */}
       <div className="pw-sidebar" style={{ width: 264, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', height: '100%' }}>
-        <div style={{ padding: '0 8px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-          <div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>HIGH-TOUCH ADMISSIONS</div>
-          </div>
-          <select
-            value={language}
-            onChange={e => setLanguage(e.target.value)}
-            aria-label="Chat language"
-            style={{ border: '1px solid #d7ddec', borderRadius: 8, padding: '5px 8px', fontSize: 12, fontWeight: 600, color: '#3a425a', background: '#fff', fontFamily: 'inherit', cursor: 'pointer' }}
-          >
-            {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
-          </select>
+        <div style={{ padding: '0 8px 8px' }}>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>HIGH-TOUCH ADMISSIONS</div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
+        <select
+          value={language}
+          onChange={e => setLanguage(e.target.value)}
+          aria-label="Chat language"
+          style={{ width: '100%', marginTop: 18, border: '1px solid #d7ddec', borderRadius: 10, padding: '12px 14px', fontSize: 14, fontWeight: 600, color: '#3a425a', background: '#fff', fontFamily: 'inherit', cursor: 'pointer', boxSizing: 'border-box' }}
+        >
+          {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+        </select>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 14 }}>
           {navItems.map(item => (
             <button key={item.key} onClick={() => setCandTab(item.key)} style={sideStyle(candTab === item.key)}>
               {item.icon}{item.label}
