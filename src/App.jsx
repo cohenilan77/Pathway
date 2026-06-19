@@ -18,12 +18,20 @@ export const PLANS = {
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — program selection is as far as it goes. Upgrade to Pathway AI or AI + Strategist in Settings to unlock your narrative strategy, CV, essays, and mock interviews.";
 
-const INITIAL_CHAT = [
-  {
-    role: 'ai',
-    text: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you?\nUndergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
-  },
-];
+const WELCOME_MESSAGE = {
+  English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you?\nUndergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
+  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones — aquí para construir la narrativa que te abrirá las puertas.\n\nEmpecemos por saber en qué etapa de tu camino estás. ¿Cuál te describe mejor?\nPregrado | Posgrado | Posgrado / Doctorado | Desarrollo Personal",
+  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים — כאן כדי לבנות את הסיפור שיכניס אותך.\n\nנתחיל בלברר באיזה שלב במסע שלך אתה נמצא. מה הכי מתאר אותך?\nתואר ראשון | תואר שני | לימודים מתקדמים / דוקטורט | התפתחות אישית",
+  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك — هنا لصياغة القصة التي ستضمن قبولك.\n\nلنبدأ بمعرفة أين أنت في رحلتك. ما الذي يصفك أكثر؟\nبكالوريوس | دراسات عليا | دراسات عليا / دكتوراه | تطوير شخصي",
+  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师——在这里为您打造能助您成功录取的故事。\n\n让我们先了解您目前的阶段。以下哪项最符合您的情况？\n本科 | 研究生 | 研究生／博士 | 个人发展",
+  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions — ici pour construire le récit qui vous fera accepter.\n\nCommençons par savoir où vous en êtes dans votre parcours. Qu'est-ce qui vous décrit le mieux ?\nLicence | Master | Doctorat / Postdoctorat | Développement Personnel",
+};
+
+function buildInitialChat(language) {
+  return [{ role: 'ai', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
+}
+
+const INITIAL_CHAT = buildInitialChat('English');
 
 function parseBlocks(raw) {
   const extract = (tag) => {
@@ -142,7 +150,7 @@ export default function App() {
   const setLanguage = useCallback((next) => {
     setLanguageState(next);
     localStorage.setItem('pathway_language', next);
-    setChat(INITIAL_CHAT);
+    setChat(buildInitialChat(next));
   }, []);
 
   const setAuth = useCallback((next) => {
@@ -267,7 +275,7 @@ export default function App() {
   }, [setAuth]);
 
   const resetSession = useCallback(() => {
-    setChat(INITIAL_CHAT);
+    setChat(buildInitialChat(language));
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
     setTasks(null); setCompletedTasks({});
@@ -282,7 +290,7 @@ export default function App() {
       }).catch(() => {});
     }
     showToast('Session cleared — starting fresh.');
-  }, [auth?.token, showToast]);
+  }, [auth?.token, showToast, language]);
 
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
