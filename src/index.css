@@ -8,17 +8,3 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
-
-@media (max-width: 860px) {
-  .pw-shell { flex-direction: column !important; }
-  .pw-sidebar {
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: 40vh;
-    overflow-y: auto;
-    flex-shrink: 0;
-  }
-  .pw-advisor-rail { display: none !important; }
-  .pw-advisor-grid { grid-template-columns: 1fr !important; }
-}

@@ -1,34 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-landing.css';
 import { PLAN_CARDS, WHY_PATHWAY, PROCESS_STEPS, PROGRAMS, UNIVERSITIES, logoUrl, TESTIMONIALS } from '../data/editorialContent';
+import useIsMobile from '../hooks/useIsMobile.js';
+
+function DesktopNav({ go, primaryDestination }) {
+  return (
+    <header className="nav">
+      <div className="nav__inner">
+        <button className="nav__brand" onClick={() => go('landing')}>
+          <span className="nav__dot" />
+          <span className="serif nav__wordmark">Pathway</span>
+        </button>
+        <nav className="nav__links">
+          <a className="pw-link" href="#process">Process</a>
+          <a className="pw-link" href="#programs">Programs</a>
+          <a className="pw-link" href="#results">Results</a>
+          <a className="pw-link" href="#pricing">Pricing</a>
+        </nav>
+        <div className="nav__actions">
+          <button className="btn-text" onClick={() => go('login')}>Log in</button>
+          <button className="pw-cta btn-cta" onClick={() => go(primaryDestination)}>Apply now</button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function MobileNav({ go, primaryDestination }) {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+
+  return (
+    <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(250,247,242,0.92)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e7e1d4' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 18px' }}>
+        <button onClick={() => go('landing')} style={{ display: 'flex', alignItems: 'center', gap: 9, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <span className="nav__dot" />
+          <span className="serif" style={{ fontSize: 21, fontWeight: 500 }}>Pathway</span>
+        </button>
+        <button onClick={() => setOpen(true)} aria-label="Open menu" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8, display: 'flex' }}>
+          <svg viewBox="0 0 24 24" width="24" height="24" style={{ fill: 'none', stroke: '#16233f', strokeWidth: 2, strokeLinecap: 'round' }}>
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </div>
+
+      {open && (
+        <div onClick={close} style={{ position: 'fixed', inset: 0, background: 'rgba(22,35,63,0.45)', zIndex: 100 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 0, right: 0, width: '80%', maxWidth: 320, height: '100%', background: '#faf7f2', boxShadow: '-8px 0 30px rgba(0,0,0,.15)', display: 'flex', flexDirection: 'column', padding: '20px 22px', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
+              <button onClick={close} aria-label="Close menu" style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+                <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#16233f', strokeWidth: 2, strokeLinecap: 'round' }}>
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            </div>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: 22, marginBottom: 32 }}>
+              <a className="pw-link" href="#process" onClick={close} style={{ fontSize: 17, fontWeight: 600 }}>Process</a>
+              <a className="pw-link" href="#programs" onClick={close} style={{ fontSize: 17, fontWeight: 600 }}>Programs</a>
+              <a className="pw-link" href="#results" onClick={close} style={{ fontSize: 17, fontWeight: 600 }}>Results</a>
+              <a className="pw-link" href="#pricing" onClick={close} style={{ fontSize: 17, fontWeight: 600 }}>Pricing</a>
+            </nav>
+            <button className="btn-text" onClick={() => { close(); go('login'); }} style={{ textAlign: 'left', marginBottom: 14, fontSize: 16, padding: 0 }}>Log in</button>
+            <button className="pw-cta btn-cta" onClick={() => { close(); go(primaryDestination); }} style={{ width: '100%', textAlign: 'center' }}>Apply now</button>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+}
 
 export default function Landing({ go, authUser, noop }) {
+  const isMobile = useIsMobile();
   const primaryDestination = authUser ? 'candidate' : 'register';
   const universities = [...UNIVERSITIES, ...UNIVERSITIES];
   const testimonials = [...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
     <div className="landing">
-      {/* NAV */}
-      <header className="nav">
-        <div className="nav__inner">
-          <button className="nav__brand" onClick={() => go('landing')}>
-            <span className="nav__dot" />
-            <span className="serif nav__wordmark">Pathway</span>
-          </button>
-          <nav className="nav__links">
-            <a className="pw-link" href="#process">Process</a>
-            <a className="pw-link" href="#programs">Programs</a>
-            <a className="pw-link" href="#results">Results</a>
-            <a className="pw-link" href="#pricing">Pricing</a>
-          </nav>
-          <div className="nav__actions">
-            <button className="btn-text" onClick={() => go('login')}>Log in</button>
-            <button className="pw-cta btn-cta" onClick={() => go(primaryDestination)}>Apply now</button>
-          </div>
-        </div>
-      </header>
+      {isMobile
+        ? <MobileNav go={go} primaryDestination={primaryDestination} />
+        : <DesktopNav go={go} primaryDestination={primaryDestination} />}
 
       {/* HERO */}
       <section className="hero">

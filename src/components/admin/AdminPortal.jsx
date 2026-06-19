@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph } from 'docx';
+import useIsMobile from '../../hooks/useIsMobile.js';
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
@@ -10,8 +11,110 @@ const sideStyle = (active) => ({
   background: active ? '#16233f' : 'transparent', color: active ? '#fff' : '#3a425a',
 });
 
+const ADMIN_NAV_ITEMS = [
+  {
+    key: 'candidates', label: 'Candidates',
+    icon: <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></svg>
+  },
+  {
+    key: 'users', label: 'Users',
+    icon: <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+  },
+  {
+    key: 'session', label: 'Live Session',
+    icon: <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>
+  },
+  {
+    key: 'settings', label: 'Settings',
+    icon: <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
+  },
+];
+
+function AdminSidebarNav({ adminView, setAdminView, signOut, onNavigate }) {
+  return (
+    <>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
+        {ADMIN_NAV_ITEMS.map(item => (
+          <button key={item.key} onClick={() => { setAdminView(item.key); onNavigate?.(); }} style={sideStyle(adminView === item.key)}>
+            {item.icon}{item.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ marginTop: 'auto' }}>
+        <div style={{ height: 1, background: '#dde3f4', marginBottom: 14 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 9, background: '#16233f', color: '#f5c94c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>Admin Panel</div>
+            <div style={{ fontSize: 11, color: '#8a93a3', letterSpacing: '.5px' }}>IVY ADMISSIONS</div>
+          </div>
+        </div>
+        <button onClick={() => { signOut(); onNavigate?.(); }} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%', marginTop: 4 }}>
+          <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+          Sign Out
+        </button>
+      </div>
+    </>
+  );
+}
+
+function AdminDesktopShell({ adminView, setAdminView, signOut, children }) {
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
+      <div style={{ width: 258, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', minHeight: '100vh' }}>
+        <div style={{ padding: '0 8px 8px' }}>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>ADMIN PORTAL</div>
+        </div>
+        <AdminSidebarNav adminView={adminView} setAdminView={setAdminView} signOut={signOut} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function AdminMobileShell({ adminView, setAdminView, signOut, children }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const activeLabel = ADMIN_NAV_ITEMS.find(i => i.key === adminView)?.label || 'Pathway';
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f6f7fb' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', background: '#eef1fc', borderBottom: '1px solid #e1e6f5', flexShrink: 0 }}>
+        <div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#6b7280' }}>{activeLabel}</div>
+        </div>
+        <button onClick={() => setDrawerOpen(true)} aria-label="Open menu" style={{ background: 'none', border: '1px solid #c5cde0', borderRadius: 9, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <svg viewBox="0 0 24 24" width="20" height="20" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '2', strokeLinecap: 'round' }}><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+        </button>
+      </div>
+
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        {children}
+      </div>
+
+      {drawerOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex' }}>
+          <div onClick={() => setDrawerOpen(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(15,26,48,.5)' }} />
+          <div style={{ position: 'relative', width: '82%', maxWidth: 300, height: '100%', background: '#eef1fc', padding: '20px 18px', display: 'flex', flexDirection: 'column', boxShadow: '8px 0 30px rgba(15,26,48,.25)', animation: 'pwFade .2s ease' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 8px 8px' }}>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+              <button onClick={() => setDrawerOpen(false)} aria-label="Close menu" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', fontSize: 22, lineHeight: 1 }}>×</button>
+            </div>
+            <AdminSidebarNav
+              adminView={adminView} setAdminView={setAdminView} signOut={signOut}
+              onNavigate={() => setDrawerOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
   aiConfig, setAiConfig }) {
+  const isMobile = useIsMobile();
   const stepsFor = (category) => (category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS);
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
@@ -296,52 +399,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     ? [...chosenPrograms, ...programs.filter(p => !chosenPrograms.some(c => c.name === p.name))]
     : [];
 
-  return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
-      {/* Sidebar */}
-      <div style={{ width: 258, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', minHeight: '100vh' }}>
-        <div style={{ padding: '0 8px 8px' }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>ADMIN PORTAL</div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
-          <button onClick={() => setAdminView('candidates')} style={sideStyle(adminView === 'candidates')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></svg>
-            Candidates
-          </button>
-          <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
-            Users
-          </button>
-          <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>
-            Live Session
-          </button>
-          <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
-            Settings
-          </button>
-        </div>
-        <div style={{ marginTop: 'auto' }}>
-          <div style={{ height: 1, background: '#dde3f4', marginBottom: 14 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 9, background: '#16233f', color: '#f5c94c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>Admin Panel</div>
-              <div style={{ fontSize: 11, color: '#8a93a3', letterSpacing: '.5px' }}>IVY ADMISSIONS</div>
-            </div>
-          </div>
-          <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%', marginTop: 4 }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
-            Sign Out
-          </button>
-        </div>
-      </div>
+  const Shell = isMobile ? AdminMobileShell : AdminDesktopShell;
 
+  return (
+    <Shell adminView={adminView} setAdminView={setAdminView} signOut={signOut}>
       {/* Main */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '26px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff' }}>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 800, color: '#16233f', margin: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: isMobile ? 0 : '100vh' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: isMobile ? '18px 18px' : '26px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', flexWrap: 'wrap' }}>
+          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 22 : 30, fontWeight: 800, color: '#16233f', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Users'}
             {adminView === 'session' && 'Live Session'}
@@ -355,7 +420,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           )}
         </div>
 
-        <div style={{ flex: 1, overflow: 'auto', padding: '30px 36px' }}>
+        <div style={{ flex: 1, overflow: 'auto', padding: isMobile ? '18px 16px' : '30px 36px' }}>
 
           {/* ── CANDIDATES LIST ── */}
           {adminView === 'candidates' && !candidateOpen && (
@@ -376,11 +441,35 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               ) : (
                 <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
-                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span></span>
-                  </div>
+                  {!isMobile && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
+                      <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span></span>
+                    </div>
+                  )}
                   {users.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    if (isMobile) {
+                      return (
+                        <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 18px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', borderBottom: '1px solid #f8f9fb', boxSizing: 'border-box' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                            <span style={{ width: 36, height: 36, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{uInitials}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
+                              <div style={{ fontSize: 12, color: '#8a93a3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
+                            </div>
+                            {u.scores && (
+                              <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, flexShrink: 0, color: u.scores.overall >= 70 ? '#2d7d46' : u.scores.overall >= 50 ? '#b8902f' : '#d64545' }}>{u.scores.overall}</span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 11.5, fontWeight: 700, padding: '4px 10px', borderRadius: 7, flexShrink: 0 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
+                            <span style={{ fontSize: 12.5, color: '#5d6577', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+                              {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    }
                     return (
                       <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -412,7 +501,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── CANDIDATE DETAIL ── */}
           {adminView === 'candidates' && candidateOpen && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 360px', gap: isMobile ? 16 : 24 }}>
               <div>
                 <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
                   <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
@@ -426,10 +515,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 )}
 
                 {/* Candidate card */}
-                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 24, marginBottom: 20 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? 18 : 24, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                     <span style={{ width: 52, height: 52, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>{initials}</span>
-                    <div style={{ flex: 1 }}>
+                    <div style={{ flex: 1, minWidth: 160 }}>
                       <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f' }}>{candidateName}</div>
                       <div style={{ fontSize: 13, color: '#8a93a3', marginTop: 2 }}>{candidateSub}</div>
                       {profile && (
@@ -580,7 +669,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               </div>
 
               {/* Consultant controls panel */}
-              <div style={{ background: '#fbfcfe', border: '1px solid #eaedf4', borderRadius: 16, padding: 24, alignSelf: 'start', position: 'sticky', top: 0 }}>
+              <div style={{ background: '#fbfcfe', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? 18 : 24, alignSelf: 'start', position: isMobile ? 'static' : 'sticky', top: 0 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginBottom: 16 }}>CONSULTANT CONTROLS</div>
                 <div style={{ marginBottom: 22 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
@@ -652,17 +741,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── USERS ── */}
           {adminView === 'users' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div style={{ display: 'flex', gap: 18 }}>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'stretch' : 'center', gap: 14, marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px', flex: isMobile ? 1 : undefined, minWidth: isMobile ? 90 : undefined }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>TOTAL USERS</div>
                     <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#16233f' }}>{users.length}</div>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px', flex: isMobile ? 1 : undefined, minWidth: isMobile ? 90 : undefined }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>ACTIVE</div>
                     <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#2d7d46' }}>{users.filter(u => !u.suspended).length}</div>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
+                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px', flex: isMobile ? 1 : undefined, minWidth: isMobile ? 90 : undefined }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>SUSPENDED</div>
                     <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#d64545' }}>{users.filter(u => u.suspended).length}</div>
                   </div>
@@ -682,13 +771,53 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               ) : (
                 <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
-                    <span>USER</span><span>LAST LOGIN</span><span>SESSION DURATION</span><span>STATUS</span><span>ACTIONS</span>
-                  </div>
+                  {!isMobile && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
+                      <span>USER</span><span>LAST LOGIN</span><span>SESSION DURATION</span><span>STATUS</span><span>ACTIONS</span>
+                    </div>
+                  )}
                   {users.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     const busySuspend = userActionBusy === `${u.id}:suspend` || userActionBusy === `${u.id}:unsuspend`;
                     const busyDelete = userActionBusy === `${u.id}:delete`;
+                    if (isMobile) {
+                      return (
+                        <div key={u.id} style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: '16px 18px', borderBottom: '1px solid #f8f9fb' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                            <button onClick={() => setUserDetailId(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0, minWidth: 0, flex: 1 }}>
+                              <span style={{ width: 36, height: 36, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{uInitials}</span>
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
+                                <div style={{ fontSize: 12, color: '#8a93a3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.email}</div>
+                              </div>
+                            </button>
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 7, letterSpacing: '.3px', flexShrink: 0,
+                              background: u.suspended ? '#fff5f5' : '#f0fdf4',
+                              color: u.suspended ? '#d64545' : '#2d7d46',
+                              border: `1px solid ${u.suspended ? '#fecaca' : '#bbf0cb'}`,
+                            }}>{u.suspended ? 'SUSPENDED' : 'ACTIVE'}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: '#3a425a' }}>Last login: {formatDateTime(u.lastLoginAt)} · Session: {formatDuration(u.sessionDurationMs)}</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => u.suspended
+                                ? performUserAction(u.id, 'unsuspend')
+                                : confirmUserAction(u.id, 'suspend', `Suspend ${u.name}? They will be unable to log in until reinstated.`)}
+                              disabled={busySuspend}
+                              style={{ flex: 1, background: '#eef1f7', border: 'none', borderRadius: 7, padding: '8px 12px', cursor: busySuspend ? 'not-allowed' : 'pointer', color: '#16233f', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busySuspend ? 0.5 : 1 }}>
+                              {u.suspended ? 'Reinstate' : 'Suspend'}
+                            </button>
+                            <button
+                              onClick={() => confirmUserAction(u.id, 'delete', `Permanently delete ${u.name} (${u.email})? This cannot be undone.`)}
+                              disabled={busyDelete}
+                              style={{ flex: 1, background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 7, padding: '8px 12px', cursor: busyDelete ? 'not-allowed' : 'pointer', color: '#d64545', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busyDelete ? 0.5 : 1 }}>
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
                       <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '16px 20px', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
                         <button onClick={() => setUserDetailId(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
@@ -733,7 +862,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* User detail overlay */}
               {userDetail && (
                 <div onClick={() => setUserDetailId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,35,63,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 28, width: 460, maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: isMobile ? 20 : 28, width: isMobile ? '100%' : 460, maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
                       <span style={{ width: 48, height: 48, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
                         {(userDetail.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
@@ -744,7 +873,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 20 }}>
                       {[
                         ['Status', userDetail.suspended ? 'Suspended' : 'Active'],
                         ['Residency', userDetail.residency || '—'],
@@ -806,7 +935,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </div>
           )}
           {adminView === 'session' && selectedUserId && (
-            <div style={{ maxWidth: 800 }}>
+            <div style={{ maxWidth: 800, width: '100%', boxSizing: 'border-box' }}>
               <div style={{ fontSize: 13, color: '#8a93a3', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
               {/* Summarize button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -863,8 +992,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── SETTINGS ── */}
           {adminView === 'settings' && (
-            <div style={{ maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
+            <div style={{ maxWidth: 700, width: '100%', display: 'flex', flexDirection: 'column', gap: 24, boxSizing: 'border-box' }}>
+              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? '18px 16px' : 28, boxSizing: 'border-box' }}>
                 <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 18px' }}>Portal Settings</h3>
                 <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 18 }}>
                   This admin panel shows live session data from the active candidate. In a production deployment, this would connect to a database with historical sessions and multi-consultant features.
@@ -878,7 +1007,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               </div>
 
-              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
+              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? '18px 16px' : 28, boxSizing: 'border-box' }}>
                 <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>AI Process Configuration</h3>
                 <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 22 }}>
                   Edit how the advisor analyzes profiles, ranks candidates, searches programs, and scores fit. Saved changes apply to every candidate message going forward.
@@ -927,6 +1056,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           )}
         </div>
       </div>
-    </div>
+    </Shell>
   );
 }

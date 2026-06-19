@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-auth.css';
+import useIsMobile from '../hooks/useIsMobile.js';
 
 export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, noop, login, adminAuth, authError, authBusy }) {
+  const isMobile = useIsMobile();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -15,28 +17,30 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
 
   return (
     <div className="auth">
-      <div className="auth__brand auth__brand--forest">
-        <div className="auth__brand-glow" />
-        <button className="auth__logo" onClick={() => go('landing')} title="Back to home">
-          <span className="auth__logo-dot auth__logo-dot--gold" />
-          <span className="serif auth__logo-text">Pathway</span>
-        </button>
-        <div className="auth__quote-wrap">
-          <div className="serif auth__quote-mark">&ldquo;</div>
-          <blockquote className="serif auth__quote">
-            Navigating the world's elite institutions feels different when you have a strategist
-            and an AI co-pilot in your corner.
-          </blockquote>
-          <div className="auth__quote-person">
-            <span className="auth__quote-avatar" />
-            <div>
-              <div className="auth__quote-name">Daniel K.</div>
-              <div className="auth__quote-meta">Admitted to Stanford GSB</div>
+      {!isMobile && (
+        <div className="auth__brand auth__brand--forest">
+          <div className="auth__brand-glow" />
+          <button className="auth__logo" onClick={() => go('landing')} title="Back to home">
+            <span className="auth__logo-dot auth__logo-dot--gold" />
+            <span className="serif auth__logo-text">Pathway</span>
+          </button>
+          <div className="auth__quote-wrap">
+            <div className="serif auth__quote-mark">&ldquo;</div>
+            <blockquote className="serif auth__quote">
+              Navigating the world's elite institutions feels different when you have a strategist
+              and an AI co-pilot in your corner.
+            </blockquote>
+            <div className="auth__quote-person">
+              <span className="auth__quote-avatar" />
+              <div>
+                <div className="auth__quote-name">Daniel K.</div>
+                <div className="auth__quote-meta">Admitted to Stanford GSB</div>
+              </div>
             </div>
           </div>
+          <div className="auth__copy">© 2026 Pathway Admissions</div>
         </div>
-        <div className="auth__copy">© 2026 Pathway Admissions</div>
-      </div>
+      )}
 
       <div className="auth__form-side">
         <div className="auth__form-box">

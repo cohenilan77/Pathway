@@ -9,7 +9,7 @@ const CATEGORY_CHIPS = [
   { label: 'Personal Development', text: 'Personal Development' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative, tasks, completedTasks, setCompletedTasks }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative, tasks, completedTasks, setCompletedTasks, isMobile }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -45,34 +45,45 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
       {/* Stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
-        {STEPS.map((label, i) => {
-          const active = i === stepIdx;
-          const done = i < stepIdx;
-          const on = active || done;
-          return (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-              <span style={{
-                width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 700, flexShrink: 0,
-                background: on ? '#16233f' : '#fff', color: on ? '#fff' : '#9aa3b5',
-                border: on ? 'none' : '1.5px solid #e3e7f0',
-              }}>
-                {done ? '✓' : i + 1}
-              </span>
-              <span style={{ fontSize: 14, fontWeight: active ? 700 : 600, color: active ? '#16233f' : '#9aa3b5', whiteSpace: 'nowrap' }}>
-                {label}
-              </span>
-              {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: '#e1e6f0', margin: '0 4px' }} />}
-            </div>
-          );
-        })}
-      </div>
+      {isMobile ? (
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid #e7eaf3', background: '#fff', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>Step {stepIdx + 1} of {STEPS.length}: {STEPS[stepIdx]}</span>
+          </div>
+          <div style={{ height: 5, borderRadius: 4, background: '#eef1f6', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${((stepIdx + 1) / STEPS.length) * 100}%`, background: '#16233f', borderRadius: 4 }} />
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
+          {STEPS.map((label, i) => {
+            const active = i === stepIdx;
+            const done = i < stepIdx;
+            const on = active || done;
+            return (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+                <span style={{
+                  width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 700, flexShrink: 0,
+                  background: on ? '#16233f' : '#fff', color: on ? '#fff' : '#9aa3b5',
+                  border: on ? 'none' : '1.5px solid #e3e7f0',
+                }}>
+                  {done ? '✓' : i + 1}
+                </span>
+                <span style={{ fontSize: 14, fontWeight: active ? 700 : 600, color: active ? '#16233f' : '#9aa3b5', whiteSpace: 'nowrap' }}>
+                  {label}
+                </span>
+                {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: '#e1e6f0', margin: '0 4px' }} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Chat + Right rail */}
-      <div className="pw-advisor-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', background: '#fff', minHeight: 0, overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '1fr 340px', background: '#fff', minHeight: 0, overflow: isMobile ? 'auto' : 'hidden' }}>
         {/* Chat area */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', borderRight: isMobile ? 'none' : '1px solid #eef1f6', borderBottom: isMobile ? '1px solid #eef1f6' : 'none', position: 'relative', minHeight: isMobile ? '60vh' : 0, overflow: 'hidden' }}>
           {showScrollTop && (
             <button
               onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
@@ -89,11 +100,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </svg>
             </button>
           )}
-          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '34px 40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 26 }}>
+          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: isMobile ? '20px 18px' : '34px 40px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: isMobile ? 18 : 26, flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
-                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>
+                <span style={{ width: isMobile ? 38 : 46, height: isMobile ? 38 : 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
+                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 21 : 28, fontWeight: 700, color: '#16233f', margin: 0 }}>
                   {profile?.name ? `${profile.name}'s Strategic Profile` : 'Strategic Profile'}
                 </h2>
               </div>
@@ -102,7 +113,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 620 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: isMobile ? '100%' : 620 }}>
               {chat.map((m, i) => (
                 m.role === 'ai' ? (
                   <div key={i} style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '18px 20px', fontSize: 15, lineHeight: 1.65, color: '#2a3447', whiteSpace: 'pre-wrap' }}>
@@ -179,7 +190,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           </div>
 
           {/* Input bar */}
-          <div style={{ padding: '18px 40px 18px', borderTop: '1px solid #eef1f6', flexShrink: 0 }}>
+          <div style={{ padding: isMobile ? '14px 18px' : '18px 40px 18px', borderTop: '1px solid #eef1f6', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px' }}>
               {/* Upload / paste CV button */}
               <button onClick={() => setShowCvModal(true)}
@@ -215,8 +226,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
         </div>
 
         {/* Right tasks rail */}
-        <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Tasks</h3>
+        <div style={{ background: '#fbfcfe', padding: isMobile ? '24px 18px' : '32px 26px', overflowY: 'auto', minHeight: 0, borderTop: isMobile ? '1px solid #eef1f6' : 'none' }}>
+          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 20 : 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Tasks</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 26px', lineHeight: 1.5 }}>
             Personalized action items, added as we learn more about you.
           </p>

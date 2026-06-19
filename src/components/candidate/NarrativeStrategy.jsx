@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function NarrativeStrategy({ narrative, setNarrative, setCandTab, send, noop }) {
+export default function NarrativeStrategy({ narrative, setNarrative, setCandTab, send, noop, isMobile }) {
   const narrCard = (kind) => {
     const on = narrative === kind;
     const accent = kind === 'pivot' ? '#c2962f' : '#16233f';
@@ -8,7 +8,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
       card: {
         position: 'relative', background: '#fff',
         border: on ? `2px solid ${accent}` : '1.5px solid #e6e9f2',
-        borderRadius: 18, padding: 30, cursor: 'pointer', transition: 'all .15s',
+        borderRadius: 18, padding: isMobile ? 22 : 30, cursor: 'pointer', transition: 'all .15s',
         boxShadow: on ? '0 18px 44px rgba(15,26,48,.14)' : '0 2px 10px rgba(15,26,48,.04)',
       },
       badge: {
@@ -31,16 +31,16 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
   return (
     <div style={{ flex: 1, minHeight: '100vh', background: '#faf6ec', overflowY: 'auto' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '44px 44px 64px' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '26px 18px 40px' : '44px 44px 64px' }}>
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', color: '#b8902f', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 46, lineHeight: 1.06, fontWeight: 800, color: '#16233f', margin: '0 0 14px' }}>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 30 : 46, lineHeight: 1.06, fontWeight: 800, color: '#16233f', margin: '0 0 14px' }}>
           Choose Your Narrative
         </h1>
-        <p style={{ fontSize: 16, lineHeight: 1.65, color: '#5d6577', margin: '0 0 36px', maxWidth: '64ch' }}>
+        <p style={{ fontSize: isMobile ? 14.5 : 16, lineHeight: 1.65, color: '#5d6577', margin: '0 0 28px', maxWidth: '64ch' }}>
           Now that we have your programs and fit, we engineer the <em>story</em> that ties your resume, profile, grades and target program together. Admissions boards do not read achievements — they read <strong>narratives</strong>. Every candidate's arc bends toward one of two strategic postures.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 22, marginBottom: 14 }}>
+        <div style={{ display: isMobile ? 'flex' : 'grid', flexDirection: isMobile ? 'column' : undefined, gridTemplateColumns: isMobile ? undefined : '1fr 1fr', gap: isMobile ? 16 : 22, marginBottom: 14 }}>
           {/* Upgrade card */}
           <div onClick={() => { setNarrative('upgrade'); send && send("I've chosen the Upgrade narrative. Please craft my complete narrative strategy now for my chosen schools."); setCandTab('advisor'); }} style={upgrade.card}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -122,7 +122,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
         {/* Locked narrative banner */}
         {narrative && (
-          <div style={{ background: '#16233f', borderRadius: 18, padding: '30px 34px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease' }}>
+          <div style={{ background: '#16233f', borderRadius: 18, padding: isMobile ? '24px 22px' : '30px 34px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease' }}>
             <div style={{ flex: 1, minWidth: 280 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#f5c94c', marginBottom: 8 }}>NARRATIVE LOCKED</div>
               {narrative === 'upgrade' ? (
@@ -151,7 +151,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
         )}
 
         {/* Strategist note */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: '20px 22px', marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: isMobile ? '18px 16px' : '20px 22px', marginTop: 24 }}>
           <span style={{ width: 38, height: 38, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>LS</span>
           <div>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f', marginBottom: 4 }}>Strategist's note</div>
