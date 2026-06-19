@@ -9,31 +9,7 @@ const CATEGORY_CHIPS = [
   { label: 'Personal Development', text: 'Personal Development' },
 ];
 
-// Action items for the candidate to complete at each pipeline stage — these are
-// "to-dos" for the candidate, not a readout of system/AI progress.
-const GRAD_TASKS = [
-  'Share your background, CV, or complete the guided profile questions',
-  'Decide whether you already have target schools in mind',
-  'Review your competitiveness scores in the Analysis tab',
-  'Name your 3–5 target schools',
-  'Choose your Upgrade or Pivot narrative direction',
-  'Polish your CV bullet points',
-  'Draft your school-specific essays',
-  'Refine your essay drafts',
-  'Complete your mock interview prep',
-];
-
-const UNDERGRAD_TASKS = [
-  'Tell us your school and the subjects or activities you’re interested in',
-  'Share your GPA and your honors/AP/IB course plan',
-  'List your extracurriculars and leadership roles',
-  'Share your SAT/ACT score or testing timeline',
-  'Pick your 3–5 target universities',
-  'Draft your college application essays',
-  'Track your application deadlines and checklist',
-];
-
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative, tasks, completedTasks, setCompletedTasks }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -61,13 +37,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
 
-  // Tasks rail: action items for the candidate to complete, revealed as the conversation reaches each stage.
+  // Tasks rail: AI-generated action items personalized to the candidate's profile/category/progress.
   // Completion is entirely manual — the candidate checks a task off themselves when they've done it.
-  const [checkedTasks, setCheckedTasks] = useState({});
-  const isUndergrad = profile?.category === 'Undergraduate';
-  const taskList = isUndergrad ? UNDERGRAD_TASKS : GRAD_TASKS;
-  const taskSteps = taskList.slice(0, stepIdx + 1);
-  const toggleTask = (i) => setCheckedTasks(prev => ({ ...prev, [i]: !prev[i] }));
+  const taskList = tasks || [];
+  const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
@@ -245,17 +218,17 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
         <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Tasks</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 26px', lineHeight: 1.5 }}>
-            Your roadmap, updated as we move through each step.
+            Personalized action items, added as we learn more about you.
           </p>
 
-          {taskSteps.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#9aa3b5' }}>Tasks will appear here as we progress.</div>
+          {taskList.length === 0 ? (
+            <div style={{ fontSize: 13, color: '#9aa3b5' }}>Tasks will appear here as we learn more about you.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {taskSteps.map((text, i) => {
-                const done = !!checkedTasks[i];
+              {taskList.map((text) => {
+                const done = !!completedTasks?.[text];
                 return (
-                  <div key={text} onClick={() => toggleTask(i)}
+                  <div key={text} onClick={() => toggleTask(text)}
                     style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 6px', borderRadius: 8, cursor: 'pointer' }}>
                     <span style={{
                       width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,

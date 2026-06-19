@@ -31,7 +31,7 @@ function parseBlocks(raw) {
     try { return JSON.parse(m[1].trim()); } catch { return null; }
   };
   const clean = raw
-    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT)>[\s\S]*?<\/\1>/g, '')
+    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>[\s\S]*?<\/\1>/g, '')
     .trim();
   return {
     clean,
@@ -44,6 +44,7 @@ function parseBlocks(raw) {
     insights: extract('INSIGHTS'),
     essay: extract('ESSAY'),
     interviewResult: extract('INTERVIEW_RESULT'),
+    tasks: extract('TASKS'),
   };
 }
 
@@ -91,6 +92,8 @@ export default function App() {
   const [scores, setScores] = useState(null);
   const [strengths, setStrengths] = useState(null);
   const [weaknesses, setWeaknesses] = useState(null);
+  const [tasks, setTasks] = useState(null);
+  const [completedTasks, setCompletedTasks] = useState({});
   const [programs, setPrograms] = useState(null);
   const [chosenSchools, setChosenSchools] = useState(null);
   const [cvText, setCvText] = useState('');
@@ -150,6 +153,8 @@ export default function App() {
         setScores(data?.scores || null);
         setStrengths(data?.strengths || null);
         setWeaknesses(data?.weaknesses || null);
+        setTasks(data?.tasks || null);
+        setCompletedTasks(data?.completedTasks || {});
         setPrograms(data?.programs || null);
         setChosenSchools(data?.chosenSchools || null);
         setCvText(data?.cvText || '');
@@ -177,12 +182,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
+  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -311,6 +316,7 @@ export default function App() {
         }
         if (parsed.strengths) setStrengths(parsed.strengths);
         if (parsed.weaknesses) setWeaknesses(parsed.weaknesses);
+        if (parsed.tasks) setTasks(parsed.tasks);
         if (parsed.programs) {
           setPrograms(parsed.programs);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 4 : 3));
@@ -492,6 +498,7 @@ export default function App() {
     chat, setChat, input, setInput, busy,
     STEPS: profile?.category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS, UNDERGRAD_STEPS, stepIdx,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
+    tasks, completedTasks, setCompletedTasks,
     cvText, setCvText,
     essayText, setEssayText,
     essaySchool, setEssaySchool,
