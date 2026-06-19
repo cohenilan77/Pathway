@@ -18,7 +18,7 @@ const PLAN_DETAILS = [
   },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast }) {
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, isMobile }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -58,12 +58,12 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
   return (
     <div style={{ flex: 1, minHeight: '100vh', background: '#f6f7fb', overflowY: 'auto' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 44px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 38, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>Settings</h1>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: isMobile ? '28px 18px' : '48px 44px', boxSizing: 'border-box' }}>
+        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 28 : 38, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>Settings</h1>
         <p style={{ fontSize: 15, color: '#7a8295', margin: '0 0 32px' }}>Manage your private office preferences.</p>
 
         {/* Plan */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? '20px 18px' : 28, marginBottom: 18 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Plan</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
@@ -94,10 +94,10 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Profile */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
+        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? '20px 18px' : 28, marginBottom: 18 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Profile</h3>
           <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
             <div>
               <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Full Name</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
@@ -118,7 +118,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Notifications */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 24 }}>
+        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: isMobile ? '20px 18px' : 28, marginBottom: 24 }}>
           <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Notifications</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f0f2f7' }}>
             <div>
@@ -136,7 +136,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 12, flexWrap: 'wrap' }}>
           <button onClick={handleSave} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Save Changes
           </button>

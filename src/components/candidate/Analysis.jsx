@@ -41,13 +41,13 @@ const TIERS = [
   },
 ];
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, isMobile }) {
   const hasData = !!scores;
 
   if (!hasData) {
     return (
       <div style={{ flex: 1, minHeight: '100vh', background: '#faf6ec', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', maxWidth: 440, padding: '0 24px' }}>
+        <div style={{ textAlign: 'center', maxWidth: 440, padding: '0 24px', boxSizing: 'border-box' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#f0e8d4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
             <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#b8902f', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" />
@@ -80,12 +80,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   return (
     <div style={{ flex: 1, minHeight: '100vh', background: '#faf6ec', overflowY: 'auto' }}>
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '44px 44px 64px' }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: isMobile ? '26px 18px 40px' : '44px 44px 64px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 36 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: isMobile ? 24 : 36 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
-            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 46, lineHeight: 1.05, fontWeight: 800, color: '#16233f', margin: 0 }}>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: isMobile ? 30 : 46, lineHeight: 1.05, fontWeight: 800, color: '#16233f', margin: 0 }}>
               {profile?.name ? `${profile.name}'s` : 'Your'}<br />Competitiveness
             </h1>
             {profile && (
@@ -125,7 +125,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score dials */}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(scoreItems.length, 3)}, 1fr)`, gap: 18, marginBottom: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : `repeat(${Math.min(scoreItems.length, 3)}, 1fr)`, gap: 18, marginBottom: 24 }}>
           {scoreItems.slice(0, 3).map(item => (
             <ScoreDial key={item.key} score={scores[item.key]} stroke={item.stroke} title={item.title} desc={item.desc} />
           ))}
@@ -133,7 +133,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
         {/* Strengths / Growth areas */}
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 48 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 18, marginBottom: 48 }}>
             {displayStrengths.length > 0 && (
               <div style={{ background: '#fffdf7', borderRadius: 16, padding: 30, border: '1px solid #efe7d4' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe7d2', paddingBottom: 14, marginBottom: 18 }}>
@@ -191,11 +191,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                       {schools.map((school, idx) => (
                         <div key={school.name || idx} style={{
                           display: 'flex',
-                          alignItems: 'center',
+                          flexDirection: isMobile ? 'column' : 'row',
+                          alignItems: isMobile ? 'flex-start' : 'center',
                           justifyContent: 'space-between',
-                          padding: '18px 24px',
+                          padding: isMobile ? '16px 18px' : '18px 24px',
                           borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none',
-                          gap: 16,
+                          gap: isMobile ? 12 : 16,
                         }}>
                           {/* Left: name, location, notes */}
                           <div style={{ flex: 1, minWidth: 0 }}>
