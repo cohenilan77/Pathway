@@ -7,7 +7,7 @@ const docNavStyle = (active) => ({
   background: active ? '#fbf1d6' : 'transparent', color: active ? '#16233f' : '#3a425a',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative }) {
+export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken }) {
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
 
@@ -19,6 +19,25 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
   const startInterview = (school) => {
     setCandTab('advisor');
     send(`I'd like to do my mock interview for ${school}.`);
+  };
+
+  const downloadOriginalCv = async () => {
+    if (!cvFile || !authToken) return;
+    try {
+      const res = await fetch('/api/download-file', {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = cvFile.name || 'candidate-cv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      showToast('Could not download the original file.');
+    }
   };
 
   const subNavItems = [
@@ -49,7 +68,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#3a7d1e' : '#d3c9a8', flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>CV / Resume</div>
-                <div style={{ fontSize: 11, color: '#8a93a3' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words` : 'Not uploaded'}</div>
+                <div style={{ fontSize: 11, color: '#8a93a3' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 10, background: essayText ? '#f0f7ea' : '#faf6ec', border: `1px solid ${essayText ? '#c8dba8' : '#efe7d4'}` }}>
@@ -142,9 +161,18 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, essayT
         {docTab === 'documents' && (
           <div style={{ width: '100%', maxWidth: 680 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>My CV</h2>
+              <div>
+                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>My CV</h2>
+                {cvFile && <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>Original file saved: {cvFile.name}</div>}
+              </div>
               {cvText ? (
                 <div style={{ display: 'flex', gap: 10 }}>
+                  {cvFile && (
+                    <button onClick={downloadOriginalCv}
+                      style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Original
+                    </button>
+                  )}
                   {!editingCv ? (
                     <button onClick={() => { setEditingCv(true); setCvEdit(cvText); }}
                       style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>

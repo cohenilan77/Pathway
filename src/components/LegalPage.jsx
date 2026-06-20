@@ -80,6 +80,7 @@ const PRIVACY_SECTIONS = [
       'Educational history.',
       'Application materials.',
       'Essays, resumes, transcripts, and uploaded documents.',
+      'Original uploaded files, such as PDF or Word resumes, when you choose to upload them.',
       'Usage and analytics information.',
       'Payment information processed through third-party providers.',
     ],
@@ -89,6 +90,7 @@ const PRIVACY_SECTIONS = [
     body: ['We use information to:'],
     list: [
       'Provide Platform services.',
+      'Store original uploaded files for review and download while using extracted text for AI analysis.',
       'Generate AI-powered analysis and recommendations.',
       'Improve system performance.',
       'Communicate with users.',

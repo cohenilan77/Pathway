@@ -10,6 +10,7 @@ import adminAuthHandler from './api/admin-auth.js';
 import adminUsersHandler from './api/admin-users.js';
 import adminSessionHandler from './api/admin-session.js';
 import parseFileHandler from './api/parse-file.js';
+import downloadFileHandler from './api/download-file.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -344,6 +345,7 @@ export default defineConfig(({ mode }) => {
   if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
   if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
   if (env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
+  if (env.BLOB_READ_WRITE_TOKEN) process.env.BLOB_READ_WRITE_TOKEN = env.BLOB_READ_WRITE_TOKEN;
 
   return {
     plugins: [
@@ -432,6 +434,14 @@ export default defineConfig(({ mode }) => {
 
           // File parse endpoint (PDF + .docx)
           server.middlewares.use('/api/parse-file', withApiAdapter(parseFileHandler));
+
+          server.middlewares.use('/api/download-file', (req, res) => {
+            downloadFileHandler(req, res).catch((err) => {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err.message || 'Download failed' }));
+            });
+          });
 
           // Contact form email endpoint
           server.middlewares.use('/api/contact', withApiAdapter(contactHandler));
