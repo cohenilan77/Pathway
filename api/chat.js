@@ -362,6 +362,7 @@ ${config.ranking}
 
 ==DATA BLOCKS==
 Emit these structured blocks when you have enough data. The system parses and hides them. Your visible reply must contain ONLY conversational text.
+CRITICAL FORMAT RULE: every block must contain ONLY raw, strictly valid JSON between its opening and closing tag — never wrap it in markdown code fences (no triple-backtick fences of any kind), never add commentary inside the tag, never use trailing commas, and always escape any literal double-quote characters inside string values (e.g. write \" not "). A block that fails to parse as JSON will silently fail to update the UI, so correctness here is mandatory.
 
 "First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development").
 <PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","goals":"Move into PE"}</PROFILE>

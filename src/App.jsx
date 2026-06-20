@@ -37,7 +37,18 @@ function parseBlocks(raw) {
   const extract = (tag) => {
     const m = raw.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
     if (!m) return null;
-    try { return JSON.parse(m[1].trim()); } catch { return null; }
+    let body = m[1].trim();
+    // Strip markdown code fences the model sometimes wraps blocks in (```json ... ```)
+    body = body.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
+    try { return JSON.parse(body); } catch { /* fall through */ }
+    // Last resort: grab the outermost {...} or [...] in case of stray leading/trailing text
+    const arrMatch = body.match(/\[[\s\S]*\]/);
+    const objMatch = body.match(/\{[\s\S]*\}/);
+    const candidate = arrMatch?.[0] || objMatch?.[0];
+    if (candidate) {
+      try { return JSON.parse(candidate); } catch { return null; }
+    }
+    return null;
   };
   const clean = raw
     .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>[\s\S]*?<\/\1>/g, '')
