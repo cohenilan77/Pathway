@@ -18,6 +18,7 @@ export const PLANS = {
 };
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — program selection is as far as it goes. Upgrade to Pathway AI or AI + Strategist in Settings to unlock your narrative strategy, CV, essays, and mock interviews.";
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
 const WELCOME_MESSAGE = {
   English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you?\nUndergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
@@ -125,6 +126,7 @@ export default function App() {
   const [programs, setPrograms] = useState(null);
   const [chosenSchools, setChosenSchools] = useState(null);
   const [cvText, setCvText] = useState('');
+  const [cvFile, setCvFile] = useState(null);
   const [essayText, setEssayText] = useState('');
   const [essaySchool, setEssaySchool] = useState('');
   const [essayQuestion, setEssayQuestion] = useState('');
@@ -135,6 +137,7 @@ export default function App() {
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
+  const [cvFileDraft, setCvFileDraft] = useState(null);
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
   const [plan, setPlanState] = useState(loadPlan);
@@ -193,6 +196,7 @@ export default function App() {
         setPrograms(data?.programs || null);
         setChosenSchools(data?.chosenSchools || null);
         setCvText(data?.cvText || '');
+        setCvFile(data?.cvFile || null);
         setEssayText(data?.essayText || '');
         setEssaySchool(data?.essaySchool || '');
         setEssayQuestion(data?.essayQuestion || '');
@@ -217,12 +221,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
+  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -291,7 +295,7 @@ export default function App() {
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
     setTasks(null); setCompletedTasks({});
-    setPrograms(null); setChosenSchools(null); setCvText(''); setEssayText(''); setEssaySchool('');
+    setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
     if (auth?.token) {
@@ -436,21 +440,29 @@ export default function App() {
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
     setCvText(cvDraft);
+    setCvFile(cvFileDraft);
     setShowCvModal(false);
     const draft = cvDraft;
     const extra = cvExtra;
     setCvDraft('');
+    setCvFileDraft(null);
     setCvExtra('');
     const combined = extra.trim()
       ? `Here is my CV/resume:\n\n${draft}\n\n---ADDITIONAL BACKGROUND---\n\n${extra}`
       : `Here is my CV/resume:\n\n${draft}`;
     send(combined);
-  }, [cvDraft, cvExtra, send]);
+  }, [cvDraft, cvFileDraft, cvExtra, send]);
 
   const handleFileUpload = useCallback((e) => {
     const file = e.target.files[0];
     if (!file) return;
     const ext = file.name.split('.').pop().toLowerCase();
+
+    if (file.size > MAX_UPLOAD_BYTES) {
+      showToast('File is too large — please upload a PDF or Word file under 3 MB.');
+      e.target.value = '';
+      return;
+    }
 
     if (ext === 'doc') {
       showToast('Legacy .doc format not supported — please save as .docx or PDF.');
@@ -470,10 +482,14 @@ export default function App() {
           const res = await fetch('/api/parse-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ base64, mediaType }),
+            body: JSON.stringify({ base64, mediaType, fileName: file.name }),
           });
           const data = await res.json();
-          if (data.text) { setCvDraft(data.text); showToast(ext === 'pdf' ? 'PDF loaded — review the text below.' : 'Word document loaded — review the text below.'); }
+          if (data.text) {
+            setCvDraft(data.text);
+            setCvFileDraft(data.file || null);
+            showToast(ext === 'pdf' ? 'PDF loaded — review the text below.' : 'Word document loaded — review the text below.');
+          }
           else showToast('Could not extract text — please paste it manually.');
         } catch { showToast('Extraction failed — please paste the text manually.'); }
       };
@@ -484,7 +500,7 @@ export default function App() {
 
     // .txt / .rtf
     const reader = new FileReader();
-    reader.onload = (ev) => setCvDraft(ev.target.result || '');
+    reader.onload = (ev) => { setCvDraft(ev.target.result || ''); setCvFileDraft(null); };
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
     reader.readAsText(file);
     e.target.value = '';
@@ -541,7 +557,7 @@ export default function App() {
     STEPS: profile?.category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS, UNDERGRAD_STEPS, stepIdx,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
     tasks, completedTasks, setCompletedTasks,
-    cvText, setCvText,
+    cvText, setCvText, cvFile, setCvFile,
     essayText, setEssayText,
     essaySchool, setEssaySchool,
     essayQuestion, setEssayQuestion,
@@ -552,7 +568,7 @@ export default function App() {
     aiConfig, setAiConfig,
     plan, setPlan,
     language, setLanguage,
-    authUser: auth?.user || null, authError, authBusy, adminSecret,
+    authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
@@ -589,7 +605,9 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft ? '✓ File loaded — review below or upload another' : 'Upload PDF, Word (.docx), or .txt file (or paste text below)'}
+              {cvDraft
+                ? (cvFileDraft ? `Original saved: ${cvFileDraft.name}` : 'Text loaded — review below or upload another')
+                : 'Upload PDF or Word (.docx) under 3 MB, or paste text below'}
               <input type="file" accept=".txt,.rtf,.pdf,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 

@@ -12,6 +12,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.36.0",
     "@upstash/redis": "^1.38.0",
+    "@vercel/blob": "^2.4.1",
     "docx": "^9.7.1",
     "jspdf": "^4.2.1",
     "mammoth": "^1.12.0",

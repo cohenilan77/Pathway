@@ -133,6 +133,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const stepIdx = sd.stepIdx || 0;
   const narrative = sd.narrative || null;
   const cvText = sd.cvText || '';
+  const cvFile = sd.cvFile || null;
   const essayText = sd.essayText || '';
   const override = sd.override ?? scores?.overall ?? 0;
 
@@ -229,8 +230,22 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     saveBlob(await Packer.toBlob(doc), `${baseName}.docx`);
   };
 
+  const downloadOriginalFile = async (file) => {
+    if (!selectedUserId || !file) return;
+    try {
+      const res = await fetch(`/api/download-file?userId=${encodeURIComponent(selectedUserId)}`, {
+        headers: adminHeaders,
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      saveBlob(blob, file.name || 'candidate-cv');
+    } catch {
+      showToast('Could not download the original file.');
+    }
+  };
+
   const documents = [
-    cvText && { label: 'CV / Resume', text: cvText, baseName: 'candidate_cv' },
+    cvText && { label: 'CV / Resume', text: cvText, baseName: 'candidate_cv', file: cvFile },
     essayText && { label: 'Essay Draft', text: essayText, baseName: 'candidate_essay' },
   ].filter(Boolean);
 
@@ -613,10 +628,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                             </span>
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>{doc.label}</div>
-                              <div style={{ fontSize: 11, color: '#8a93a3' }}>{doc.text.trim().split(/\s+/).length} words</div>
+                              <div style={{ fontSize: 11, color: '#8a93a3' }}>{doc.text.trim().split(/\s+/).length} words{doc.file ? ` · original: ${doc.file.name}` : ''}</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
+                            {doc.file && <button onClick={() => downloadOriginalFile(doc.file)} style={{ background: '#16233f', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>Original</button>}
                             <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>PDF</button>
                             <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>Word</button>
                           </div>
