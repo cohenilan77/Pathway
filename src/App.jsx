@@ -85,7 +85,7 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
-const SCORE_KEYS = ['academic', 'professional', 'leadership', 'narrative', 'potential'];
+const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'potential'];
 
 export default function App() {
   const [auth, setAuthState] = useState(loadAuth); // {token, user} | null

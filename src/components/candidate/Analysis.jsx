@@ -68,8 +68,13 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   const scoreItems = [
     { key: 'academic', title: 'Academic', stroke: '#c2962f', desc: 'GPA, test scores, and quantitative aptitude relative to program benchmarks.' },
+    { key: 'testScore', title: 'Test Score', stroke: '#16233f', desc: 'Standardized test score gap relative to program medians.' },
     { key: 'professional', title: 'Professional', stroke: '#16233f', desc: 'Career trajectory, impact, and industry positioning.' },
     { key: 'leadership', title: 'Leadership', stroke: '#c2962f', desc: 'Team leadership, initiative, and influence track record.' },
+    { key: 'volunteering', title: 'Volunteering', stroke: '#16233f', desc: 'Sustained community involvement and leadership in service.' },
+    { key: 'uniqueness', title: 'Uniqueness', stroke: '#c2962f', desc: 'Non-linear path, rare achievements, and what sets you apart.' },
+    { key: 'diversity', title: 'Diversity', stroke: '#16233f', desc: 'Nationality, languages, and background relative to the cohort.' },
+    { key: 'goalClarity', title: 'Goal Clarity', stroke: '#c2962f', desc: 'Specificity of post-degree role, sector, and timeline.' },
     { key: 'narrative', title: 'Narrative', stroke: '#16233f', desc: 'Cohesion of personal brand and clarity of purpose.' },
     { key: 'potential', title: 'Potential', stroke: '#c2962f', desc: 'Long-term upside and fit with program outcomes.' },
   ].filter(item => scores[item.key] != null);
@@ -125,8 +130,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score dials */}
-        <div className="pw-analysis-dials" style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(scoreItems.length, 3)}, 1fr)`, gap: 18, marginBottom: 24 }}>
-          {scoreItems.slice(0, 3).map(item => (
+        <div className="pw-analysis-dials" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 18, marginBottom: 24 }}>
+          {scoreItems.map(item => (
             <ScoreDial key={item.key} score={scores[item.key]} stroke={item.stroke} title={item.title} desc={item.desc} />
           ))}
         </div>
