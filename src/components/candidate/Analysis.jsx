@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 
-function ScoreBar({ score, stroke, title, last }) {
+const BAR_COLORS = [
+  { from: '#7dd3fc', to: '#0ea5e9' }, // sky
+  { from: '#fda4af', to: '#e11d48' }, // rose
+  { from: '#bef264', to: '#65a30d' }, // lime
+  { from: '#fcd34d', to: '#d97706' }, // amber
+  { from: '#c4b5fd', to: '#7c3aed' }, // violet
+  { from: '#5eead4', to: '#0d9488' }, // teal
+  { from: '#f0abfc', to: '#c026d3' }, // fuchsia
+  { from: '#93c5fd', to: '#2563eb' }, // blue
+  { from: '#fdba74', to: '#ea580c' }, // orange
+  { from: '#86efac', to: '#16a34a' }, // green
+];
+
+function ScoreBar({ score, title, last, color }) {
   const pct = Math.max(0, Math.min(100, score || 0));
   return (
     <div style={{ marginBottom: last ? 0 : 22 }}>
@@ -8,8 +21,32 @@ function ScoreBar({ score, stroke, title, last }) {
         <span style={{ fontSize: 16, fontWeight: 700, color: '#16233f' }}>{title}</span>
         <span style={{ fontSize: 16, fontWeight: 700, color: '#16233f' }}>{pct}</span>
       </div>
-      <div style={{ height: 8, borderRadius: 6, background: '#eee9da' }}>
-        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 6, background: stroke }} />
+      <div style={{
+        height: 14,
+        borderRadius: 10,
+        background: 'rgba(22,35,63,0.06)',
+        boxShadow: 'inset 0 1px 3px rgba(22,35,63,0.12)',
+        overflow: 'hidden',
+        position: 'relative',
+      }}>
+        <div style={{
+          height: '100%',
+          width: `${pct}%`,
+          borderRadius: 10,
+          background: `linear-gradient(180deg, ${color.from} 0%, ${color.to} 100%)`,
+          boxShadow: `0 0 10px ${color.to}66, inset 0 1px 1px rgba(255,255,255,0.6)`,
+          position: 'relative',
+          overflow: 'hidden',
+          transition: 'width 0.4s ease',
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0,
+            height: '55%',
+            background: 'linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.05) 100%)',
+            borderRadius: '10px 10px 0 0',
+          }} />
+        </div>
       </div>
     </div>
   );
@@ -133,7 +170,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1.5px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
         <div style={{ background: '#fffdf7', borderRadius: 16, padding: '30px 28px', border: '1px solid #efe7d4', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
-            <ScoreBar key={item.key} score={scores[item.key]} stroke={item.stroke} title={item.title} last={i === scoreItems.length - 1} />
+            <ScoreBar key={item.key} score={scores[item.key]} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
           ))}
         </div>
 
