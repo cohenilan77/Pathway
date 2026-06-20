@@ -357,6 +357,12 @@
   margin: 16px 0 0;
   line-height: 1.5;
 }
+.auth__legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 10px;
+}
 .auth__hr {
   height: 1px;
   background: var(--border-2);

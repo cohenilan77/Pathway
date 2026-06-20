@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-auth.css';
 
-export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, noop, login, adminAuth, authError, authBusy }) {
+export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, login, adminAuth, authError, authBusy }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -124,8 +124,8 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
           <div className="auth__legal-row">
             <span style={{ maxWidth: '50%' }}>© 2024 Pathway Strategic Advising. All rights reserved.</span>
             <span style={{ display: 'flex', gap: 18, flexShrink: 0 }}>
-              <button className="auth__legal-link" onClick={noop}>Terms of Service</button>
-              <button className="auth__legal-link" onClick={noop}>Privacy Policy</button>
+              <button className="auth__legal-link" onClick={() => go('terms')}>Terms of Service</button>
+              <button className="auth__legal-link" onClick={() => go('privacy')}>Privacy Policy</button>
             </span>
           </div>
         </div>
