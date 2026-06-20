@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import Landing from './components/Landing.jsx';
+import LegalPage from './components/LegalPage.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
@@ -631,6 +632,8 @@ export default function App() {
       {screen === 'login' && <Login {...sharedProps} />}
       {screen === 'register' && <Register {...sharedProps} />}
       {screen === 'landing' && <Landing {...sharedProps} />}
+      {screen === 'terms' && <LegalPage {...sharedProps} type="terms" />}
+      {screen === 'privacy' && <LegalPage {...sharedProps} type="privacy" />}
       {screen === 'candidate' && <CandidatePortal {...sharedProps} />}
       {screen === 'admin' && <AdminPortal {...sharedProps} />}
     </div>

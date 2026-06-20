@@ -80,6 +80,14 @@ export default function Register({ go, register, authError, authBusy }) {
             </svg>
           </button>
 
+          <p className="auth__legal">
+            Pathway AI provides guidance and analysis only. Admission decisions are made solely by universities, and no admission outcome is guaranteed.
+          </p>
+          <div className="auth__legal-links">
+            <button className="auth__legal-link" onClick={() => go('terms')}>Terms of Service</button>
+            <button className="auth__legal-link" onClick={() => go('privacy')}>Privacy Policy</button>
+          </div>
+
           <p className="auth__switch">
             Already a member?{' '}
             <button className="auth__switch-link" onClick={() => go('login')}>Sign In</button>

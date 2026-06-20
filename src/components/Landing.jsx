@@ -3,7 +3,7 @@ import '../styles/editorial-base.css';
 import '../styles/editorial-landing.css';
 import { PLAN_CARDS, WHY_PATHWAY, PROCESS_STEPS, PROGRAMS, UNIVERSITIES, logoUrl, TESTIMONIALS } from '../data/editorialContent';
 
-export default function Landing({ go, authUser, noop }) {
+export default function Landing({ go, authUser }) {
   const primaryDestination = authUser ? 'candidate' : 'register';
   const universities = [...UNIVERSITIES, ...UNIVERSITIES];
   const testimonials = [...TESTIMONIALS, ...TESTIMONIALS];
@@ -298,8 +298,8 @@ export default function Landing({ go, authUser, noop }) {
             <a className="pw-link" href="#process">Process</a>
             <a className="pw-link" href="#results">Results</a>
             <button className="footer__loginlink" onClick={() => go('login')}>Log in</button>
-            <button className="footer__loginlink" onClick={noop}>Terms</button>
-            <button className="footer__loginlink" onClick={noop}>Privacy</button>
+            <button className="footer__loginlink" onClick={() => go('terms')}>Terms</button>
+            <button className="footer__loginlink" onClick={() => go('privacy')}>Privacy</button>
           </nav>
           <div className="footer__copy">© 2026 Pathway Admissions</div>
         </div>
