@@ -62,4 +62,8 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-analysis-grid { grid-template-columns: 1fr !important; }
   .pw-narrative-grid { grid-template-columns: 1fr !important; }
   .pw-settings-grid { grid-template-columns: 1fr !important; }
+  .pw-school-row { flex-wrap: wrap !important; align-items: flex-start !important; }
+  .pw-school-checkbox { margin-top: 2px; }
+  .pw-school-info { flex-basis: 100% !important; order: 1; }
+  .pw-school-stats { order: 2; margin-left: 38px; gap: 16px !important; }
 }
