@@ -19,10 +19,15 @@ const PLAN_LABELS = { free: 'Free', pathwayAI: 'Pathway AI', aiStrategist: 'AI +
 export default function CandidatePortal(props) {
   const { candTab, setCandTab, signOut, showToast, plan, language, setLanguage } = props;
   const [showHelp, setShowHelp] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleHelp = () => setShowHelp(true);
+  const handleHelp = () => { setShowHelp(true); setMenuOpen(false); };
 
-  const handleUpgrade = () => setCandTab('settings');
+  const handleUpgrade = () => { setCandTab('settings'); setMenuOpen(false); };
+
+  const handleSignOut = () => { setMenuOpen(false); signOut(); };
+
+  const handleNavClick = (key) => { setCandTab(key); setMenuOpen(false); };
 
   const navItems = [
     {
@@ -49,8 +54,24 @@ export default function CandidatePortal(props) {
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f6f7fb' }}>
+      {/* Mobile top bar with hamburger */}
+      <div className="pw-mobile-bar">
+        <button
+          className="pw-hamburger"
+          onClick={() => setMenuOpen(o => !o)}
+          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+        >
+          <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '2', strokeLinecap: 'round' }}><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+        </button>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+      </div>
+
+      {/* Backdrop for mobile drawer */}
+      {menuOpen && <div className="pw-sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
+
       {/* Sidebar */}
-      <div className="pw-sidebar" style={{ width: 264, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', height: '100%' }}>
+      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 264, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', height: '100%' }}>
         <div style={{ padding: '0 8px 8px' }}>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>HIGH-TOUCH ADMISSIONS</div>
@@ -65,7 +86,7 @@ export default function CandidatePortal(props) {
         </select>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 14 }}>
           {navItems.map(item => (
-            <button key={item.key} onClick={() => setCandTab(item.key)} style={sideStyle(candTab === item.key)}>
+            <button key={item.key} onClick={() => handleNavClick(item.key)} style={sideStyle(candTab === item.key)}>
               {item.icon}{item.label}
             </button>
           ))}
@@ -84,7 +105,7 @@ export default function CandidatePortal(props) {
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
             Help
           </button>
-          <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%' }}>
+          <button onClick={handleSignOut} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
             Sign Out
           </button>
