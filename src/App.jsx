@@ -228,6 +228,12 @@ export default function App() {
     return () => { cancelled = true; };
   }, [auth?.token, setAuth]);
 
+  const requiresOAuthDetails = !!auth?.user?.oauthProvider && !auth.user.oauthDetailsConfirmed;
+
+  useEffect(() => {
+    if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
+  }, [screen, requiresOAuthDetails]);
+
   // Persist the candidate's session to their account, debounced
   useEffect(() => {
     if (!auth?.token || chat.length <= 1) return;
@@ -323,6 +329,19 @@ export default function App() {
     }
     showToast('Session cleared — starting fresh.');
   }, [auth?.token, showToast, language]);
+
+  const saveUserDetails = useCallback(async (details) => {
+    if (!auth?.token) throw new Error('You must be signed in to save details.');
+    const res = await fetch('/api/user-details', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify(details),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not save details.');
+    setAuth({ token: auth.token, user: data.user });
+    return data.user;
+  }, [auth?.token, setAuth]);
 
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
@@ -585,6 +604,7 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
+    requiresOAuthDetails, saveUserDetails,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),

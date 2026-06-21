@@ -11,6 +11,9 @@ import adminUsersHandler from './api/admin-users.js';
 import adminSessionHandler from './api/admin-session.js';
 import parseFileHandler from './api/parse-file.js';
 import downloadFileHandler from './api/download-file.js';
+import oauthStartHandler from './api/oauth-start.js';
+import oauthCallbackHandler from './api/oauth-callback.js';
+import userDetailsHandler from './api/user-details.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -346,6 +349,10 @@ export default defineConfig(({ mode }) => {
   if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
   if (env.ANTHROPIC_API_KEY) process.env.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;
   if (env.BLOB_READ_WRITE_TOKEN) process.env.BLOB_READ_WRITE_TOKEN = env.BLOB_READ_WRITE_TOKEN;
+  if (env.GOOGLE_CLIENT_ID) process.env.GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
+  if (env.GOOGLE_CLIENT_SECRET) process.env.GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
+  if (env.MICROSOFT_CLIENT_ID) process.env.MICROSOFT_CLIENT_ID = env.MICROSOFT_CLIENT_ID;
+  if (env.MICROSOFT_CLIENT_SECRET) process.env.MICROSOFT_CLIENT_SECRET = env.MICROSOFT_CLIENT_SECRET;
 
   return {
     plugins: [
@@ -359,6 +366,21 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/admin-auth', withApiAdapter(adminAuthHandler));
           server.middlewares.use('/api/admin-users', withApiAdapter(adminUsersHandler));
           server.middlewares.use('/api/admin-session', withApiAdapter(adminSessionHandler));
+          server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
+          server.middlewares.use('/api/oauth-start', (req, res) => {
+            oauthStartHandler(req, res).catch((err) => {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err.message || 'OAuth start failed' }));
+            });
+          });
+          server.middlewares.use('/api/oauth-callback', (req, res) => {
+            oauthCallbackHandler(req, res).catch((err) => {
+              res.statusCode = 500;
+              res.setHeader('Content-Type', 'application/json');
+              res.end(JSON.stringify({ error: err.message || 'OAuth callback failed' }));
+            });
+          });
 
           server.middlewares.use('/api/chat', (req, res) => {
             res.setHeader('Content-Type', 'application/json');

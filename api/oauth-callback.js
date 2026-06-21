@@ -27,15 +27,27 @@ function parseCookies(req) {
   }, {});
 }
 
+function getRequestUrl(req) {
+  return new URL(req.url, `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`);
+}
+
+function getOrigin(req) {
+  const proto = req.headers['x-forwarded-proto'] || (req.headers.host?.startsWith('localhost') ? 'http' : 'https');
+  return `${proto}://${req.headers.host}`;
+}
+
 export default async function handler(req, res) {
-  const origin = `https://${req.headers.host}`;
+  const origin = getOrigin(req);
   const fail = (message) => {
     res.writeHead(302, { Location: `${origin}/?oauth_error=${encodeURIComponent(message)}` });
     res.end();
   };
 
   try {
-    const { code, state, error } = req.query;
+    const url = getRequestUrl(req);
+    const code = req.query?.code || url.searchParams.get('code');
+    const state = req.query?.state || url.searchParams.get('state');
+    const error = req.query?.error || url.searchParams.get('error');
     if (error) return fail(String(error));
 
     const [provider, stateValue] = String(state || '').split(':');

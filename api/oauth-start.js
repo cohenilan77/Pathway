@@ -13,8 +13,18 @@ const PROVIDERS = {
   },
 };
 
+function getRequestUrl(req) {
+  return new URL(req.url, `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host}`);
+}
+
+function getOrigin(req) {
+  const proto = req.headers['x-forwarded-proto'] || (req.headers.host?.startsWith('localhost') ? 'http' : 'https');
+  return `${proto}://${req.headers.host}`;
+}
+
 export default async function handler(req, res) {
-  const provider = String(req.query.provider || '');
+  const url = getRequestUrl(req);
+  const provider = String(req.query?.provider || url.searchParams.get('provider') || '');
   const config = PROVIDERS[provider];
   if (!config) {
     res.status(400).json({ error: 'Unknown OAuth provider.' });
@@ -22,11 +32,11 @@ export default async function handler(req, res) {
   }
   const clientId = process.env[config.clientIdEnv];
   if (!clientId) {
-    res.status(500).json({ error: `${provider} sign-in is not configured yet.` });
+    res.status(500).json({ error: `${provider} sign-in is missing ${config.clientIdEnv}.` });
     return;
   }
 
-  const origin = `https://${req.headers.host}`;
+  const origin = getOrigin(req);
   const redirectUri = `${origin}/api/oauth-callback`;
   const state = crypto.randomBytes(16).toString('hex');
 
