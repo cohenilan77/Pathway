@@ -4,15 +4,15 @@ const PROVIDERS = {
   google: {
     tokenUrl: 'https://oauth2.googleapis.com/token',
     userInfoUrl: 'https://www.googleapis.com/oauth2/v3/userinfo',
-    clientIdEnv: 'GOOGLE_CLIENT_ID',
-    clientSecretEnv: 'GOOGLE_CLIENT_SECRET',
+    clientIdEnv: ['GOOGLE_CLIENT_ID', 'GOOGLE_ID', 'AUTH_GOOGLE_ID'],
+    clientSecretEnv: ['GOOGLE_CLIENT_SECRET', 'GOOGLE_SECRET', 'AUTH_GOOGLE_SECRET'],
     mapUser: (info) => ({ email: info.email, name: info.name }),
   },
   microsoft: {
     tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
     userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
-    clientIdEnv: 'MICROSOFT_CLIENT_ID',
-    clientSecretEnv: 'MICROSOFT_CLIENT_SECRET',
+    clientIdEnv: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_ID', 'AUTH_MICROSOFT_ID'],
+    clientSecretEnv: ['MICROSOFT_CLIENT_SECRET', 'MICROSOFT_SECRET', 'AUTH_MICROSOFT_SECRET'],
     mapUser: (info) => ({ email: info.mail || info.userPrincipalName, name: info.displayName }),
   },
 };
@@ -34,6 +34,14 @@ function getRequestUrl(req) {
 function getOrigin(req) {
   const proto = req.headers['x-forwarded-proto'] || (req.headers.host?.startsWith('localhost') ? 'http' : 'https');
   return `${proto}://${req.headers.host}`;
+}
+
+function readEnv(names) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value) return { value, name };
+  }
+  return { value: '', name: names[0] };
 }
 
 export default async function handler(req, res) {
@@ -59,9 +67,11 @@ export default async function handler(req, res) {
       return fail('Sign-in session expired — please try again.');
     }
 
-    const clientId = process.env[config.clientIdEnv];
-    const clientSecret = process.env[config.clientSecretEnv];
-    if (!clientId || !clientSecret) return fail(`${provider} sign-in is not configured yet.`);
+    const { value: clientId, name: clientIdEnv } = readEnv(config.clientIdEnv);
+    const { value: clientSecret, name: clientSecretEnv } = readEnv(config.clientSecretEnv);
+    if (!clientId || !clientSecret) {
+      return fail(`${provider} sign-in is missing ${!clientId ? clientIdEnv : clientSecretEnv}.`);
+    }
 
     const redirectUri = `${origin}/api/oauth-callback`;
     const tokenRes = await fetch(config.tokenUrl, {
