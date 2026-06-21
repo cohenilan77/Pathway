@@ -18,7 +18,7 @@ const PLAN_DETAILS = [
   },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, requiresOAuthDetails, saveUserDetails, setCandTab }) {
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, setCandTab }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -28,6 +28,8 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
     gmat: profile?.gmat || '',
   });
   const [savingDetails, setSavingDetails] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [savingPassword, setSavingPassword] = useState(false);
 
   const [details, setDetails] = useState(() => {
     const stored = (() => {
@@ -97,6 +99,36 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
       setShowContactModal(true);
     } else {
       showToast(`Plan updated to ${label}.`);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!authToken) {
+      showToast('Please sign in again to change your password.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      showToast('New passwords do not match.');
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const res = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not change password.');
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      showToast('Password updated.');
+    } catch (err) {
+      showToast(err.message || 'Could not change password.');
+    } finally {
+      setSavingPassword(false);
     }
   };
 
@@ -237,6 +269,29 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           <p style={{ fontSize: 12, color: '#9098b5', margin: 0, lineHeight: 1.5 }}>
             These details are used by your AI strategist only to personalise your admissions risk evaluation.
           </p>
+        </div>
+
+        {/* Security */}
+        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Security</h3>
+          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Change your password using the normal encrypted authentication system.</p>
+          <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Current Password</label>
+              <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))} placeholder="Current password" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>New Password</label>
+              <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="New password" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Confirm New Password</label>
+              <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))} placeholder="Confirm new password" style={inputStyle} />
+            </div>
+          </div>
+          <button onClick={handleChangePassword} disabled={savingPassword} style={{ marginTop: 16, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, cursor: savingPassword ? 'wait' : 'pointer', opacity: savingPassword ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+            {savingPassword ? 'Saving...' : 'Change Password'}
+          </button>
         </div>
 
         {/* Notifications */}

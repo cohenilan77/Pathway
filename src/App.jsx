@@ -103,7 +103,11 @@ const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volu
 export default function App() {
   const [auth, setAuthState] = useState(loadAuth); // {token, user} | null
 
-  const [screen, setScreen] = useState(() => (loadAuth() ? 'candidate' : 'landing'));
+  const [screen, setScreen] = useState(() => {
+    const saved = loadAuth();
+    if (!saved) return 'landing';
+    return ['admin', 'consultant'].includes(saved.user?.role) ? 'admin' : 'candidate';
+  });
   const [role, setRole] = useState('candidate');
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -201,6 +205,10 @@ export default function App() {
         const { data, user } = await res.json();
         if (cancelled) return;
         if (user && !auth.user) setAuth({ token: auth.token, user });
+        if (user?.role === 'admin' || user?.role === 'consultant') {
+          setScreen('admin');
+          return;
+        }
         setChat(data?.chat?.length ? data.chat : INITIAL_CHAT);
         setStepIdx(data?.stepIdx || 0);
         setProfile(data?.profile || null);
@@ -263,12 +271,12 @@ export default function App() {
     try {
       const res = await fetch('/api/login', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ identifier: email, password }),
       });
       const data = await res.json();
       if (!res.ok) { setAuthError(data.error || 'Login failed.'); return; }
       setAuth({ token: data.token, user: data.user });
-      setScreen('candidate'); window.scrollTo(0, 0);
+      setScreen(['admin', 'consultant'].includes(data.user?.role) ? 'admin' : 'candidate'); window.scrollTo(0, 0);
     } catch { setAuthError('Connection issue. Please try again.'); }
     finally { setAuthBusy(false); }
   }, [setAuth]);
@@ -299,6 +307,7 @@ export default function App() {
       if (!res.ok) { setAuthError(data.error || 'Invalid access code.'); return; }
       setAdminSecret(secret);
       sessionStorage.setItem('pathway_admin_secret', secret);
+      setAuth(null);
       setScreen('admin'); window.scrollTo(0, 0);
     } catch { setAuthError('Connection issue. Please try again.'); }
     finally { setAuthBusy(false); }

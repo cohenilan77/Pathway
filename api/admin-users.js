@@ -1,19 +1,23 @@
-import { checkAdminSecret } from '../lib/admin.js';
-import { getAllUserIds, getUserById, getUserData, publicUser } from '../lib/db.js';
+import { canAccessCandidate, getActor } from '../lib/admin.js';
+import { ensureSuperAdminAccount, getAllUserIds, getUserById, getUserData, publicUser, ROLES } from '../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  if (!checkAdminSecret(req)) {
+  const actor = await getActor(req);
+  if (!actor) {
     res.status(401).json({ error: 'Unauthorized.' });
     return;
   }
+  if (actor.role === ROLES.admin) await ensureSuperAdminAccount();
   const ids = await getAllUserIds();
   const users = await Promise.all(
     ids.map(async (id) => {
       const user = await getUserById(id);
+      if (!user) return null;
+      if (actor.role === ROLES.consultant && !canAccessCandidate(actor, user)) return null;
       const data = await getUserData(id);
       return {
         ...publicUser(user),
@@ -35,5 +39,5 @@ export default async function handler(req, res) {
       };
     })
   );
-  res.status(200).json({ users });
+  res.status(200).json({ actor: publicUser(actor), users: users.filter(Boolean) });
 }

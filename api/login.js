@@ -1,4 +1,4 @@
-import { verifyCredentials, createSessionToken, publicUser, recordLogin } from '../lib/db.js';
+import { ensureSuperAdminAccount, verifyCredentials, createSessionToken, publicUser, recordLogin } from '../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,12 +6,14 @@ export default async function handler(req, res) {
     return;
   }
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      res.status(400).json({ error: 'Email and password are required.' });
+    const { email, identifier, password } = req.body || {};
+    const loginId = identifier || email;
+    if (!loginId || !password) {
+      res.status(400).json({ error: 'Email or username and password are required.' });
       return;
     }
-    const user = await verifyCredentials(email, password);
+    await ensureSuperAdminAccount();
+    const user = await verifyCredentials(loginId, password);
     if (!user) {
       res.status(401).json({ error: 'Invalid email or password.' });
       return;

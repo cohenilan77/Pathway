@@ -1,8 +1,9 @@
-import { checkAdminSecret } from '../lib/admin.js';
+import { canAccessCandidate, getActor } from '../lib/admin.js';
 import { getUserById, getUserData, setUserData, publicUser } from '../lib/db.js';
 
 export default async function handler(req, res) {
-  if (!checkAdminSecret(req)) {
+  const actor = await getActor(req);
+  if (!actor) {
     res.status(401).json({ error: 'Unauthorized.' });
     return;
   }
@@ -18,6 +19,10 @@ export default async function handler(req, res) {
       res.status(404).json({ error: 'User not found.' });
       return;
     }
+    if (!canAccessCandidate(actor, user)) {
+      res.status(403).json({ error: 'You do not have access to this candidate.' });
+      return;
+    }
     const data = await getUserData(userId);
     res.status(200).json({ user: publicUser(user), data });
     return;
@@ -27,6 +32,11 @@ export default async function handler(req, res) {
     const { userId, patch } = req.body || {};
     if (!userId || !patch) {
       res.status(400).json({ error: 'userId and patch are required.' });
+      return;
+    }
+    const user = await getUserById(userId);
+    if (!canAccessCandidate(actor, user)) {
+      res.status(403).json({ error: 'You do not have access to this candidate.' });
       return;
     }
     const existing = (await getUserData(userId)) || {};

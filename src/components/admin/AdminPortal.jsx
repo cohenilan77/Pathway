@@ -38,7 +38,7 @@ const NavIcon = ({ children }) => (
 );
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
-  aiConfig, setAiConfig }) {
+  aiConfig, setAiConfig, authToken, authUser }) {
   const stepsFor = (category) => (category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS);
   const [adminView, setAdminView] = useState('candidates');
   const [candidateOpen, setCandidateOpen] = useState(false);
@@ -59,8 +59,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [selectedLoading, setSelectedLoading] = useState(false);
   const [userDetailId, setUserDetailId] = useState(null);
   const [userActionBusy, setUserActionBusy] = useState(null);
+  const [userForm, setUserForm] = useState(null);
+  const [passwordResetId, setPasswordResetId] = useState(null);
+  const [passwordDraft, setPasswordDraft] = useState('');
+  const [ownPasswordForm, setOwnPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [ownPasswordBusy, setOwnPasswordBusy] = useState(false);
 
-  const adminHeaders = { 'X-Admin-Secret': adminSecret };
+  const canManageUsers = authUser?.role === 'admin' || !!adminSecret;
+  const adminHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : { 'X-Admin-Secret': adminSecret };
 
   const fetchUsers = useCallback(() => {
     setUsersLoading(true);
@@ -73,7 +79,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       })
       .catch(() => setUsersError('Failed to load candidates.'))
       .finally(() => setUsersLoading(false));
-  }, [adminSecret]);
+  }, [adminSecret, authToken]);
+
+  const candidateUsers = users.filter(u => (u.role || 'candidate') === 'candidate');
+  const consultantUsers = users.filter(u => u.role === 'consultant');
+  const assignableConsultants = consultantUsers.filter(u => !u.suspended);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -108,21 +118,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     return rem ? `${hrs}h ${rem}m` : `${hrs}h`;
   };
 
-  const performUserAction = async (userId, action) => {
+  const performUserAction = async (userId, action, payload = {}) => {
     setUserActionBusy(`${userId}:${action}`);
     try {
       const res = await fetch('/api/admin-user-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...adminHeaders },
-        body: JSON.stringify({ userId, action }),
+        body: JSON.stringify({ userId, action, ...payload }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || 'Action failed.');
       showToast(
         action === 'delete' ? 'User deleted.' :
-        action === 'suspend' ? 'User suspended.' : 'User reinstated.'
+        action === 'suspend' ? 'User suspended.' :
+        action === 'unsuspend' ? 'User reinstated.' :
+        action === 'resetPassword' ? 'Password reset.' :
+        action === 'create' ? 'User created.' : 'User updated.'
       );
       if (action === 'delete' && userDetailId === userId) setUserDetailId(null);
+      setUserForm(null);
+      setPasswordResetId(null);
+      setPasswordDraft('');
       fetchUsers();
     } catch (e) {
       showToast(e.message || 'Action failed.');
@@ -133,6 +149,36 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
   const confirmUserAction = (userId, action, confirmMsg) => {
     if (window.confirm(confirmMsg)) performUserAction(userId, action);
+  };
+
+  const changeOwnPassword = async () => {
+    if (!authToken) {
+      showToast('Sign in with your admin or consultant account to change its password.');
+      return;
+    }
+    if (ownPasswordForm.newPassword !== ownPasswordForm.confirmPassword) {
+      showToast('New passwords do not match.');
+      return;
+    }
+    setOwnPasswordBusy(true);
+    try {
+      const res = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({
+          currentPassword: ownPasswordForm.currentPassword,
+          newPassword: ownPasswordForm.newPassword,
+        }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Could not change password.');
+      setOwnPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      showToast('Password updated.');
+    } catch (e) {
+      showToast(e.message || 'Could not change password.');
+    } finally {
+      setOwnPasswordBusy(false);
+    }
   };
 
   const userDetail = users.find(u => u.id === userDetailId) || null;
@@ -351,10 +397,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <NavIcon><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></NavIcon>
             Candidates
           </button>
-          <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
-            <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
-            Users
-          </button>
+          {canManageUsers && (
+            <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
+              <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
+              Consultants
+            </button>
+          )}
           <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
             <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
             Live Session
@@ -385,7 +433,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '26px 36px', borderBottom: '1px solid #f1eadd', background: '#faf7f2' }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
-            {adminView === 'users' && 'Users'}
+            {adminView === 'users' && 'Consultants'}
             {adminView === 'session' && 'Live Session'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -402,7 +450,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── CANDIDATES LIST ── */}
           {adminView === 'candidates' && !candidateOpen && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: canManageUsers ? 'space-between' : 'flex-end', marginBottom: 12 }}>
+                {canManageUsers && (
+                  <button onClick={() => setUserForm({ mode: 'create', role: 'candidate', name: '', email: '', username: '', residency: '', age: '', consultantId: '', password: '' })} style={{ ...btnPrimary, padding: '7px 14px', fontSize: 12.5 }}>
+                    Create Candidate
+                  </button>
+                )}
                 <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
                   {usersLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
@@ -411,20 +464,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
-              ) : !users.length ? (
+              ) : !candidateUsers.length ? (
                 <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
                   <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>{usersLoading ? 'Loading candidates…' : 'No registered candidates yet.'}</div>
-                  <div style={{ fontSize: 13, color: '#aab2cc' }}>Once candidates register and start the advisor, they'll appear here.</div>
+                  <div style={{ fontSize: 13, color: '#aab2cc' }}>Once candidates are created and start the advisor, they'll appear here.</div>
                 </div>
               ) : (
                 <div style={{ ...cardShell, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span></span>
+                  <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 280px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span>{canManageUsers ? 'ASSIGNMENT' : ''}</span>
                   </div>
-                  {users.map(u => {
+                  {candidateUsers.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
-                      <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 280px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <button onClick={() => openCandidate(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(140deg,#94b3fb,#b899fb)', color: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
                           <div>
@@ -432,6 +486,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                             <div style={{ fontSize: 12, color: '#9098b5' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
                           </div>
                         </div>
+                        </button>
                         <div>
                           {u.scores ? (
                             <span style={{ fontSize: 22, fontWeight: 800, color: scoreColor(u.scores.overall) }}>{u.scores.overall}</span>
@@ -443,8 +498,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         <div style={{ fontSize: 13, color: '#33405e', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
                         </div>
-                        <div style={{ color: '#5b46e0', fontSize: 18, fontWeight: 700 }}>→</div>
-                      </button>
+                        <div>
+                          {canManageUsers ? (
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                              <select
+                                value={u.consultantId || ''}
+                                onChange={(e) => performUserAction(u.id, 'assign', { patch: { consultantId: e.target.value } })}
+                                style={{ minWidth: 108, flex: 1, border: '1px solid #f1eadd', borderRadius: 9, padding: '7px 8px', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 12 }}
+                              >
+                                <option value="">Unassigned</option>
+                                {assignableConsultants.map(c => <option key={c.id} value={c.id}>{c.name || c.email}</option>)}
+                              </select>
+                              <button onClick={() => setUserForm({ mode: 'edit', ...u, password: '' })} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Edit</button>
+                              <button onClick={() => { setPasswordResetId(u.id); setPasswordDraft(''); }} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Reset</button>
+                            </div>
+                          ) : (
+                            <div style={{ color: '#5b46e0', fontSize: 18, fontWeight: 700 }}>→</div>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -693,37 +765,42 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 18 }}>
                   <div style={{ ...cardShell, padding: '10px 18px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>TOTAL USERS</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#141b34' }}>{users.length}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>TOTAL CONSULTANTS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#141b34' }}>{consultantUsers.length}</div>
                   </div>
                   <div style={{ ...cardShell, padding: '10px 18px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>ACTIVE</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#19c08a' }}>{users.filter(u => !u.suspended).length}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#19c08a' }}>{consultantUsers.filter(u => !u.suspended).length}</div>
                   </div>
                   <div style={{ ...cardShell, padding: '10px 18px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>SUSPENDED</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#e0457a' }}>{users.filter(u => u.suspended).length}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#e0457a' }}>{consultantUsers.filter(u => u.suspended).length}</div>
                   </div>
                 </div>
-                <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
-                  {usersLoading ? 'Refreshing…' : 'Refresh'}
-                </button>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={() => setUserForm({ mode: 'create', role: 'consultant', name: '', email: '', username: '', residency: '', age: '', consultantId: '', password: '' })} style={{ ...btnPrimary, padding: '7px 14px', fontSize: 12.5 }}>
+                    Create Consultant
+                  </button>
+                  <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
+                    {usersLoading ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {usersError ? (
                 <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
-              ) : !users.length ? (
+              ) : !consultantUsers.length ? (
                 <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 15, color: '#9098b5' }}>{usersLoading ? 'Loading users…' : 'No registered users yet.'}</div>
+                  <div style={{ fontSize: 15, color: '#9098b5' }}>{usersLoading ? 'Loading consultants…' : 'No consultants yet.'}</div>
                 </div>
               ) : (
                 <div style={{ ...cardShell, overflow: 'hidden' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                     <span>USER</span><span>LAST LOGIN</span><span>SESSION DURATION</span><span>STATUS</span><span>ACTIONS</span>
                   </div>
-                  {users.map(u => {
+                  {consultantUsers.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     const busySuspend = userActionBusy === `${u.id}:suspend` || userActionBusy === `${u.id}:unsuspend`;
                     const busyDelete = userActionBusy === `${u.id}:delete`;
@@ -747,6 +824,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           }}>{u.suspended ? 'SUSPENDED' : 'ACTIVE'}</span>
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => setUserForm({ mode: 'edit', ...u, password: '' })}
+                            style={{ ...btnGhost, padding: '7px 12px', fontSize: 12 }}>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => { setPasswordResetId(u.id); setPasswordDraft(''); }}
+                            style={{ ...btnGhost, padding: '7px 12px', fontSize: 12 }}>
+                            Reset
+                          </button>
                           <button
                             onClick={() => u.suspended
                               ? performUserAction(u.id, 'unsuspend')
@@ -916,6 +1003,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               </div>
 
               <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>Security</h3>
+                <div style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, marginBottom: 18 }}>
+                  Change the password for the signed-in {authUser?.role || 'user'} account.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <input type="password" value={ownPasswordForm.currentPassword} onChange={e => setOwnPasswordForm(f => ({ ...f, currentPassword: e.target.value }))} placeholder="Current password" style={{ border: '1px solid #f1eadd', borderRadius: 10, padding: 11, background: '#f6f1e8', fontFamily: 'inherit', color: '#141b34' }} />
+                  <input type="password" value={ownPasswordForm.newPassword} onChange={e => setOwnPasswordForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="New password" style={{ border: '1px solid #f1eadd', borderRadius: 10, padding: 11, background: '#f6f1e8', fontFamily: 'inherit', color: '#141b34' }} />
+                  <input type="password" value={ownPasswordForm.confirmPassword} onChange={e => setOwnPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))} placeholder="Confirm new password" style={{ border: '1px solid #f1eadd', borderRadius: 10, padding: 11, background: '#f6f1e8', fontFamily: 'inherit', color: '#141b34' }} />
+                </div>
+                <button onClick={changeOwnPassword} disabled={ownPasswordBusy || !authToken} style={{ ...btnPrimary, marginTop: 14, padding: '10px 18px', fontSize: 13, opacity: ownPasswordBusy || !authToken ? 0.55 : 1, cursor: ownPasswordBusy || !authToken ? 'not-allowed' : 'pointer' }}>
+                  {ownPasswordBusy ? 'Saving...' : 'Change Password'}
+                </button>
+              </div>
+
+              <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>AI Process Configuration</h3>
                 <div style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, marginBottom: 22 }}>
                   Edit how the advisor analyzes profiles, ranks candidates, searches programs, and scores fit. Saved changes apply to every candidate message going forward.
@@ -958,6 +1060,78 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {userForm && canManageUsers && (
+            <div onClick={() => setUserForm(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 20 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: '#faf7f2', borderRadius: 22, padding: 28, width: 520, maxWidth: '100%', boxShadow: '0 24px 80px rgba(40,30,90,.28)' }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>{userForm.mode === 'create' ? `Create ${userForm.role}` : 'Edit User'}</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {userForm.mode === 'create' && (
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Role
+                      <select value={userForm.role} onChange={e => setUserForm(f => ({ ...f, role: e.target.value }))} style={{ marginTop: 6, width: '100%', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }}>
+                        <option value="candidate">Candidate</option>
+                        <option value="consultant">Consultant</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </label>
+                  )}
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Name
+                    <input value={userForm.name || ''} onChange={e => setUserForm(f => ({ ...f, name: e.target.value }))} style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Email
+                    <input value={userForm.email || ''} onChange={e => setUserForm(f => ({ ...f, email: e.target.value }))} style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Username
+                    <input value={userForm.username || ''} onChange={e => setUserForm(f => ({ ...f, username: e.target.value }))} style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Residency
+                    <input value={userForm.residency || ''} onChange={e => setUserForm(f => ({ ...f, residency: e.target.value }))} style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  {(userForm.role || 'candidate') === 'candidate' && (
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Consultant
+                      <select value={userForm.consultantId || ''} onChange={e => setUserForm(f => ({ ...f, consultantId: e.target.value }))} style={{ marginTop: 6, width: '100%', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }}>
+                        <option value="">Unassigned</option>
+                        {assignableConsultants.map(c => <option key={c.id} value={c.id}>{c.name || c.email}</option>)}
+                      </select>
+                    </label>
+                  )}
+                  {userForm.mode === 'create' && (
+                    <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Temporary password
+                      <input type="password" value={userForm.password || ''} onChange={e => setUserForm(f => ({ ...f, password: e.target.value }))} style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                    </label>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                  <button onClick={() => {
+                    if (userForm.mode === 'create') performUserAction('new', 'create', { user: userForm });
+                    else performUserAction(userForm.id, 'update', { patch: userForm });
+                  }} style={{ ...btnPrimary, flex: 1, padding: '10px 14px', fontSize: 13 }}>
+                    Save
+                  </button>
+                  <button onClick={() => setUserForm(null)} style={{ ...btnGhost, flex: 1, padding: '10px 14px', fontSize: 13 }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {passwordResetId && canManageUsers && (
+            <div onClick={() => setPasswordResetId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 61, padding: 20 }}>
+              <div onClick={e => e.stopPropagation()} style={{ background: '#faf7f2', borderRadius: 22, padding: 28, width: 420, maxWidth: '100%', boxShadow: '0 24px 80px rgba(40,30,90,.28)' }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Reset Password</h3>
+                <input type="password" value={passwordDraft} onChange={e => setPasswordDraft(e.target.value)} placeholder="New temporary password" style={{ width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 12, fontFamily: 'inherit' }} />
+                <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+                  <button onClick={() => performUserAction(passwordResetId, 'resetPassword', { password: passwordDraft })} style={{ ...btnPrimary, flex: 1, padding: '10px 14px', fontSize: 13 }}>
+                    Reset
+                  </button>
+                  <button onClick={() => setPasswordResetId(null)} style={{ ...btnGhost, flex: 1, padding: '10px 14px', fontSize: 13 }}>
+                    Cancel
+                  </button>
                 </div>
               </div>
             </div>

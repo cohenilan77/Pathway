@@ -1,7 +1,7 @@
 import { get } from '@vercel/blob';
 import { Readable } from 'stream';
-import { checkAdminSecret } from '../lib/admin.js';
-import { getUserData, getUserIdByToken } from '../lib/db.js';
+import { canAccessCandidate, getActor } from '../lib/admin.js';
+import { getUserById, getUserData, getUserIdByToken } from '../lib/db.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -28,7 +28,9 @@ async function resolveUserId(req) {
   const requestedUserId = url.searchParams.get('userId');
 
   if (requestedUserId) {
-    if (!checkAdminSecret(req)) return null;
+    const actor = await getActor(req);
+    const candidate = await getUserById(requestedUserId);
+    if (!canAccessCandidate(actor, candidate)) return null;
     return requestedUserId;
   }
 

@@ -8,12 +8,14 @@ import loginHandler from './api/login.js';
 import sessionHandler from './api/session.js';
 import adminAuthHandler from './api/admin-auth.js';
 import adminUsersHandler from './api/admin-users.js';
+import adminUserActionHandler from './api/admin-user-action.js';
 import adminSessionHandler from './api/admin-session.js';
 import parseFileHandler from './api/parse-file.js';
 import downloadFileHandler from './api/download-file.js';
 import oauthStartHandler from './api/oauth-start.js';
 import oauthCallbackHandler from './api/oauth-callback.js';
 import userDetailsHandler from './api/user-details.js';
+import changePasswordHandler from './api/change-password.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -344,6 +346,7 @@ IMPORTANT: Never display block tag content in the visible chat.`;
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   if (env.ADMIN_SECRET) process.env.ADMIN_SECRET = env.ADMIN_SECRET;
+  if (env.SUPER_ADMIN_INITIAL_PASSWORD) process.env.SUPER_ADMIN_INITIAL_PASSWORD = env.SUPER_ADMIN_INITIAL_PASSWORD;
   if (env.KV_REST_API_URL) process.env.KV_REST_API_URL = env.KV_REST_API_URL;
   if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
   if (env.RESEND_API_KEY) process.env.RESEND_API_KEY = env.RESEND_API_KEY;
@@ -369,8 +372,10 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/session', withApiAdapter(sessionHandler));
           server.middlewares.use('/api/admin-auth', withApiAdapter(adminAuthHandler));
           server.middlewares.use('/api/admin-users', withApiAdapter(adminUsersHandler));
+          server.middlewares.use('/api/admin-user-action', withApiAdapter(adminUserActionHandler));
           server.middlewares.use('/api/admin-session', withApiAdapter(adminSessionHandler));
           server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
+          server.middlewares.use('/api/change-password', withApiAdapter(changePasswordHandler));
           server.middlewares.use('/api/oauth-start', (req, res) => {
             oauthStartHandler(req, res).catch((err) => {
               res.statusCode = 500;

@@ -7,8 +7,8 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
   const [password, setPassword] = useState('');
 
   const submit = () => {
-    if (role === 'candidate') login(email, password);
-    else adminAuth(password);
+    if ((role === 'admin' || role === 'consultant') && !email.trim()) adminAuth(password);
+    else login(email, password);
   };
 
   const onKeyDown = (e) => { if (e.key === 'Enter') submit(); };
@@ -55,6 +55,10 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
               className={`auth__role-btn${role === 'consultant' ? ' auth__role-btn--active' : ''}`}
               onClick={() => setRole('consultant')}
             >Consultant</button>
+            <button
+              className={`auth__role-btn${role === 'admin' ? ' auth__role-btn--active' : ''}`}
+              onClick={() => setRole('admin')}
+            >Admin</button>
           </div>
 
           {authError && <p className="auth__error">{authError}</p>}
@@ -78,6 +82,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
                 <button
                   type="button"
                   className="auth__oauth-btn"
+                  onClick={() => { window.location.href = '/api/oauth-start?provider=microsoft'; }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18">
                     <rect x="0" y="2" width="18" height="14" rx="2" fill="#0078D4" />
@@ -88,20 +93,21 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
                 </button>
               </div>
               <div className="auth__divider">or continue with email</div>
-              <label className="auth__label">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={onKeyDown}
-                placeholder="you@example.com"
-                className="auth__input"
-              />
             </>
           )}
 
+          <label className="auth__label">{role === 'candidate' ? 'Email' : 'Email or username'}</label>
+          <input
+            type={role === 'candidate' ? 'email' : 'text'}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={role === 'candidate' ? 'you@example.com' : 'email or username'}
+            className="auth__input"
+          />
+
           <div className="auth__label-row">
-            <label className="auth__label">{role === 'candidate' ? 'Password' : 'Access Code'}</label>
+            <label className="auth__label">Password</label>
             {role === 'candidate' && (
               <button className="auth__forgot" onClick={forgot}>Forgot Password?</button>
             )}
@@ -112,7 +118,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={onKeyDown}
-              placeholder={role === 'candidate' ? 'Enter your password' : 'Enter the consultant access code'}
+              placeholder={(role === 'admin' || role === 'consultant') ? 'Enter your password or legacy access code' : 'Enter your password'}
               className="auth__input"
             />
             <button className="auth__eye-btn" onClick={() => setShowPw((p) => !p)}>
@@ -134,7 +140,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
           </button>
 
           <button onClick={submit} disabled={authBusy} className="pw-cta auth__submit auth__submit--forest">
-            {authBusy ? 'Please wait…' : 'Enter Office'}
+            {authBusy ? 'Please wait…' : 'Enter'}
             <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -142,8 +148,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
 
           {role === 'candidate' && (
             <p className="auth__switch">
-              New to the circle?{' '}
-              <button className="auth__switch-link" onClick={() => go('register')}>Request Access</button>
+              <button className="auth__switch-link" onClick={() => go('register')}>Sign up</button>
             </p>
           )}
 
