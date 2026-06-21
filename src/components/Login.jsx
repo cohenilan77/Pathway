@@ -98,7 +98,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
           <button className="auth__remember" onClick={() => setRemember((r) => !r)}>
             <span className={`auth__remember-box${remember ? ' auth__remember-box--checked' : ''}`}>
               {remember && (
-                <svg viewBox="0 0 24 24" width="12" height="12" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <svg viewBox="0 0 24 24" width="12" height="12" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                   <path d="m5 12 5 5 9-11" />
                 </svg>
               )}

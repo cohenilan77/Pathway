@@ -3,29 +3,29 @@ import React from 'react';
 export default function NarrativeStrategy({ narrative, setNarrative, setCandTab, send, noop }) {
   const narrCard = (kind) => {
     const on = narrative === kind;
-    const accent = kind === 'pivot' ? '#c0844a' : '#1d3b32';
-    const gradient = kind === 'pivot' ? 'linear-gradient(135deg,#c0844a,#a8453f)' : 'linear-gradient(135deg,#1d3b32,#1d3b32)';
+    const accent = kind === 'pivot' ? '#ff7a3d' : '#5b46e0';
+    const gradient = kind === 'pivot' ? 'linear-gradient(135deg,#ff9a4d,#ff5c8a)' : 'linear-gradient(135deg,#4d83ff,#8a52ff)';
     return {
       card: {
-        position: 'relative', background: '#faf7f2',
-        border: on ? `2px solid ${accent}` : '1.5px solid #f1eadd',
+        position: 'relative', background: '#fff',
+        border: on ? `2px solid ${accent}` : '1.5px solid #eef1f9',
         borderRadius: 22, padding: 30, cursor: 'pointer', transition: 'all .15s',
         boxShadow: on ? `0 18px 40px ${kind === 'pivot' ? 'rgba(255,122,61,.22)' : 'rgba(105,91,255,.24)'}` : '0 18px 40px rgba(60,72,130,.06)',
       },
       badge: {
         display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11,
         fontWeight: 800, letterSpacing: '.5px', padding: '6px 12px', borderRadius: 9,
-        background: kind === 'pivot' ? '#e9c79a' : '#f1eadd',
-        color: kind === 'pivot' ? '#c0844a' : '#1d3b32',
+        background: kind === 'pivot' ? '#fff1e8' : '#efeaff',
+        color: kind === 'pivot' ? '#d9601a' : '#5b46e0',
       },
       check: {
         width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: on ? gradient : '#faf7f2',
+        justifyContent: 'center', background: on ? gradient : '#fff',
         boxShadow: on ? `0 6px 14px ${kind === 'pivot' ? 'rgba(255,122,61,.36)' : 'rgba(105,91,255,.36)'}` : 'none',
-        border: on ? 'none' : '1.5px solid #e7dcc7', flexShrink: 0,
+        border: on ? 'none' : '1.5px solid #dde2f3', flexShrink: 0,
       },
-      iconBg: kind === 'pivot' ? '#e9c79a' : '#f1eadd',
-      iconColor: kind === 'pivot' ? '#c0844a' : '#1d3b32',
+      iconBg: kind === 'pivot' ? '#fff1e8' : '#efeaff',
+      iconColor: kind === 'pivot' ? '#d9601a' : '#5b46e0',
       gradient,
       accent,
       on,
@@ -38,12 +38,12 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 34px 64px' }}>
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#1d3b32', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
-        <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#1a2420', margin: '0 0 14px', letterSpacing: '-.6px' }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
+        <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: '0 0 14px', letterSpacing: '-.6px' }}>
           Choose Your Narrative
         </h1>
-        <p style={{ fontSize: 15, lineHeight: 1.65, color: '#5d6b63', margin: '0 0 32px', maxWidth: '64ch', fontWeight: 500 }}>
-          Now that we have your programs and fit, we engineer the <em>story</em> that ties your resume, profile, grades and target program together. Admissions boards do not read achievements — they read <strong style={{ color: '#1a2420' }}>narratives</strong>. Every candidate's arc bends toward one of two strategic postures.
+        <p style={{ fontSize: 15, lineHeight: 1.65, color: '#6b7392', margin: '0 0 32px', maxWidth: '64ch', fontWeight: 500 }}>
+          Now that we have your programs and fit, we engineer the <em>story</em> that ties your resume, profile, grades and target program together. Admissions boards do not read achievements — they read <strong style={{ color: '#141b34' }}>narratives</strong>. Every candidate's arc bends toward one of two strategic postures.
         </p>
 
         <div className="pw-narrative-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 14 }}>
@@ -58,7 +58,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
               </span>
               <span style={upgrade.check}>
                 {upgrade.on && (
-                  <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="m5 12 5 5 9-11" />
                   </svg>
                 )}
@@ -69,19 +69,19 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
                 <path d="M3 17l6-6 4 4 8-8" /><path d="M14 7h7v7" />
               </svg>
             </div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a2420', margin: '0 0 8px', letterSpacing: '-.4px' }}>The Upgrade</h2>
-            <p style={{ fontSize: 14, lineHeight: 1.65, color: '#5d6b63', margin: '0 0 20px' }}>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.4px' }}>The Upgrade</h2>
+            <p style={{ fontSize: 14, lineHeight: 1.65, color: '#6b7392', margin: '0 0 20px' }}>
               "I am already on a strong track — I need this program to give me the tools and credentials to rise faster within my field." You deepen an existing trajectory rather than redirect it.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #f1eadd', paddingTop: 18 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#2c3833' }}>
-                <span style={{ color: '#1d3b32' }}>▲</span>Continuity of industry &amp; function — a coherent, low-doubt story
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #f0f2fa', paddingTop: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
+                <span style={{ color: '#5b46e0' }}>▲</span>Continuity of industry &amp; function — a coherent, low-doubt story
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#2c3833' }}>
-                <span style={{ color: '#1d3b32' }}>▲</span>Easy to evidence with promotions &amp; metrics
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
+                <span style={{ color: '#5b46e0' }}>▲</span>Easy to evidence with promotions &amp; metrics
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#5d6b63' }}>
-                <span style={{ color: '#6b7872' }}>▽</span>Risk: reads as <em>safe</em> — boards see it often
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#9098b5' }}>
+                <span style={{ color: '#aab2cc' }}>▽</span>Risk: reads as <em>safe</em> — boards see it often
               </div>
             </div>
           </div>
@@ -97,7 +97,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
               </span>
               <span style={pivot.check}>
                 {pivot.on && (
-                  <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="m5 12 5 5 9-11" />
                   </svg>
                 )}
@@ -108,19 +108,19 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
                 <path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7" />
               </svg>
             </div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#1a2420', margin: '0 0 8px', letterSpacing: '-.4px' }}>The Pivot</h2>
-            <p style={{ fontSize: 14, lineHeight: 1.65, color: '#5d6b63', margin: '0 0 20px' }}>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.4px' }}>The Pivot</h2>
+            <p style={{ fontSize: 14, lineHeight: 1.65, color: '#6b7392', margin: '0 0 20px' }}>
               "I am changing my career, my sector, or stepping out to build something of my own." A transformation story — you reframe past experience as the launchpad for a bold new direction.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #e9c79a', paddingTop: 18 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#2c3833' }}>
-                <span style={{ color: '#c0844a' }}>▲</span>Memorable, distinctive — boards reward conviction
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #fbe7da', paddingTop: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
+                <span style={{ color: '#ff7a3d' }}>▲</span>Memorable, distinctive — boards reward conviction
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#2c3833' }}>
-                <span style={{ color: '#c0844a' }}>▲</span>Career-changer &amp; entrepreneur arcs signal ambition
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
+                <span style={{ color: '#ff7a3d' }}>▲</span>Career-changer &amp; entrepreneur arcs signal ambition
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#5d6b63' }}>
-                <span style={{ color: '#6b7872' }}>▽</span>Risk: must justify the "why now" rigorously
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#9098b5' }}>
+                <span style={{ color: '#aab2cc' }}>▽</span>Risk: must justify the "why now" rigorously
               </div>
             </div>
           </div>
@@ -128,27 +128,27 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
         {/* Locked narrative banner */}
         {narrative && (
-          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#122621,#122621)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#2a2f5b,#4733a8)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ flex: 1, minWidth: 280, position: 'relative' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#c0844a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#ffd76a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
               {narrative === 'upgrade' ? (
                 <>
-                  <h3 style={{ fontSize: 21, fontWeight: 800, color: '#faf7f2', margin: '0 0 6px', letterSpacing: '-.3px' }}>Upgrade · Deepen the Trajectory</h3>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#d9cbb3', margin: 0 }}>
+                  <h3 style={{ fontSize: 21, fontWeight: 800, color: '#fff', margin: '0 0 6px', letterSpacing: '-.3px' }}>Upgrade · Deepen the Trajectory</h3>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#c5c9f5', margin: 0 }}>
                     Your CV and essays will emphasize momentum, mastery of your craft, and the specific tools this program adds to an already-rising career.
                   </p>
                 </>
               ) : (
                 <>
-                  <h3 style={{ fontSize: 21, fontWeight: 800, color: '#faf7f2', margin: '0 0 6px', letterSpacing: '-.3px' }}>Pivot · Engineer the Transformation</h3>
-                  <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#d9cbb3', margin: 0 }}>
+                  <h3 style={{ fontSize: 21, fontWeight: 800, color: '#fff', margin: '0 0 6px', letterSpacing: '-.3px' }}>Pivot · Engineer the Transformation</h3>
+                  <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#c5c9f5', margin: 0 }}>
                     Your CV and essays will reframe past experience as deliberate preparation for a bold change in career, sector, or venture.
                   </p>
                 </>
               )}
             </div>
-            <button onClick={() => setCandTab('documents')} style={{ position: 'relative', background: '#faf7f2', color: '#1d3b32', border: 'none', borderRadius: 13, padding: '15px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,.18)' }}>
+            <button onClick={() => setCandTab('documents')} style={{ position: 'relative', background: '#fff', color: '#5b46e0', border: 'none', borderRadius: 13, padding: '15px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,.18)' }}>
               Continue to CV &amp; Essays
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <path d="M5 12h14M13 6l6 6-6 6" />
@@ -158,13 +158,13 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
         )}
 
         {/* Strategist note */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: '20px 22px', marginTop: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-          <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(140deg,#1d3b32,#1d3b32)', color: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0, boxShadow: '0 8px 16px rgba(105,91,255,.32)' }}>LS</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, background: '#fff', border: '1px solid #eef1f9', borderRadius: 18, padding: '20px 22px', marginTop: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+          <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13, flexShrink: 0, boxShadow: '0 8px 16px rgba(105,91,255,.32)' }}>LS</span>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2420', marginBottom: 4 }}>Strategist's note</div>
-            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#5d6b63', margin: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 4 }}>Strategist's note</div>
+            <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#6b7392', margin: 0 }}>
               There is no wrong answer — only the story we can defend most convincingly to your target boards. Once you choose, I will tailor every CV bullet and essay prompt to that posture.{' '}
-              <button onClick={() => setCandTab('advisor')} style={{ background: 'none', border: 'none', color: '#1d3b32', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit', padding: 0 }}>
+              <button onClick={() => setCandTab('advisor')} style={{ background: 'none', border: 'none', color: '#5b46e0', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit', padding: 0 }}>
                 Discuss with your advisor →
               </button>
             </p>
