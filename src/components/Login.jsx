@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-auth.css';
 
-export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, login, adminAuth, authError, authBusy }) {
+export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, login, adminAuth, authError, authBusy, showToast }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -61,6 +61,34 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
 
           {role === 'candidate' && (
             <>
+              <div className="auth__oauth-row">
+                <button
+                  type="button"
+                  className="auth__oauth-btn"
+                  onClick={() => showToast && showToast('Google sign-in is coming soon.')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.85 2.07-1.81 2.71v2.26h2.92c1.71-1.57 2.69-3.89 2.69-6.61z" />
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.81 5.96-2.18l-2.92-2.26c-.81.55-1.85.87-3.04.87-2.34 0-4.32-1.58-5.03-3.71H.96v2.33C2.44 15.98 5.48 18 9 18z" />
+                    <path fill="#FBBC05" d="M3.97 10.72A5.41 5.41 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A8.96 8.96 0 0 0 0 9c0 1.45.35 2.82.96 4.05l3.01-2.33z" />
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" />
+                  </svg>
+                  Continue with Google
+                </button>
+                <button
+                  type="button"
+                  className="auth__oauth-btn"
+                  onClick={() => showToast && showToast('Outlook sign-in is coming soon.')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18">
+                    <rect x="0" y="2" width="18" height="14" rx="2" fill="#0078D4" />
+                    <path fill="#fff" d="M5 6.2 9 9l4-2.8v6.4L9 12 5 12.6Z" opacity="0.001" />
+                    <path fill="#fff" d="M2.5 5.2 9 9.6l6.5-4.4v7.6c0 .55-.45 1-1 1H3.5c-.55 0-1-.45-1-1Z" />
+                  </svg>
+                  Continue with Outlook
+                </button>
+              </div>
+              <div className="auth__divider">or continue with email</div>
               <label className="auth__label">Email</label>
               <input
                 type="email"
