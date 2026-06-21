@@ -51,12 +51,12 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
   };
 
   const Toggle = ({ on, onToggle }) => (
-    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? 'linear-gradient(135deg,#4d83ff,#8a52ff)' : '#dde2f3', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s', boxShadow: on ? '0 4px 10px rgba(105,91,255,.32)' : 'none' }}>
-      <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
+    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s', boxShadow: on ? '0 4px 10px rgba(105,91,255,.32)' : 'none' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#faf7f2', transition: 'left .2s' }} />
     </span>
   );
 
-  const inputStyle = { width: '100%', border: '1.5px solid #ecf0fa', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#141b34', background: '#f7f9fe' };
+  const inputStyle = { width: '100%', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#141b34', background: '#f6f1e8' };
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
@@ -65,7 +65,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>Manage your private office preferences.</p>
 
         {/* Plan */}
-        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Plan</h3>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
@@ -74,16 +74,16 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
               return (
                 <div key={p.key} style={{
                   display: 'flex', flexDirection: 'column',
-                  border: active ? '2px solid #5b46e0' : '1.5px solid #ecf0fa',
-                  background: active ? '#f7f9fe' : '#fff',
+                  border: active ? '2px solid #9285e4' : '1.5px solid #f1eadd',
+                  background: active ? '#f6f1e8' : '#faf7f2',
                   borderRadius: 16, padding: '20px 18px',
                 }}>
                   <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{p.label}</div>
                   <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
                   <button onClick={() => handleSelectPlan(p.key)} disabled={active} style={{
-                    background: active ? 'none' : 'linear-gradient(135deg,#4d83ff,#8a52ff)',
-                    color: active ? '#9098b5' : '#fff',
-                    border: active ? '1.5px solid #ecf0fa' : 'none',
+                    background: active ? 'none' : 'linear-gradient(135deg,#94b3fb,#b899fb)',
+                    color: active ? '#9098b5' : '#faf7f2',
+                    border: active ? '1.5px solid #f1eadd' : 'none',
                     borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 700,
                     cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
                     boxShadow: active ? 'none' : '0 8px 16px rgba(105,91,255,.3)',
@@ -97,7 +97,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Profile */}
-        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Profile</h3>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -121,9 +121,9 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Notifications */}
-        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Notifications</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f1f3fb' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f1eadd' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Strategist updates</div>
               <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>Get notified when your advisor reviews a document.</div>
@@ -140,13 +140,13 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button onClick={handleSave} style={{ background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+          <button onClick={handleSave} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
             Save Changes
           </button>
-          <button onClick={resetSession} style={{ background: 'none', color: '#e0457a', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={resetSession} style={{ background: 'none', color: '#e384a5', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Clear Session Data
           </button>
-          <button onClick={signOut} style={{ background: 'none', color: '#6b7392', border: '1.5px solid #ecf0fa', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={signOut} style={{ background: 'none', color: '#6b7392', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Sign Out
           </button>
         </div>
