@@ -81,8 +81,9 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
                 </button>
                 <button
                   type="button"
-                  className="auth__oauth-btn"
-                  onClick={() => { window.location.href = '/api/oauth-start?provider=microsoft'; }}
+                  className="auth__oauth-btn auth__oauth-btn--disabled"
+                  disabled
+                  title="Outlook sign-in is temporarily unavailable"
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18">
                     <rect x="0" y="2" width="18" height="14" rx="2" fill="#0078D4" />
