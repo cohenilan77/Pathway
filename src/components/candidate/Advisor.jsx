@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 
-
 const CATEGORY_CHIPS = [
-  { label: 'Undergraduate', text: 'Undergraduate' },
-  { label: 'Graduate', text: 'Graduate' },
-  { label: 'Postgraduate / Doctoral', text: 'Postgraduate / Doctoral' },
-  { label: 'Personal Development', text: 'Personal Development' },
+  { label: 'Undergraduate', emoji: '🎓', text: 'Undergraduate' },
+  { label: 'Graduate', emoji: '📚', text: 'Graduate' },
+  { label: 'Postgraduate / Doctoral', emoji: '🔬', text: 'Postgraduate / Doctoral' },
+  { label: 'Personal Development', emoji: '✨', text: 'Personal Development' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, resetSession, narrative, tasks, completedTasks, setCompletedTasks }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, narrative, tasks, completedTasks, setCompletedTasks }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -31,225 +30,225 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   };
 
   const hasScores = !!scores;
-  // Show chips only before first user message
   const showChips = !busy && chat.every(m => m.role === 'ai');
-  // Detect when AI has presented narrative choice (mentions "Narrative Strategy tab")
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
 
-  // Tasks rail: AI-generated action items personalized to the candidate's profile/category/progress.
-  // Completion is entirely manual — the candidate checks a task off themselves when they've done it.
   const taskList = tasks || [];
   const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
+  const doneCount = taskList.filter(t => completedTasks?.[t]).length;
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-      {/* Stepper */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
-        {STEPS.map((label, i) => {
-          const active = i === stepIdx;
-          const done = i < stepIdx;
-          const on = active || done;
-          return (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
-              <span style={{
-                width: 28, height: 28, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 13, fontWeight: 700, flexShrink: 0,
-                background: on ? '#16233f' : '#fff', color: on ? '#fff' : '#9aa3b5',
-                border: on ? 'none' : '1.5px solid #e3e7f0',
-              }}>
-                {done ? '✓' : i + 1}
-              </span>
-              <span style={{ fontSize: 14, fontWeight: active ? 700 : 600, color: active ? '#16233f' : '#9aa3b5', whiteSpace: 'nowrap' }}>
-                {label}
-              </span>
-              {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: '#e1e6f0', margin: '0 4px' }} />}
-            </div>
-          );
-        })}
-      </div>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 24px 24px' }}>
+      <div style={{ flex: 1, minHeight: 0, background: '#fff', borderRadius: 24, border: '1px solid #eef1f9', boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-      {/* Chat + Right rail */}
-      <div className="pw-advisor-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 340px', background: '#fff', minHeight: 0, overflow: 'hidden' }}>
-        {/* Chat area */}
-        <div style={{ display: 'flex', flexDirection: 'column', borderRight: '1px solid #eef1f6', position: 'relative', minHeight: 0, overflow: 'hidden' }}>
-          {showScrollTop && (
-            <button
-              onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-              title="Scroll to top"
-              style={{
-                position: 'fixed', bottom: 90, right: 32, zIndex: 100,
-                width: 42, height: 42, borderRadius: '50%',
-                background: '#16233f', color: '#fff', border: 'none',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(22,35,63,.32)',
-              }}>
-              <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                <path d="M12 19V5M5 12l7-7 7 7" />
-              </svg>
-            </button>
-          )}
-          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '34px 40px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, marginBottom: 26 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <span style={{ width: 46, height: 46, borderRadius: '50%', background: '#16233f', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>LS</span>
-                <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: 0 }}>
-                  {profile?.name ? `${profile.name}'s Strategic Profile` : 'Strategic Profile'}
-                </h2>
+        {/* stepper */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '18px 28px', borderBottom: '1px solid #f0f2fa', overflowX: 'auto', flexShrink: 0 }}>
+          {STEPS.map((label, i) => {
+            const active = i === stepIdx;
+            const done = i < stepIdx;
+            const on = active || done;
+            return (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                <span style={{
+                  width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 13, fontWeight: 800, flexShrink: 0,
+                  ...(on
+                    ? { background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', boxShadow: '0 6px 14px rgba(105,91,255,.3)' }
+                    : { background: '#fff', color: '#aab2cc', border: '1.5px solid #e7ebf7' }),
+                }}>
+                  {done ? '✓' : i + 1}
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: active ? 800 : 600, color: active ? '#141b34' : '#aab2cc', whiteSpace: 'nowrap' }}>
+                  {label}
+                </span>
+                {i < STEPS.length - 1 && <span style={{ width: 30, height: 2, borderRadius: 2, background: done ? '#b9a8ff' : '#e7ebf7', margin: '0 2px' }} />}
               </div>
-              <button onClick={resetSession} style={{ background: 'none', border: '1px solid #e3e7f0', borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: '#8a93a3', cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                New Session
-              </button>
-            </div>
+            );
+          })}
+        </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 620 }}>
-              {chat.map((m, i) => (
-                m.role === 'ai' ? (
-                  <div key={i} style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '18px 20px', fontSize: 15, lineHeight: 1.65, color: '#2a3447', whiteSpace: 'pre-wrap' }}>
-                    {renderFormattedText(m.text)}
-                  </div>
-                ) : (
-                  <div key={i} style={{ alignSelf: 'flex-end', background: '#16233f', color: '#eef2fa', borderRadius: '16px 16px 4px 16px', padding: '16px 20px', fontSize: 15, lineHeight: 1.6, maxWidth: '82%', whiteSpace: 'pre-wrap' }}>
-                    {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
-                  </div>
-                )
-              ))}
+        {/* grid: chat + rail */}
+        <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 322px', overflow: 'hidden' }}>
 
-              {busy && (
-                <div style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '18px 20px' }}>
-                  <span style={{ display: 'inline-flex', gap: 5 }}>
-                    {[0, 1, 2].map(i => (
-                      <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#9aa3b5', display: 'inline-block', animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-                    ))}
-                  </span>
-                  <style>{`@keyframes pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}`}</style>
-                </div>
-              )}
-
-              {/* Program type chips — shown only before first user message */}
-              {showChips && (
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#8a93a3', letterSpacing: '.5px', margin: '4px 0 12px' }}>SELECT YOUR PATH</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                    {CATEGORY_CHIPS.map(chip => (
-                      <button key={chip.label} onClick={() => send(chip.text)} disabled={busy}
-                        style={{ background: '#fff', border: '1.5px solid #d7ddec', borderRadius: 10, padding: '10px 20px', fontSize: 14, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '.3px' }}>
-                        {chip.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Upload CV prompt — shown after program type selected but before CV submitted */}
-              {!showChips && !hasScores && !busy && chat.some(m => m.role === 'user') && (
-                <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 14, color: '#7a5d12', fontWeight: 600 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
-                  <button onClick={() => setShowCvModal(true)} style={{ background: '#b8902f', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    Upload CV →
-                  </button>
-                </div>
-              )}
-
-              {/* Analysis ready banner */}
-              {scores && stepIdx >= 2 && (
-                <div style={{ background: '#f0f5e8', border: '1px solid #c8dba8', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ fontSize: 14, color: '#3a5a1a', fontWeight: 600 }}>✓ Your profile analysis is ready</span>
-                  <button onClick={() => setCandTab('analysis')} style={{ background: '#2a4a12', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    View Analysis →
-                  </button>
-                </div>
-              )}
-
-              {/* Narrative choice CTA */}
-              {showNarrativeCTA && (
-                <div style={{ background: '#16233f', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#f5c94c', marginBottom: 4 }}>NEXT STEP</div>
-                    <span style={{ fontSize: 14, color: '#e5ebf6', fontWeight: 600 }}>Choose your narrative strategy</span>
-                  </div>
-                  <button onClick={() => setCandTab('strategy')} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    Choose Narrative →
-                  </button>
-                </div>
-              )}
-
-              <div ref={messagesEndRef} />
-            </div>
-          </div>
-
-          {/* Input bar */}
-          <div style={{ padding: '18px 40px 18px', borderTop: '1px solid #eef1f6', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px' }}>
-              {/* Upload / paste CV button */}
-              <button onClick={() => setShowCvModal(true)}
-                title="Upload or paste your CV / background info"
-                style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
-                </svg>
-              </button>
-              <input
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={handleKey}
-                disabled={busy}
-                placeholder={busy ? 'Analyzing...' : 'Type your answer or ask anything…'}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 15, padding: '10px 0', color: '#1c2433', fontFamily: 'inherit' }}
-              />
-              <button onClick={() => send()} disabled={busy || !input.trim()}
-                style={{ background: '#16233f', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: '#fff', opacity: busy || !input.trim() ? 0.5 : 1, flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+          {/* chat */}
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #f0f2fa', position: 'relative' }}>
+            {showScrollTop && (
+              <button
+                onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+                title="Scroll to top"
+                style={{
+                  position: 'absolute', bottom: 96, right: 24, zIndex: 5,
+                  width: 42, height: 42, borderRadius: '50%',
+                  background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', border: 'none',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 8px 18px rgba(105,91,255,.36)',
+                }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                   <path d="M12 19V5M5 12l7-7 7 7" />
                 </svg>
               </button>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: '#9aa3b5' }}>
-              <span>Confidential consultation · <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowCvModal(true)}>Upload CV</span></span>
-              <button onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })} style={{ background: 'none', border: '1px solid #e2e7f2', borderRadius: 7, padding: '4px 10px', fontSize: 11, color: '#9aa3b5', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.5, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 19V5M5 12l7-7 7 7" /></svg>
-                Top
-              </button>
-            </div>
-          </div>
-        </div>
+            )}
 
-        {/* Right tasks rail */}
-        <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Tasks</h3>
-          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 26px', lineHeight: 1.5 }}>
-            Personalized action items, added as we learn more about you.
-          </p>
+            <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '28px 32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 24 }}>
+                <span style={{ width: 48, height: 48, borderRadius: 15, background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                  <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+                </span>
+                <div>
+                  <h2 style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.4px', color: '#141b34', margin: 0 }}>
+                    {profile?.name ? `${profile.name}'s Strategic Profile` : 'Your Strategic Profile'}
+                  </h2>
+                  <div style={{ fontSize: 12.5, color: '#19c08a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#19c08a', boxShadow: '0 0 8px rgba(25,192,138,.7)' }} />
+                    AI advisor · online
+                  </div>
+                </div>
+              </div>
 
-          {taskList.length === 0 ? (
-            <div style={{ fontSize: 13, color: '#9aa3b5' }}>Tasks will appear here as we learn more about you.</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {taskList.map((text) => {
-                const done = !!completedTasks?.[text];
-                return (
-                  <div key={text} onClick={() => toggleTask(text)}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 6px', borderRadius: 8, cursor: 'pointer' }}>
-                    <span style={{
-                      width: 22, height: 22, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-                      border: done ? 'none' : '1.5px solid #d7ddec',
-                      background: done ? '#2d7d46' : '#fff',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      {done && (
-                        <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                          <path d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.4, color: done ? '#8a93a3' : '#16233f', textDecoration: done ? 'line-through' : 'none' }}>
-                      {text}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
+                {chat.map((m, i) => (
+                  m.role === 'ai' ? (
+                    <div key={i} style={{ alignSelf: 'flex-start', background: '#f5f7fd', border: '1px solid #eef1f9', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
+                      {renderFormattedText(m.text)}
+                    </div>
+                  ) : (
+                    <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
+                      {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
+                    </div>
+                  )
+                ))}
+
+                {busy && (
+                  <div style={{ alignSelf: 'flex-start', background: '#f5f7fd', border: '1px solid #eef1f9', borderRadius: '6px 18px 18px 18px', padding: '17px 20px' }}>
+                    <span style={{ display: 'inline-flex', gap: 5 }}>
+                      {[0, 1, 2].map(i => (
+                        <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#9aa3c0', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                      ))}
                     </span>
                   </div>
-                );
-              })}
+                )}
+
+                {showChips && (
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#aeb6cf', letterSpacing: '1px', marginBottom: 12 }}>CHOOSE YOUR PATH</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                      {CATEGORY_CHIPS.map(chip => (
+                        <button key={chip.label} onClick={() => send(chip.text)} disabled={busy}
+                          style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#fff', border: '1.5px solid #e7ebf7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          <span style={{ fontSize: 16 }}>{chip.emoji}</span>{chip.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Upload CV prompt */}
+                {!showChips && !hasScores && !busy && chat.some(m => m.role === 'user') && (
+                  <div style={{ background: '#fff8e8', border: '1px solid #f7e6b8', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13.5, color: '#8a6a14', fontWeight: 700 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
+                    <button onClick={() => setShowCvModal(true)} style={{ background: 'linear-gradient(135deg,#ffb35c,#ff9f43)', color: '#fff', border: 'none', borderRadius: 11, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                      Upload CV →
+                    </button>
+                  </div>
+                )}
+
+                {/* Analysis ready banner */}
+                {scores && stepIdx >= 2 && (
+                  <div style={{ background: '#e9f9f1', border: '1px solid #b7ecd4', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13.5, color: '#119467', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
+                    <button onClick={() => setCandTab('analysis')} style={{ background: 'linear-gradient(135deg,#19c08a,#43d6a8)', color: '#fff', border: 'none', borderRadius: 11, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                      View Analysis →
+                    </button>
+                  </div>
+                )}
+
+                {/* Narrative choice CTA */}
+                {showNarrativeCTA && (
+                  <div style={{ background: 'linear-gradient(135deg,#2a2f5b,#4733a8)', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#ffd76a', marginBottom: 4 }}>NEXT STEP</div>
+                      <span style={{ fontSize: 14, color: '#e5ebf6', fontWeight: 600 }}>Choose your narrative strategy</span>
+                    </div>
+                    <button onClick={() => setCandTab('strategy')} style={{ background: '#fff', color: '#5b46e0', border: 'none', borderRadius: 11, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                      Choose Narrative →
+                    </button>
+                  </div>
+                )}
+
+                <div ref={messagesEndRef} />
+              </div>
             </div>
-          )}
+
+            {/* input */}
+            <div style={{ padding: '16px 24px 20px', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f5f7fd', border: '1.5px solid #e9edf8', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
+                <button onClick={() => setShowCvModal(true)} title="Upload or paste your CV / background info"
+                  style={{ background: '#fff', border: 'none', borderRadius: 13, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0, boxShadow: '0 2px 6px rgba(60,72,130,.08)' }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                  </svg>
+                </button>
+                <input
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={handleKey}
+                  disabled={busy}
+                  placeholder={busy ? 'Analyzing…' : 'Type your answer or ask anything…'}
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                />
+                <button onClick={() => send()} disabled={busy || !input.trim()}
+                  style={{ background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', border: 'none', borderRadius: 13, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: '#fff', flexShrink: 0, boxShadow: '0 8px 18px rgba(105,91,255,.36)', opacity: busy || !input.trim() ? 0.55 : 1 }}>
+                  <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                  </svg>
+                </button>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, paddingLeft: 6 }}>
+                <span style={{ fontSize: 11.5, color: '#a3abc6', fontWeight: 500 }}>Confidential consultation · responses are AI-generated guidance</span>
+              </div>
+            </div>
+          </div>
+
+          {/* tasks rail */}
+          <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '26px 22px', overflowY: 'auto', minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <h3 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-.3px', color: '#141b34', margin: 0 }}>Your tasks</h3>
+              {taskList.length > 0 && (
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#efeaff', padding: '4px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
+              )}
+            </div>
+            <p style={{ fontSize: 12.5, color: '#9098b5', margin: '0 0 20px', lineHeight: 1.5, fontWeight: 500 }}>Personalized steps, added as we learn about you.</p>
+
+            {taskList.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#aeb6cf', fontWeight: 500 }}>Tasks will appear here as we learn more about you.</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {taskList.map((text) => {
+                  const done = !!completedTasks?.[text];
+                  return (
+                    <div key={text} onClick={() => toggleTask(text)}
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 14px', borderRadius: 15, cursor: 'pointer', border: `1px solid ${done ? '#e6f6ef' : '#eef1f9'}`, background: done ? '#f3fbf7' : '#fff' }}>
+                      <span style={{
+                        width: 23, height: 23, borderRadius: 8, flexShrink: 0, marginTop: 1,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        ...(done ? { background: '#19c08a', border: 'none', boxShadow: '0 4px 10px rgba(25,192,138,.32)' } : { background: '#fff', border: '1.8px solid #d8deee' }),
+                      }}>
+                        {done && (
+                          <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                            <path d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </span>
+                      <span style={{ fontSize: 13.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3bf' : '#33405e', textDecoration: done ? 'line-through' : 'none' }}>
+                        {text}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

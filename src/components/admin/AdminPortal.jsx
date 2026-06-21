@@ -3,12 +3,39 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph } from 'docx';
 
+const cardShell = { background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
+
 const sideStyle = (active) => ({
-  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10,
+  display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12,
   fontSize: 14, fontWeight: active ? 700 : 600, cursor: 'pointer', width: '100%',
   textAlign: 'left', border: 'none', fontFamily: 'inherit',
-  background: active ? '#16233f' : 'transparent', color: active ? '#fff' : '#3a425a',
+  background: active ? 'linear-gradient(135deg,#4d83ff,#8a52ff)' : 'transparent',
+  color: active ? '#fff' : '#6b7392',
+  boxShadow: active ? '0 8px 16px rgba(105,91,255,.32)' : 'none',
+  transition: 'all .15s',
 });
+
+const btnPrimary = {
+  background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', border: 'none', borderRadius: 12,
+  fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(105,91,255,.3)',
+};
+const btnGhost = {
+  background: '#fff', color: '#33405e', border: '1px solid #eef1f9', borderRadius: 10,
+  fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+};
+const btnDanger = {
+  background: '#fff1f6', color: '#e0457a', border: '1px solid #fbd3e2', borderRadius: 10,
+  fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+};
+
+const scoreColor = (s) => (s >= 75 ? '#19c08a' : s >= 50 ? '#c77f0a' : '#e0457a');
+const tierColor = (tier) => (tier === 'stretch' ? '#e0457a' : tier === 'safe' ? '#19c08a' : tier === 'possible' ? '#c77f0a' : '#9098b5');
+const tierBg = (tier) => (tier === 'stretch' ? '#fff1f6' : tier === 'safe' ? '#eafff6' : tier === 'possible' ? '#fff8ea' : '#f3f5fc');
+const tierBorder = (tier) => (tier === 'stretch' ? '#fbd3e2' : tier === 'safe' ? '#aaeed1' : tier === 'possible' ? '#f5dfa6' : '#eef1f9');
+
+const NavIcon = ({ children }) => (
+  <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>{children}</svg>
+);
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
   aiConfig, setAiConfig }) {
@@ -312,42 +339,42 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     : [];
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f6f7fb' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f3f5fc', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
       {/* Sidebar */}
-      <div style={{ width: 258, flexShrink: 0, background: '#eef1fc', borderRight: '1px solid #e1e6f5', display: 'flex', flexDirection: 'column', padding: '26px 18px', minHeight: '100vh' }}>
+      <div style={{ width: 258, flexShrink: 0, background: '#fff', borderRight: '1px solid #eef1f9', display: 'flex', flexDirection: 'column', padding: '26px 18px', minHeight: '100vh' }}>
         <div style={{ padding: '0 8px 8px' }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f' }}>Pathway</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 2 }}>ADMIN PORTAL</div>
+          <div style={{ fontSize: 23, fontWeight: 800, color: '#141b34' }}>Pathway</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#5b46e0', marginTop: 2 }}>ADMIN PORTAL</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
           <button onClick={() => setAdminView('candidates')} style={sideStyle(adminView === 'candidates')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></svg>
+            <NavIcon><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></NavIcon>
             Candidates
           </button>
           <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
+            <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
             Users
           </button>
           <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>
+            <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
             Live Session
           </button>
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
-            <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
+            <NavIcon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></NavIcon>
             Settings
           </button>
         </div>
         <div style={{ marginTop: 'auto' }}>
-          <div style={{ height: 1, background: '#dde3f4', marginBottom: 14 }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 9, background: '#16233f', color: '#f5c94c', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
+          <div style={{ height: 1, background: '#eef1f9', marginBottom: 14 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, background: '#f7f9fe', borderRadius: 14 }}>
+            <span style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#2a2f5b,#4733a8)', color: '#ffd76a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>Admin Panel</div>
-              <div style={{ fontSize: 11, color: '#8a93a3', letterSpacing: '.5px' }}>IVY ADMISSIONS</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>Admin Panel</div>
+              <div style={{ fontSize: 11, color: '#9098b5', letterSpacing: '.5px' }}>IVY ADMISSIONS</div>
             </div>
           </div>
-          <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#3a425a', fontWeight: 600, padding: 8, width: '100%', marginTop: 4 }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
+          <button onClick={signOut} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, color: '#6b7392', fontWeight: 600, padding: 8, width: '100%', marginTop: 8 }}>
+            <NavIcon><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></NavIcon>
             Sign Out
           </button>
         </div>
@@ -355,17 +382,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
       {/* Main */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '26px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff' }}>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 800, color: '#16233f', margin: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, padding: '26px 36px', borderBottom: '1px solid #eef1f9', background: '#fff' }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Users'}
             {adminView === 'session' && 'Live Session'}
             {adminView === 'settings' && 'Settings'}
           </h1>
           {sessionActive && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f0f7ea', border: '1px solid #c8dba8', borderRadius: 9, padding: '8px 16px' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3a7d1e' }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#3a7d1e' }}>Session Active</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#eafff6', border: '1px solid #aaeed1', borderRadius: 10, padding: '8px 16px' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#19c08a' }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>Session Active</span>
             </div>
           )}
         </div>
@@ -376,47 +403,47 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {adminView === 'candidates' && !candidateOpen && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
-                <button onClick={fetchUsers} disabled={usersLoading} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#3a425a', cursor: usersLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
                   {usersLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
               </div>
               {usersError ? (
-                <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 16, padding: 24, textAlign: 'center', color: '#b42318', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
               ) : !users.length ? (
-                <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 8 }}>{usersLoading ? 'Loading candidates…' : 'No registered candidates yet.'}</div>
-                  <div style={{ fontSize: 13, color: '#b6bdcd' }}>Once candidates register and start the advisor, they'll appear here.</div>
+                <div style={{ background: '#fff', border: '1px dashed #d7ddf0', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>{usersLoading ? 'Loading candidates…' : 'No registered candidates yet.'}</div>
+                  <div style={{ fontSize: 13, color: '#aab2cc' }}>Once candidates register and start the advisor, they'll appear here.</div>
                 </div>
               ) : (
-                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
+                <div style={{ ...cardShell, overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f3f5fc', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                     <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span></span>
                   </div>
                   {users.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
-                      <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
+                      <button key={u.id} onClick={() => openCandidate(u.id)} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f7f9fe' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
+                          <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
-                            <div style={{ fontSize: 12, color: '#8a93a3' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>{u.name}</div>
+                            <div style={{ fontSize: 12, color: '#9098b5' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
                           </div>
                         </div>
                         <div>
                           {u.scores ? (
-                            <span style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: u.scores.overall >= 70 ? '#2d7d46' : u.scores.overall >= 50 ? '#b8902f' : '#d64545' }}>{u.scores.overall}</span>
-                          ) : <span style={{ fontSize: 13, color: '#b6bdcd' }}>—</span>}
+                            <span style={{ fontSize: 22, fontWeight: 800, color: scoreColor(u.scores.overall) }}>{u.scores.overall}</span>
+                          ) : <span style={{ fontSize: 13, color: '#aab2cc' }}>—</span>}
                         </div>
                         <div>
-                          <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 7 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
+                          <span style={{ background: '#efeaff', color: '#5b46e0', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 8 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
                         </div>
-                        <div style={{ fontSize: 13, color: '#5d6577', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 13, color: '#33405e', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
                         </div>
-                        <div style={{ color: '#b8902f', fontSize: 18, fontWeight: 700 }}>→</div>
+                        <div style={{ color: '#5b46e0', fontSize: 18, fontWeight: 700 }}>→</div>
                       </button>
                     );
                   })}
@@ -429,26 +456,26 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {adminView === 'candidates' && candidateOpen && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
               <div>
-                <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
+                <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#5b46e0', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
                   <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
                   All Candidates
                 </button>
 
                 {selectedLoading && (
-                  <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 32, textAlign: 'center', color: '#8a93a3', fontSize: 14, marginBottom: 20 }}>
+                  <div style={{ background: '#fff', border: '1px dashed #d7ddf0', borderRadius: 20, padding: 32, textAlign: 'center', color: '#9098b5', fontSize: 14, marginBottom: 20 }}>
                     Loading candidate session…
                   </div>
                 )}
 
                 {/* Candidate card */}
-                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+                <div style={{ ...cardShell, padding: 24, marginBottom: 20 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <span style={{ width: 52, height: 52, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>{initials}</span>
+                    <span style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(140deg,#ffb35c,#ff7a9c)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>{initials}</span>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f' }}>{candidateName}</div>
-                      <div style={{ fontSize: 13, color: '#8a93a3', marginTop: 2 }}>{candidateSub}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34' }}>{candidateName}</div>
+                      <div style={{ fontSize: 13, color: '#6b7392', marginTop: 2 }}>{candidateSub}</div>
                       {profile && (
-                        <div style={{ fontSize: 12, color: '#b6bdcd', marginTop: 4 }}>
+                        <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>
                           {[profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `GMAT ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
                         </div>
                       )}
@@ -456,13 +483,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                       {scores && (
                         <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>{scores.overall}</div>
-                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginTop: 2 }}>OVERALL</div>
+                          <div style={{ fontSize: 32, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>{scores.overall}</div>
+                          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 2 }}>OVERALL</div>
                         </div>
                       )}
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 4 }}>PIPELINE STEP</div>
-                        <span style={{ background: '#f6e2a8', color: '#7a5d12', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8 }}>{stepLabel}</span>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>PIPELINE STEP</div>
+                        <span style={{ background: '#efeaff', color: '#5b46e0', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 9 }}>{stepLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -470,13 +497,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
                 {/* Key insights */}
                 {strengths && strengths.length > 0 && (
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22, marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>KEY INSIGHTS</div>
+                  <div style={{ ...cardShell, padding: 22, marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 14 }}>KEY INSIGHTS</div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {strengths.map((s, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#b8902f', marginTop: 6, flexShrink: 0 }} />
-                          <span style={{ fontSize: 13.5, color: '#2a3447', lineHeight: 1.55 }}>{s}</span>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#c77f0a', marginTop: 6, flexShrink: 0 }} />
+                          <span style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.55 }}>{s}</span>
                         </div>
                       ))}
                     </div>
@@ -485,16 +512,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
                 {/* Risk profile */}
                 {weaknesses && weaknesses.length > 0 && (
-                  <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: 16, padding: 22, marginBottom: 20 }}>
+                  <div style={{ ...cardShell, border: '1px solid #fbd3e2', padding: 22, marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                      <span style={{ color: '#d64545', fontSize: 15 }}>⚠</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#d64545' }}>RISK PROFILE</div>
+                      <span style={{ color: '#e0457a', fontSize: 15 }}>⚠</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#e0457a' }}>RISK PROFILE</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {weaknesses.map((w, i) => (
                         <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#d64545', marginTop: 6, flexShrink: 0 }} />
-                          <span style={{ fontSize: 13.5, color: '#2a3447', lineHeight: 1.55 }}>{w}</span>
+                          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e0457a', marginTop: 6, flexShrink: 0 }} />
+                          <span style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.55 }}>{w}</span>
                         </div>
                       ))}
                     </div>
@@ -503,20 +530,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
                 {/* School portfolio */}
                 {programs && programs.length > 0 && (
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 14 }}>SCHOOL PORTFOLIO — {programs.length} schools</div>
+                  <div style={{ ...cardShell, padding: 22 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 14 }}>SCHOOL PORTFOLIO — {programs.length} schools</div>
 
                     {/* Tier counts */}
                     <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                      {[{ key: 'stretch', label: 'STRETCH', color: '#d64545', bg: '#fff5f5' },
-                        { key: 'possible', label: 'POSSIBLE', color: '#ca8a04', bg: '#fffbf0' },
-                        { key: 'safe', label: 'SAFE', color: '#2d7d46', bg: '#f0fdf4' }].map(t => {
+                      {[{ key: 'stretch', label: 'STRETCH' },
+                        { key: 'possible', label: 'POSSIBLE' },
+                        { key: 'safe', label: 'SAFE' }].map(t => {
                         const n = programs.filter(p => p.tier === t.key).length;
                         if (!n) return null;
                         return (
-                          <div key={t.key} style={{ flex: 1, background: t.bg, borderRadius: 10, padding: '12px 14px', textAlign: 'center' }}>
-                            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: t.color }}>{n}</div>
-                            <div style={{ fontSize: 10, fontWeight: 700, color: t.color, letterSpacing: '.5px', marginTop: 2 }}>{t.label}</div>
+                          <div key={t.key} style={{ flex: 1, background: tierBg(t.key), borderRadius: 14, padding: '12px 14px', textAlign: 'center' }}>
+                            <div style={{ fontSize: 26, fontWeight: 800, color: tierColor(t.key) }}>{n}</div>
+                            <div style={{ fontSize: 10, fontWeight: 700, color: tierColor(t.key), letterSpacing: '.5px', marginTop: 2 }}>{t.label}</div>
                           </div>
                         );
                       })}
@@ -525,28 +552,23 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     {/* Candidate's chosen schools */}
                     {chosenPrograms.length > 0 && (
                       <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#c77f0a', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                          {chosenPrograms.map(p => {
-                            const tierColor = p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#ca8a04' : '#9aa3b5';
-                            const tierBg = p.tier === 'stretch' ? '#fff5f5' : p.tier === 'safe' ? '#f0fdf4' : p.tier === 'possible' ? '#fffbf0' : '#f6f7fb';
-                            const tierBorder = p.tier === 'stretch' ? '#fecaca' : p.tier === 'safe' ? '#86efac' : p.tier === 'possible' ? '#fde68a' : '#e2e7f2';
-                            return (
-                              <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tierBg, border: `1.5px solid ${tierBorder}`, borderRadius: 9, padding: '9px 12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                  <span style={{ color: '#b8902f', fontSize: 13 }}>★</span>
-                                  <span style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f' }}>{p.name}</span>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  {p.tier && <span style={{ fontSize: 10, fontWeight: 700, color: tierColor, letterSpacing: '.5px', textTransform: 'uppercase' }}>{p.tier}</span>}
-                                  <span style={{ fontSize: 13, fontWeight: 700, color: tierColor }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
-                                </div>
+                          {chosenPrograms.map(p => (
+                            <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tierBg(p.tier), border: `1.5px solid ${tierBorder(p.tier)}`, borderRadius: 12, padding: '9px 12px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ color: '#c77f0a', fontSize: 13 }}>★</span>
+                                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{p.name}</span>
                               </div>
-                            );
-                          })}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                {p.tier && <span style={{ fontSize: 10, fontWeight: 700, color: tierColor(p.tier), letterSpacing: '.5px', textTransform: 'uppercase' }}>{p.tier}</span>}
+                                <span style={{ fontSize: 13, fontWeight: 700, color: tierColor(p.tier) }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <div style={{ height: 1, background: '#eaedf4', margin: '14px 0 10px' }} />
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 8 }}>FULL PORTFOLIO</div>
+                        <div style={{ height: 1, background: '#eef1f9', margin: '14px 0 10px' }} />
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 8 }}>FULL PORTFOLIO</div>
                       </div>
                     )}
 
@@ -555,18 +577,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       {sortedPrograms.slice(0, Math.max(6, chosenPrograms.length)).map(p => {
                         const isChosen = chosenPrograms.some(c => c.name === p.name);
                         return (
-                          <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f5f6fa' }}>
+                          <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f7f9fe' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: p.tier === 'stretch' ? '#d64545' : p.tier === 'safe' ? '#2d7d46' : p.tier === 'possible' ? '#ca8a04' : '#9aa3b5' }} />
-                              <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#16233f' }}>{p.name}</span>
-                              {isChosen && <span style={{ fontSize: 10, background: '#fef3c7', color: '#92400e', fontWeight: 700, padding: '2px 6px', borderRadius: 4, letterSpacing: '.3px' }}>CHOSEN</span>}
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: tierColor(p.tier) }} />
+                              <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#141b34' }}>{p.name}</span>
+                              {isChosen && <span style={{ fontSize: 10, background: '#fff8ea', color: '#c77f0a', fontWeight: 700, padding: '2px 6px', borderRadius: 5, letterSpacing: '.3px' }}>CHOSEN</span>}
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#b8902f' }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#c77f0a' }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
                           </div>
                         );
                       })}
                       {programs.length > Math.max(6, chosenPrograms.length) && (
-                        <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 4 }}>+{programs.length - Math.max(6, chosenPrograms.length)} more schools in full portfolio</div>
+                        <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>+{programs.length - Math.max(6, chosenPrograms.length)} more schools in full portfolio</div>
                       )}
                     </div>
                   </div>
@@ -574,67 +596,67 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               </div>
 
               {/* Session summary */}
-              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 22, marginTop: 20 }}>
+              <div style={{ ...cardShell, padding: 22, marginTop: 20 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: summaryVisible && summary ? 14 : 0 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>SESSION SUMMARY</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>SESSION SUMMARY</div>
                   <button onClick={generateSummary} disabled={summarizing || !sessionActive}
-                    style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
+                    style={{ ...btnPrimary, padding: '9px 18px', fontSize: 13, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
                     {summarizing ? 'Summarizing…' : summary ? 'Re-summarize Chat' : 'Summarize Chat'}
                   </button>
                 </div>
                 {summaryVisible && (
                   <div style={{ marginTop: 14 }}>
                     {summarizing && !summary && (
-                      <div style={{ fontSize: 13, color: '#8a93a3', fontStyle: 'italic' }}>Analyzing conversation…</div>
+                      <div style={{ fontSize: 13, color: '#9098b5', fontStyle: 'italic' }}>Analyzing conversation…</div>
                     )}
                     {summary && (
-                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap', background: '#fafbfd', borderRadius: 10, padding: '14px 16px', border: '1px solid #eaedf4' }}>{renderFormattedText(summary)}</div>
+                      <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#33405e', whiteSpace: 'pre-wrap', background: '#f7f9fe', borderRadius: 14, padding: '14px 16px', border: '1px solid #eef1f9' }}>{renderFormattedText(summary)}</div>
                     )}
                   </div>
                 )}
               </div>
 
               {/* Consultant controls panel */}
-              <div style={{ background: '#fbfcfe', border: '1px solid #eaedf4', borderRadius: 16, padding: 24, alignSelf: 'start', position: 'sticky', top: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginBottom: 16 }}>CONSULTANT CONTROLS</div>
+              <div style={{ background: '#fbfcfe', border: '1px solid #eef1f9', borderRadius: 20, padding: 24, alignSelf: 'start', position: 'sticky', top: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#9098b5', marginBottom: 16 }}>CONSULTANT CONTROLS</div>
                 <div style={{ marginBottom: 22 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>Score Override</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Score Override</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button onClick={() => handleOverride(-1)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #d7ddec', background: '#f1f3fa', color: '#16233f', fontSize: 18, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>–</button>
-                      <span style={{ fontSize: 18, fontWeight: 700, color: '#16233f', minWidth: 32, textAlign: 'center' }}>{override}</span>
-                      <button onClick={() => handleOverride(1)} style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid #d7ddec', background: '#f1f3fa', color: '#16233f', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>+</button>
+                      <button onClick={() => handleOverride(-1)} style={{ width: 30, height: 30, borderRadius: 9, border: '1px solid #eef1f9', background: '#fff', color: '#141b34', fontSize: 18, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>–</button>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: '#141b34', minWidth: 32, textAlign: 'center' }}>{override}</span>
+                      <button onClick={() => handleOverride(1)} style={{ width: 30, height: 30, borderRadius: 9, border: '1px solid #eef1f9', background: '#fff', color: '#141b34', fontSize: 16, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1 }}>+</button>
                     </div>
                   </div>
-                  <div style={{ height: 6, background: '#eef1f6', borderRadius: 3, overflow: 'hidden' }}>
-                    <div style={{ width: `${override}%`, height: '100%', background: override >= 70 ? '#3a7d1e' : override >= 50 ? '#b8902f' : '#d64545', transition: 'all .2s' }} />
+                  <div style={{ height: 6, background: '#eef1f9', borderRadius: 3, overflow: 'hidden' }}>
+                    <div style={{ width: `${override}%`, height: '100%', background: scoreColor(override), transition: 'all .2s' }} />
                   </div>
                 </div>
 
                 {/* Candidate documents */}
                 <div style={{ marginBottom: 22 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 10 }}>CANDIDATE DOCUMENTS</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 10 }}>CANDIDATE DOCUMENTS</div>
                   {documents.length === 0 ? (
-                    <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 12, padding: '18px 14px', textAlign: 'center', fontSize: 12.5, color: '#8a93a3' }}>
+                    <div style={{ background: '#fff', border: '1px dashed #d7ddf0', borderRadius: 14, padding: '18px 14px', textAlign: 'center', fontSize: 12.5, color: '#9098b5' }}>
                       No documents uploaded yet.
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                       {documents.map(doc => (
-                        <div key={doc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #e2e7f2', borderRadius: 10, padding: '10px 12px' }}>
+                        <div key={doc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', border: '1px solid #eef1f9', borderRadius: 12, padding: '10px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ width: 28, height: 28, borderRadius: 7, background: '#eef1f7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16233f', flexShrink: 0 }}>
+                            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#efeaff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5b46e0', flexShrink: 0 }}>
                               <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
                             </span>
                             <div>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f' }}>{doc.label}</div>
-                              <div style={{ fontSize: 11, color: '#8a93a3' }}>{doc.text.trim().split(/\s+/).length} words{doc.file ? ` · original: ${doc.file.name}` : ''}</div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>{doc.label}</div>
+                              <div style={{ fontSize: 11, color: '#9098b5' }}>{doc.text.trim().split(/\s+/).length} words{doc.file ? ` · original: ${doc.file.name}` : ''}</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
-                            {doc.file && <button onClick={() => downloadOriginalFile(doc.file)} style={{ background: '#16233f', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#fff', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>Original</button>}
-                            <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>PDF</button>
-                            <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ background: '#eef1f7', border: 'none', borderRadius: 6, padding: '5px 9px', cursor: 'pointer', color: '#16233f', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}>Word</button>
+                            {doc.file && <button onClick={() => downloadOriginalFile(doc.file)} style={{ ...btnPrimary, borderRadius: 7, padding: '5px 9px', fontSize: 11, boxShadow: 'none' }}>Original</button>}
+                            <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>PDF</button>
+                            <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>Word</button>
                           </div>
                         </div>
                       ))}
@@ -643,21 +665,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
 
                 {narrative && (
-                  <div style={{ background: '#f4f6fc', border: '1px solid #d7ddec', borderRadius: 12, padding: 14, marginBottom: 18 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 5 }}>NARRATIVE STRATEGY</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#16233f', textTransform: 'capitalize' }}>{narrative}</div>
-                    <div style={{ fontSize: 13, color: '#7a8295', marginTop: 3 }}>
+                  <div style={{ background: '#f3f5fc', border: '1px solid #eef1f9', borderRadius: 14, padding: 14, marginBottom: 18 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 5 }}>NARRATIVE STRATEGY</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34', textTransform: 'capitalize' }}>{narrative}</div>
+                    <div style={{ fontSize: 13, color: '#6b7392', marginTop: 3 }}>
                       {narrative === 'upgrade' ? 'Deepening existing trajectory' : 'Pivoting to new direction'}
                     </div>
                   </div>
                 )}
 
-                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 10 }}>SEND NOTE TO CANDIDATE</div>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#fff', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 14px', marginBottom: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 10 }}>SEND NOTE TO CANDIDATE</div>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#fff', border: '1px solid #eef1f9', borderRadius: 14, padding: '6px 6px 6px 14px', marginBottom: 0 }}>
                   <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} placeholder="Send a note to candidate's session..." rows="3"
-                    style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#1c2433', padding: '8px 0' }} />
+                    style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#141b34', padding: '8px 0' }} />
                   <button onClick={sendConsultantNote}
-                    style={{ background: '#16233f', border: 'none', borderRadius: 9, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', flexShrink: 0 }}>
+                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
                     <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" /></svg>
                   </button>
                 </div>
@@ -670,35 +692,35 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                 <div style={{ display: 'flex', gap: 18 }}>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>TOTAL USERS</div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#16233f' }}>{users.length}</div>
+                  <div style={{ ...cardShell, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>TOTAL USERS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#141b34' }}>{users.length}</div>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>ACTIVE</div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#2d7d46' }}>{users.filter(u => !u.suspended).length}</div>
+                  <div style={{ ...cardShell, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>ACTIVE</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#19c08a' }}>{users.filter(u => !u.suspended).length}</div>
                   </div>
-                  <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 12, padding: '10px 18px' }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>SUSPENDED</div>
-                    <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 800, color: '#d64545' }}>{users.filter(u => u.suspended).length}</div>
+                  <div style={{ ...cardShell, padding: '10px 18px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>SUSPENDED</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#e0457a' }}>{users.filter(u => u.suspended).length}</div>
                   </div>
                 </div>
-                <button onClick={fetchUsers} disabled={usersLoading} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 8, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#3a425a', cursor: usersLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
                   {usersLoading ? 'Refreshing…' : 'Refresh'}
                 </button>
               </div>
 
               {usersError ? (
-                <div style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 16, padding: 24, textAlign: 'center', color: '#b42318', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
               ) : !users.length ? (
-                <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 15, color: '#8a93a3' }}>{usersLoading ? 'Loading users…' : 'No registered users yet.'}</div>
+                <div style={{ background: '#fff', border: '1px dashed #d7ddf0', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, color: '#9098b5' }}>{usersLoading ? 'Loading users…' : 'No registered users yet.'}</div>
                 </div>
               ) : (
-                <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f0f2f7', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3' }}>
+                <div style={{ ...cardShell, overflow: 'hidden' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f3f5fc', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                     <span>USER</span><span>LAST LOGIN</span><span>SESSION DURATION</span><span>STATUS</span><span>ACTIONS</span>
                   </div>
                   {users.map(u => {
@@ -706,22 +728,22 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     const busySuspend = userActionBusy === `${u.id}:suspend` || userActionBusy === `${u.id}:unsuspend`;
                     const busyDelete = userActionBusy === `${u.id}:delete`;
                     return (
-                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '16px 20px', alignItems: 'center', borderBottom: '1px solid #f8f9fb' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .8fr 1.6fr', gap: 0, padding: '16px 20px', alignItems: 'center', borderBottom: '1px solid #f7f9fe' }}>
                         <button onClick={() => setUserDetailId(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
-                          <span style={{ width: 38, height: 38, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{uInitials}</span>
+                          <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, flexShrink: 0 }}>{uInitials}</span>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{u.name}</div>
-                            <div style={{ fontSize: 12, color: '#8a93a3' }}>{u.email}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>{u.name}</div>
+                            <div style={{ fontSize: 12, color: '#9098b5' }}>{u.email}</div>
                           </div>
                         </button>
-                        <div style={{ fontSize: 13, color: '#3a425a' }}>{formatDateTime(u.lastLoginAt)}</div>
-                        <div style={{ fontSize: 13, color: '#3a425a' }}>{formatDuration(u.sessionDurationMs)}</div>
+                        <div style={{ fontSize: 13, color: '#33405e' }}>{formatDateTime(u.lastLoginAt)}</div>
+                        <div style={{ fontSize: 13, color: '#33405e' }}>{formatDuration(u.sessionDurationMs)}</div>
                         <div>
                           <span style={{
-                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 7, letterSpacing: '.3px',
-                            background: u.suspended ? '#fff5f5' : '#f0fdf4',
-                            color: u.suspended ? '#d64545' : '#2d7d46',
-                            border: `1px solid ${u.suspended ? '#fecaca' : '#bbf0cb'}`,
+                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px',
+                            background: u.suspended ? '#fff1f6' : '#eafff6',
+                            color: u.suspended ? '#e0457a' : '#19c08a',
+                            border: `1px solid ${u.suspended ? '#fbd3e2' : '#aaeed1'}`,
                           }}>{u.suspended ? 'SUSPENDED' : 'ACTIVE'}</span>
                         </div>
                         <div style={{ display: 'flex', gap: 6 }}>
@@ -730,13 +752,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                               ? performUserAction(u.id, 'unsuspend')
                               : confirmUserAction(u.id, 'suspend', `Suspend ${u.name}? They will be unable to log in until reinstated.`)}
                             disabled={busySuspend}
-                            style={{ background: '#eef1f7', border: 'none', borderRadius: 7, padding: '7px 12px', cursor: busySuspend ? 'not-allowed' : 'pointer', color: '#16233f', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busySuspend ? 0.5 : 1 }}>
+                            style={{ ...btnGhost, padding: '7px 12px', fontSize: 12, cursor: busySuspend ? 'not-allowed' : 'pointer', opacity: busySuspend ? 0.5 : 1 }}>
                             {u.suspended ? 'Reinstate' : 'Suspend'}
                           </button>
                           <button
                             onClick={() => confirmUserAction(u.id, 'delete', `Permanently delete ${u.name} (${u.email})? This cannot be undone.`)}
                             disabled={busyDelete}
-                            style={{ background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 7, padding: '7px 12px', cursor: busyDelete ? 'not-allowed' : 'pointer', color: '#d64545', fontSize: 12, fontWeight: 700, fontFamily: 'inherit', opacity: busyDelete ? 0.5 : 1 }}>
+                            style={{ ...btnDanger, padding: '7px 12px', fontSize: 12, cursor: busyDelete ? 'not-allowed' : 'pointer', opacity: busyDelete ? 0.5 : 1 }}>
                             Delete
                           </button>
                         </div>
@@ -748,15 +770,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
               {/* User detail overlay */}
               {userDetail && (
-                <div onClick={() => setUserDetailId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(22,35,63,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
-                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: 28, width: 460, maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto' }}>
+                <div onClick={() => setUserDetailId(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 20 }}>
+                  <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 22, padding: 28, width: 460, maxWidth: '100%', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(40,30,90,.28)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
-                      <span style={{ width: 48, height: 48, borderRadius: '50%', background: '#dbe3f5', color: '#2b3c63', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
+                      <span style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
                         {(userDetail.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                       </span>
                       <div>
-                        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f' }}>{userDetail.name}</div>
-                        <div style={{ fontSize: 13, color: '#8a93a3' }}>{userDetail.email}</div>
+                        <div style={{ fontSize: 19, fontWeight: 800, color: '#141b34' }}>{userDetail.name}</div>
+                        <div style={{ fontSize: 13, color: '#9098b5' }}>{userDetail.email}</div>
                       </div>
                     </div>
 
@@ -771,20 +793,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         ['Session duration', formatDuration(userDetail.sessionDurationMs)],
                         ['Pipeline step', stepsFor(userDetail.category)[userDetail.stepIdx] || 'Profile'],
                       ].map(([label, val]) => (
-                        <div key={label} style={{ background: '#f6f7fb', borderRadius: 10, padding: '10px 12px' }}>
-                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#8a93a3', marginBottom: 3 }}>{label.toUpperCase()}</div>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f' }}>{val}</div>
+                        <div key={label} style={{ background: '#f3f5fc', borderRadius: 12, padding: '10px 12px' }}>
+                          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#9098b5', marginBottom: 3 }}>{label.toUpperCase()}</div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{val}</div>
                         </div>
                       ))}
                     </div>
 
                     {userDetail.loginHistory && userDetail.loginHistory.length > 0 && (
                       <div style={{ marginBottom: 22 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#8a93a3', marginBottom: 8 }}>RECENT LOGIN ACTIVITY</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 8 }}>RECENT LOGIN ACTIVITY</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 160, overflowY: 'auto' }}>
                           {[...userDetail.loginHistory].reverse().map((h, i) => (
-                            <div key={i} style={{ fontSize: 12.5, color: '#3a425a', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f5f6fa', padding: '4px 0' }}>
-                              <span>Login</span><span style={{ color: '#8a93a3' }}>{formatDateTime(h.at)}</span>
+                            <div key={i} style={{ fontSize: 12.5, color: '#33405e', display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f7f9fe', padding: '4px 0' }}>
+                              <span>Login</span><span style={{ color: '#9098b5' }}>{formatDateTime(h.at)}</span>
                             </div>
                           ))}
                         </div>
@@ -796,16 +818,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         onClick={() => userDetail.suspended
                           ? performUserAction(userDetail.id, 'unsuspend')
                           : confirmUserAction(userDetail.id, 'suspend', `Suspend ${userDetail.name}? They will be unable to log in until reinstated.`)}
-                        style={{ flex: 1, background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ ...btnPrimary, flex: 1, padding: '10px 14px', fontSize: 13 }}>
                         {userDetail.suspended ? 'Reinstate User' : 'Suspend User'}
                       </button>
                       <button
                         onClick={() => confirmUserAction(userDetail.id, 'delete', `Permanently delete ${userDetail.name} (${userDetail.email})? This cannot be undone.`)}
-                        style={{ flex: 1, background: '#fff5f5', border: '1px solid #fecaca', color: '#d64545', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ ...btnDanger, flex: 1, padding: '10px 14px', fontSize: 13 }}>
                         Delete User
                       </button>
                     </div>
-                    <button onClick={() => setUserDetailId(null)} style={{ marginTop: 14, width: '100%', background: 'none', border: 'none', color: '#8a93a3', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 6 }}>
+                    <button onClick={() => setUserDetailId(null)} style={{ marginTop: 14, width: '100%', background: 'none', border: 'none', color: '#9098b5', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 6 }}>
                       Close
                     </button>
                   </div>
@@ -816,55 +838,54 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── LIVE SESSION FEED ── */}
           {adminView === 'session' && !selectedUserId && (
-            <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 16, padding: 48, textAlign: 'center' }}>
-              <div style={{ fontSize: 15, color: '#8a93a3', marginBottom: 8 }}>No candidate selected.</div>
-              <div style={{ fontSize: 13, color: '#b6bdcd' }}>Open a candidate from the Candidates list to view their live session.</div>
+            <div style={{ background: '#fff', border: '1px dashed #d7ddf0', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>No candidate selected.</div>
+              <div style={{ fontSize: 13, color: '#aab2cc' }}>Open a candidate from the Candidates list to view their live session.</div>
             </div>
           )}
           {adminView === 'session' && selectedUserId && (
             <div style={{ maxWidth: 800 }}>
-              <div style={{ fontSize: 13, color: '#8a93a3', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
+              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
               {/* Summarize button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <div style={{ fontSize: 13, color: '#8a93a3', fontWeight: 600 }}>{chat.length} messages in session</div>
+                <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600 }}>{chat.length} messages in session</div>
                 <button onClick={generateSummary} disabled={summarizing || !sessionActive}
-                  style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
+                  style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
                   {summarizing ? 'Summarizing…' : 'Summarize Chat'}
                 </button>
               </div>
 
               {/* Summary card */}
               {summary && (
-                <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#b8902f', marginBottom: 10 }}>SESSION SUMMARY</div>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: '#2a3447', whiteSpace: 'pre-wrap' }}>{renderFormattedText(summary)}</div>
+                <div style={{ background: '#fff8ea', border: '1px solid #f5e3b8', borderRadius: 16, padding: '20px 24px', marginBottom: 24 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#c77f0a', marginBottom: 10 }}>SESSION SUMMARY</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.7, color: '#33405e', whiteSpace: 'pre-wrap' }}>{renderFormattedText(summary)}</div>
                 </div>
               )}
 
               {/* Full chat log */}
               {!sessionActive ? (
-                <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#8a93a3', border: '1px solid #eaedf4' }}>No session data. Have a candidate log in and start the advisor.</div>
+                <div style={{ background: '#fff', borderRadius: 16, padding: 32, textAlign: 'center', color: '#9098b5', border: '1px solid #eef1f9' }}>No session data. Have a candidate log in and start the advisor.</div>
               ) : (
                 <div
                   style={{
                     display: 'flex', flexDirection: 'column', gap: 10,
                     height: '55vh', minHeight: 280, maxHeight: 640,
                     overflowY: 'auto', overscrollBehavior: 'contain',
-                    background: '#fff', border: '1px solid #eaedf4', borderRadius: 14, padding: 18,
+                    background: '#fff', border: '1px solid #eef1f9', borderRadius: 18, padding: 18,
                   }}
                 >
                   {chat.map((m, i) => (
                     <div key={i} style={{
-                      borderRadius: m.role === 'user' ? '12px 12px 4px 12px' : '4px 12px 12px 12px',
+                      borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
                       padding: '12px 16px', maxWidth: '88%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                      background: m.role === 'ai' ? '#eef3fb' : '#16233f',
-                      border: m.role === 'ai' ? '1px solid #d7e1f2' : 'none',
+                      background: m.role === 'ai' ? '#f3f5fc' : 'linear-gradient(135deg,#4d83ff,#8a52ff)',
                       flexShrink: 0,
                     }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: m.role === 'ai' ? '#8a93a3' : '#9bb0d8', marginBottom: 4 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: m.role === 'ai' ? '#9098b5' : 'rgba(255,255,255,.75)', marginBottom: 4 }}>
                         {m.role === 'ai' ? 'AI ADVISOR' : candidateName.toUpperCase()}
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.55, color: m.role === 'ai' ? '#2a3447' : '#e5ebf6', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ fontSize: 13, lineHeight: 1.55, color: m.role === 'ai' ? '#33405e' : '#fff', whiteSpace: 'pre-wrap' }}>
                         {m.role === 'user' && m.text.startsWith('Here is my CV')
                           ? '📄 [CV submitted for analysis]'
                           : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
@@ -880,12 +901,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── SETTINGS ── */}
           {adminView === 'settings' && (
             <div style={{ maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
-                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 18px' }}>Portal Settings</h3>
-                <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 18 }}>
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Portal Settings</h3>
+                <div style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, marginBottom: 18 }}>
                   This admin panel shows live session data from the active candidate. In a production deployment, this would connect to a database with historical sessions and multi-consultant features.
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#8a93a3' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, color: '#9098b5' }}>
                   <div>• Session persistence: server-side per account (any device)</div>
                   <div>• AI model: claude-haiku-4-5-20251001</div>
                   <div>• API: Anthropic Claude via /api/chat</div>
@@ -894,14 +915,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               </div>
 
-              <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28 }}>
-                <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>AI Process Configuration</h3>
-                <div style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, marginBottom: 22 }}>
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>AI Process Configuration</h3>
+                <div style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, marginBottom: 22 }}>
                   Edit how the advisor analyzes profiles, ranks candidates, searches programs, and scores fit. Saved changes apply to every candidate message going forward.
                 </div>
 
                 {!aiConfigLoaded && (
-                  <div style={{ fontSize: 13, color: '#8a93a3' }}>Loading configuration…</div>
+                  <div style={{ fontSize: 13, color: '#9098b5' }}>Loading configuration…</div>
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 26 }}>
@@ -910,27 +931,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     return (
                       <div key={s.key}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: '#16233f' }}>{s.label}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>{s.label}</div>
                           {isCustom && (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: '#7a5d12', background: '#fffbf0', border: '1px solid #fde68a', borderRadius: 6, padding: '2px 8px' }}>CUSTOM</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#c77f0a', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 7, padding: '2px 8px' }}>CUSTOM</span>
                           )}
                         </div>
-                        <div style={{ fontSize: 12.5, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>{s.description}</div>
+                        <div style={{ fontSize: 12.5, color: '#9098b5', marginBottom: 8, lineHeight: 1.5 }}>{s.description}</div>
                         <textarea
                           value={aiDrafts[s.key] || ''}
                           onChange={(e) => setAiDrafts(prev => ({ ...prev, [s.key]: e.target.value }))}
                           rows={8}
                           style={{
                             width: '100%', fontFamily: "'SF Mono',Consolas,monospace", fontSize: 12.5, lineHeight: 1.6,
-                            color: '#3a425a', background: '#f6f7fb', border: '1px solid #eaedf4', borderRadius: 10,
+                            color: '#33405e', background: '#f7f9fe', border: '1px solid #eef1f9', borderRadius: 14,
                             padding: '12px 14px', resize: 'vertical', boxSizing: 'border-box',
                           }}
                         />
                         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-                          <button onClick={() => saveAiSection(s.key)} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          <button onClick={() => saveAiSection(s.key)} style={{ ...btnPrimary, padding: '8px 16px', fontSize: 13 }}>
                             Save
                           </button>
-                          <button onClick={() => resetAiSection(s.key)} style={{ background: 'transparent', color: '#7a8295', border: '1px solid #eaedf4', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          <button onClick={() => resetAiSection(s.key)} style={{ ...btnGhost, padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
                             Reset to Default
                           </button>
                         </div>

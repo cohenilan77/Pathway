@@ -51,39 +51,42 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
   };
 
   const Toggle = ({ on, onToggle }) => (
-    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? '#16233f' : '#d7ddec', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s' }}>
+    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? 'linear-gradient(135deg,#4d83ff,#8a52ff)' : '#dde2f3', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s', boxShadow: on ? '0 4px 10px rgba(105,91,255,.32)' : 'none' }}>
       <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s' }} />
     </span>
   );
 
+  const inputStyle = { width: '100%', border: '1.5px solid #ecf0fa', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#141b34', background: '#f7f9fe' };
+
   return (
-    <div style={{ flex: 1, minHeight: '100vh', background: '#f6f7fb', overflowY: 'auto' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 44px' }}>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 38, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>Settings</h1>
-        <p style={{ fontSize: 15, color: '#7a8295', margin: '0 0 32px' }}>Manage your private office preferences.</p>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 34px 64px' }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Settings</h1>
+        <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>Manage your private office preferences.</p>
 
         {/* Plan */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Plan</h3>
-          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
+        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Plan</h3>
+          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
             {PLAN_DETAILS.map(p => {
               const active = plan === p.key;
               return (
                 <div key={p.key} style={{
                   display: 'flex', flexDirection: 'column',
-                  border: active ? '2px solid #16233f' : '1px solid #e2e7f2',
-                  background: active ? '#f6f7fb' : '#fff',
-                  borderRadius: 14, padding: '20px 18px',
+                  border: active ? '2px solid #5b46e0' : '1.5px solid #ecf0fa',
+                  background: active ? '#f7f9fe' : '#fff',
+                  borderRadius: 16, padding: '20px 18px',
                 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>{p.label}</div>
-                  <div style={{ fontSize: 13, color: '#6b7280', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
+                  <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{p.label}</div>
+                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
                   <button onClick={() => handleSelectPlan(p.key)} disabled={active} style={{
-                    background: active ? 'none' : '#16233f',
-                    color: active ? '#8a93a3' : '#fff',
-                    border: active ? '1px solid #d7ddec' : 'none',
-                    borderRadius: 9, padding: '10px 0', fontSize: 13, fontWeight: 700,
+                    background: active ? 'none' : 'linear-gradient(135deg,#4d83ff,#8a52ff)',
+                    color: active ? '#9098b5' : '#fff',
+                    border: active ? '1.5px solid #ecf0fa' : 'none',
+                    borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 700,
                     cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
+                    boxShadow: active ? 'none' : '0 8px 16px rgba(105,91,255,.3)',
                   }}>
                     {active ? 'Current Plan' : 'Select'}
                   </button>
@@ -94,56 +97,56 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Profile */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 18 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Profile</h3>
-          <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
+        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Profile</h3>
+          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Full Name</label>
-              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Full Name</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>Target Degree</label>
-              <input value={form.degree} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))} placeholder="MBA, Masters, PhD..." style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Target Degree</label>
+              <input value={form.degree} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))} placeholder="MBA, Masters, PhD..." style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>GPA</label>
-              <input value={form.gpa} onChange={e => setForm(f => ({ ...f, gpa: e.target.value }))} placeholder="e.g. 3.7" style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>GPA</label>
+              <input value={form.gpa} onChange={e => setForm(f => ({ ...f, gpa: e.target.value }))} placeholder="e.g. 3.7" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, marginBottom: 7 }}>GMAT / GRE</label>
-              <input value={form.gmat} onChange={e => setForm(f => ({ ...f, gmat: e.target.value }))} placeholder="e.g. 720" style={{ width: '100%', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>GMAT / GRE</label>
+              <input value={form.gmat} onChange={e => setForm(f => ({ ...f, gmat: e.target.value }))} placeholder="e.g. 720" style={inputStyle} />
             </div>
           </div>
         </div>
 
         {/* Notifications */}
-        <div style={{ background: '#fff', border: '1px solid #eaedf4', borderRadius: 16, padding: 28, marginBottom: 24 }}>
-          <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: '0 0 6px' }}>Notifications</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f0f2f7' }}>
+        <div style={{ background: '#fff', border: '1px solid #eef1f9', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Notifications</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f1f3fb' }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#16233f' }}>Strategist updates</div>
-              <div style={{ fontSize: 13, color: '#8a93a3' }}>Get notified when your advisor reviews a document.</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Strategist updates</div>
+              <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>Get notified when your advisor reviews a document.</div>
             </div>
             <Toggle on={notifStrategist} onToggle={() => setNotifStrategist(v => !v)} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#16233f' }}>Weekly score digest</div>
-              <div style={{ fontSize: 13, color: '#8a93a3' }}>A summary of your competitiveness metrics.</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Weekly score digest</div>
+              <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>A summary of your competitiveness metrics.</div>
             </div>
             <Toggle on={notifDigest} onToggle={() => setNotifDigest(v => !v)} />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          <button onClick={handleSave} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={handleSave} style={{ background: 'linear-gradient(135deg,#4d83ff,#8a52ff)', color: '#fff', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
             Save Changes
           </button>
-          <button onClick={resetSession} style={{ background: 'none', color: '#d64545', border: '1.5px solid #d64545', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={resetSession} style={{ background: 'none', color: '#e0457a', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Clear Session Data
           </button>
-          <button onClick={signOut} style={{ background: 'none', color: '#7a8295', border: '1.5px solid #d7ddec', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={signOut} style={{ background: 'none', color: '#6b7392', border: '1.5px solid #ecf0fa', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Sign Out
           </button>
         </div>
