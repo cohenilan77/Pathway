@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import '../styles/editorial-base.css';
 import '../styles/editorial-auth.css';
 
-export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, login, adminAuth, authError, authBusy, showToast }) {
+export default function Login({ role, setRole, showPw, setShowPw, remember, setRemember, go, forgot, login, adminAuth, authError, authBusy }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -65,7 +65,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
                 <button
                   type="button"
                   className="auth__oauth-btn"
-                  onClick={() => showToast && showToast('Google sign-in is coming soon.')}
+                  onClick={() => { window.location.href = '/api/oauth-start?provider=google'; }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18">
                     <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.12-.85 2.07-1.81 2.71v2.26h2.92c1.71-1.57 2.69-3.89 2.69-6.61z" />
@@ -78,7 +78,7 @@ export default function Login({ role, setRole, showPw, setShowPw, remember, setR
                 <button
                   type="button"
                   className="auth__oauth-btn"
-                  onClick={() => showToast && showToast('Outlook sign-in is coming soon.')}
+                  onClick={() => { window.location.href = '/api/oauth-start?provider=microsoft'; }}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18">
                     <rect x="0" y="2" width="18" height="14" rx="2" fill="#0078D4" />

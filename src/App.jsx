@@ -174,6 +174,21 @@ export default function App() {
     else localStorage.removeItem('pathway_auth');
   }, []);
 
+  // Pick up the session token (or error) handed back by /api/oauth-callback after
+  // a Google/Outlook sign-in redirect, then strip it from the URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const oauthToken = params.get('oauth_token');
+    const oauthError = params.get('oauth_error');
+    if (!oauthToken && !oauthError) return;
+    if (oauthToken) { setAuth({ token: oauthToken, user: null }); setScreen('candidate'); }
+    if (oauthError) setToast(oauthError);
+    params.delete('oauth_token');
+    params.delete('oauth_error');
+    const rest = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
+  }, [setAuth]);
+
   // Hydrate the candidate's session from the server whenever we have a token
   // (on initial load with a remembered token, and right after login/register).
   useEffect(() => {
@@ -183,8 +198,9 @@ export default function App() {
       try {
         const res = await fetch('/api/session', { headers: { Authorization: `Bearer ${auth.token}` } });
         if (!res.ok) throw new Error('unauthorized');
-        const { data } = await res.json();
+        const { data, user } = await res.json();
         if (cancelled) return;
+        if (user && !auth.user) setAuth({ token: auth.token, user });
         setChat(data?.chat?.length ? data.chat : INITIAL_CHAT);
         setStepIdx(data?.stepIdx || 0);
         setProfile(data?.profile || null);
