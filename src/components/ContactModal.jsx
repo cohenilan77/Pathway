@@ -58,7 +58,7 @@ export default function ContactModal({ onClose, profile }) {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: '#fff',
+          background: '#faf7f2',
           borderRadius: 20,
           maxWidth: 540,
           width: '100%',
@@ -69,7 +69,7 @@ export default function ContactModal({ onClose, profile }) {
         {/* Header */}
         <div
           style={{
-            background: '#16233f',
+            background: '#122621',
             padding: '32px 40px 28px',
             position: 'relative',
           }}
@@ -80,23 +80,23 @@ export default function ContactModal({ onClose, profile }) {
             style={{
               position: 'absolute', top: 18, right: 20,
               background: 'none', border: 'none', cursor: 'pointer',
-              color: '#9bb0d8', fontSize: 22, lineHeight: 1,
+              color: '#9a8a72', fontSize: 22, lineHeight: 1,
               padding: '4px 8px', borderRadius: 6,
               transition: 'color .15s',
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = '#f5c94c')}
-            onMouseLeave={(e) => (e.currentTarget.style.color = '#9bb0d8')}
+            onMouseEnter={(e) => (e.currentTarget.style.color = '#c0844a')}
+            onMouseLeave={(e) => (e.currentTarget.style.color = '#9a8a72')}
           >
             ×
           </button>
           <div
             style={{
               display: 'inline-block',
-              background: 'linear-gradient(90deg,#b8902f,#f5c94c)',
+              background: 'linear-gradient(90deg,#c0844a,#c0844a)',
               borderRadius: 4,
               padding: '3px 10px',
               fontSize: 11, fontWeight: 700, letterSpacing: '1.2px',
-              color: '#42320a', marginBottom: 12,
+              color: '#8a6a3e', marginBottom: 12,
               fontFamily: "'Public Sans',sans-serif",
               textTransform: 'uppercase',
             }}
@@ -107,7 +107,7 @@ export default function ContactModal({ onClose, profile }) {
             style={{
               fontFamily: "'Playfair Display',serif",
               fontSize: 26, fontWeight: 800,
-              color: '#fff', margin: 0, lineHeight: 1.2,
+              color: '#faf7f2', margin: 0, lineHeight: 1.2,
             }}
           >
             Upgrade to Elite Strategy
@@ -115,7 +115,7 @@ export default function ContactModal({ onClose, profile }) {
           <p
             style={{
               fontFamily: "'Public Sans',sans-serif",
-              fontSize: 14, color: '#9bb0d8',
+              fontSize: 14, color: '#9a8a72',
               margin: '8px 0 0', lineHeight: 1.5,
             }}
           >
@@ -126,17 +126,17 @@ export default function ContactModal({ onClose, profile }) {
         {/* Success state */}
         {status === 'sent' && (
           <div style={{ padding: '40px', textAlign: 'center' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #86efac', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
-            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: '#16233f', margin: '0 0 10px' }}>Inquiry Sent</h3>
-            <p style={{ fontSize: 14, color: '#7a8295', margin: '0 0 24px', lineHeight: 1.6 }}>We'll be in touch within one business day.</p>
-            <button onClick={onClose} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#cdd8d1', border: '2px solid #bcccc4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: 28 }}>✓</div>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: '#122621', margin: '0 0 10px' }}>Inquiry Sent</h3>
+            <p style={{ fontSize: 14, color: '#6b7872', margin: '0 0 24px', lineHeight: 1.6 }}>We'll be in touch within one business day.</p>
+            <button onClick={onClose} style={{ background: '#122621', color: '#faf7f2', border: 'none', borderRadius: 10, padding: '12px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
           </div>
         )}
 
         {/* Error state */}
         {status === 'error' && (
-          <div style={{ margin: '0 40px', padding: '12px 16px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#d64545', fontWeight: 600 }}>
-            Couldn't send — please email <a href="mailto:cohenilan@gmail.com" style={{ color: '#d64545' }}>cohenilan@gmail.com</a> directly.
+          <div style={{ margin: '0 40px', padding: '12px 16px', background: '#f3e3df', border: '1px solid #f3e3df', borderRadius: 10, fontSize: 13, color: '#a8453f', fontWeight: 600 }}>
+            Couldn't send — please email <a href="mailto:cohenilan@gmail.com" style={{ color: '#a8453f' }}>cohenilan@gmail.com</a> directly.
           </div>
         )}
 
@@ -176,7 +176,7 @@ export default function ContactModal({ onClose, profile }) {
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>
                 Phone{' '}
-                <span style={{ color: '#adb5c7', fontWeight: 400 }}>(optional)</span>
+                <span style={{ color: '#9a8a72', fontWeight: 400 }}>(optional)</span>
               </label>
               <input
                 name="phone"
@@ -226,8 +226,8 @@ export default function ContactModal({ onClose, profile }) {
             type="submit"
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg,#b8902f,#f5c94c)',
-              color: '#42320a',
+              background: 'linear-gradient(135deg,#c0844a,#c0844a)',
+              color: '#8a6a3e',
               border: 'none', borderRadius: 10,
               padding: '14px 0',
               fontSize: 15, fontWeight: 800,
@@ -254,18 +254,18 @@ export default function ContactModal({ onClose, profile }) {
         {/* Or call us */}
         <div style={{ padding: '24px 40px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,transparent,#b8902f)' }} />
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,transparent,#c0844a)' }} />
             <span
               style={{
                 fontFamily: "'Public Sans',sans-serif",
                 fontSize: 12, fontWeight: 700,
-                color: '#b8902f', letterSpacing: '.8px',
+                color: '#c0844a', letterSpacing: '.8px',
                 textTransform: 'uppercase', whiteSpace: 'nowrap',
               }}
             >
               Or call us
             </span>
-            <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#b8902f,transparent)' }} />
+            <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#c0844a,transparent)' }} />
           </div>
           <div style={{ textAlign: 'center', marginBottom: 0 }}>
             <a
@@ -273,7 +273,7 @@ export default function ContactModal({ onClose, profile }) {
               style={{
                 fontFamily: "'Playfair Display',serif",
                 fontSize: 20, fontWeight: 700,
-                color: '#16233f',
+                color: '#122621',
                 textDecoration: 'none',
                 letterSpacing: '.5px',
               }}
@@ -293,7 +293,7 @@ export default function ContactModal({ onClose, profile }) {
           <span
             style={{
               fontFamily: "'Public Sans',sans-serif",
-              fontSize: 11, color: '#adb5c7',
+              fontSize: 11, color: '#9a8a72',
               letterSpacing: '.4px',
             }}
           >
@@ -309,7 +309,7 @@ const labelStyle = {
   display: 'block',
   fontFamily: "'Public Sans',sans-serif",
   fontSize: 12, fontWeight: 700,
-  color: '#3a425a', marginBottom: 6,
+  color: '#122621', marginBottom: 6,
   letterSpacing: '.3px',
 };
 
@@ -317,9 +317,9 @@ const inputStyle = {
   width: '100%',
   boxSizing: 'border-box',
   fontFamily: "'Public Sans',sans-serif",
-  fontSize: 14, color: '#16233f',
-  background: '#f6f7fb',
-  border: '1.5px solid #e1e6f5',
+  fontSize: 14, color: '#122621',
+  background: '#f6f1e8',
+  border: '1.5px solid #e7dcc7',
   borderRadius: 9,
   padding: '10px 13px',
   outline: 'none',
@@ -327,13 +327,13 @@ const inputStyle = {
 };
 
 function inputFocus(e) {
-  e.currentTarget.style.borderColor = '#b8902f';
+  e.currentTarget.style.borderColor = '#c0844a';
   e.currentTarget.style.boxShadow = '0 0 0 3px rgba(184,144,47,0.12)';
-  e.currentTarget.style.background = '#fff';
+  e.currentTarget.style.background = '#faf7f2';
 }
 
 function inputBlur(e) {
-  e.currentTarget.style.borderColor = '#e1e6f5';
+  e.currentTarget.style.borderColor = '#e7dcc7';
   e.currentTarget.style.boxShadow = 'none';
-  e.currentTarget.style.background = '#f6f7fb';
+  e.currentTarget.style.background = '#f6f1e8';
 }

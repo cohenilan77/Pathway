@@ -23,6 +23,10 @@
   --green-soft: #bcccc4;
   --green-soft-2: #9fb1a8;
   --green-soft-3: #cdd8d1;
+  --success: #2f6b4f;
+  --success-soft: #cdd8d1;
+  --error: #a8453f;
+  --error-soft: #f3e3df;
 }
 
 .serif {
