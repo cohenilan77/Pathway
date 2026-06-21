@@ -3,12 +3,12 @@ import crypto from 'crypto';
 const PROVIDERS = {
   google: {
     authorizeUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    clientIdEnv: 'GOOGLE_CLIENT_ID',
+    clientIdEnv: ['GOOGLE_CLIENT_ID', 'GOOGLE_ID', 'AUTH_GOOGLE_ID'],
     scope: 'openid email profile',
   },
   microsoft: {
     authorizeUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    clientIdEnv: 'MICROSOFT_CLIENT_ID',
+    clientIdEnv: ['MICROSOFT_CLIENT_ID', 'MICROSOFT_ID', 'AUTH_MICROSOFT_ID'],
     scope: 'openid email profile User.Read',
   },
 };
@@ -22,6 +22,14 @@ function getOrigin(req) {
   return `${proto}://${req.headers.host}`;
 }
 
+function readEnv(names) {
+  for (const name of names) {
+    const value = process.env[name];
+    if (value) return { value, name };
+  }
+  return { value: '', name: names[0] };
+}
+
 export default async function handler(req, res) {
   const url = getRequestUrl(req);
   const provider = String(req.query?.provider || url.searchParams.get('provider') || '');
@@ -30,9 +38,9 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Unknown OAuth provider.' });
     return;
   }
-  const clientId = process.env[config.clientIdEnv];
+  const { value: clientId, name: clientIdEnv } = readEnv(config.clientIdEnv);
   if (!clientId) {
-    res.status(500).json({ error: `${provider} sign-in is missing ${config.clientIdEnv}.` });
+    res.status(500).json({ error: `${provider} sign-in is missing ${clientIdEnv}.` });
     return;
   }
 
