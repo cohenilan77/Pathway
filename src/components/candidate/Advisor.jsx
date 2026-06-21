@@ -8,10 +8,68 @@ const CATEGORY_CHIPS = [
   { label: 'Personal Development', emoji: '✨', text: 'Personal Development' },
 ];
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, narrative, tasks, completedTasks, setCompletedTasks }) {
+function NarrativeModal({ onClose, onChoose }) {
+  return (
+    <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,27,52,.58)', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: '#faf7f2', borderRadius: 24, maxWidth: 640, width: '100%', padding: 32, boxShadow: '0 30px 60px rgba(20,27,52,.35)', maxHeight: '90vh', overflowY: 'auto' }}>
+        <button onClick={onClose} title="Close" style={{ position: 'absolute', top: 20, right: 20, width: 34, height: 34, borderRadius: 10, border: 'none', background: '#f1eadd', color: '#6b7392', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 6 6 18M6 6l12 12" /></svg>
+        </button>
+
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#5b46e0', marginBottom: 8 }}>STEP 5 · BEFORE YOU WRITE</div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.4px', color: '#141b34', margin: '0 0 10px' }}>Choose your narrative</h2>
+        <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: '0 0 24px' }}>
+          Every strong application is anchored by a clear narrative posture. Pick the one that best reflects how you want to be seen by admissions committees — we'll tailor your essays, recommendations guidance, and interview prep around it.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 22 }}>
+          <div style={{ background: '#fff', border: '1px solid #f1eadd', borderRadius: 18, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#19c08a', background: '#e9f9f1', padding: '4px 9px', borderRadius: 7 }}>LOWER RISK</span>
+            <span style={{ fontSize: 22 }}>📈</span>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#141b34', margin: 0 }}>The Upgrade</h3>
+            <p style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, margin: 0, flex: 1 }}>
+              Build directly on your current trajectory — sharpen your strengths and frame your experience as a natural step up to your target schools.
+            </p>
+            <button onClick={() => onChoose('upgrade')} style={{ width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px rgba(105,91,255,.32)' }}>
+              Choose the Upgrade
+            </button>
+          </div>
+
+          <div style={{ background: '#fff', border: '1px solid #f1eadd', borderRadius: 18, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#e0556b', background: '#fdeaf0', padding: '4px 9px', borderRadius: 7 }}>HIGHER REWARD</span>
+            <span style={{ fontSize: 22 }}>🔄</span>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#141b34', margin: 0 }}>The Pivot</h3>
+            <p style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, margin: 0, flex: 1 }}>
+              Reframe your story around a deliberate change in direction — a bolder narrative that explains why now, and why this path.
+            </p>
+            <button onClick={() => onChoose('pivot')} style={{ width: '100%', background: 'linear-gradient(135deg,#fbc094,#fba2bb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px rgba(251,140,170,.32)' }}>
+              Choose the Pivot
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '12px 14px', marginBottom: 16 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(140deg,#fbd2a2,#fcbfcf)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: '#faf7f2' }}>LS</span>
+          <p style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, margin: 0 }}>
+            Not sure which fits? Your strategist can review your profile and recommend a posture — just ask in the chat.
+          </p>
+        </div>
+
+        <div style={{ textAlign: 'center' }}>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9098b5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>
+            Not ready yet — go back to the chat
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showNarrativeModal, setShowNarrativeModal] = useState(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,6 +85,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  const handleNarrativeChoose = (kind) => {
+    setNarrative && setNarrative(kind);
+    send && send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
   };
 
   const hasScores = !!scores;
@@ -170,7 +233,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#ffd76a', marginBottom: 4 }}>NEXT STEP</div>
                       <span style={{ fontSize: 14, color: '#e7dcc7', fontWeight: 600 }}>Choose your narrative strategy</span>
                     </div>
-                    <button onClick={() => setCandTab('strategy')} style={{ background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 11, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 11, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                       Choose Narrative →
                     </button>
                   </div>
@@ -208,6 +271,13 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 <span style={{ fontSize: 11.5, color: '#a3abc6', fontWeight: 500 }}>Confidential consultation · responses are AI-generated guidance</span>
               </div>
             </div>
+
+            {showNarrativeModal && (
+              <NarrativeModal
+                onClose={() => setShowNarrativeModal(false)}
+                onChoose={handleNarrativeChoose}
+              />
+            )}
           </div>
 
           {/* tasks rail */}

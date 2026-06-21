@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
-import NarrativeStrategy from './NarrativeStrategy.jsx';
 import Settings from './Settings.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
@@ -17,10 +16,6 @@ const NAV_ITEMS = [
   {
     key: 'analysis', label: 'Analysis',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 3v18h18" /><rect x="7" y="11" width="3" height="6" rx="1" /><rect x="12" y="7" width="3" height="10" rx="1" /><rect x="17" y="13" width="3" height="4" rx="1" /></svg>,
-  },
-  {
-    key: 'strategy', label: 'Narrative Strategy',
-    icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 11l19-9-9 19-2-8-8-2Z" /></svg>,
   },
   {
     key: 'documents', label: 'Documents',
@@ -73,7 +68,7 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { advisor: 'Advisor', analysis: 'Analysis', strategy: 'Narrative Strategy', documents: 'Documents', settings: 'Settings' };
+  const tabLabels = { advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings' };
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f1eadd', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif", color: '#141b34', WebkitFontSmoothing: 'antialiased' }}>
@@ -200,7 +195,6 @@ export default function CandidatePortal(props) {
         {candTab === 'advisor' && <Advisor {...props} />}
         {candTab === 'analysis' && <Analysis {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
-        {candTab === 'strategy' && <NarrativeStrategy {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
       </div>
 
