@@ -18,48 +18,74 @@ const PLAN_DETAILS = [
   },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast }) {
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, requiresOAuthDetails, saveUserDetails, setCandTab }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
-    name: profile?.name || '',
+    name: authUser?.name || profile?.name || '',
     degree: profile?.degree || '',
     gpa: profile?.gpa || '',
     gmat: profile?.gmat || '',
   });
-
-  const [detailsSaved, setDetailsSaved] = useState(() => {
-    try { return localStorage.getItem('pathway_details_saved') === 'true'; }
-    catch { return false; }
-  });
+  const [savingDetails, setSavingDetails] = useState(false);
 
   const [details, setDetails] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('pathway_details') || '{}'); }
-    catch { return {}; }
+    const stored = (() => {
+      try { return JSON.parse(localStorage.getItem('pathway_details') || '{}'); }
+      catch { return {}; }
+    })();
+    return {
+      name: authUser?.name || stored.name || profile?.name || '',
+      email: authUser?.email || stored.email || '',
+      country: authUser?.residency || stored.country || '',
+      age: authUser?.age || stored.age || '',
+      phone: authUser?.phone || stored.phone || '',
+      linkedin: authUser?.linkedin || stored.linkedin || '',
+    };
   });
 
-  const handleSave = () => {
+  const persistDetails = async (confirmOAuth = false) => {
+    const payload = {
+      name: details.name || form.name,
+      residency: details.country,
+      age: details.age,
+      phone: details.phone,
+      linkedin: details.linkedin,
+      oauthDetailsConfirmed: confirmOAuth,
+    };
+    if (saveUserDetails) await saveUserDetails(payload);
+    localStorage.setItem('pathway_details', JSON.stringify({ ...details, name: payload.name }));
+  };
+
+  const handleSave = async () => {
+    setSavingDetails(true);
     try {
       const prefs = JSON.parse(localStorage.getItem('pathway_prefs') || '{}');
       localStorage.setItem('pathway_prefs', JSON.stringify({ ...prefs, profile: form, notifStrategist, notifDigest }));
-      localStorage.setItem('pathway_details', JSON.stringify(details));
+      await persistDetails(false);
       showToast('Preferences saved.');
-    } catch {
-      showToast('Could not save preferences.');
+    } catch (err) {
+      showToast(err.message || 'Could not save preferences.');
+    } finally {
+      setSavingDetails(false);
     }
   };
 
-  const handleUnlock = () => {
-    if (!details.country?.trim() || !details.age?.toString().trim()) {
-      showToast('Please fill in Country of Residence and Age to continue.');
+  const handleUnlock = async () => {
+    if (!details.name?.trim() || !details.country?.trim() || !details.age?.toString().trim()) {
+      showToast('Please fill in Full Name, Country of Residence, and Age to continue.');
       return;
     }
+    setSavingDetails(true);
     try {
-      localStorage.setItem('pathway_details', JSON.stringify(details));
-      localStorage.setItem('pathway_details_saved', 'true');
-    } catch {}
-    setDetailsSaved(true);
-    showToast('Details saved — Pathway is now unlocked.');
+      await persistDetails(true);
+      showToast('Details saved — Pathway is now unlocked.');
+      setCandTab('advisor');
+    } catch (err) {
+      showToast(err.message || 'Could not save details.');
+    } finally {
+      setSavingDetails(false);
+    }
   };
 
   const handleSelectPlan = (key) => {
@@ -82,7 +108,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
   const inputStyle = { width: '100%', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#141b34', background: '#f6f1e8' };
 
-  const lockedCardStyle = !detailsSaved ? { opacity: 0.3, pointerEvents: 'none', userSelect: 'none', position: 'relative' } : { position: 'relative' };
+  const lockedCardStyle = requiresOAuthDetails ? { opacity: 0.3, pointerEvents: 'none', userSelect: 'none', position: 'relative' } : { position: 'relative' };
 
   const LockOverlay = () => (
     <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,.18) 6px, rgba(255,255,255,.18) 7px)', zIndex: 1 }} />
@@ -92,7 +118,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 34px 64px' }}>
 
-        {!detailsSaved && (
+        {requiresOAuthDetails && (
           <div style={{ background: 'linear-gradient(135deg,#94b3fb18,#b899fb18)', border: '1.5px solid #b899fb55', borderRadius: 16, padding: '16px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
             <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#faf7f2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -101,18 +127,18 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
               </svg>
             </span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>Complete your details to unlock Pathway</div>
-              <div style={{ fontSize: 12.5, color: '#6b7392' }}>Your AI strategist needs this information before your session can begin.</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>Confirm your details to unlock Pathway</div>
+              <div style={{ fontSize: 12.5, color: '#6b7392' }}>This is required once after Google or Outlook sign-in.</div>
             </div>
           </div>
         )}
 
         <h1 style={{ fontSize: 32, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Settings</h1>
-        <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>Manage your private office preferences.</p>
+          <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>{requiresOAuthDetails ? 'Confirm your candidate details before continuing.' : 'Manage your private office preferences.'}</p>
 
         {/* Plan */}
         <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
-          {!detailsSaved && <LockOverlay />}
+          {requiresOAuthDetails && <LockOverlay />}
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Plan</h3>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
@@ -145,7 +171,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
         {/* Profile */}
         <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
-          {!detailsSaved && <LockOverlay />}
+          {requiresOAuthDetails && <LockOverlay />}
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Profile</h3>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -169,19 +195,27 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Details */}
-        <div style={{ background: '#faf7f2', border: !detailsSaved ? '1.5px solid #b899fb88' : '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', position: 'relative' }}>
+        <div style={{ background: '#faf7f2', border: requiresOAuthDetails ? '1.5px solid #b899fb88' : '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Details</h3>
-            {!detailsSaved && (
+            {requiresOAuthDetails && (
               <span style={{ fontSize: 11, fontWeight: 700, color: '#9285e4', background: '#f1eadd', padding: '3px 9px', borderRadius: 8 }}>Required</span>
             )}
           </div>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>
-            {!detailsSaved
+            {requiresOAuthDetails
               ? 'Fill in all required fields to unlock your Pathway private office.'
               : 'Your personal details used by your AI strategist.'}
           </p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Full Name</label>
+              <input value={details.name || ''} onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} placeholder="Your name" style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Email</label>
+              <input value={details.email || authUser?.email || ''} disabled placeholder="you@example.com" style={{ ...inputStyle, opacity: 0.7, cursor: 'not-allowed' }} />
+            </div>
             <div>
               <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Country of Residence</label>
               <input value={details.country || ''} onChange={e => setDetails(d => ({ ...d, country: e.target.value }))} placeholder="e.g. United States" style={inputStyle} />
@@ -207,7 +241,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
         {/* Notifications */}
         <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
-          {!detailsSaved && <LockOverlay />}
+          {requiresOAuthDetails && <LockOverlay />}
           <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Notifications</h3>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f1eadd' }}>
             <div>
@@ -226,17 +260,17 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          {!detailsSaved ? (
+          {requiresOAuthDetails ? (
             <>
-              <button onClick={handleUnlock} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
-                Save &amp; Unlock Pathway →
+              <button onClick={handleUnlock} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                {savingDetails ? 'Saving…' : 'Save & Unlock Pathway →'}
               </button>
               <span style={{ fontSize: 12.5, color: '#9098b5' }}>Fill in required fields above to continue</span>
             </>
           ) : (
             <>
-              <button onClick={handleSave} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
-                Save Changes
+              <button onClick={handleSave} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                {savingDetails ? 'Saving…' : 'Save Changes'}
               </button>
               <button onClick={resetSession} style={{ background: 'none', color: '#e0457a', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear Session Data

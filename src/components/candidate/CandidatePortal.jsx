@@ -49,14 +49,23 @@ function navDotStyle(active) {
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleHelp = () => { setShowHelp(true); setMenuOpen(false); };
   const handleUpgrade = () => { setCandTab('settings'); setMenuOpen(false); };
   const handleSignOut = () => { setMenuOpen(false); signOut(); };
-  const handleNavClick = (key) => { setCandTab(key); setMenuOpen(false); };
+  const handleNavClick = (key) => {
+    if (requiresOAuthDetails && key !== 'settings') {
+      setCandTab('settings');
+      setMenuOpen(false);
+      showToast('Please confirm your details before continuing.');
+      return;
+    }
+    setCandTab(key);
+    setMenuOpen(false);
+  };
 
   const name = authUser?.name || profile?.name || 'Candidate';
   const initials = name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -111,8 +120,9 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {NAV_ITEMS.map(item => {
             const active = candTab === item.key;
+            const locked = requiresOAuthDetails && item.key !== 'settings';
             return (
-              <button key={item.key} onClick={() => handleNavClick(item.key)} style={navStyle(active)}>
+              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
                 <span>{item.label}</span>
                 <span style={navDotStyle(active)} />
@@ -180,7 +190,7 @@ export default function CandidatePortal(props) {
               <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
               <span style={{ position: 'absolute', top: 9, right: 10, width: 8, height: 8, borderRadius: '50%', background: '#fcb1c1', border: '2px solid #faf7f2' }} />
             </button>
-            <button onClick={resetSession} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={resetSession} disabled={requiresOAuthDetails} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
               New session
             </button>
