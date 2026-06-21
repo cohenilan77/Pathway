@@ -64,6 +64,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [passwordDraft, setPasswordDraft] = useState('');
   const [ownPasswordForm, setOwnPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [ownPasswordBusy, setOwnPasswordBusy] = useState(false);
+  const [kpiStatus, setKpiStatus] = useState(null);
+  const [kpiBusy, setKpiBusy] = useState(false);
 
   const canManageUsers = authUser?.role === 'admin' || !!adminSecret;
   const adminHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : { 'X-Admin-Secret': adminSecret };
@@ -86,6 +88,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const assignableConsultants = consultantUsers.filter(u => !u.suspended);
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
+
+  const loadKpiStatus = useCallback(() => {
+    if (!canManageUsers) return;
+    fetch('/api/kpi-refresh', { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.error) setKpiStatus(d);
+      })
+      .catch(() => {});
+  }, [adminSecret, authToken, canManageUsers]);
+
+  useEffect(() => { loadKpiStatus(); }, [loadKpiStatus]);
 
   const openCandidate = (userId) => {
     setSelectedUserId(userId);
@@ -178,6 +192,24 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       showToast(e.message || 'Could not change password.');
     } finally {
       setOwnPasswordBusy(false);
+    }
+  };
+
+  const refreshKpiDatabase = async () => {
+    setKpiBusy(true);
+    try {
+      const res = await fetch('/api/kpi-refresh', { method: 'POST', headers: adminHeaders });
+      const data = await res.json();
+      if (!res.ok) {
+        showToast(data.error || 'Failed to refresh KPI database.');
+        return;
+      }
+      setKpiStatus(data);
+      showToast('KPI database refreshed.');
+    } catch {
+      showToast('Failed to refresh KPI database.');
+    } finally {
+      setKpiBusy(false);
     }
   };
 
@@ -1016,6 +1048,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   {ownPasswordBusy ? 'Saving...' : 'Change Password'}
                 </button>
               </div>
+
+              {canManageUsers && (
+                <div style={{ ...cardShell, padding: 28 }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>KPI Database</h3>
+                  <div style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>
+                    Refresh the live university/program KPI database from the Excel file saved in GitHub.
+                  </div>
+                  <div style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: 14, fontSize: 13, color: '#6b7392', lineHeight: 1.7 }}>
+                    <div><strong style={{ color: '#33405e' }}>Source:</strong> {kpiStatus?.sourceFile || 'data/admissions_kpi_universe_expanded.xlsx'}</div>
+                    <div><strong style={{ color: '#33405e' }}>Last refresh:</strong> {kpiStatus?.importedAt ? new Date(kpiStatus.importedAt).toLocaleString() : 'Not refreshed yet'}</div>
+                    {kpiStatus?.counts && (
+                      <div><strong style={{ color: '#33405e' }}>Rows:</strong> {Object.entries(kpiStatus.counts).map(([name, count]) => `${name}: ${count}`).join(' · ')}</div>
+                    )}
+                  </div>
+                  <button onClick={refreshKpiDatabase} disabled={kpiBusy} style={{ ...btnPrimary, marginTop: 14, padding: '10px 18px', fontSize: 13, opacity: kpiBusy ? 0.55 : 1, cursor: kpiBusy ? 'not-allowed' : 'pointer' }}>
+                    {kpiBusy ? 'Refreshing...' : 'Refresh KPI Database'}
+                  </button>
+                </div>
+              )}
 
               <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>AI Process Configuration</h3>

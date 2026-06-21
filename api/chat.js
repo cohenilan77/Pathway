@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -138,11 +139,15 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config, language) {
+function buildSystemPrompt(config, language, kpiPromptSummary = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
     : '';
+  const kpiInstruction = kpiPromptSummary
+    ? `\n\n==LIVE UNIVERSITY / PROGRAM KPI DATABASE==\n${kpiPromptSummary}\n\nUse the LIVE UNIVERSITY / PROGRAM KPI DATABASE as the baseline for school/program matching, KPI criteria, hard gates, evidence gaps, student action items, source awareness, and fit calibration. Keep using the required <PROGRAMS>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, and <TASKS> JSON block formats below.`
+    : '';
   return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
+${kpiInstruction}
 
 You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
 1. The GRADUATE / POSTGRADUATE-DOCTORAL / PERSONAL DEVELOPMENT pipeline — a structured 9-step admissions/career process (STEP 2 through STEP 8 below).
@@ -419,10 +424,11 @@ export default async function handler(req, res) {
   }
 
   try {
+    const kpiPromptSummary = await getKpiPromptSummary();
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 3500,
-      system: buildSystemPrompt(resolveConfig(aiConfig), language),
+      system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary),
       messages: messages.map(m => ({
         role: m.role === 'ai' ? 'assistant' : 'user',
         content: m.text,
