@@ -50,7 +50,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
   ];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 24px 24px' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
       <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px 1fr 290px', background: '#fff', borderRadius: 24, border: '1px solid #eef1f9', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
         <div style={{ borderRight: '1px solid #f0f2fa', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>

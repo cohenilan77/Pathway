@@ -60,7 +60,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 34px 64px' }}>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 34px 64px' }}>
         <h1 style={{ fontSize: 32, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Settings</h1>
         <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>Manage your private office preferences.</p>
 

@@ -93,7 +93,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   if (!hasData) {
     return (
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 34px 34px' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 34px 34px' }}>
         <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#fff', borderRadius: 24, border: '1px solid #eef1f9', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 12px 24px rgba(105,91,255,.34)' }}>
             <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#fff', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -132,7 +132,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '0 34px 64px' }}>
+      <div style={{ maxWidth: 980, margin: '0 auto', padding: '24px 34px 64px' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 28 }}>
           <div>

@@ -37,7 +37,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 34px 64px' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 34px 64px' }}>
         <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
         <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: '0 0 14px', letterSpacing: '-.6px' }}>
           Choose Your Narrative

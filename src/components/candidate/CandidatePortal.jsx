@@ -80,10 +80,10 @@ export default function CandidatePortal(props) {
       {menuOpen && <div className="pw-sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
 
       {/* Sidebar */}
-      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 266, flexShrink: 0, height: '100%', display: 'flex', flexDirection: 'column', padding: '22px 16px', background: '#ffffff', borderRight: '1px solid #edf0f9' }}>
+      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 266, flexShrink: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '26px 18px', background: '#ffffff', borderRight: '1px solid #edf0f9' }}>
 
         {/* brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 10px 2px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 10px 4px' }}>
           <div style={{ width: 44, height: 44, borderRadius: 15, flexShrink: 0, background: 'linear-gradient(140deg,#4d83ff,#8a52ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 20px rgba(105,91,255,.36), inset 0 1px 0 rgba(255,255,255,.45)' }}>
             <svg viewBox="0 0 24 24" width="23" height="23" style={{ fill: 'none', stroke: '#fff', strokeWidth: '2.3', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M5 19 C5 13 9 11 12 11 C15 11 19 9 19 4.5" /><circle cx="5" cy="19" r="1.7" fill="#fff" stroke="none" /><circle cx="19" cy="4.6" r="1.7" fill="#fff" stroke="none" />
@@ -108,7 +108,7 @@ export default function CandidatePortal(props) {
         <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', margin: '24px 12px 10px' }}>MENU</div>
 
         {/* nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {NAV_ITEMS.map(item => {
             const active = candTab === item.key;
             return (
@@ -122,7 +122,7 @@ export default function CandidatePortal(props) {
         </div>
 
         {/* help */}
-        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 15px', marginTop: 6, borderRadius: 15, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#5e688c', background: 'transparent' }}>
+        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '12px 15px', marginTop: 10, borderRadius: 15, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#5e688c', background: 'transparent' }}>
           <span style={{ width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#f3f5fc', color: '#8a93b3' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
           </span>
@@ -167,7 +167,7 @@ export default function CandidatePortal(props) {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 
         {/* top bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 34px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '26px 36px', borderBottom: '1px solid #eef1f9', background: '#fff', flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.5px', color: '#141b34' }}>Good {tod}, {first}</div>
             <div style={{ fontSize: 13.5, color: '#838bab', fontWeight: 500, marginTop: 3 }}>{tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab]}</div>

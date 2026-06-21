@@ -39,7 +39,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const doneCount = taskList.filter(t => completedTasks?.[t]).length;
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 24px 24px' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
       <div style={{ flex: 1, minHeight: 0, background: '#fff', borderRadius: 24, border: '1px solid #eef1f9', boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* stepper */}
