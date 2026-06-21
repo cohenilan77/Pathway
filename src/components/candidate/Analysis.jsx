@@ -136,7 +136,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 28 }}>
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#9285e4', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
             <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.6px' }}>
               {profile?.name ? `${profile.name}'s` : 'Your'} Competitiveness
             </h1>
@@ -170,7 +170,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score breakdown */}
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#9285e4', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
         <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
             <ScoreBar key={item.key} score={scores[item.key]} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
@@ -183,7 +183,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             {displayStrengths.length > 0 && (
               <div style={{ background: '#faf7f2', borderRadius: 20, padding: 28, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #f1eadd', paddingBottom: 14, marginBottom: 18 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#eafdf6', color: '#3fdca9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#eafdf6', color: '#19c08a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Core Strengths</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -199,7 +199,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             {displayWeaknesses.length > 0 && (
               <div style={{ background: '#faf7f2', borderRadius: 20, padding: 28, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #f1eadd', paddingBottom: 14, marginBottom: 18 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#fff1f6', color: '#e384a5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#fff1f6', color: '#e0457a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Growth Areas</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -218,7 +218,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#9285e4', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
               <h2 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.5px' }}>Strategic School Portfolio</h2>
             </div>
@@ -364,7 +364,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 Clear
               </button>
               <button onClick={confirmSelection}
-                style={{ background: '#faf7f2', border: 'none', color: '#9285e4', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                style={{ background: '#faf7f2', border: 'none', color: '#5b46e0', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                 Back to Chat with Picks →
               </button>
             </div>

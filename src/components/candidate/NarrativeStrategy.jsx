@@ -38,7 +38,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 34px 64px' }}>
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#9285e4', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
         <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: '0 0 14px', letterSpacing: '-.6px' }}>
           Choose Your Narrative
         </h1>
@@ -75,10 +75,10 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #f1eadd', paddingTop: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
-                <span style={{ color: '#9285e4' }}>▲</span>Continuity of industry &amp; function — a coherent, low-doubt story
+                <span style={{ color: '#5b46e0' }}>▲</span>Continuity of industry &amp; function — a coherent, low-doubt story
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
-                <span style={{ color: '#9285e4' }}>▲</span>Easy to evidence with promotions &amp; metrics
+                <span style={{ color: '#5b46e0' }}>▲</span>Easy to evidence with promotions &amp; metrics
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#9098b5' }}>
                 <span style={{ color: '#aab2cc' }}>▽</span>Risk: reads as <em>safe</em> — boards see it often
@@ -114,10 +114,10 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11, borderTop: '1px solid #fbe7da', paddingTop: 18 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
-                <span style={{ color: '#faa984' }}>▲</span>Memorable, distinctive — boards reward conviction
+                <span style={{ color: '#ff7a3d' }}>▲</span>Memorable, distinctive — boards reward conviction
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e' }}>
-                <span style={{ color: '#faa984' }}>▲</span>Career-changer &amp; entrepreneur arcs signal ambition
+                <span style={{ color: '#ff7a3d' }}>▲</span>Career-changer &amp; entrepreneur arcs signal ambition
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#9098b5' }}>
                 <span style={{ color: '#aab2cc' }}>▽</span>Risk: must justify the "why now" rigorously
@@ -131,7 +131,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ flex: 1, minWidth: 280, position: 'relative' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#fce7b0', marginBottom: 8 }}>NARRATIVE LOCKED</div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#ffd76a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
               {narrative === 'upgrade' ? (
                 <>
                   <h3 style={{ fontSize: 21, fontWeight: 800, color: '#faf7f2', margin: '0 0 6px', letterSpacing: '-.3px' }}>Upgrade · Deepen the Trajectory</h3>
@@ -148,7 +148,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
                 </>
               )}
             </div>
-            <button onClick={() => setCandTab('documents')} style={{ position: 'relative', background: '#faf7f2', color: '#9285e4', border: 'none', borderRadius: 13, padding: '15px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,.18)' }}>
+            <button onClick={() => setCandTab('documents')} style={{ position: 'relative', background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 13, padding: '15px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, boxShadow: '0 10px 20px rgba(0,0,0,.18)' }}>
               Continue to CV &amp; Essays
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                 <path d="M5 12h14M13 6l6 6-6 6" />
@@ -164,7 +164,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
             <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 4 }}>Strategist's note</div>
             <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#6b7392', margin: 0 }}>
               There is no wrong answer — only the story we can defend most convincingly to your target boards. Once you choose, I will tailor every CV bullet and essay prompt to that posture.{' '}
-              <button onClick={() => setCandTab('advisor')} style={{ background: 'none', border: 'none', color: '#9285e4', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit', padding: 0 }}>
+              <button onClick={() => setCandTab('advisor')} style={{ background: 'none', border: 'none', color: '#5b46e0', fontWeight: 700, cursor: 'pointer', fontSize: 13.5, fontFamily: 'inherit', padding: 0 }}>
                 Discuss with your advisor →
               </button>
             </p>

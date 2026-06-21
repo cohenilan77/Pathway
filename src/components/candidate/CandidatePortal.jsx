@@ -142,7 +142,7 @@ export default function CandidatePortal(props) {
               {plan !== 'aiStrategist' ? (
                 <>
                   <div style={{ fontSize: 12.5, color: '#f1eadd', lineHeight: 1.45, marginBottom: 13, fontWeight: 500 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
-                  <button onClick={handleUpgrade} style={{ width: '100%', background: '#faf7f2', color: '#9285e4', border: 'none', borderRadius: 12, padding: 11, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 14px rgba(40,20,90,.18)' }}>Upgrade plan</button>
+                  <button onClick={handleUpgrade} style={{ width: '100%', background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 12, padding: 11, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 14px rgba(40,20,90,.18)' }}>Upgrade plan</button>
                 </>
               ) : (
                 <div style={{ fontSize: 12.5, color: '#f1eadd', lineHeight: 1.45, fontWeight: 500 }}>You have full access, including your dedicated strategist.</div>
@@ -180,7 +180,7 @@ export default function CandidatePortal(props) {
               <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
               <span style={{ position: 'absolute', top: 9, right: 10, width: 8, height: 8, borderRadius: '50%', background: '#fcb1c1', border: '2px solid #faf7f2' }} />
             </button>
-            <button onClick={resetSession} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#9285e4', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <button onClick={resetSession} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
               New session
             </button>

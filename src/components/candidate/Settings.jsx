@@ -143,7 +143,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           <button onClick={handleSave} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
             Save Changes
           </button>
-          <button onClick={resetSession} style={{ background: 'none', color: '#e384a5', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          <button onClick={resetSession} style={{ background: 'none', color: '#e0457a', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
             Clear Session Data
           </button>
           <button onClick={signOut} style={{ background: 'none', color: '#6b7392', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>

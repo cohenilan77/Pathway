@@ -99,7 +99,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                   <h2 style={{ fontSize: 19, fontWeight: 800, letterSpacing: '-.4px', color: '#141b34', margin: 0 }}>
                     {profile?.name ? `${profile.name}'s Strategic Profile` : 'Your Strategic Profile'}
                   </h2>
-                  <div style={{ fontSize: 12.5, color: '#3fdca9', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                  <div style={{ fontSize: 12.5, color: '#19c08a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3fdca9', boxShadow: '0 0 8px rgba(25,192,138,.7)' }} />
                     AI advisor · online
                   </div>
@@ -146,7 +146,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 {/* Upload CV prompt */}
                 {!showChips && !hasScores && !busy && chat.some(m => m.role === 'user') && (
                   <div style={{ background: '#fff8e8', border: '1px solid #f7e6b8', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13.5, color: '#bb9225', fontWeight: 700 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
+                    <span style={{ fontSize: 13.5, color: '#8a6a14', fontWeight: 700 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
                     <button onClick={() => setShowCvModal(true)} style={{ background: 'linear-gradient(135deg,#fbd2a2,#fac18a)', color: '#faf7f2', border: 'none', borderRadius: 11, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                       Upload CV →
                     </button>
@@ -156,7 +156,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 {/* Analysis ready banner */}
                 {scores && stepIdx >= 2 && (
                   <div style={{ background: '#e9f9f1', border: '1px solid #b7ecd4', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 13.5, color: '#21c68d', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
+                    <span style={{ fontSize: 13.5, color: '#119467', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
                     <button onClick={() => setCandTab('analysis')} style={{ background: 'linear-gradient(135deg,#3fdca9,#80dbbf)', color: '#faf7f2', border: 'none', borderRadius: 11, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                       View Analysis →
                     </button>
@@ -167,10 +167,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 {showNarrativeCTA && (
                   <div style={{ background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 16, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <div>
-                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#fce7b0', marginBottom: 4 }}>NEXT STEP</div>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#ffd76a', marginBottom: 4 }}>NEXT STEP</div>
                       <span style={{ fontSize: 14, color: '#e7dcc7', fontWeight: 600 }}>Choose your narrative strategy</span>
                     </div>
-                    <button onClick={() => setCandTab('strategy')} style={{ background: '#faf7f2', color: '#9285e4', border: 'none', borderRadius: 11, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    <button onClick={() => setCandTab('strategy')} style={{ background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 11, padding: '10px 18px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                       Choose Narrative →
                     </button>
                   </div>
@@ -184,7 +184,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             <div style={{ padding: '16px 24px 20px', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
                 <button onClick={() => setShowCvModal(true)} title="Upload or paste your CV / background info"
-                  style={{ background: '#faf7f2', border: 'none', borderRadius: 13, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#9285e4', flexShrink: 0, boxShadow: '0 2px 6px rgba(60,72,130,.08)' }}>
+                  style={{ background: '#faf7f2', border: 'none', borderRadius: 13, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0, boxShadow: '0 2px 6px rgba(60,72,130,.08)' }}>
                   <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
                   </svg>
@@ -215,7 +215,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <h3 style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-.3px', color: '#141b34', margin: 0 }}>Your tasks</h3>
               {taskList.length > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#9285e4', background: '#f1eadd', padding: '4px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#f1eadd', padding: '4px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
               )}
             </div>
             <p style={{ fontSize: 12.5, color: '#9098b5', margin: '0 0 20px', lineHeight: 1.5, fontWeight: 500 }}>Personalized steps, added as we learn about you.</p>

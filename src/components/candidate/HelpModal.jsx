@@ -62,7 +62,7 @@ export default function HelpModal({ onClose }) {
             <div style={{ fontSize: 14, color: '#9098b5', fontStyle: 'italic' }}>Putting your guide together…</div>
           )}
           {!loading && error && (
-            <div style={{ fontSize: 14, color: '#e384a5' }}>Couldn't generate the guide right now — please try again.</div>
+            <div style={{ fontSize: 14, color: '#e0457a' }}>Couldn't generate the guide right now — please try again.</div>
           )}
           {!loading && !error && (
             <div style={{ fontSize: 14, lineHeight: 1.7, color: '#33405e' }}>

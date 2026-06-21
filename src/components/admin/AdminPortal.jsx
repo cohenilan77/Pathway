@@ -24,7 +24,7 @@ const btnGhost = {
   fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 };
 const btnDanger = {
-  background: '#fff1f6', color: '#e384a5', border: '1px solid #fbd3e2', borderRadius: 10,
+  background: '#fff1f6', color: '#e0457a', border: '1px solid #fbd3e2', borderRadius: 10,
   fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 };
 
@@ -344,7 +344,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       <div style={{ width: 258, flexShrink: 0, background: '#faf7f2', borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', padding: '26px 18px', minHeight: '100vh' }}>
         <div style={{ padding: '0 8px 8px' }}>
           <div style={{ fontSize: 23, fontWeight: 800, color: '#141b34' }}>Pathway</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#9285e4', marginTop: 2 }}>ADMIN PORTAL</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#5b46e0', marginTop: 2 }}>ADMIN PORTAL</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
           <button onClick={() => setAdminView('candidates')} style={sideStyle(adminView === 'candidates')}>
@@ -367,7 +367,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         <div style={{ marginTop: 'auto' }}>
           <div style={{ height: 1, background: '#f1eadd', marginBottom: 14 }} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, background: '#f6f1e8', borderRadius: 14 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#474d80,#6d5cc2)', color: '#fce7b0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
+            <span style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#474d80,#6d5cc2)', color: '#ffd76a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>Admin Panel</div>
               <div style={{ fontSize: 11, color: '#9098b5', letterSpacing: '.5px' }}>IVY ADMISSIONS</div>
@@ -392,7 +392,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {sessionActive && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#eafff6', border: '1px solid #aaeed1', borderRadius: 10, padding: '8px 16px' }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3fdca9' }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#3fdca9' }}>Session Active</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>Session Active</span>
             </div>
           )}
         </div>
@@ -408,7 +408,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </button>
               </div>
               {usersError ? (
-                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e384a5', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
               ) : !users.length ? (
@@ -438,12 +438,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           ) : <span style={{ fontSize: 13, color: '#aab2cc' }}>—</span>}
                         </div>
                         <div>
-                          <span style={{ background: '#f1eadd', color: '#9285e4', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 8 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
+                          <span style={{ background: '#f1eadd', color: '#5b46e0', fontSize: 12, fontWeight: 700, padding: '4px 10px', borderRadius: 8 }}>{stepsFor(u.category)[u.stepIdx] || 'Profile'}</span>
                         </div>
                         <div style={{ fontSize: 13, color: '#33405e', paddingRight: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.topInsight || (u.degree ? `${u.degree} candidate` : (u.sessionActive ? 'Session in progress' : 'Not started'))}
                         </div>
-                        <div style={{ color: '#9285e4', fontSize: 18, fontWeight: 700 }}>→</div>
+                        <div style={{ color: '#5b46e0', fontSize: 18, fontWeight: 700 }}>→</div>
                       </button>
                     );
                   })}
@@ -456,7 +456,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {adminView === 'candidates' && candidateOpen && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24 }}>
               <div>
-                <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#9285e4', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
+                <button onClick={closeCandidate} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#5b46e0', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', padding: '0 0 20px', marginLeft: -4 }}>
                   <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
                   All Candidates
                 </button>
@@ -489,7 +489,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       )}
                       <div style={{ textAlign: 'right' }}>
                         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>PIPELINE STEP</div>
-                        <span style={{ background: '#f1eadd', color: '#9285e4', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 9 }}>{stepLabel}</span>
+                        <span style={{ background: '#f1eadd', color: '#5b46e0', fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 9 }}>{stepLabel}</span>
                       </div>
                     </div>
                   </div>
@@ -514,8 +514,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 {weaknesses && weaknesses.length > 0 && (
                   <div style={{ ...cardShell, border: '1px solid #fbd3e2', padding: 22, marginBottom: 20 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                      <span style={{ color: '#e384a5', fontSize: 15 }}>⚠</span>
-                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#e384a5' }}>RISK PROFILE</div>
+                      <span style={{ color: '#e0457a', fontSize: 15 }}>⚠</span>
+                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#e0457a' }}>RISK PROFILE</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {weaknesses.map((w, i) => (
@@ -552,12 +552,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     {/* Candidate's chosen schools */}
                     {chosenPrograms.length > 0 && (
                       <div style={{ marginBottom: 16 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#eaa129', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
+                        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#c77f0a', marginBottom: 8 }}>★ CANDIDATE'S CHOSEN SCHOOLS</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                           {chosenPrograms.map(p => (
                             <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: tierBg(p.tier), border: `1.5px solid ${tierBorder(p.tier)}`, borderRadius: 12, padding: '9px 12px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ color: '#eaa129', fontSize: 13 }}>★</span>
+                                <span style={{ color: '#c77f0a', fontSize: 13 }}>★</span>
                                 <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{p.name}</span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -581,9 +581,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: tierColor(p.tier) }} />
                               <span style={{ fontSize: 13.5, fontWeight: isChosen ? 700 : 600, color: '#141b34' }}>{p.name}</span>
-                              {isChosen && <span style={{ fontSize: 10, background: '#fff8ea', color: '#eaa129', fontWeight: 700, padding: '2px 6px', borderRadius: 5, letterSpacing: '.3px' }}>CHOSEN</span>}
+                              {isChosen && <span style={{ fontSize: 10, background: '#fff8ea', color: '#c77f0a', fontWeight: 700, padding: '2px 6px', borderRadius: 5, letterSpacing: '.3px' }}>CHOSEN</span>}
                             </div>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#eaa129' }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#c77f0a' }}>{p.fit != null ? `${p.fit}%` : '—'}</span>
                           </div>
                         );
                       })}
@@ -645,7 +645,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       {documents.map(doc => (
                         <div key={doc.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 12, padding: '10px 12px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#f1eadd', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9285e4', flexShrink: 0 }}>
+                            <span style={{ width: 28, height: 28, borderRadius: 8, background: '#f1eadd', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5b46e0', flexShrink: 0 }}>
                               <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /></svg>
                             </span>
                             <div>
@@ -698,11 +698,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                   <div style={{ ...cardShell, padding: '10px 18px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>ACTIVE</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#3fdca9' }}>{users.filter(u => !u.suspended).length}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#19c08a' }}>{users.filter(u => !u.suspended).length}</div>
                   </div>
                   <div style={{ ...cardShell, padding: '10px 18px' }}>
                     <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>SUSPENDED</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#e384a5' }}>{users.filter(u => u.suspended).length}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#e0457a' }}>{users.filter(u => u.suspended).length}</div>
                   </div>
                 </div>
                 <button onClick={fetchUsers} disabled={usersLoading} style={{ ...btnGhost, padding: '7px 14px', fontSize: 12.5, cursor: usersLoading ? 'not-allowed' : 'pointer' }}>
@@ -711,7 +711,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               </div>
 
               {usersError ? (
-                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e384a5', fontSize: 14, fontWeight: 600 }}>
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 24, textAlign: 'center', color: '#e0457a', fontSize: 14, fontWeight: 600 }}>
                   {usersError}
                 </div>
               ) : !users.length ? (
@@ -858,7 +858,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* Summary card */}
               {summary && (
                 <div style={{ background: '#fff8ea', border: '1px solid #f5e3b8', borderRadius: 16, padding: '20px 24px', marginBottom: 24 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#eaa129', marginBottom: 10 }}>SESSION SUMMARY</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#c77f0a', marginBottom: 10 }}>SESSION SUMMARY</div>
                   <div style={{ fontSize: 14, lineHeight: 1.7, color: '#33405e', whiteSpace: 'pre-wrap' }}>{renderFormattedText(summary)}</div>
                 </div>
               )}
@@ -933,7 +933,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                           <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>{s.label}</div>
                           {isCustom && (
-                            <span style={{ fontSize: 11, fontWeight: 700, color: '#eaa129', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 7, padding: '2px 8px' }}>CUSTOM</span>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: '#c77f0a', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 7, padding: '2px 8px' }}>CUSTOM</span>
                           )}
                         </div>
                         <div style={{ fontSize: 12.5, color: '#9098b5', marginBottom: 8, lineHeight: 1.5 }}>{s.description}</div>

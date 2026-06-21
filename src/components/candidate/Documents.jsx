@@ -244,7 +244,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
                           <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34' }}>{school}</div>
                           {result?.rating != null && (
-                            <div style={{ fontSize: 13, fontWeight: 800, color: '#9285e4' }}>{result.rating}/10</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#5b46e0' }}>{result.rating}/10</div>
                           )}
                         </div>
                         {result ? (
@@ -256,7 +256,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                               </ul>
                             )}
                             <button onClick={() => startInterview(school)}
-                              style={{ marginTop: 14, background: 'none', border: '1.5px solid #f1eadd', color: '#9285e4', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ marginTop: 14, background: 'none', border: '1.5px solid #f1eadd', color: '#5b46e0', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                               Redo Interview →
                             </button>
                           </>
@@ -325,7 +325,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         <div style={{ borderLeft: '1px solid #f1eadd', background: '#f6f1e8', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ background: '#f1eadd', padding: 20, borderBottom: '1px solid #edf0f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ color: '#9285e4' }}>✦</span>
+              <span style={{ color: '#5b46e0' }}>✦</span>
               <span style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: '.5px', color: '#141b34' }}>STRATEGIST TOOLS</span>
             </div>
           </div>
@@ -364,7 +364,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
             {essayText && (
               <>
                 <button onClick={() => analyzeEssay()} disabled={busy}
-                  style={{ width: '100%', background: 'none', border: '1.5px solid #f1eadd', color: '#9285e4', borderRadius: 13, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1 }}>
+                  style={{ width: '100%', background: 'none', border: '1.5px solid #f1eadd', color: '#5b46e0', borderRadius: 13, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1 }}>
                   ✦ Analyze with AI
                 </button>
                 <button onClick={() => rewriteEssay()} disabled={busy}

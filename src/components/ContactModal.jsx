@@ -96,7 +96,7 @@ export default function ContactModal({ onClose, profile }) {
               borderRadius: 4,
               padding: '3px 10px',
               fontSize: 11, fontWeight: 700, letterSpacing: '1.2px',
-              color: '#765b18', marginBottom: 12,
+              color: '#42320a', marginBottom: 12,
               fontFamily: "'Public Sans',sans-serif",
               textTransform: 'uppercase',
             }}
@@ -135,8 +135,8 @@ export default function ContactModal({ onClose, profile }) {
 
         {/* Error state */}
         {status === 'error' && (
-          <div style={{ margin: '0 40px', padding: '12px 16px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#dc8282', fontWeight: 600 }}>
-            Couldn't send — please email <a href="mailto:cohenilan@gmail.com" style={{ color: '#dc8282' }}>cohenilan@gmail.com</a> directly.
+          <div style={{ margin: '0 40px', padding: '12px 16px', background: '#fff5f5', border: '1px solid #fecaca', borderRadius: 10, fontSize: 13, color: '#d64545', fontWeight: 600 }}>
+            Couldn't send — please email <a href="mailto:cohenilan@gmail.com" style={{ color: '#d64545' }}>cohenilan@gmail.com</a> directly.
           </div>
         )}
 
@@ -227,7 +227,7 @@ export default function ContactModal({ onClose, profile }) {
             style={{
               width: '100%',
               background: 'linear-gradient(135deg,#cbab5e,#f4da90)',
-              color: '#765b18',
+              color: '#42320a',
               border: 'none', borderRadius: 10,
               padding: '14px 0',
               fontSize: 15, fontWeight: 800,
@@ -259,7 +259,7 @@ export default function ContactModal({ onClose, profile }) {
               style={{
                 fontFamily: "'Public Sans',sans-serif",
                 fontSize: 12, fontWeight: 700,
-                color: '#cbab5e', letterSpacing: '.8px',
+                color: '#b8902f', letterSpacing: '.8px',
                 textTransform: 'uppercase', whiteSpace: 'nowrap',
               }}
             >
