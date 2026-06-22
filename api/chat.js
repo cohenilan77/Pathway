@@ -6,7 +6,6 @@ import {
   getUsageSettings,
   getAllUsageRecords,
   costForUserToday,
-  costForConversation,
   createAlert,
 } from '../lib/usage.js';
 
@@ -449,25 +448,27 @@ async function resolveUserId(req) {
   try {
     const header = req.headers.authorization || '';
     const match = header.match(/^Bearer (.+)$/i);
-    if (!match) return 'anonymous';
+    if (!match) return null;
     const userId = await getUserIdByToken(match[1]);
-    return userId || 'anonymous';
+    return userId || null;
   } catch {
-    return 'anonymous';
+    return null;
   }
 }
 
 // Checks budgets/limits defensively — any error here must never break normal chat,
 // so failures are logged and treated as "no action needed."
-async function checkUsageLimits(userId, conversationId) {
+async function checkUsageLimits(userId) {
   try {
     const settings = await getUsageSettings();
 
-    // Per-user cap is checked against TODAY's usage only (resets daily), and per-session
-    // cap against the session total — both apply once set, independent of the "Enable
-    // Usage Limits" master toggle, which only gates the system-wide monthly/daily budget checks below.
-    const userCost = await costForUserToday(userId);
-    const sessionCost = conversationId ? await costForConversation(conversationId) : 0;
+    // Per-candidate enforcement uses only that authenticated user's daily counter.
+    // Org budgets below are admin-alert-only, and suspended users are blocked before
+    // this function runs. Missing auth must not fall back to a shared "anonymous"
+    // counter that could block unrelated candidates.
+    const hasResolvedUser = !!userId;
+    const maxCostPerUser = Number(settings.maxCostPerUser) || 0;
+    const userCost = hasResolvedUser ? await costForUserToday(userId) : 0;
 
     let monthlyCost = 0;
     let dailyCost = 0;
@@ -483,20 +484,16 @@ async function checkUsageLimits(userId, conversationId) {
       }
     }
 
-    const monthlyPercent = settings.usageLimitsEnabled && settings.monthlyBudget > 0 ? monthlyCost / settings.monthlyBudget : 0;
-    const dailyPercent = settings.usageLimitsEnabled && settings.dailyBudget > 0 ? dailyCost / settings.dailyBudget : 0;
-    const userPercent = settings.maxCostPerUser > 0 ? userCost / settings.maxCostPerUser : 0;
-    const sessionPercent = settings.maxCostPerSession > 0 ? sessionCost / settings.maxCostPerSession : 0;
+    const monthlyBudget = Number(settings.monthlyBudget) || 0;
+    const dailyBudget = Number(settings.dailyBudget) || 0;
+    const monthlyPercent = settings.usageLimitsEnabled && monthlyBudget > 0 ? monthlyCost / monthlyBudget : 0;
+    const dailyPercent = settings.usageLimitsEnabled && dailyBudget > 0 ? dailyCost / dailyBudget : 0;
+    const userPercent = hasResolvedUser && maxCostPerUser > 0 ? userCost / maxCostPerUser : 0;
 
-    // Blocking/warning a candidate's own messages must depend ONLY on that candidate's own
-    // daily/session usage — never on the org-wide monthly/daily budget, which would otherwise
-    // block every user's next message as soon as the org total ticks over, regardless of
-    // whether they personally crossed anything. The org-wide budget still feeds the admin
-    // notify-only alert below.
-    const userOverLimit = (settings.maxCostPerUser > 0 && userCost >= settings.maxCostPerUser)
-      || (settings.maxCostPerSession > 0 && sessionCost >= settings.maxCostPerSession);
-    const userNearLimit = userPercent >= 0.8 || sessionPercent >= 0.8;
-    const orgOverLimit = settings.usageLimitsEnabled && (monthlyCost >= settings.monthlyBudget || dailyCost >= settings.dailyBudget);
+    const userOverLimit = hasResolvedUser && maxCostPerUser > 0 && userCost >= maxCostPerUser;
+    const userNearLimit = hasResolvedUser && maxCostPerUser > 0 && userPercent >= 0.8;
+    const orgOverLimit = settings.usageLimitsEnabled
+      && ((monthlyBudget > 0 && monthlyCost >= monthlyBudget) || (dailyBudget > 0 && dailyCost >= dailyBudget));
     const orgNearLimit = settings.usageLimitsEnabled && (monthlyPercent >= 0.8 || dailyPercent >= 0.8);
 
     if (settings.limitAction === 'block_messages' && userOverLimit) {
@@ -535,7 +532,8 @@ export default async function handler(req, res) {
 
   const userId = await resolveUserId(req);
   const feature = inferFeature(messages);
-  const convoId = conversationId || 'session';
+  const usageUserId = userId || 'anonymous';
+  const convoId = conversationId || (userId ? `user:${userId}` : 'anonymous');
 
   try {
     // System-wide suspension switch — short-circuit before any Anthropic call,
@@ -547,21 +545,21 @@ export default async function handler(req, res) {
 
     // Admin "suspend" is an absolute override — it blocks the user regardless of their
     // daily usage counter, and regardless of any per-user/session limit settings.
-    if (userId !== 'anonymous') {
+    if (userId) {
       const user = await getUserById(userId).catch(() => null);
       if (user?.suspended) {
         return res.status(200).json({ raw: 'Your account has been suspended. Please contact your advisor.' });
       }
     }
 
-    const { action } = await checkUsageLimits(userId, convoId);
+    const { action } = await checkUsageLimits(userId);
     if (action === 'block') {
       return res.status(200).json({ raw: 'You have reached your usage limit for this period. Please contact your advisor or try again later.' });
     }
     if (action === 'notify') {
       createAlert({
         type: 'usage_limit',
-        message: `Usage limit threshold reached for user ${userId} (feature: ${feature}).`,
+        message: `Usage limit threshold reached for user ${usageUserId} (feature: ${feature}).`,
       }).catch((err) => console.error('Failed to create usage alert:', err));
     }
 
@@ -577,7 +575,7 @@ export default async function handler(req, res) {
     });
 
     recordUsage({
-      userId,
+      userId: usageUserId,
       conversationId: convoId,
       feature,
       model: CHAT_MODEL,
