@@ -488,21 +488,25 @@ async function checkUsageLimits(userId, conversationId) {
     const userPercent = settings.maxCostPerUser > 0 ? userCost / settings.maxCostPerUser : 0;
     const sessionPercent = settings.maxCostPerSession > 0 ? sessionCost / settings.maxCostPerSession : 0;
 
-    const overLimit = (settings.usageLimitsEnabled && (monthlyCost >= settings.monthlyBudget || dailyCost >= settings.dailyBudget))
-      || (settings.maxCostPerUser > 0 && userCost >= settings.maxCostPerUser)
+    // Blocking/warning a candidate's own messages must depend ONLY on that candidate's own
+    // daily/session usage — never on the org-wide monthly/daily budget, which would otherwise
+    // block every user's next message as soon as the org total ticks over, regardless of
+    // whether they personally crossed anything. The org-wide budget still feeds the admin
+    // notify-only alert below.
+    const userOverLimit = (settings.maxCostPerUser > 0 && userCost >= settings.maxCostPerUser)
       || (settings.maxCostPerSession > 0 && sessionCost >= settings.maxCostPerSession);
-    const nearLimit = monthlyPercent >= 0.8 || dailyPercent >= 0.8 || userPercent >= 0.8 || sessionPercent >= 0.8;
+    const userNearLimit = userPercent >= 0.8 || sessionPercent >= 0.8;
+    const orgOverLimit = settings.usageLimitsEnabled && (monthlyCost >= settings.monthlyBudget || dailyCost >= settings.dailyBudget);
+    const orgNearLimit = settings.usageLimitsEnabled && (monthlyPercent >= 0.8 || dailyPercent >= 0.8);
 
-    if (!overLimit && !nearLimit) return { settings, action: null };
-
-    if (settings.limitAction === 'block_messages' && overLimit) {
+    if (settings.limitAction === 'block_messages' && userOverLimit) {
       return { settings, action: 'block' };
     }
-    if (settings.limitAction === 'warn_user' && (overLimit || nearLimit)) {
+    if (settings.limitAction === 'warn_user' && (userOverLimit || userNearLimit)) {
       return { settings, action: 'warn' };
     }
-    if (settings.limitAction === 'notify_admin' && (overLimit || nearLimit)) {
-      return { settings, action: 'notify', overLimit };
+    if (orgOverLimit || orgNearLimit) {
+      return { settings, action: 'notify', overLimit: orgOverLimit };
     }
     return { settings, action: null };
   } catch (err) {
