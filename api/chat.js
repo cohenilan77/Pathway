@@ -6,6 +6,7 @@ import {
   getUsageSettings,
   getAllUsageRecords,
   costForUser,
+  costForConversation,
   createAlert,
 } from '../lib/usage.js';
 
@@ -216,13 +217,13 @@ Ask: "Let's build your profile. You can: (a) paste your CV or resume, (b) upload
 
 If they share CV/resume text OR a background dump (any significant personal information):
 → Immediately extract all facts you can find.
-→ Build an internal checklist of mandatory fields for their category: GPA + university, the test score relevant to their program type (see mapping below; Personal Development category has no standardized test), years of work experience + current role/company, industry + target post-degree role, volunteering/community involvement (duration, role, scale of impact), any unexplained 6+ month career gap, uniqueness factors, diversity factors (nationality, languages, countries lived/worked in, first-gen status), goal clarity (specific role + sector + timeline), and why now.
+→ Build an internal checklist of mandatory fields for their category: GPA + university, the test score relevant to their program type (see mapping below; Personal Development category has no standardized test), years of work experience + current role/company, industry + target post-degree role, target study destination (which country/countries or region they want to study in — e.g. USA, UK, Canada, Europe, open to anywhere), volunteering/community involvement (duration, role, scale of impact), any unexplained 6+ month career gap, uniqueness factors, diversity factors (nationality, languages, countries lived/worked in, first-gen status), goal clarity (specific role + sector + timeline), and why now. Target study destination is mandatory and must always be asked if not already stated — it directly shapes which schools are recommended in STEP 4, so never proceed to PROFILE CONFIRMATION without it.
 → For every mandatory field still missing after extraction, ask exactly ONE question per message, in order of priority, until the checklist is complete. Never ask two questions in the same message. Never ask for information already provided in the file or text.
 → Once the checklist is complete (or the candidate types "next"/"continue"), emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks, give a 2-sentence honest assessment including real gaps, then move to the PROFILE CONFIRMATION step below before Step 3.
 
 If they prefer guided questions instead of sharing a file/dump, use the same checklist approach above — ask ONE missing field at a time, starting with: "What is your GPA and which university did you attend?" then the test score relevant to their program type using this mapping:
 ${config.testScores}
-Continue one field at a time through work experience, industry/target role, volunteering, career gaps, uniqueness, diversity, goal clarity, and why now — never two fields in one message, never skipping a mandatory field, never re-asking something already answered.
+Continue one field at a time through work experience, industry/target role, target study destination (ask exactly: "Which country or region are you hoping to study in — for example the USA, UK, Canada, Europe, or are you open to anywhere?"), volunteering, career gaps, uniqueness, diversity, goal clarity, and why now — never two fields in one message, never skipping a mandatory field, never re-asking something already answered.
 
 PROFILE CONFIRMATION (required before Step 3):
 Once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then show the candidate a summary and ask exactly: "Is this accurate? Anything to correct before I match you to programs?"
@@ -251,7 +252,7 @@ Step 3: Visible reply must say ONLY: "Your portfolio is live in the Analysis tab
 Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
-Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type, distributed across three tiers:
+Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country), distributed across three tiers:
 ${config.programSearch}
 
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
@@ -400,7 +401,7 @@ FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup suc
 NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in the Analysis tab. If the candidate reports the Analysis tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text limited to something like "Here's your portfolio again — it's live in the Analysis tab now." Schools only ever reach the candidate through the rendered Analysis tab, never through chat text.
 
 "First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development").
-<PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","goals":"Move into PE"}</PROFILE>
+<PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","destination":"USA","goals":"Move into PE"}</PROFILE>
 
 Undergraduate PROFILE example (grade/school replace gpa/gmat/experience as relevant):
 <PROFILE>{"name":"First Last","category":"Undergraduate","degree":"Undergraduate","grade":"10th","school":"Lincoln High School","interests":"Robotics, debate, biology"}</PROFILE>
@@ -458,33 +459,39 @@ async function resolveUserId(req) {
 
 // Checks budgets/limits defensively — any error here must never break normal chat,
 // so failures are logged and treated as "no action needed."
-async function checkUsageLimits(userId) {
+async function checkUsageLimits(userId, conversationId) {
   try {
     const settings = await getUsageSettings();
-    if (!settings.usageLimitsEnabled) return { settings, action: null };
 
-    const allRecords = await getAllUsageRecords();
-    const now = new Date();
-    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
-    const dayKey = now.toISOString().slice(0, 10);
+    // Per-user and per-session caps are explicit numbers the admin set — they always
+    // apply once set, independent of the "Enable Usage Limits" master toggle, which
+    // only gates the system-wide monthly/daily budget checks below.
+    const userCost = await costForUser(userId);
+    const sessionCost = conversationId ? await costForConversation(conversationId) : 0;
 
     let monthlyCost = 0;
     let dailyCost = 0;
-    for (const r of allRecords) {
-      const d = new Date(r.createdAt);
-      if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += r.totalCost || 0;
-      if (d.toISOString().slice(0, 10) === dayKey) dailyCost += r.totalCost || 0;
+    if (settings.usageLimitsEnabled) {
+      const allRecords = await getAllUsageRecords();
+      const now = new Date();
+      const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+      const dayKey = now.toISOString().slice(0, 10);
+      for (const r of allRecords) {
+        const d = new Date(r.createdAt);
+        if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += r.totalCost || 0;
+        if (d.toISOString().slice(0, 10) === dayKey) dailyCost += r.totalCost || 0;
+      }
     }
-    const userCost = await costForUser(userId);
 
-    const monthlyPercent = settings.monthlyBudget > 0 ? monthlyCost / settings.monthlyBudget : 0;
-    const dailyPercent = settings.dailyBudget > 0 ? dailyCost / settings.dailyBudget : 0;
+    const monthlyPercent = settings.usageLimitsEnabled && settings.monthlyBudget > 0 ? monthlyCost / settings.monthlyBudget : 0;
+    const dailyPercent = settings.usageLimitsEnabled && settings.dailyBudget > 0 ? dailyCost / settings.dailyBudget : 0;
     const userPercent = settings.maxCostPerUser > 0 ? userCost / settings.maxCostPerUser : 0;
+    const sessionPercent = settings.maxCostPerSession > 0 ? sessionCost / settings.maxCostPerSession : 0;
 
-    const overLimit = monthlyCost >= settings.monthlyBudget
-      || dailyCost >= settings.dailyBudget
-      || userCost >= settings.maxCostPerUser;
-    const nearLimit = monthlyPercent >= 0.8 || dailyPercent >= 0.8 || userPercent >= 0.8;
+    const overLimit = (settings.usageLimitsEnabled && (monthlyCost >= settings.monthlyBudget || dailyCost >= settings.dailyBudget))
+      || (settings.maxCostPerUser > 0 && userCost >= settings.maxCostPerUser)
+      || (settings.maxCostPerSession > 0 && sessionCost >= settings.maxCostPerSession);
+    const nearLimit = monthlyPercent >= 0.8 || dailyPercent >= 0.8 || userPercent >= 0.8 || sessionPercent >= 0.8;
 
     if (!overLimit && !nearLimit) return { settings, action: null };
 
@@ -534,9 +541,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ raw: settingsCheck.suspensionMessage });
     }
 
-    const { action } = await checkUsageLimits(userId);
+    const { action } = await checkUsageLimits(userId, convoId);
     if (action === 'block') {
-      return res.status(200).json({ raw: 'You have reached the usage limit for this period. Please try again later or contact support.' });
+      return res.status(200).json({ raw: 'You have reached your usage limit for this period. Please contact your advisor or try again later.' });
     }
     if (action === 'notify') {
       createAlert({

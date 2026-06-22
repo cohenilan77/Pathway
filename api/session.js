@@ -9,13 +9,13 @@ function getToken(req) {
 
 // Non-chat candidate text fields are always stored in English. Chat messages
 // are exempt — they stay in the candidate's language (see App.jsx chat schema).
-async function translateNonChatFields(data) {
+async function translateNonChatFields(data, userId) {
   if (!data) return data;
   const next = { ...data };
 
-  if (next.cvText) next.cvText = await toEnglish(next.cvText);
-  if (next.essayText) next.essayText = await toEnglish(next.essayText);
-  if (next.essayQuestion) next.essayQuestion = await toEnglish(next.essayQuestion);
+  if (next.cvText) next.cvText = await toEnglish(next.cvText, userId);
+  if (next.essayText) next.essayText = await toEnglish(next.essayText, userId);
+  if (next.essayQuestion) next.essayQuestion = await toEnglish(next.essayQuestion, userId);
 
   if (next.essays) {
     const schools = Object.keys(next.essays);
@@ -23,8 +23,8 @@ async function translateNonChatFields(data) {
       const entry = next.essays[school];
       return [school, {
         ...entry,
-        question: entry.question ? await toEnglish(entry.question) : entry.question,
-        text: entry.text ? await toEnglish(entry.text) : entry.text,
+        question: entry.question ? await toEnglish(entry.question, userId) : entry.question,
+        text: entry.text ? await toEnglish(entry.text, userId) : entry.text,
       }];
     }));
     next.essays = Object.fromEntries(translatedEntries);
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
       return;
     }
     const { data } = req.body || {};
-    const translated = await translateNonChatFields(data || {});
+    const translated = await translateNonChatFields(data || {}, userId);
     await setUserData(userId, translated);
     await touchActivity(userId);
     res.status(200).json({ ok: true });

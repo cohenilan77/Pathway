@@ -1,4 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { getUserIdByToken } from '../lib/db.js';
+import { recordUsage } from '../lib/usage.js';
+const MODEL = 'claude-haiku-4-5-20251001';
+
+async function resolveUserId(req) {
+  try {
+    const match = (req.headers.authorization || '').match(/^Bearer (.+)$/i);
+    if (!match) return 'anonymous';
+    return (await getUserIdByToken(match[1])) || 'anonymous';
+  } catch {
+    return 'anonymous';
+  }
+}
 
 const PLATFORM_FACTS = `
 PIPELINE STEPS (in order, tracked by the stepper at the top of the Admissions Advisor chat):
@@ -28,11 +41,21 @@ export default async function handler(req, res) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODEL,
       max_tokens: 700,
       system: 'You are a concise product guide for the Pathway admissions platform. Using ONLY the facts given, produce a short summary the user can scan in seconds. For each pipeline step and each tab, give one short line in the format "Name — what to do; goal: why it matters." Use plain text only — no markdown, no asterisks, no bold. Use a dash for bullets. Group into two sections with plain text headers: "YOUR 7-STEP PROCESS" and "PORTAL TABS".',
       messages: [{ role: 'user', content: PLATFORM_FACTS }],
     });
+
+    const userId = await resolveUserId(req);
+    recordUsage({
+      userId,
+      conversationId: 'session',
+      feature: 'help_guide',
+      model: MODEL,
+      inputTokens: response.usage?.input_tokens,
+      outputTokens: response.usage?.output_tokens,
+    }).catch((e) => console.error('Failed to record usage:', e));
 
     const text = response.content[0]?.text || '';
     return res.status(200).json({ text });

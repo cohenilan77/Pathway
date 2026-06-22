@@ -1,6 +1,6 @@
 import { getActor } from '../lib/admin.js';
 import { ROLES } from '../lib/db.js';
-import { saveUsageSettings } from '../lib/usage.js';
+import { saveUsageSettings, getUsageSettings, broadcastChatMessage } from '../lib/usage.js';
 
 const VALID_LIMIT_ACTIONS = ['warn_user', 'block_messages', 'notify_admin'];
 
@@ -36,7 +36,16 @@ export default async function handler(req, res) {
   if (typeof body.suspensionMessage === 'string') patch.suspensionMessage = body.suspensionMessage;
 
   try {
+    const before = await getUsageSettings();
     const settings = await saveUsageSettings(patch);
+
+    if (typeof patch.systemSuspended === 'boolean' && patch.systemSuspended !== before.systemSuspended) {
+      const message = patch.systemSuspended
+        ? settings.suspensionMessage || 'This system is temporarily unavailable. Please try again later.'
+        : 'The system is back online — you can continue your conversation.';
+      broadcastChatMessage(message).catch((err) => console.error('Failed to broadcast suspension message:', err));
+    }
+
     res.status(200).json({ settings });
   } catch (error) {
     res.status(500).json({ error: error.message || 'Failed to save usage settings.' });
