@@ -80,7 +80,7 @@ export default function CandidatePortal(props) {
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings', chat: 'Live Chat' };
-  const hasChatAccess = authUser?.plan === 'ai_strategy';
+  const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
 
   return (
