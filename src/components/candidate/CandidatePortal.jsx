@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Dashboard from './Dashboard.jsx';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
@@ -9,6 +10,10 @@ import { LANGUAGES } from '../../constants.js';
 const PLAN_LABELS = { free: 'Free plan', pathwayAI: 'Pathway AI', aiStrategist: 'AI + Strategist' };
 
 const NAV_ITEMS = [
+  {
+    key: 'dashboard', label: 'Dashboard',
+    icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>,
+  },
   {
     key: 'advisor', label: 'Advisor',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
@@ -68,7 +73,7 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings' };
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f1eadd', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif", color: '#141b34', WebkitFontSmoothing: 'antialiased' }}>
@@ -192,6 +197,7 @@ export default function CandidatePortal(props) {
           </div>
         </div>
 
+        {candTab === 'dashboard' && <Dashboard {...props} />}
         {candTab === 'advisor' && <Advisor {...props} />}
         {candTab === 'analysis' && <Analysis {...props} />}
         {candTab === 'documents' && <Documents {...props} />}

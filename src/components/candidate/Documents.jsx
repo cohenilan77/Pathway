@@ -9,7 +9,7 @@ const docNavStyle = (active) => ({
   boxShadow: active ? '0 10px 20px rgba(105,91,255,.32)' : 'none',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken }) {
+export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig }) {
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
 
@@ -55,6 +55,11 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         {/* Left nav */}
         <div style={{ borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #f1eadd' }}>
+            {currentConfig?.docLabel && (
+              <div style={{ fontSize: 11.5, color: '#9098b5', lineHeight: 1.5, marginBottom: 14 }}>
+                Documents for this track: <span style={{ color: '#5b46e0', fontWeight: 700 }}>{currentConfig.docLabel}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {subNavItems.map(item => (
                 <button key={item.key} onClick={() => setDocTab(item.key)} style={docNavStyle(docTab === item.key)}>
