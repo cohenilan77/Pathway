@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
-import jsPDF from 'jspdf';
-import { Document, Packer, Paragraph } from 'docx';
+import { saveBlob, downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -297,6 +296,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const cvText = sd.cvText || '';
   const cvFile = sd.cvFile || null;
   const essayText = sd.essayText || '';
+  const essays = sd.essays || {};
   const override = sd.override ?? scores?.overall ?? 0;
 
   useEffect(() => {
@@ -359,39 +359,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     setMsgInput('');
   };
 
-  const saveBlob = (blob, filename) => {
-    const u = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = u; a.download = filename; a.click();
-    URL.revokeObjectURL(u);
-  };
-
-  const downloadAsPdf = (text, baseName) => {
-    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
-    const margin = 48;
-    const maxWidth = doc.internal.pageSize.getWidth() - margin * 2;
-    const pageHeight = doc.internal.pageSize.getHeight();
-    doc.setFont('helvetica');
-    doc.setFontSize(11);
-    let y = margin;
-    text.split('\n').forEach((paragraph) => {
-      const lines = doc.splitTextToSize(paragraph || ' ', maxWidth);
-      lines.forEach((line) => {
-        if (y > pageHeight - margin) { doc.addPage(); y = margin; }
-        doc.text(line, margin, y);
-        y += 14;
-      });
-    });
-    doc.save(`${baseName}.pdf`);
-  };
-
-  const downloadAsDocx = async (text, baseName) => {
-    const doc = new Document({
-      sections: [{ children: text.split('\n').map((line) => new Paragraph(line)) }],
-    });
-    saveBlob(await Packer.toBlob(doc), `${baseName}.docx`);
-  };
-
   const downloadOriginalFile = async (file) => {
     if (!selectedUserId || !file) return;
     try {
@@ -406,9 +373,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     }
   };
 
+  const savedEssaySchools = Object.keys(essays).filter((school) => essays[school]?.text);
   const documents = [
     cvText && { label: 'CV / Resume', text: cvText, baseName: 'candidate_cv', file: cvFile },
-    essayText && { label: 'Essay Draft', text: essayText, baseName: 'candidate_essay' },
+    ...savedEssaySchools.map((school) => ({
+      label: `Essay — ${school}`,
+      text: essays[school].text,
+      baseName: `candidate_essay_${school.replace(/[^a-z0-9]+/gi, '_')}`,
+    })),
+    // The in-progress draft only shows up here if it hasn't been saved against a school yet.
+    essayText && !savedEssaySchools.length && { label: 'Essay Draft (unsaved)', text: essayText, baseName: 'candidate_essay_draft' },
   ].filter(Boolean);
 
   const generateSummary = async () => {

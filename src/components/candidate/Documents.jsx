@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 
 const docNavStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13,
@@ -182,6 +183,14 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                         Original
                       </button>
                     )}
+                    <button onClick={() => downloadAsPdf(cvText, 'my_cv')}
+                      style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      PDF
+                    </button>
+                    <button onClick={() => downloadAsDocx(cvText, 'my_cv')}
+                      style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      Word
+                    </button>
                     {!editingCv ? (
                       <button onClick={() => { setEditingCv(true); setCvEdit(cvText); }}
                         style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -229,6 +238,36 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                     Paste My CV →
                   </button>
                 </div>
+              )}
+
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '40px 0 16px', letterSpacing: '-.4px' }}>My Essays</h2>
+              {savedSchools.filter(s => essays?.[s]?.text).length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {savedSchools.filter(s => essays?.[s]?.text).map(school => (
+                    <div key={school} style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{school}</div>
+                        <div style={{ fontSize: 12, color: '#9098b5' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => selectEssaySchool(school)}
+                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Open
+                        </button>
+                        <button onClick={() => downloadAsPdf(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
+                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          PDF
+                        </button>
+                        <button onClick={() => downloadAsDocx(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
+                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          Word
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: 13.5, color: '#9098b5' }}>No saved essays yet — write one in the Essay Editor tab.</div>
               )}
             </div>
           )}

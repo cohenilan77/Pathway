@@ -1,8 +1,21 @@
 import Anthropic from '@anthropic-ai/sdk';
 import mammoth from 'mammoth';
 import { put } from '@vercel/blob';
+import { getUserIdByToken } from '../lib/db.js';
+import { recordUsage } from '../lib/usage.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const MODEL = 'claude-haiku-4-5-20251001';
+
+async function resolveUserId(req) {
+  try {
+    const match = (req.headers.authorization || '').match(/^Bearer (.+)$/i);
+    if (!match) return 'anonymous';
+    return (await getUserIdByToken(match[1])) || 'anonymous';
+  } catch {
+    return 'anonymous';
+  }
+}
 
 const DOCX_MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 const MAX_FILE_BYTES = 3 * 1024 * 1024;
@@ -70,7 +83,7 @@ export default async function handler(req, res) {
     }
 
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: MODEL,
       max_tokens: 4000,
       messages: [{
         role: 'user',
@@ -80,6 +93,15 @@ export default async function handler(req, res) {
         ],
       }],
     });
+    const userId = await resolveUserId(req);
+    recordUsage({
+      userId,
+      conversationId: 'session',
+      feature: 'document_parsing',
+      model: MODEL,
+      inputTokens: response.usage?.input_tokens,
+      outputTokens: response.usage?.output_tokens,
+    }).catch((e) => console.error('Failed to record usage:', e));
     return res.status(200).json({ text: response.content[0]?.text || '', file });
   } catch (err) {
     console.error('parse-file error:', err.message);
