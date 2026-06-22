@@ -1,11 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
-import { getUserIdByToken } from '../lib/db.js';
+import { getUserIdByToken, getUserById } from '../lib/db.js';
 import {
   recordUsage,
   getUsageSettings,
   getAllUsageRecords,
-  costForUser,
+  costForUserToday,
   costForConversation,
   createAlert,
 } from '../lib/usage.js';
@@ -463,10 +463,10 @@ async function checkUsageLimits(userId, conversationId) {
   try {
     const settings = await getUsageSettings();
 
-    // Per-user and per-session caps are explicit numbers the admin set — they always
-    // apply once set, independent of the "Enable Usage Limits" master toggle, which
-    // only gates the system-wide monthly/daily budget checks below.
-    const userCost = await costForUser(userId);
+    // Per-user cap is checked against TODAY's usage only (resets daily), and per-session
+    // cap against the session total — both apply once set, independent of the "Enable
+    // Usage Limits" master toggle, which only gates the system-wide monthly/daily budget checks below.
+    const userCost = await costForUserToday(userId);
     const sessionCost = conversationId ? await costForConversation(conversationId) : 0;
 
     let monthlyCost = 0;
@@ -539,6 +539,15 @@ export default async function handler(req, res) {
     const settingsCheck = await getUsageSettings().catch(() => null);
     if (settingsCheck?.systemSuspended) {
       return res.status(200).json({ raw: settingsCheck.suspensionMessage });
+    }
+
+    // Admin "suspend" is an absolute override — it blocks the user regardless of their
+    // daily usage counter, and regardless of any per-user/session limit settings.
+    if (userId !== 'anonymous') {
+      const user = await getUserById(userId).catch(() => null);
+      if (user?.suspended) {
+        return res.status(200).json({ raw: 'Your account has been suspended. Please contact your advisor.' });
+      }
     }
 
     const { action } = await checkUsageLimits(userId, convoId);
