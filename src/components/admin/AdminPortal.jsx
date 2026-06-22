@@ -645,13 +645,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               ) : (
                 <div style={{ ...cardShell, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 280px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 360px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                     <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span>{canManageUsers ? 'ASSIGNMENT' : ''}</span>
                   </div>
                   {candidateUsers.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     return (
-                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 280px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 360px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                         <button onClick={() => openCandidate(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(140deg,#94b3fb,#b899fb)', color: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
@@ -685,10 +685,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                               <select
                                 value={u.consultantId || ''}
                                 onChange={(e) => performUserAction(u.id, 'assign', { patch: { consultantId: e.target.value } })}
-                                style={{ minWidth: 108, flex: 1, border: '1px solid #f1eadd', borderRadius: 9, padding: '7px 8px', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 12 }}
+                                style={{ minWidth: 96, flex: 1, border: '1px solid #f1eadd', borderRadius: 9, padding: '7px 8px', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 12 }}
                               >
                                 <option value="">Unassigned</option>
                                 {assignableConsultants.map(c => <option key={c.id} value={c.id}>{c.name || c.email}</option>)}
+                              </select>
+                              <select
+                                value={u.plan || 'free'}
+                                onChange={(e) => performUserAction(u.id, 'assign', { patch: { plan: e.target.value } })}
+                                style={{ minWidth: 88, border: '1px solid #f1eadd', borderRadius: 9, padding: '7px 8px', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 12 }}
+                              >
+                                <option value="free">Free</option>
+                                <option value="ai_strategy">AI Strategy</option>
                               </select>
                               <button onClick={() => setUserForm({ mode: 'edit', ...u, password: '' })} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Edit</button>
                               <button onClick={() => { setPasswordResetId(u.id); setPasswordDraft(''); }} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Reset</button>
