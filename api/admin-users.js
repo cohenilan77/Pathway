@@ -1,5 +1,6 @@
 import { canAccessCandidate, getActor } from '../lib/admin.js';
 import { ensureSuperAdminAccount, getAllUserIds, getUserById, getUserData, publicUser, ROLES } from '../lib/db.js';
+import { countUnread } from '../lib/chat.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -19,8 +20,10 @@ export default async function handler(req, res) {
       if (!user) return null;
       if (actor.role === ROLES.consultant && !canAccessCandidate(actor, user)) return null;
       const data = await getUserData(id);
+      const unreadMessages = (user.role || ROLES.candidate) === ROLES.candidate ? await countUnread(id, ROLES.consultant) : 0;
       return {
         ...publicUser(user),
+        unreadMessages,
         chatLength: Array.isArray(data?.chat) ? data.chat.length : 0,
         sessionActive: Array.isArray(data?.chat) && data.chat.length > 1,
         stepIdx: data?.stepIdx || 0,

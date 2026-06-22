@@ -4,6 +4,7 @@ import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
 import Settings from './Settings.jsx';
+import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 
@@ -31,6 +32,11 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>,
   },
 ];
+
+const CHAT_NAV_ITEM = {
+  key: 'chat', label: 'Chat',
+  icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
+};
 
 function navStyle(active) {
   return active
@@ -73,7 +79,9 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings', chat: 'Chat' };
+  const hasChatAccess = authUser?.plan === 'ai_strategy';
+  const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f1eadd', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif", color: '#141b34', WebkitFontSmoothing: 'antialiased' }}>
@@ -118,7 +126,7 @@ export default function CandidatePortal(props) {
 
         {/* nav */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {NAV_ITEMS.map(item => {
+          {navItems.map(item => {
             const active = candTab === item.key;
             const locked = requiresOAuthDetails && item.key !== 'settings';
             return (
@@ -202,6 +210,7 @@ export default function CandidatePortal(props) {
         {candTab === 'analysis' && <Analysis {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
+        {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
 
       {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}

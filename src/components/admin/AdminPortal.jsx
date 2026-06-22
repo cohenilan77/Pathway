@@ -39,9 +39,12 @@ const NavIcon = ({ children }) => (
 export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
   aiConfig, setAiConfig, authToken, authUser }) {
   const stepsFor = (category) => (category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS);
-  const [adminView, setAdminView] = useState('candidates');
+  const [adminView, setAdminView] = useState('dashboard');
   const [candidateOpen, setCandidateOpen] = useState(false);
   const [msgInput, setMsgInput] = useState('');
+  const [liveChatMessages, setLiveChatMessages] = useState([]);
+  const [liveChatInput, setLiveChatInput] = useState('');
+  const [liveChatSending, setLiveChatSending] = useState(false);
   const [summary, setSummary] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
@@ -173,7 +176,53 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     setCandidateOpen(false);
     setSelectedUserId(null);
     setSelectedData(null);
+    setAdminView('candidates');
     fetchUsers();
+  };
+
+  const fetchLiveChatMessages = useCallback(() => {
+    if (!selectedUserId) return;
+    fetch(`/api/chat/messages?candidateId=${selectedUserId}`, { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => { if (d.messages) setLiveChatMessages(d.messages); })
+      .catch(() => {});
+  }, [selectedUserId, adminSecret, authToken]);
+
+  useEffect(() => {
+    if (!selectedUserId || adminView !== 'liveChat') { if (!selectedUserId) setLiveChatMessages([]); return; }
+    fetchLiveChatMessages();
+    fetch('/api/chat/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...adminHeaders },
+      body: JSON.stringify({ candidateId: selectedUserId }),
+    }).then(fetchUsers).catch(() => {});
+  }, [selectedUserId, adminView]);
+
+  useEffect(() => {
+    if (!selectedUserId || adminView !== 'liveChat') return;
+    const interval = setInterval(fetchLiveChatMessages, 5000);
+    return () => clearInterval(interval);
+  }, [selectedUserId, adminView, fetchLiveChatMessages]);
+
+  const sendLiveChatMessage = async () => {
+    const text = liveChatInput.trim();
+    if (!text || !selectedUserId || liveChatSending) return;
+    setLiveChatSending(true);
+    setLiveChatInput('');
+    try {
+      const res = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ candidateId: selectedUserId, senderId: authUser?.id, senderRole: 'consultant', text }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Failed to send message.');
+      fetchLiveChatMessages();
+    } catch (e) {
+      showToast(e.message || 'Failed to send message.');
+    } finally {
+      setLiveChatSending(false);
+    }
   };
 
   const formatDateTime = (ts) => ts ? new Date(ts).toLocaleString() : '—';
@@ -456,6 +505,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#5b46e0', marginTop: 2 }}>ADMIN PORTAL</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginTop: 26 }}>
+          <button onClick={() => setAdminView('dashboard')} style={sideStyle(adminView === 'dashboard')}>
+            <NavIcon><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></NavIcon>
+            Dashboard
+          </button>
           <button onClick={() => setAdminView('candidates')} style={sideStyle(adminView === 'candidates')}>
             <NavIcon><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></NavIcon>
             Candidates
@@ -466,10 +519,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Consultants
             </button>
           )}
-          <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
-            <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
-            Live Session
-          </button>
+          {selectedUserId && (
+            <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
+              <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
+              Live Session
+            </button>
+          )}
+          {selectedUserId && (
+            <button onClick={() => setAdminView('liveChat')} style={sideStyle(adminView === 'liveChat')}>
+              <NavIcon><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NavIcon>
+              Live Chat
+            </button>
+          )}
           {canManageUsers && (
             <button onClick={() => setAdminView('usageCost')} style={sideStyle(adminView === 'usageCost')}>
               <NavIcon><path d="M3 3v18h18" /><rect x="7" y="11" width="3" height="6" rx="1" /><rect x="12" y="7" width="3" height="10" rx="1" /><rect x="17" y="13" width="3" height="4" rx="1" /></NavIcon>
@@ -523,6 +584,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Consultants'}
             {adminView === 'session' && 'Live Session'}
+            {adminView === 'liveChat' && 'Live Chat'}
+            {adminView === 'dashboard' && 'Dashboard'}
             {adminView === 'usageCost' && 'Usage & Cost'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -535,6 +598,28 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', padding: '30px 36px' }}>
+
+          {/* ── DASHBOARD ── */}
+          {adminView === 'dashboard' && (
+            <div style={{ maxWidth: 1100 }}>
+              <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8, marginBottom: 20 }}>
+                Overview of your assigned candidates.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
+                {[
+                  { label: 'TOTAL ASSIGNED CANDIDATES', value: candidateUsers.length, color: '#141b34' },
+                  { label: 'ACTIVE CANDIDATES', value: candidateUsers.filter(u => u.sessionActive).length, color: '#5b46e0' },
+                  { label: 'CANDIDATES WITH PENDING TASKS', value: candidateUsers.filter(u => !u.scores).length, color: '#c77f0a' },
+                  { label: 'UNREAD MESSAGES', value: candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0), color: '#e0457a' },
+                ].map((kpi) => (
+                  <div key={kpi.label} style={{ ...cardShell, padding: '16px 18px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 8 }}>{kpi.label}</div>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: kpi.color }}>{usersLoading ? '…' : kpi.value}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* ── CANDIDATES LIST ── */}
           {adminView === 'candidates' && !candidateOpen && (
@@ -571,7 +656,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(140deg,#94b3fb,#b899fb)', color: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>{u.name}</div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34', display: 'flex', alignItems: 'center', gap: 7 }}>
+                              {u.name}
+                              {!!u.unreadMessages && (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 18, height: 18, padding: '0 5px', borderRadius: 9, background: '#e0457a', color: '#fff', fontSize: 10.5, fontWeight: 800 }}>
+                                  {u.unreadMessages}
+                                </span>
+                              )}
+                            </div>
                             <div style={{ fontSize: 12, color: '#9098b5' }}>{[u.residency, u.email].filter(Boolean).join(' · ')}</div>
                           </div>
                         </div>
@@ -1071,6 +1163,58 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   <div ref={chatLogEndRef} />
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── LIVE CHAT ── */}
+          {adminView === 'liveChat' && !selectedUserId && (
+            <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>No candidate selected.</div>
+              <div style={{ fontSize: 13, color: '#aab2cc' }}>Open a candidate from the Candidates list to view their live chat.</div>
+            </div>
+          )}
+          {adminView === 'liveChat' && selectedUserId && (
+            <div style={{ maxWidth: 800 }}>
+              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14 }}>Viewing: {candidateName}</div>
+              <div style={{ ...cardShell, display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
+                    {liveChatMessages.length === 0 && (
+                      <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
+                        No messages yet — say hello to {candidateName}.
+                      </div>
+                    )}
+                    {liveChatMessages.map((m) => (
+                      m.senderRole === 'consultant' ? (
+                        <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
+                          {m.text}
+                        </div>
+                      ) : (
+                        <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
+                          {m.text}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                </div>
+                <div style={{ padding: '16px 24px 20px', flexShrink: 0, borderTop: '1px solid #f1eadd' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
+                    <input
+                      value={liveChatInput}
+                      onChange={e => setLiveChatInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendLiveChatMessage(); } }}
+                      placeholder={`Message ${candidateName}…`}
+                      style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 12px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                    />
+                    <button onClick={sendLiveChatMessage} disabled={liveChatSending || !liveChatInput.trim()}
+                      style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: liveChatSending || !liveChatInput.trim() ? 'not-allowed' : 'pointer', color: '#faf7f2', flexShrink: 0, boxShadow: '0 8px 18px rgba(105,91,255,.36)', opacity: liveChatSending || !liveChatInput.trim() ? 0.55 : 1 }}>
+                      <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                        <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
