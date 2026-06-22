@@ -7,9 +7,14 @@ const PLAN_DETAILS = [
     description: 'Chat through profile, analysis, and program selection.',
   },
   {
+    key: 'ai',
+    label: 'AI',
+    description: 'The full AI-guided process — narrative, CV, essays, and mock interviews.',
+  },
+  {
     key: 'ai_strategy',
     label: 'AI + Strategy',
-    description: 'Everything in Pathway AI, plus 1:1 access to a human admissions consultant.',
+    description: 'Everything in AI, plus 1:1 access to a human admissions consultant and Live Chat.',
   },
 ];
 

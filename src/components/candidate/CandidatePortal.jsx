@@ -8,7 +8,7 @@ import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 
-const PLAN_LABELS = { free: 'Free plan', ai_strategy: 'AI + Strategy' };
+const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
 const NAV_ITEMS = [
   {
@@ -155,7 +155,7 @@ export default function CandidatePortal(props) {
             <div style={{ position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
                 <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: '#fce7b0', stroke: 'none' }}><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.7L12 2Z" /></svg>
-                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.4px', color: '#f1eadd' }}>{PLAN_LABELS[plan] || 'Pathway AI'}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.4px', color: '#f1eadd' }}>{PLAN_LABELS[plan] || 'AI'}</span>
               </div>
               {plan !== 'ai_strategy' ? (
                 <>

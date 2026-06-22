@@ -36,10 +36,11 @@ export const TRACK_CONFIG = {
 
 export const PLANS = {
   free: { label: 'Free' },
+  ai: { label: 'AI' },
   ai_strategy: { label: 'AI + Strategy' },
 };
 
-const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — program selection is as far as it goes. Upgrade to Pathway AI or AI + Strategist in Settings to unlock your narrative strategy, CV, essays, and mock interviews.";
+const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please upgrade in Settings to continue with AI guidance, or choose AI + Strategy to add Live Chat with your consultant.";
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
 const WELCOME_MESSAGE = {
@@ -110,6 +111,7 @@ function loadPlan() {
   try {
     const s = localStorage.getItem('pathway_plan');
     if (s === 'aiStrategist') return 'ai_strategy';
+    if (s === 'pathwayAI') return 'ai';
     return s && PLANS[s] ? s : 'free';
   } catch { return 'free'; }
 }
@@ -191,7 +193,11 @@ export default function App() {
   }, []);
 
   const setPlan = useCallback((next) => {
-    const normalized = next === 'aiStrategist' ? 'ai_strategy' : (next === 'ai_strategy' ? 'ai_strategy' : 'free');
+    const normalized = next === 'aiStrategist'
+      ? 'ai_strategy'
+      : next === 'pathwayAI'
+        ? 'ai'
+        : (next === 'ai' || next === 'ai_strategy' ? next : 'free');
     setPlanState(normalized);
     localStorage.setItem('pathway_plan', normalized);
     if (auth?.token) {
@@ -400,7 +406,7 @@ export default function App() {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
 
-    if (plan === 'free' && chosenSchools && chosenSchools.length > 0) {
+    if (plan === 'free' && scores) {
       setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
       setInput('');
       return;
@@ -526,7 +532,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, chosenSchools, profile, completedTasks, language]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, completedTasks, language]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;

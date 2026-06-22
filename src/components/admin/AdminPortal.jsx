@@ -696,7 +696,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                                 style={{ minWidth: 88, border: '1px solid #f1eadd', borderRadius: 9, padding: '7px 8px', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 12 }}
                               >
                                 <option value="free">Free</option>
-                                <option value="ai_strategy">AI Strategy</option>
+                                <option value="ai">AI</option>
+                                <option value="ai_strategy">AI + Strategy</option>
                               </select>
                               <button onClick={() => setUserForm({ mode: 'edit', ...u, password: '' })} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Edit</button>
                               <button onClick={() => { setPasswordResetId(u.id); setPasswordDraft(''); }} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Reset</button>
