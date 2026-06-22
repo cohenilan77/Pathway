@@ -267,11 +267,25 @@ PIVOT — [1-2 sentences describing their specific pivot arc: how their backgrou
 Head to the Narrative Strategy tab to lock in your choice — once you do, I'll craft your complete narrative strategy."
 
 When the candidate returns having chosen and sends a message like "I choose Upgrade" or "I've chosen Pivot":
+
+Before producing any visible output, silently run this internal "Narrative Lab" process. Never reveal these steps, labels, or intermediate scores to the candidate — they exist only to sharpen your final answer.
+
+NARRATIVE LAB (hidden):
+1. Evidence map — Pull together everything available: the full conversation so far, CV/background text, PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, chosen schools, the N1–N4 answers, stated goals, and the Upgrade/Pivot choice.
+2. Admissions diagnosis — Identify what this specific candidate must prove to an admissions committee: credibility, direction, maturity, uniqueness, risk reduction, school/program fit, and post-program logic.
+3. Narrative hypotheses — Generate three internal candidate angles: (a) safe/credible, (b) bold/differentiated, (c) emotional/personal. Do not show these to the candidate.
+4. Stress test — Score each hypothesis internally from 1–10 on: specificity, admissions credibility, school fit, emotional hook, differentiation, career logic, and weakness/risk reduction. Reject any angle that scores low because it relies on generic claims rather than this candidate's actual evidence.
+5. Choose and refine — Pick the strongest-scoring angle as the primary narrative; optionally fold in a second angle as supporting texture. Rewrite it once more for concrete detail, human voice, a past → trigger → future arc, school-specific logic, and credibility.
+6. Bad-output blocker — Before finalizing, scan your draft for generic phrases and rewrite around them unless made fully specific and evidence-backed: "I am passionate about," "make an impact," "innovative," "cutting-edge," "leverage," "unlock potential," "dynamic," "give back," "change the world," "driven by curiosity," "lifelong learner."
+
+Only after completing this hidden process, produce the visible output:
 1. Confirm: "Your [Upgrade/Pivot] narrative — locked in. Here's your strategy for [their schools]:"
-2. Using ALL information from the conversation (CV/background, profile, goals, chosen schools, N1-N4 answers), write:
+2. Using the refined narrative from the Narrative Lab, write exactly these five sections:
    • CORE NARRATIVE: A 2-3 sentence statement connecting past → trigger moment → post-program vision, referencing their primary chosen school specifically
    • MASTER THEME: The single concept tying all their stories together (e.g., "translating operational complexity into strategic clarity")
    • ESSAY OPENER: One specific vivid opening sentence for their top school essay that an admissions officer would want to keep reading
+   • WHY THIS WORKS: 2-3 sentences explaining why this narrative is credible and differentiated for this candidate and their chosen schools, grounded in their actual evidence
+   • RISKS TO AVOID: 2-3 concrete pitfalls this candidate specifically must avoid (e.g., sounding generic, overclaiming, ignoring a gap) so the narrative doesn't fall flat in essays or interviews
 3. Then say: "Your narrative foundation is set. Now let's sharpen your CV to reinforce this story."
 
 STEP 6 — CV OPTIMIZATION
@@ -427,7 +441,7 @@ export default async function handler(req, res) {
     const kpiPromptSummary = await getKpiPromptSummary();
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 3500,
+      max_tokens: 5000,
       system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary),
       messages: messages.map(m => ({
         role: m.role === 'ai' ? 'assistant' : 'user',

@@ -11,6 +11,29 @@ import { LANGUAGES } from './constants.js';
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
 
+export const TRACK_CONFIG = {
+  Undergraduate: {
+    scoreLabel: 'Application Readiness',
+    steps: UNDERGRAD_STEPS,
+    docLabel: 'CV, action plan, skills plan, university applications',
+  },
+  Graduate: {
+    scoreLabel: 'Competitiveness Score',
+    steps: STEPS,
+    docLabel: 'CV, essays, SOP, recommendations',
+  },
+  'Postgraduate / Doctoral': {
+    scoreLabel: 'Research Readiness',
+    steps: ['Profile', 'Academic Depth', 'Research Experience', 'Research Direction', 'Supervisor Fit', 'Proposal', 'Writing Sample', 'Recommendations', 'Interview'],
+    docLabel: 'Research proposal, writing sample, CV, papers',
+  },
+  'Personal Development': {
+    scoreLabel: 'Growth Score',
+    steps: ['Profile', 'Goals', 'Strengths', 'Gaps', 'Skills Plan', 'Experience Plan', 'Personal Brand', 'Execution', 'Review'],
+    docLabel: 'CV, action plan, skills plan, portfolio',
+  },
+};
+
 export const PLANS = {
   free: { label: 'Free' },
   pathwayAI: { label: 'Pathway AI' },
@@ -587,6 +610,10 @@ export default function App() {
     setEssayText(existing?.text || '');
   }, [essaySchool, essayQuestion, essayText, essays]);
 
+  const currentTrack = profile?.category || 'Graduate';
+  const currentConfig = TRACK_CONFIG[currentTrack] || TRACK_CONFIG.Graduate;
+  const currentSteps = currentConfig.steps;
+
   const sharedProps = {
     screen, role, setRole,
     showPw, setShowPw,
@@ -598,7 +625,8 @@ export default function App() {
     override, setOverride,
     narrative, setNarrative,
     chat, setChat, input, setInput, busy,
-    STEPS: profile?.category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS, UNDERGRAD_STEPS, stepIdx,
+    STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
+    currentConfig, currentTrack,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
     tasks, completedTasks, setCompletedTasks,
     cvText, setCvText, cvFile, setCvFile,
