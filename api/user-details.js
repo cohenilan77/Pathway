@@ -18,7 +18,19 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { name, residency, age, phone, linkedin, oauthDetailsConfirmed } = req.body || {};
+  const { name, residency, age, phone, linkedin, oauthDetailsConfirmed, plan } = req.body || {};
+  const isPlanOnlyUpdate = plan != null
+    && name == null
+    && residency == null
+    && age == null
+    && phone == null
+    && linkedin == null
+    && oauthDetailsConfirmed == null;
+  if (isPlanOnlyUpdate) {
+    const user = await updateUserDetails(userId, { plan });
+    res.status(200).json({ user: publicUser(user) });
+    return;
+  }
   const ageNumber = age === '' || age == null ? null : Number(age);
   if (!String(name || '').trim()) {
     res.status(400).json({ error: 'Full name is required.' });
@@ -40,6 +52,7 @@ export default async function handler(req, res) {
     phone,
     linkedin,
     oauthDetailsConfirmed,
+    plan,
   });
 
   res.status(200).json({ user: publicUser(user) });

@@ -36,8 +36,7 @@ export const TRACK_CONFIG = {
 
 export const PLANS = {
   free: { label: 'Free' },
-  pathwayAI: { label: 'Pathway AI' },
-  aiStrategist: { label: 'AI + Strategist' },
+  ai_strategy: { label: 'AI + Strategy' },
 };
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan — program selection is as far as it goes. Upgrade to Pathway AI or AI + Strategist in Settings to unlock your narrative strategy, CV, essays, and mock interviews.";
@@ -110,8 +109,9 @@ function loadAiConfig() {
 function loadPlan() {
   try {
     const s = localStorage.getItem('pathway_plan');
-    return s && PLANS[s] ? s : 'pathwayAI';
-  } catch { return 'pathwayAI'; }
+    if (s === 'aiStrategist') return 'ai_strategy';
+    return s && PLANS[s] ? s : 'free';
+  } catch { return 'free'; }
 }
 
 function loadLanguage() {
@@ -184,21 +184,34 @@ export default function App() {
     }
   }, []);
 
-  const setPlan = useCallback((next) => {
-    setPlanState(next);
-    localStorage.setItem('pathway_plan', next);
+  const setAuth = useCallback((next) => {
+    setAuthState(next);
+    if (next) localStorage.setItem('pathway_auth', JSON.stringify(next));
+    else localStorage.removeItem('pathway_auth');
   }, []);
+
+  const setPlan = useCallback((next) => {
+    const normalized = next === 'aiStrategist' ? 'ai_strategy' : (next === 'ai_strategy' ? 'ai_strategy' : 'free');
+    setPlanState(normalized);
+    localStorage.setItem('pathway_plan', normalized);
+    if (auth?.token) {
+      fetch('/api/user-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ plan: normalized }),
+      })
+        .then(r => r.json().then(data => ({ ok: r.ok, data })))
+        .then(({ ok, data }) => {
+          if (ok && data.user) setAuth({ token: auth.token, user: data.user });
+        })
+        .catch(() => {});
+    }
+  }, [auth?.token, setAuth]);
 
   const setLanguage = useCallback((next) => {
     setLanguageState(next);
     localStorage.setItem('pathway_language', next);
     setChat(buildInitialChat(next));
-  }, []);
-
-  const setAuth = useCallback((next) => {
-    setAuthState(next);
-    if (next) localStorage.setItem('pathway_auth', JSON.stringify(next));
-    else localStorage.removeItem('pathway_auth');
   }, []);
 
   // Pick up the session token (or error) handed back by /api/oauth-callback after
@@ -227,7 +240,11 @@ export default function App() {
         if (!res.ok) throw new Error('unauthorized');
         const { data, user } = await res.json();
         if (cancelled) return;
-        if (user && !auth.user) setAuth({ token: auth.token, user });
+        if (user) {
+          setAuth({ token: auth.token, user });
+          setPlanState(user.plan || 'free');
+          localStorage.setItem('pathway_plan', user.plan || 'free');
+        }
         if (user?.role === 'admin' || user?.role === 'consultant') {
           setScreen('admin');
           return;
@@ -299,6 +316,8 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) { setAuthError(data.error || 'Login failed.'); return; }
       setAuth({ token: data.token, user: data.user });
+      setPlanState(data.user?.plan || 'free');
+      localStorage.setItem('pathway_plan', data.user?.plan || 'free');
       setScreen(['admin', 'consultant'].includes(data.user?.role) ? 'admin' : 'candidate'); window.scrollTo(0, 0);
     } catch { setAuthError('Connection issue. Please try again.'); }
     finally { setAuthBusy(false); }
@@ -314,6 +333,8 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) { setAuthError(data.error || 'Registration failed.'); return; }
       setAuth({ token: data.token, user: data.user });
+      setPlanState(data.user?.plan || 'free');
+      localStorage.setItem('pathway_plan', data.user?.plan || 'free');
       setScreen('candidate'); window.scrollTo(0, 0);
     } catch { setAuthError('Connection issue. Please try again.'); }
     finally { setAuthBusy(false); }

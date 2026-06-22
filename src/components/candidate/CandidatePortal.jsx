@@ -8,7 +8,7 @@ import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 
-const PLAN_LABELS = { free: 'Free plan', pathwayAI: 'Pathway AI', aiStrategist: 'AI + Strategist' };
+const PLAN_LABELS = { free: 'Free plan', ai_strategy: 'AI + Strategy' };
 
 const NAV_ITEMS = [
   {
@@ -34,7 +34,7 @@ const NAV_ITEMS = [
 ];
 
 const CHAT_NAV_ITEM = {
-  key: 'chat', label: 'Chat',
+  key: 'chat', label: 'Live Chat',
   icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
 };
 
@@ -79,7 +79,7 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings', chat: 'Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const hasChatAccess = authUser?.plan === 'ai_strategy';
   const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
 
@@ -157,7 +157,7 @@ export default function CandidatePortal(props) {
                 <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: '#fce7b0', stroke: 'none' }}><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.7L12 2Z" /></svg>
                 <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.4px', color: '#f1eadd' }}>{PLAN_LABELS[plan] || 'Pathway AI'}</span>
               </div>
-              {plan !== 'aiStrategist' ? (
+              {plan !== 'ai_strategy' ? (
                 <>
                   <div style={{ fontSize: 12.5, color: '#f1eadd', lineHeight: 1.45, marginBottom: 13, fontWeight: 500 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
                   <button onClick={handleUpgrade} style={{ width: '100%', background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 12, padding: 11, fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 14px rgba(40,20,90,.18)' }}>Upgrade plan</button>

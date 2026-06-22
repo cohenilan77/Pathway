@@ -7,13 +7,8 @@ const PLAN_DETAILS = [
     description: 'Chat through profile, analysis, and program selection.',
   },
   {
-    key: 'pathwayAI',
-    label: 'Pathway AI',
-    description: 'The full AI-guided process — narrative, CV, essays, and mock interviews.',
-  },
-  {
-    key: 'aiStrategist',
-    label: 'AI + Strategist',
+    key: 'ai_strategy',
+    label: 'AI + Strategy',
     description: 'Everything in Pathway AI, plus 1:1 access to a human admissions consultant.',
   },
 ];
@@ -94,8 +89,8 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
     if (key === plan) return;
     setPlan(key);
     const label = PLAN_DETAILS.find(p => p.key === key)?.label || key;
-    if (key === 'aiStrategist') {
-      showToast('AI + Strategist selected — connecting you with a consultant.');
+    if (key === 'ai_strategy') {
+      showToast('AI + Strategy selected — connecting you with a consultant.');
       setShowContactModal(true);
     } else {
       showToast(`Plan updated to ${label}.`);
