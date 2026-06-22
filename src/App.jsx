@@ -403,7 +403,10 @@ export default function App() {
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+        },
         body: JSON.stringify({ messages: newChat, aiConfig, language }),
       });
       const data = await res.json();

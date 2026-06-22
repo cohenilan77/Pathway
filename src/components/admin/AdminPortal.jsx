@@ -67,6 +67,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [kpiStatus, setKpiStatus] = useState(null);
   const [kpiBusy, setKpiBusy] = useState(false);
 
+  const [usageData, setUsageData] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState('');
+  const [usageSettings, setUsageSettings] = useState({
+    usageLimitsEnabled: false,
+    monthlyBudget: 100,
+    dailyBudget: 10,
+    maxCostPerUser: 2,
+    maxCostPerSession: 0.5,
+    limitAction: 'block_messages',
+    systemSuspended: false,
+    suspensionMessage: 'This system is temporarily unavailable. Please try again later.',
+  });
+  const [usageSettingsBusy, setUsageSettingsBusy] = useState(false);
+
   const canManageUsers = authUser?.role === 'admin' || !!adminSecret;
   const adminHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : { 'X-Admin-Secret': adminSecret };
 
@@ -100,6 +115,48 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   }, [adminSecret, authToken, canManageUsers]);
 
   useEffect(() => { loadKpiStatus(); }, [loadKpiStatus]);
+
+  const loadUsageData = useCallback(() => {
+    if (!canManageUsers) return;
+    setUsageLoading(true);
+    setUsageError('');
+    fetch('/api/admin-usage', { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          setUsageError(d.error);
+          return;
+        }
+        setUsageData(d);
+        if (d.settings) setUsageSettings(prev => ({ ...prev, ...d.settings }));
+      })
+      .catch(() => setUsageError('Failed to load usage data.'))
+      .finally(() => setUsageLoading(false));
+  }, [adminSecret, authToken, canManageUsers]);
+
+  useEffect(() => {
+    if (adminView === 'usageCost' && canManageUsers) loadUsageData();
+  }, [adminView, canManageUsers, loadUsageData]);
+
+  const saveUsageSettings = async () => {
+    setUsageSettingsBusy(true);
+    try {
+      const res = await fetch('/api/admin-usage-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify(usageSettings),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Failed to save usage settings.');
+      if (d.settings) setUsageSettings(prev => ({ ...prev, ...d.settings }));
+      showToast('Usage settings saved.');
+      loadUsageData();
+    } catch (e) {
+      showToast(e.message || 'Failed to save usage settings.');
+    } finally {
+      setUsageSettingsBusy(false);
+    }
+  };
 
   const openCandidate = (userId) => {
     setSelectedUserId(userId);
@@ -439,6 +496,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
             Live Session
           </button>
+          {canManageUsers && (
+            <button onClick={() => setAdminView('usageCost')} style={sideStyle(adminView === 'usageCost')}>
+              <NavIcon><path d="M3 3v18h18" /><rect x="7" y="11" width="3" height="6" rx="1" /><rect x="12" y="7" width="3" height="10" rx="1" /><rect x="17" y="13" width="3" height="4" rx="1" /></NavIcon>
+              Usage & Cost
+            </button>
+          )}
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
             <NavIcon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></NavIcon>
             Settings
@@ -446,6 +509,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         </div>
         <div style={{ marginTop: 'auto' }}>
           <div style={{ height: 1, background: '#f1eadd', marginBottom: 14 }} />
+          {usageData && (
+            <div style={{ padding: 10, background: '#f6f1e8', borderRadius: 14, marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: usageSettings.systemSuspended ? '#e0457a' : '#3fdca9', flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: usageSettings.systemSuspended ? '#e0457a' : '#19c08a' }}>
+                  {usageSettings.systemSuspended ? 'System Suspended' : 'System Running'}
+                </span>
+              </div>
+              <div style={{ height: 5, background: '#f1eadd', borderRadius: 3, overflow: 'hidden', marginBottom: 5 }}>
+                <div style={{
+                  width: `${Math.min(100, usageData.budgetPercent || 0)}%`, height: '100%',
+                  background: (usageData.budgetPercent || 0) >= 100 ? '#e0457a' : (usageData.budgetPercent || 0) >= 80 ? '#eaa129' : '#3fdca9',
+                }} />
+              </div>
+              <div style={{ fontSize: 11, color: '#9098b5' }}>
+                ${Number(usageData.monthlyCost || 0).toFixed(2)} / ${Number(usageData.monthlyBudget || 0).toFixed(2)}
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 8, background: '#f6f1e8', borderRadius: 14 }}>
             <span style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#474d80,#6d5cc2)', color: '#ffd76a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>✦</span>
             <div>
@@ -467,6 +549,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Consultants'}
             {adminView === 'session' && 'Live Session'}
+            {adminView === 'usageCost' && 'Usage & Cost'}
             {adminView === 'settings' && 'Settings'}
           </h1>
           {sessionActive && (
@@ -1014,6 +1097,231 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   <div ref={chatLogEndRef} />
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── USAGE & COST ── */}
+          {adminView === 'usageCost' && canManageUsers && (
+            <div style={{ maxWidth: 1100, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
+                Monitor token usage, costs and control system limits.
+              </div>
+
+              {usageError && (
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 18, color: '#e0457a', fontSize: 13.5, fontWeight: 600 }}>
+                  {usageError}
+                </div>
+              )}
+
+              {/* KPI cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
+                {[
+                  { label: 'TOTAL COST THIS MONTH', value: `$${Number(usageData?.monthlyCost || 0).toFixed(2)}`, color: '#141b34' },
+                  { label: 'TOTAL TOKENS', value: Number(usageData?.totalTokens || 0).toLocaleString(), color: '#141b34' },
+                  { label: 'INPUT TOKENS', value: Number(usageData?.inputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'OUTPUT TOKENS', value: Number(usageData?.outputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'USERS', value: Number(usageData?.totalUsers || 0).toLocaleString(), color: '#141b34' },
+                  { label: 'AVG COST / USER', value: `$${Number(usageData?.avgCostPerUser || 0).toFixed(2)}`, color: '#19c08a' },
+                  { label: 'AVG COST / SESSION', value: `$${Number(usageData?.avgCostPerSession || 0).toFixed(2)}`, color: '#19c08a' },
+                ].map((kpi) => (
+                  <div key={kpi.label} style={{ ...cardShell, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>{kpi.label}</div>
+                    <div style={{ fontSize: 21, fontWeight: 800, color: kpi.color }}>{usageLoading && !usageData ? '…' : kpi.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* System cost controls */}
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>System Cost Controls</h3>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 700, color: '#141b34', marginBottom: 18, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!usageSettings.usageLimitsEnabled}
+                    onChange={(e) => setUsageSettings(s => ({ ...s, usageLimitsEnabled: e.target.checked }))} />
+                  Enable Usage Limits
+                </label>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 22 }}>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Monthly Budget ($)
+                    <input type="number" min="0" step="1" value={usageSettings.monthlyBudget}
+                      onChange={(e) => setUsageSettings(s => ({ ...s, monthlyBudget: Number(e.target.value) }))}
+                      style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Daily Budget ($)
+                    <input type="number" min="0" step="1" value={usageSettings.dailyBudget}
+                      onChange={(e) => setUsageSettings(s => ({ ...s, dailyBudget: Number(e.target.value) }))}
+                      style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Max Cost Per User ($)
+                    <input type="number" min="0" step="0.1" value={usageSettings.maxCostPerUser}
+                      onChange={(e) => setUsageSettings(s => ({ ...s, maxCostPerUser: Number(e.target.value) }))}
+                      style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Max Cost Per Session ($)
+                    <input type="number" min="0" step="0.1" value={usageSettings.maxCostPerSession}
+                      onChange={(e) => setUsageSettings(s => ({ ...s, maxCostPerSession: Number(e.target.value) }))}
+                      style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
+                  </label>
+                </div>
+
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#6b7392', marginBottom: 10 }}>WHEN A LIMIT IS REACHED</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 22 }}>
+                  {[
+                    ['warn_user', 'Warn User Only'],
+                    ['block_messages', 'Block Further Messages'],
+                    ['notify_admin', 'Notify Admin Only'],
+                  ].map(([value, label]) => (
+                    <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, color: '#33405e', cursor: 'pointer' }}>
+                      <input type="radio" name="limitAction" value={value} checked={usageSettings.limitAction === value}
+                        onChange={() => setUsageSettings(s => ({ ...s, limitAction: value }))} />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+
+                <button onClick={saveUsageSettings} disabled={usageSettingsBusy}
+                  style={{ ...btnPrimary, padding: '10px 18px', fontSize: 13, opacity: usageSettingsBusy ? 0.55 : 1, cursor: usageSettingsBusy ? 'not-allowed' : 'pointer' }}>
+                  {usageSettingsBusy ? 'Saving…' : 'Save Changes'}
+                </button>
+              </div>
+
+              {/* Emergency controls */}
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Emergency Controls</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 700, color: '#e0457a', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={!!usageSettings.systemSuspended}
+                      onChange={(e) => setUsageSettings(s => ({ ...s, systemSuspended: e.target.checked }))} />
+                    Suspend Entire System
+                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: usageSettings.systemSuspended ? '#e0457a' : '#3fdca9' }} />
+                    <span style={{ fontSize: 13, fontWeight: 700, color: usageSettings.systemSuspended ? '#e0457a' : '#19c08a' }}>
+                      {usageSettings.systemSuspended ? 'System Suspended' : 'System Running'}
+                    </span>
+                  </div>
+                </div>
+                <button onClick={saveUsageSettings} disabled={usageSettingsBusy}
+                  style={{ ...btnDanger, padding: '10px 18px', fontSize: 13, opacity: usageSettingsBusy ? 0.55 : 1, cursor: usageSettingsBusy ? 'not-allowed' : 'pointer' }}>
+                  {usageSettingsBusy ? 'Saving…' : 'Save Suspension Setting'}
+                </button>
+              </div>
+
+              {/* Cost over time */}
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Cost Over Time</h3>
+                {!usageData?.costOverTime?.length ? (
+                  <div style={{ fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    {(() => {
+                      const maxCost = Math.max(0.01, ...usageData.costOverTime.map(d => d.cost || 0));
+                      return usageData.costOverTime.slice(-14).map((d) => (
+                        <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 11, color: '#9098b5', width: 80, flexShrink: 0 }}>{d.date}</span>
+                          <div style={{ flex: 1, height: 10, background: '#f1eadd', borderRadius: 5, overflow: 'hidden' }}>
+                            <div style={{ width: `${Math.max(2, (d.cost / maxCost) * 100)}%`, height: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)' }} />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#141b34', width: 60, textAlign: 'right' }}>${d.cost.toFixed(2)}</span>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Top users by cost */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Top Users by Cost</h3>
+                </div>
+                {!usageData?.topUsersByCost?.length ? (
+                  <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>STATUS</span>
+                    </div>
+                    {usageData.topUsersByCost.map((u) => (
+                      <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
+                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
+                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
+                        <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
+                        <span>
+                          <span style={{
+                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
+                            background: u.status === 'high' ? '#fff1f6' : u.status === 'warning' ? '#fff8ea' : '#eafff6',
+                            color: u.status === 'high' ? '#e384a5' : u.status === 'warning' ? '#eaa129' : '#3fdca9',
+                            border: `1px solid ${u.status === 'high' ? '#fbd3e2' : u.status === 'warning' ? '#f5dfa6' : '#aaeed1'}`,
+                          }}>{u.status}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Cost by feature */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Cost by Feature</h3>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                  <span>FEATURE</span><span>COST</span><span>TOKENS</span>
+                </div>
+                {(usageData?.costByFeature || []).map((f) => (
+                  <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
+                    <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Recent high-cost conversations */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Recent High-Cost Conversations</h3>
+                </div>
+                {!usageData?.recentHighCostConversations?.length ? (
+                  <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>CONVERSATION</span><span>USER</span><span>FEATURE</span><span>COST</span><span>WHEN</span>
+                    </div>
+                    {usageData.recentHighCostConversations.map((c, i) => (
+                      <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
+                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
+                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
+                        <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+
+              {/* Alerts */}
+              <div style={{ ...cardShell, padding: 28 }}>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Alerts</h3>
+                {!usageData?.alerts?.length ? (
+                  <div style={{ background: '#faf7f2', border: '2px dashed #e7dcc7', borderRadius: 16, padding: 24, textAlign: 'center', fontSize: 13, color: '#9098b5' }}>
+                    No alerts.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {usageData.alerts.map((a) => (
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px' }}>
+                        <span style={{ fontSize: 13, color: '#33405e' }}>{a.message}</span>
+                        <span style={{ fontSize: 11, color: '#9098b5', flexShrink: 0, marginLeft: 12 }}>{a.createdAt ? new Date(a.createdAt).toLocaleString() : '—'}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

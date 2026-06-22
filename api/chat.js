@@ -1,7 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
+import { getUserIdByToken } from '../lib/db.js';
+import {
+  recordUsage,
+  getUsageSettings,
+  getAllUsageRecords,
+  costForUser,
+  createAlert,
+} from '../lib/usage.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
 export const AI_CONFIG_SECTIONS = [
   {
@@ -419,10 +428,86 @@ Chosen schools block (emit once, right when the candidate names their target sch
 IMPORTANT: Never display block tag content in the visible chat.`;
 }
 
+// Infers which pipeline "feature" the candidate is currently in, based on the most
+// recent assistant message — used purely for usage/cost attribution, never for
+// altering the actual conversation/system prompt behavior.
+function inferFeature(messages) {
+  const lastAi = [...(messages || [])].reverse().find((m) => m.role === 'ai');
+  const text = (lastAi?.text || '').toLowerCase();
+  if (!text) return 'general_chat';
+  if (text.includes('mock interview') || text.includes('admissions interview simulation')) return 'mock_interview';
+  if (text.includes('essay') || text.includes('prompt or question')) return 'essay_workshop';
+  if (text.includes('cv you shared') || text.includes('strengthen it') || text.includes('rewrite them') || text.includes('cv section')) return 'cv_optimization';
+  if (text.includes('narrative') || text.includes('upgrade') || text.includes('pivot')) return 'narrative_strategy';
+  if (text.includes('programs') || text.includes('portfolio') || text.includes('schools excite') || text.includes('school list')) return 'program_matching';
+  if (text.includes('profile') || text.includes('scores') || text.includes('competitiveness')) return 'profile_analysis';
+  return 'general_chat';
+}
+
+async function resolveUserId(req) {
+  try {
+    const header = req.headers.authorization || '';
+    const match = header.match(/^Bearer (.+)$/i);
+    if (!match) return 'anonymous';
+    const userId = await getUserIdByToken(match[1]);
+    return userId || 'anonymous';
+  } catch {
+    return 'anonymous';
+  }
+}
+
+// Checks budgets/limits defensively — any error here must never break normal chat,
+// so failures are logged and treated as "no action needed."
+async function checkUsageLimits(userId) {
+  try {
+    const settings = await getUsageSettings();
+    if (!settings.usageLimitsEnabled) return { settings, action: null };
+
+    const allRecords = await getAllUsageRecords();
+    const now = new Date();
+    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    const dayKey = now.toISOString().slice(0, 10);
+
+    let monthlyCost = 0;
+    let dailyCost = 0;
+    for (const r of allRecords) {
+      const d = new Date(r.createdAt);
+      if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += r.totalCost || 0;
+      if (d.toISOString().slice(0, 10) === dayKey) dailyCost += r.totalCost || 0;
+    }
+    const userCost = await costForUser(userId);
+
+    const monthlyPercent = settings.monthlyBudget > 0 ? monthlyCost / settings.monthlyBudget : 0;
+    const dailyPercent = settings.dailyBudget > 0 ? dailyCost / settings.dailyBudget : 0;
+    const userPercent = settings.maxCostPerUser > 0 ? userCost / settings.maxCostPerUser : 0;
+
+    const overLimit = monthlyCost >= settings.monthlyBudget
+      || dailyCost >= settings.dailyBudget
+      || userCost >= settings.maxCostPerUser;
+    const nearLimit = monthlyPercent >= 0.8 || dailyPercent >= 0.8 || userPercent >= 0.8;
+
+    if (!overLimit && !nearLimit) return { settings, action: null };
+
+    if (settings.limitAction === 'block_messages' && overLimit) {
+      return { settings, action: 'block' };
+    }
+    if (settings.limitAction === 'warn_user' && (overLimit || nearLimit)) {
+      return { settings, action: 'warn' };
+    }
+    if (settings.limitAction === 'notify_admin' && (overLimit || nearLimit)) {
+      return { settings, action: 'notify', overLimit };
+    }
+    return { settings, action: null };
+  } catch (err) {
+    console.error('Usage limit check failed (ignoring, allowing request to proceed):', err);
+    return { settings: null, action: null };
+  }
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -432,15 +517,37 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language } = req.body;
+  const { messages, aiConfig, language, conversationId } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
 
+  const userId = await resolveUserId(req);
+  const feature = inferFeature(messages);
+  const convoId = conversationId || 'session';
+
   try {
+    // System-wide suspension switch — short-circuit before any Anthropic call,
+    // returning 200 so the existing chat UI renders the message inline.
+    const settingsCheck = await getUsageSettings().catch(() => null);
+    if (settingsCheck?.systemSuspended) {
+      return res.status(200).json({ raw: settingsCheck.suspensionMessage });
+    }
+
+    const { action } = await checkUsageLimits(userId);
+    if (action === 'block') {
+      return res.status(200).json({ raw: 'You have reached the usage limit for this period. Please try again later or contact support.' });
+    }
+    if (action === 'notify') {
+      createAlert({
+        type: 'usage_limit',
+        message: `Usage limit threshold reached for user ${userId} (feature: ${feature}).`,
+      }).catch((err) => console.error('Failed to create usage alert:', err));
+    }
+
     const kpiPromptSummary = await getKpiPromptSummary();
     const response = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: CHAT_MODEL,
       max_tokens: 5000,
       system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary),
       messages: messages.map(m => ({
@@ -449,7 +556,19 @@ export default async function handler(req, res) {
       })),
     });
 
-    const raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
+    recordUsage({
+      userId,
+      conversationId: convoId,
+      feature,
+      model: CHAT_MODEL,
+      inputTokens: response.usage?.input_tokens,
+      outputTokens: response.usage?.output_tokens,
+    }).catch((err) => console.error('Failed to record usage:', err));
+
+    let raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
+    if (action === 'warn') {
+      raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
+    }
     return res.status(200).json({ raw });
   } catch (error) {
     console.error('Anthropic API error:', error);
