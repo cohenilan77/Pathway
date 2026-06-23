@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { saveBlob, downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
+import { chatT, chatDir, formatChatDate } from '../../lib/chatI18n.js';
+import { LANGUAGES } from '../../constants.js';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -45,6 +47,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [liveChatMessages, setLiveChatMessages] = useState([]);
   const [liveChatInput, setLiveChatInput] = useState('');
   const [liveChatSending, setLiveChatSending] = useState(false);
+  const [liveChatLoading, setLiveChatLoading] = useState(true);
+  const [liveChatLoadError, setLiveChatLoadError] = useState(false);
+  const [chatLanguage, setChatLanguage] = useState(() => {
+    try { return localStorage.getItem('pathway_admin_chat_language') || 'English'; } catch { return 'English'; }
+  });
+  const setChatLanguagePersist = (lang) => {
+    setChatLanguage(lang);
+    try { localStorage.setItem('pathway_admin_chat_language', lang); } catch {}
+  };
   const [summary, setSummary] = useState('');
   const [summarizing, setSummarizing] = useState(false);
   const [summaryVisible, setSummaryVisible] = useState(false);
@@ -184,12 +195,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     if (!selectedUserId) return;
     fetch(`/api/chat/messages?candidateId=${selectedUserId}`, { headers: adminHeaders })
       .then(r => r.json())
-      .then(d => { if (d.messages) setLiveChatMessages(d.messages); })
-      .catch(() => {});
+      .then(d => {
+        if (d.messages) { setLiveChatMessages(d.messages); setLiveChatLoadError(false); }
+        else setLiveChatLoadError(true);
+      })
+      .catch(() => setLiveChatLoadError(true))
+      .finally(() => setLiveChatLoading(false));
   }, [selectedUserId, adminSecret, authToken]);
 
   useEffect(() => {
     if (!selectedUserId || adminView !== 'liveChat') { if (!selectedUserId) setLiveChatMessages([]); return; }
+    setLiveChatLoading(true);
     fetchLiveChatMessages();
     fetch('/api/chat/read', {
       method: 'POST',
@@ -216,10 +232,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         body: JSON.stringify({ candidateId: selectedUserId, senderId: authUser?.id, senderRole: 'consultant', text }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'Failed to send message.');
+      if (!res.ok) throw new Error(d.error || chatT(chatLanguage, 'failedToSendMessage'));
       fetchLiveChatMessages();
     } catch (e) {
-      showToast(e.message || 'Failed to send message.');
+      showToast(e.message || chatT(chatLanguage, 'failedToSendMessage'));
     } finally {
       setLiveChatSending(false);
     }
@@ -584,17 +600,29 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Consultants'}
             {adminView === 'session' && 'Live Session'}
-            {adminView === 'liveChat' && 'Live Chat'}
+            {adminView === 'liveChat' && chatT(chatLanguage, 'liveChat')}
             {adminView === 'dashboard' && 'Dashboard'}
             {adminView === 'usageCost' && 'Usage & Cost'}
             {adminView === 'settings' && 'Settings'}
           </h1>
-          {sessionActive && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#eafff6', border: '1px solid #aaeed1', borderRadius: 10, padding: '8px 16px' }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3fdca9' }} />
-              <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>Session Active</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {adminView === 'liveChat' && (
+              <select
+                value={chatLanguage}
+                onChange={e => setChatLanguagePersist(e.target.value)}
+                aria-label="Chat language"
+                style={{ border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 12px', fontSize: 13, fontWeight: 600, color: '#3c4564', background: '#f6f1e8', fontFamily: 'inherit', cursor: 'pointer', outline: 'none' }}
+              >
+                {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
+              </select>
+            )}
+            {sessionActive && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#eafff6', border: '1px solid #aaeed1', borderRadius: 10, padding: '8px 16px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#3fdca9' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>Session Active</span>
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ flex: 1, overflow: 'auto', padding: '30px 36px' }}>
@@ -1177,30 +1205,44 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── LIVE CHAT ── */}
           {adminView === 'liveChat' && !selectedUserId && (
-            <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
-              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>No candidate selected.</div>
-              <div style={{ fontSize: 13, color: '#aab2cc' }}>Open a candidate from the Candidates list to view their live chat.</div>
+            <div dir={chatDir(chatLanguage)} style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>{chatT(chatLanguage, 'noCandidateSelected')}</div>
+              <div style={{ fontSize: 13, color: '#aab2cc' }}>{chatT(chatLanguage, 'openCandidateFromList')}</div>
             </div>
           )}
-          {adminView === 'liveChat' && selectedUserId && (
-            <div style={{ maxWidth: 800 }}>
-              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14 }}>Viewing: {candidateName}</div>
+          {adminView === 'liveChat' && selectedUserId && (() => {
+            const dir = chatDir(chatLanguage);
+            return (
+            <div dir={dir} style={{ maxWidth: 800 }}>
+              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(chatLanguage, 'viewing')}: <bdi style={{ unicodeBidi: 'isolate' }}>{candidateName}</bdi></div>
               <div style={{ ...cardShell, display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
                 <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
-                    {liveChatMessages.length === 0 && (
+                    {liveChatLoading && (
                       <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
-                        No messages yet — say hello to {candidateName}.
+                        {chatT(chatLanguage, 'loadingMessages')}
+                      </div>
+                    )}
+                    {!liveChatLoading && liveChatLoadError && (
+                      <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
+                        {chatT(chatLanguage, 'failedToLoadMessages')}
+                      </div>
+                    )}
+                    {!liveChatLoading && !liveChatLoadError && liveChatMessages.length === 0 && (
+                      <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
+                        {chatT(chatLanguage, 'emptyChatState')}
                       </div>
                     )}
                     {liveChatMessages.map((m) => (
                       m.senderRole === 'consultant' ? (
                         <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
-                          {m.text}
+                          <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                          {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
                         </div>
                       ) : (
                         <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
-                          {m.text}
+                          <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                          {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
                         </div>
                       )
                     ))}
@@ -1209,15 +1251,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ padding: '16px 24px 20px', flexShrink: 0, borderTop: '1px solid #f1eadd' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
                     <input
+                      dir={dir}
                       value={liveChatInput}
                       onChange={e => setLiveChatInput(e.target.value)}
                       onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendLiveChatMessage(); } }}
-                      placeholder={`Message ${candidateName}…`}
-                      style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 12px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                      placeholder={chatT(chatLanguage, 'typeMessage')}
+                      style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 12px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, textAlign: dir === 'rtl' ? 'right' : 'left' }}
                     />
-                    <button onClick={sendLiveChatMessage} disabled={liveChatSending || !liveChatInput.trim()}
+                    <button onClick={sendLiveChatMessage} disabled={liveChatSending || !liveChatInput.trim()} aria-label={chatT(chatLanguage, 'send')}
                       style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: liveChatSending || !liveChatInput.trim() ? 'not-allowed' : 'pointer', color: '#faf7f2', flexShrink: 0, boxShadow: '0 8px 18px rgba(105,91,255,.36)', opacity: liveChatSending || !liveChatInput.trim() ? 0.55 : 1 }}>
-                      <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round', transform: dir === 'rtl' ? 'scaleX(-1)' : 'none' }}>
                         <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
                       </svg>
                     </button>
@@ -1225,7 +1268,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ── USAGE & COST ── */}
           {adminView === 'usageCost' && canManageUsers && (
