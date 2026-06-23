@@ -88,7 +88,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 - Either metric more than 0.5 (GPA) or 50 points (test) below median → excluded from the recommended list entirely — this is the locked gate (see fitFormula below).
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
-Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
+Always include avgGMAT, avgGPA, location, and notes fields, EXCEPT for test-optional or portfolio/audition-based programs (see TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS in the fit formula below) — for those, omit avgGMAT entirely rather than inventing a number. Notes must mention the candidate's specific fit or gap for that school.
 
 MBA reference schools by tier:
 - stretch: Harvard Business School, Stanford GSB, Wharton
@@ -108,6 +108,8 @@ FOUR TIERS, in order of severity — every school in a PROGRAMS or CHOSEN_SCHOOL
 🔴 Stretch — fit under 20%.
 🟡 Possible — fit 20–55%.
 🟢 Safe — fit over 55%.
+
+TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS (check this before running the formula below): Some graduate programs — arts, design, film, or interactive-media MFA/MPS programs (e.g. NYU Tisch), and any other program that admits primarily on a portfolio, audition, or work sample and publishes no standardized test median — have no meaningful GMAT/GRE/LSAT/MCAT/SAT/ACT figure to score against. For these schools: skip the test-score half of STEP 1 and skip the test-score check in STEP 0's locked gate entirely — base fit on the GPA gap alone plus the soft-score booster and modifiers, and omit the "avgGMAT" field from that school's PROGRAMS object rather than inventing a number for it. A missing test score on a portfolio-based program is normal, not an error state — it must never stop you from emitting the <PROGRAMS> block or from naming the school in a <CHOSEN_SCHOOLS> block.
 
 GAP-BASED FIT FORMULA — apply in this exact order:
 
@@ -672,13 +674,16 @@ export default async function handler(req, res) {
 
     // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
     // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
-    // Retry once on that mismatch — it's usually a transient generation glitch — before giving up.
+    // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
+    // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
+    // instead of blindly resending the same input, since an identical retry tends to fail the same way.
+    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, emit the complete <PROGRAMS> block for the school(s)/program(s) already named in the conversation before any such confirmation line. If a named school has no standardized test median (e.g. it is portfolio/audition-based), score it on GPA gap and soft scores alone per the TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS rule and omit avgGMAT — do not let that block you from emitting the block.';
     let raw;
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (let attempt = 0; attempt < 3; attempt++) {
       const response = await client.messages.create({
         model: CHAT_MODEL,
         max_tokens: 5000,
-        system: systemPrompt,
+        system: attempt === 0 ? systemPrompt : `${systemPrompt}${CORRECTIVE_NOTE}`,
         messages: anthropicMessages,
       });
 
@@ -701,7 +706,7 @@ export default async function handler(req, res) {
     const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
     const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
     if (claimsPortfolioLive && !hasProgramsBlock) {
-      raw = "Sorry, that portfolio didn't generate correctly — let me try again. Could you repeat which schools or criteria you'd like recommendations for?";
+      raw = "Sorry, that portfolio didn't generate correctly on my end — no need to repeat yourself, just say \"try again\" and I'll regenerate it from what you already told me.";
     }
 
     if (action === 'warn') {
