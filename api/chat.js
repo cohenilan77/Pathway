@@ -663,30 +663,40 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, programs);
-    const response = await client.messages.create({
-      model: CHAT_MODEL,
-      max_tokens: 5000,
-      system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection),
-      messages: messages.map(m => ({
-        role: m.role === 'ai' ? 'assistant' : 'user',
-        content: m.text,
-      })),
-    });
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection);
+    const anthropicMessages = messages.map(m => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.text,
+    }));
 
-    recordUsage({
-      userId: usageUserId,
-      conversationId: convoId,
-      feature,
-      model: CHAT_MODEL,
-      inputTokens: response.usage?.input_tokens,
-      outputTokens: response.usage?.output_tokens,
-    }).catch((err) => console.error('Failed to record usage:', err));
-
-    let raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
-
-    // The model sometimes confirms a portfolio is "live in the Analysis tab" without actually
+    // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
     // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
-    // Catch that mismatch here so the chat never claims data is available when it isn't.
+    // Retry once on that mismatch — it's usually a transient generation glitch — before giving up.
+    let raw;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await client.messages.create({
+        model: CHAT_MODEL,
+        max_tokens: 5000,
+        system: systemPrompt,
+        messages: anthropicMessages,
+      });
+
+      recordUsage({
+        userId: usageUserId,
+        conversationId: convoId,
+        feature,
+        model: CHAT_MODEL,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+      }).catch((err) => console.error('Failed to record usage:', err));
+
+      raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
+
+      const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
+      const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
+      if (!claimsPortfolioLive || hasProgramsBlock) break;
+    }
+
     const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
     const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
     if (claimsPortfolioLive && !hasProgramsBlock) {
