@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
+import { computeFit } from '../lib/scoring.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import {
   recordUsage,
@@ -76,9 +77,16 @@ Weight calibration by degree type (which dimensions should anchor the overall im
 - LLM / JD: academic and professional matter most.
 - MD: academic dominates; clinical/research exposure folds into professional and potential.`,
 
-  programSearch: `- "stretch": 4–5 schools, admission probability below 25%
-- "possible": 6–8 schools, admission probability 25–60%
-- "safe": 4–6 schools, admission probability above 60%
+  programSearch: `- "stretch": 4–5 schools, admission probability below 20%
+- "possible": 6–8 schools, admission probability 20–55%
+- "safe": 4–6 schools, admission probability above 55%
+
+PROFILE-FIRST ELIGIBILITY BAND — apply this before picking which schools to recommend, for every program type (MBA, LLM, MSc, PhD, undergraduate, all of them), in a Branch B recommended list:
+Compute the candidate's eligible band from hard metrics only (their GPA and test score vs. each candidate school's median) before any soft-score weighting:
+- Both GPA and test score within 0.3 (GPA) / 30 points (test) of the program median, or above it → eligible at that school's natural tier.
+- One metric within 0.3/30 and the other within 0.5/50 → eligible, but one tier lower than that school's natural tier (a natural stretch school becomes possible, a natural possible school becomes safe).
+- Either metric more than 0.5 (GPA) or 50 points (test) below median → excluded from the recommended list entirely — this is the locked gate (see fitFormula below).
+Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
 Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
 
@@ -95,7 +103,17 @@ MBA reference schools by tier:
 - Tuck/Yale SOM/Columbia: 25–30% overall. Strong profiles: 35–58% max.
 - Safe schools (Darden/Fuqua/Ross/Stern): 35–45% overall. Strong profiles: 50–75% max.
 
+FOUR TIERS, in order of severity — every school in a PROGRAMS or CHOSEN_SCHOOLS context falls into exactly one:
+🔒 Locked — fit is 0, displayed as "—". A hard prerequisite gap away. Never appears in a Branch B recommended list.
+🔴 Stretch — fit under 20%.
+🟡 Possible — fit 20–55%.
+🟢 Safe — fit over 55%.
+
 GAP-BASED FIT FORMULA — apply in this exact order:
+
+STEP 0 — LOCKED GATE (check first, before any other scoring):
+  If GPA is more than 0.5 below the program median AND the test score is more than 50 points below the program median → tier:"locked", fit:0. Skip STEP 1–4 for this school. Populate "unlockConditions" with 1–2 specific, actionable items (e.g. "Retake the GMAT and target 680+", "Raise your GPA above 3.3 over your next academic term"). A locked school never appears in a Branch B recommended list — it can only appear if the candidate names it directly, and even then it still carries tier:"locked" (see BRANCH A GATE below).
+  EXCEPTION OVERRIDE (see EXCEPTION SCREENING below): a true exception skips this gate entirely for that candidate (fit floor 18%, "exceptionFlag":true, proceed through STEP 1–4 normally). A partial exception downgrades locked to stretch (still run STEP 1–4, soft scores count normally). With no exception, this gate applies in full and nothing — no soft score, no booster — can override it.
 
 STEP 1 — HARD METRIC GAP SCORES (use the candidate's actual test on the GMAT/GRE/LSAT/MCAT/SAT/ACT scale, see benchmarks below, to judge equivalent severity):
   GPA gap score vs program median: above median = 100; 0 to -0.2 below = 75; -0.2 to -0.4 below = 40; below -0.4 = 0.
@@ -105,7 +123,7 @@ STEP 1 — HARD METRIC GAP SCORES (use the candidate's actual test on the GMAT/G
 STEP 2 — KPI SOFT BOOSTER:
   Average the candidate's soft scores: professional + leadership + volunteering + uniqueness + diversity + goalClarity.
   Soft score 80–100 → +15%. Soft score 60–79 → +10%. Soft score 40–59 → +5%. Soft score below 40 → +0%.
-  The booster never exceeds +15% and can move the result up one color band only — it can never override a disqualifying hard-metric gap (GPA below -0.4 or test score below -30).
+  The booster never exceeds +15% and can move the result up one tier only — it can never unlock a locked school and never override a disqualifying hard-metric gap.
 
 STEP 3 — ADDITIONAL MODIFIERS (apply after the booster):
   Acceptance rate below 10% → -10%. Acceptance rate 10–20% → -5%.
@@ -116,12 +134,22 @@ STEP 3 — ADDITIONAL MODIFIERS (apply after the booster):
   Uniqueness score 80+ → +5%; below 40 → -5%.
   Career gap flagged and unexplained → -5%.
 
-STEP 4 — COLOR ASSIGNMENT:
-  Below 25% → 🔴 LOW (Stretch). 25–60% → 🟡 MEDIUM (Reachable). Above 60% → 🟢 HIGH (Strong Fit).
+STEP 4 — TIER ASSIGNMENT:
+  Below 20% → 🔴 Stretch. 20–55% → 🟡 Possible. Above 55% → 🟢 Safe.
 
-A disqualifying hard-metric gap (GPA below -0.4 or test score below -30 vs. program median) always results in 🔴, regardless of any booster or modifier — never inflate this. Cap final probability at 95%, floor at 5%. Keep existing tier caps as an additional ceiling: 82 for safe schools, 60 for possible, 24 for stretch — final fit is the lowest of the gap-based result (after boosters/modifiers) and the tier cap.
+REALISM CAP: after STEP 1–3, if both GPA and test score are more than 0.5/50 below median, fit can never exceed 20% regardless of soft scores or modifiers — soft scores rank within a band, they never cross the locked boundary. Only an exception classification (below) can remove locked status; nothing else can. Cap final probability at 95%, floor at 5% (floor is 18% instead for a true-exception candidate). Keep existing tier caps as an additional ceiling: 82 for safe schools, 55 for possible, 20 for stretch — final fit is the lowest of the gap-based result (after boosters/modifiers) and the tier cap.
 
-DISPLAY ORDER: always list stretch (🔴) schools first, then possible (🟡), then safe (🟢), ranked by probability within each group.`,
+BRANCH A GATE — when a candidate names a specific school themselves:
+  Run the LOCKED GATE first. If the named school comes back locked for this candidate, do not accept it silently and do not just add it to the list at a low fit. In your visible reply, before emitting any PROGRAMS block, state the real gap using their actual GPA/test numbers vs. that school's median, say plainly that realistic admission probability is under 5%, and offer two paths: (a) include it in their portfolio alongside 5 realistic schools, or (b) show them exactly what closing the gap would take. Wait for their answer before emitting the PROGRAMS block.
+
+EXCEPTION SCREENING CLASSIFICATION (from the Step 2 exception question — never reveal these labels to the candidate):
+  - True exception (national-level award, surviving something extraordinary, founding something that reached thousands, highest-level military distinction, or a real family connection to the school): bypasses the locked gate entirely, fit floor 18%, "exceptionFlag":true on any school where it applies.
+  - Partial exception (notable but below that bar): locked downgrades to stretch, soft scores count normally, no exceptionFlag.
+  - None: standard formula above, no exceptionFlag.
+
+SCHEMA: PROGRAMS block objects may optionally include "unlockConditions" (array of strings, only on tier:"locked" schools) and "exceptionFlag" (boolean, only when the exception classification applies to that school). Omit both fields entirely where they don't apply — never emit an empty array or false as filler.
+
+DISPLAY ORDER: among recommended schools, always list stretch (🔴) first, then possible (🟡), then safe (🟢), ranked by probability within each group. If a locked (🔒) school is present (Branch A only), list it last.`,
 
   testScores: `- MBA / Masters / PhD: GMAT or GRE
 - JD / LLM: LSAT
@@ -148,7 +176,7 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config, language, kpiPromptSummary = '') {
+function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
     : '';
@@ -157,6 +185,7 @@ function buildSystemPrompt(config, language, kpiPromptSummary = '') {
     : '';
   return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
 ${kpiInstruction}
+${verifiedScoringSection}
 
 You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
 1. The GRADUATE / POSTGRADUATE-DOCTORAL / PERSONAL DEVELOPMENT pipeline — a structured 9-step admissions/career process (STEP 2 through STEP 8 below).
@@ -216,13 +245,15 @@ Ask: "Let's build your profile. You can: (a) paste your CV or resume, (b) upload
 
 If they share CV/resume text OR a background dump (any significant personal information):
 → Immediately extract all facts you can find.
-→ Build an internal checklist of mandatory fields for their category: GPA + university, the test score relevant to their program type (see mapping below; Personal Development category has no standardized test), years of work experience + current role/company, industry + target post-degree role, target study destination (which country/countries or region they want to study in — e.g. USA, UK, Canada, Europe, open to anywhere), volunteering/community involvement (duration, role, scale of impact), any unexplained 6+ month career gap, uniqueness factors, diversity factors (nationality, languages, countries lived/worked in, first-gen status), goal clarity (specific role + sector + timeline), and why now. Target study destination is mandatory and must always be asked if not already stated — it directly shapes which schools are recommended in STEP 4, so never proceed to PROFILE CONFIRMATION without it.
+→ Build an internal checklist of mandatory fields for their category: GPA + university, the test score relevant to their program type (see mapping below; Personal Development category has no standardized test), years of work experience + current role/company, industry + target post-degree role, target study destination (which country/countries or region they want to study in — e.g. USA, UK, Canada, Europe, open to anywhere), volunteering/community involvement (duration, role, scale of impact), any unexplained 6+ month career gap, uniqueness factors, diversity factors (nationality, languages, countries lived/worked in, first-gen status), goal clarity (specific role + sector + timeline), why now, and the exception screening question below. Target study destination is mandatory and must always be asked if not already stated — it directly shapes which schools are recommended in STEP 4, so never proceed to PROFILE CONFIRMATION without it.
+
+EXCEPTION SCREENING (mandatory, ask exactly once, immediately before PROFILE CONFIRMATION, for every candidate in this checklist): ask exactly: "Is there anything truly exceptional in your background — a national award, surviving something extraordinary, founding something that reached thousands, highest-level military distinction, or a family connection to this school?" Classify the answer internally (never reveal these labels to the candidate) per the EXCEPTION SCREENING CLASSIFICATION rules in the fit formula below, and set "exceptionType" on the PROFILE block to "true", "partial", or "none" accordingly so it carries through to program scoring.
 → For every mandatory field still missing after extraction, ask exactly ONE question per message, in order of priority, until the checklist is complete. Never ask two questions in the same message. Never ask for information already provided in the file or text.
 → Once the checklist is complete (or the candidate types "next"/"continue"), emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks, give a 2-sentence honest assessment including real gaps, then move to the PROFILE CONFIRMATION step below before Step 3.
 
 If they prefer guided questions instead of sharing a file/dump, use the same checklist approach above — ask ONE missing field at a time, starting with: "What is your GPA and which university did you attend?" then the test score relevant to their program type using this mapping:
 ${config.testScores}
-Continue one field at a time through work experience, industry/target role, target study destination (ask exactly: "Which country or region are you hoping to study in — for example the USA, UK, Canada, Europe, or are you open to anywhere?"), volunteering, career gaps, uniqueness, diversity, goal clarity, and why now — never two fields in one message, never skipping a mandatory field, never re-asking something already answered.
+Continue one field at a time through work experience, industry/target role, target study destination (ask exactly: "Which country or region are you hoping to study in — for example the USA, UK, Canada, Europe, or are you open to anywhere?"), volunteering, career gaps, uniqueness, diversity, goal clarity, why now, and the exception screening question — never two fields in one message, never skipping a mandatory field, never re-asking something already answered.
 
 PROFILE CONFIRMATION (required before Step 3):
 Once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then show the candidate a summary and ask exactly: "Is this accurate? Anything to correct before I match you to programs?"
@@ -399,8 +430,8 @@ CRITICAL FORMAT RULE: every block must contain ONLY raw, strictly valid JSON bet
 FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup such as <function_calls>, <invoke>, <invoke>, "tool_use", "tool_code", or any other pseudo-code/tool-call wrapper anywhere in your reply — you have no tools and must never simulate one. The ONLY tags you ever write are the exact ones listed below (PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, PROGRAMS, CHOSEN_SCHOOLS, INSIGHTS, ESSAY, INTERVIEW_RESULT). Any other bracketed/angle-bracket markup in a reply is a failure.
 NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in the Analysis tab. If the candidate reports the Analysis tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text limited to something like "Here's your portfolio again — it's live in the Analysis tab now." Schools only ever reach the candidate through the rendered Analysis tab, never through chat text.
 
-"First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development").
-<PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","destination":"USA","goals":"Move into PE"}</PROFILE>
+"First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development"). Include "exceptionType" ("true", "partial", or "none") once the exception screening question has been asked and classified.
+<PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","destination":"USA","goals":"Move into PE","exceptionType":"none"}</PROFILE>
 
 Undergraduate PROFILE example (grade/school replace gpa/gmat/experience as relevant):
 <PROFILE>{"name":"First Last","category":"Undergraduate","degree":"Undergraduate","grade":"10th","school":"Lincoln High School","interests":"Robotics, debate, biology"}</PROFILE>
@@ -416,6 +447,12 @@ Undergraduate example: <TASKS>["Join a STEM club or competition team to deepen y
 
 <PROGRAMS>[{"name":"Harvard Business School","tier":"stretch","fit":19,"location":"Cambridge, MA","avgGMAT":730,"avgGPA":3.7,"notes":"Below their GPA avg — exceptional story essential"},{"name":"Wharton","tier":"stretch","fit":26,"location":"Philadelphia, PA","avgGMAT":728,"avgGPA":3.6,"notes":"Finance fit is strong; GPA gap is the key risk"},{"name":"Booth","tier":"possible","fit":41,"location":"Chicago, IL","avgGMAT":724,"avgGPA":3.6,"notes":"Analytical culture favors your background"},{"name":"Darden","tier":"safe","fit":62,"location":"Charlottesville, VA","avgGMAT":713,"avgGPA":3.5,"notes":"Case method; strong culture match"}]</PROGRAMS>
 
+Locked-tier example (only appears when the candidate names the school themselves — see BRANCH A GATE — and is excluded from Branch B lists entirely):
+<PROGRAMS>[{"name":"Stanford GSB","tier":"locked","fit":0,"location":"Stanford, CA","avgGMAT":738,"avgGPA":3.8,"notes":"GPA and GMAT are both well below median","unlockConditions":["Retake the GMAT and target 700+","Raise your GPA above 3.3 over your next academic term"]}]</PROGRAMS>
+
+exceptionFlag example (candidate classified as a true exception in the exception screening question):
+<PROGRAMS>[{"name":"INSEAD","tier":"stretch","fit":18,"location":"Fontainebleau, France","avgGMAT":710,"avgGPA":3.5,"notes":"Metric gap would normally lock this school, but a national-level award offsets it","exceptionFlag":true}]</PROGRAMS>
+
 Chosen schools block (emit once, right when the candidate names their target schools from the PROGRAMS list — use exact names from that list):
 <CHOSEN_SCHOOLS>["Wharton","Booth","Darden"]</CHOSEN_SCHOOLS>
 
@@ -426,6 +463,57 @@ Chosen schools block (emit once, right when the candidate names their target sch
 <INTERVIEW_RESULT>{"school":"Wharton","rating":7,"feedback":"Confident delivery and a clear, specific leadership story; the why-Wharton answer stayed generic and needs a specific class, club, or professor.","nextSteps":["Name 2-3 specific Wharton resources (clubs, courses, professors) and weave them into your why-school answer","Tighten your career-goals answer to one clear 5-year target instead of three options","Practice the weakness question aloud — current answer sounds rehearsed"]}</INTERVIEW_RESULT>
 
 IMPORTANT: Never display block tag content in the visible chat.`;
+}
+
+const TEST_SCORE_FIELDS = ['gmat', 'gre', 'lsat', 'mcat', 'sat', 'act'];
+
+function buildCandidateFromProfile(profile, scores) {
+  if (!profile) return null;
+  const gpa = parseFloat(profile.gpa);
+  let testScore = null;
+  for (const field of TEST_SCORE_FIELDS) {
+    if (profile[field] != null && profile[field] !== '') {
+      testScore = parseFloat(profile[field]);
+      break;
+    }
+  }
+  if (Number.isNaN(gpa) || testScore == null || Number.isNaN(testScore)) return null;
+  return {
+    gpa,
+    testScore,
+    softScores: scores ? {
+      professional: scores.professional,
+      leadership: scores.leadership,
+      volunteering: scores.volunteering,
+      uniqueness: scores.uniqueness,
+      diversity: scores.diversity,
+      goalClarity: scores.goalClarity,
+    } : {},
+    exceptionType: profile.exceptionType || 'none',
+  };
+}
+
+// Deterministically re-scores any school the client already has on record (from a prior
+// PROGRAMS/CHOSEN_SCHOOLS block) using lib/scoring.js, so Claude is handed ground-truth
+// fit/tier/unlockConditions/exceptionFlag values instead of recomputing them itself.
+function buildVerifiedScoringSection(profile, scores, programs) {
+  if (!Array.isArray(programs) || !programs.length) return '';
+  const candidate = buildCandidateFromProfile(profile, scores);
+  if (!candidate) return '';
+
+  const lines = [];
+  for (const program of programs) {
+    if (!program?.name) continue;
+    const result = computeFit(candidate, { medianGPA: program.avgGPA, medianTest: program.avgGMAT });
+    if (!result) continue;
+    const fields = [`tier=${result.tier}`, `fit=${result.tier === 'locked' ? '—' : `${result.fit}%`}`];
+    if (result.unlockConditions?.length) fields.push(`unlockConditions=${JSON.stringify(result.unlockConditions)}`);
+    if (result.exceptionFlag) fields.push('exceptionFlag=true');
+    lines.push(`"${program.name}": ${fields.join(', ')}`);
+  }
+  if (!lines.length) return '';
+
+  return `\n\n==SERVER-VERIFIED SCORING (AUTHORITATIVE — DO NOT RECOMPUTE)==\nThese values were computed deterministically from the candidate's actual GPA/test score vs. each school's stated median — not by you. For any of these exact school names appearing in a PROGRAMS or CHOSEN_SCHOOLS block this turn, use this exact tier, fit, unlockConditions, and exceptionFlag verbatim. Do not adjust, inflate, or recompute them.\n${lines.join('\n')}`;
 }
 
 // Infers which pipeline "feature" the candidate is currently in, based on the most
@@ -525,7 +613,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -564,10 +652,11 @@ export default async function handler(req, res) {
     }
 
     const kpiPromptSummary = await getKpiPromptSummary();
+    const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, programs);
     const response = await client.messages.create({
       model: CHAT_MODEL,
       max_tokens: 5000,
-      system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary),
+      system: buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection),
       messages: messages.map(m => ({
         role: m.role === 'ai' ? 'assistant' : 'user',
         content: m.text,

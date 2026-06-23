@@ -54,6 +54,13 @@ function ScoreBar({ score, title, last, color }) {
 
 const TIERS = [
   {
+    key: 'locked',
+    label: 'PREREQUISITES',
+    accent: '#9098b5',
+    bg: '#f4f5f8',
+    border: '#dde0e8',
+  },
+  {
     key: 'stretch',
     label: 'STRETCH',
     accent: '#e384a5',
@@ -236,11 +243,15 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tier.accent, flexShrink: 0, display: 'inline-block' }} />
                       <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: tier.accent }}>{tier.label}</span>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
+                      {tier.key === 'locked' && (
+                        <span style={{ fontSize: 12, fontStyle: 'italic', color: '#9098b5', marginLeft: 6 }}>Significant metric gaps — can still be selected.</span>
+                      )}
                     </div>
                     {/* School rows */}
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
                       {schools.map((school, idx) => {
                         const isSelected = selected.includes(school.name);
+                        const isLocked = tier.key === 'locked';
                         return (
                         <div
                           key={school.name || idx}
@@ -259,8 +270,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             gap: 16,
                             cursor: 'pointer',
                             background: isSelected ? 'rgba(255,255,255,.55)' : 'transparent',
+                            opacity: isLocked && !isSelected ? 0.72 : 1,
                             boxShadow: isSelected ? `inset 3px 0 0 0 ${tier.accent}` : 'none',
-                            transition: 'background 0.15s ease, box-shadow 0.15s ease',
+                            transition: 'background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
                           }}
                         >
                           {/* Checkbox */}
@@ -279,15 +291,19 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                           </div>
                           {/* Left: name, location, notes */}
                           <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34', marginBottom: 3 }}>
+                            <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34', marginBottom: 3 }}>
                               {school.name}
                             </div>
                             {school.location && (
-                              <div style={{ fontSize: 12, color: '#6b7392', marginBottom: school.notes ? 4 : 0, fontWeight: 500 }}>
+                              <div style={{ fontSize: 12, color: '#6b7392', marginBottom: (school.notes || (isLocked && school.unlockConditions?.length)) ? 4 : 0, fontWeight: 500 }}>
                                 ◍ {school.location}
                               </div>
                             )}
-                            {school.notes && (
+                            {isLocked && school.unlockConditions?.length > 0 ? (
+                              <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.45 }}>
+                                To compete here: {school.unlockConditions.join(' · ')}
+                              </div>
+                            ) : school.notes && (
                               <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.45 }}>
                                 {school.notes}
                               </div>
@@ -309,7 +325,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             )}
                             {school.fit != null && (
                               <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{school.fit}%</div>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div>
                                 <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
                               </div>
                             )}

@@ -435,7 +435,7 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';
@@ -533,7 +533,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, completedTasks, language]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
