@@ -18,7 +18,7 @@ PIPELINE STEPS (in order, tracked by the stepper at the top of the Admissions Ad
 1. Profile — share your CV, a background dump, or answer guided questions about your GPA, test score, work experience, and goals. Goal: build an accurate picture of your candidacy.
 2. Recommender — name the people who will write your recommendation letters. Goal: confirm strong, relevant references are lined up.
 3. Analysis — the AI scores your candidacy (academic, professional, leadership, narrative, potential) against real program benchmarks. Goal: get an honest, calibrated read on where you stand.
-4. Programs — the AI recommends a tiered list of schools (stretch/possible/safe) with admission-probability fit scores, or evaluates schools you already have in mind. Goal: build a realistic, balanced target list.
+4. Programs — the AI recommends a tiered list of schools (stretch/possible/safe) with readiness fit scores, or evaluates schools you already have in mind. Goal: build a realistic, balanced target list.
 5. Narrative — answer a few questions about your motivations and story, then choose an "Upgrade" or "Pivot" framing. Goal: lock in the core story that ties your whole application together.
 6. Fit — review your fit percentages and tier for each target school. Goal: understand your real odds and where to focus effort.
 7. CV — get your resume bullets rewritten with strong action verbs and quantified outcomes, tailored to your narrative. Goal: make your CV reinforce your story.

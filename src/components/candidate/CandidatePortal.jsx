@@ -55,7 +55,7 @@ function navDotStyle(active) {
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -80,6 +80,7 @@ export default function CandidatePortal(props) {
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Documents', settings: 'Settings', chat: 'Live Chat' };
+  const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
 
@@ -132,7 +133,14 @@ export default function CandidatePortal(props) {
             return (
               <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
-                <span>{item.label}</span>
+                <span style={{ minWidth: 0 }}>
+                  <span>{item.label}</span>
+                  {item.key === 'analysis' && targetSummary && (
+                    <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: active ? '#f1eadd' : '#25785d', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 134 }}>
+                      {targetSummary}
+                    </span>
+                  )}
+                </span>
                 <span style={navDotStyle(active)} />
               </button>
             );
@@ -188,7 +196,7 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '26px 36px', borderBottom: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.5px', color: '#141b34' }}>Good {tod}, {first}</div>
-            <div style={{ fontSize: 13.5, color: '#838bab', fontWeight: 500, marginTop: 3 }}>{tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab]}</div>
+            <div style={{ fontSize: 13.5, color: '#838bab', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={handleHelp} title="Help" style={{ width: 42, height: 42, borderRadius: 13, border: '1.5px solid #f1eadd', background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392' }}>

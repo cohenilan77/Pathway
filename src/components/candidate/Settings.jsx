@@ -213,15 +213,15 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Target Degree</label>
-              <input value={form.degree} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))} placeholder="MBA, Masters, PhD..." style={inputStyle} />
+              <input value={form.degree} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))} placeholder="MBA, MPS ITP, MFA, MSc, PhD..." style={inputStyle} />
             </div>
             <div>
               <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>GPA</label>
               <input value={form.gpa} onChange={e => setForm(f => ({ ...f, gpa: e.target.value }))} placeholder="e.g. 3.7" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>GMAT / GRE</label>
-              <input value={form.gmat} onChange={e => setForm(f => ({ ...f, gmat: e.target.value }))} placeholder="e.g. 720" style={inputStyle} />
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Test / Portfolio Signal</label>
+              <input value={form.gmat} onChange={e => setForm(f => ({ ...f, gmat: e.target.value }))} placeholder="e.g. GRE 320, IELTS 7.5, portfolio ready" style={inputStyle} />
             </div>
           </div>
         </div>

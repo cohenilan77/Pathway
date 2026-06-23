@@ -94,6 +94,23 @@ function parseBlocks(raw) {
   };
 }
 
+function safeVisibleReply(raw, parsed) {
+  const clean = (parsed.clean || '')
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/<\/?(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>/g, '')
+    .replace(/<function_calls>[\s\S]*?<\/function_calls>/gi, '')
+    .replace(/<invoke[\s\S]*?<\/invoke>/gi, '')
+    .replace(/\b(tool_use|tool_code|function_calls)\b[\s\S]*$/gi, '')
+    .trim();
+  if (clean) return clean;
+  if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
+  if (parsed.chosenSchools) return 'Your target schools are saved.';
+  if (parsed.essay) return 'Your essay draft is saved in Documents.';
+  if (parsed.interviewResult) return 'Your interview results are saved.';
+  if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
+  return raw.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, '').trim() || 'Done — I updated your workspace.';
+}
+
 function loadAuth() {
   try {
     const s = localStorage.getItem('pathway_auth');
@@ -486,7 +503,7 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        const displayText = parsed.clean || raw;
+        const displayText = safeVisibleReply(raw, parsed);
 
         // Auto-advance stepper based on AI response keywords
         const lc = displayText.toLowerCase();
@@ -512,6 +529,10 @@ export default function App() {
         } else {
           if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
             setStepIdx(prev => Math.max(prev, 4));
+          }
+          if (lc.includes('narrative strategy tab') || lc.includes('choose upgrade or pivot') || lc.includes('two narrative options')) {
+            setStepIdx(prev => Math.max(prev, 4));
+            setCandTab('strategy');
           }
           if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
             setStepIdx(prev => Math.max(prev, 5));
@@ -658,7 +679,7 @@ export default function App() {
     chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
-    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, insights,
     tasks, completedTasks, setCompletedTasks,
     cvText, setCvText, cvFile, setCvFile,
     essayText, setEssayText,
@@ -733,7 +754,7 @@ export default function App() {
               <textarea
                 value={cvExtra}
                 onChange={e => setCvExtra(e.target.value)}
-                placeholder="e.g. I was born in Brazil, started my career in banking, switched to tech startup... My GMAT is 710. My recommenders are my VP at Goldman and my professor at NYU..."
+                placeholder="e.g. I was born in Brazil, started in banking, switched to tech startup... My portfolio includes interactive installations and prototypes. My recommenders are my VP and my professor..."
                 style={{ width: '100%', height: 110, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
               />
             </div>

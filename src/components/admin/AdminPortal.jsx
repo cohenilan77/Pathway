@@ -766,7 +766,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       <div style={{ fontSize: 13, color: '#6b7392', marginTop: 2 }}>{candidateSub}</div>
                       {profile && (
                         <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>
-                          {[profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `GMAT ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
+                          {[profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `Test/portfolio ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
                         </div>
                       )}
                     </div>

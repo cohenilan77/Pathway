@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const BAR_COLORS = [
   { from: '#7dd3fc', to: '#4dbbec' }, // sky
@@ -83,9 +83,21 @@ const TIERS = [
   },
 ];
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send }) {
+const STATUS_COLORS = {
+  'Not Eligible': '#c2410c',
+  'Below Baseline': '#e0457a',
+  Plausible: '#eaa129',
+  Competitive: '#4b8fea',
+  Strong: '#19a974',
+};
+
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
-  const [selected, setSelected] = useState([]);
+  const [selected, setSelected] = useState(chosenSchools || []);
+
+  useEffect(() => {
+    setSelected(chosenSchools || []);
+  }, [chosenSchools]);
 
   const toggleSchool = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
@@ -93,6 +105,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   const confirmSelection = () => {
     if (!selected.length) return;
+    setChosenSchools && setChosenSchools(selected);
     const msg = `I'd like to move forward with: ${selected.join(', ')}.`;
     setCandTab('advisor');
     send(msg);
@@ -136,6 +149,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];
   const displayPrograms = programs || [];
+  const savedTargets = chosenSchools || [];
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
@@ -149,7 +163,16 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             </h1>
             {profile && (
               <div style={{ marginTop: 12, fontSize: 13.5, color: '#6b7392', fontWeight: 500 }}>
-                {[profile.degree, profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `GMAT ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
+                {[profile.degree, profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `Test/portfolio ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
+              </div>
+            )}
+            {savedTargets.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+                {savedTargets.map(school => (
+                  <span key={school} style={{ background: '#eef7f3', color: '#25785d', border: '1px solid #cfe9df', borderRadius: 999, padding: '6px 10px', fontSize: 12, fontWeight: 800 }}>
+                    {school}
+                  </span>
+                ))}
               </div>
             )}
           </div>
@@ -230,7 +253,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               <h2 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.5px' }}>Strategic School Portfolio</h2>
             </div>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: '0 0 24px', fontWeight: 500 }}>
-              Tap the schools that excite you most, then send your picks straight to your advisor.
+              {savedTargets.length > 0 ? 'Your target schools are saved here. You can adjust them anytime.' : 'Tap the schools that excite you most, then send your picks straight to your advisor.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {TIERS.map(tier => {
@@ -291,12 +314,19 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                           </div>
                           {/* Left: name, location, notes */}
                           <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34', marginBottom: 3 }}>
-                              {school.name}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                              <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>
+                                {school.name}
+                              </div>
+                              {school.admissionStatus && (
+                                <span style={{ fontSize: 10.5, fontWeight: 800, color: STATUS_COLORS[school.admissionStatus] || '#6b7392', background: '#ffffff99', border: `1px solid ${STATUS_COLORS[school.admissionStatus] || '#d7ddec'}55`, borderRadius: 999, padding: '3px 8px' }}>
+                                  {school.admissionStatus}
+                                </span>
+                              )}
                             </div>
-                            {school.location && (
+                            {(school.location || school.programGroup) && (
                               <div style={{ fontSize: 12, color: '#6b7392', marginBottom: (school.notes || (isLocked && school.unlockConditions?.length)) ? 4 : 0, fontWeight: 500 }}>
-                                ◍ {school.location}
+                                {[school.location, school.programGroup].filter(Boolean).join(' · ')}
                               </div>
                             )}
                             {isLocked && school.unlockConditions?.length > 0 ? (
@@ -306,6 +336,24 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             ) : school.notes && (
                               <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.45 }}>
                                 {school.notes}
+                              </div>
+                            )}
+                            {Array.isArray(school.evidenceGaps) && school.evidenceGaps.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                                {school.evidenceGaps.slice(0, 4).map(gap => (
+                                  <span key={gap} style={{ fontSize: 10.5, fontWeight: 700, color: '#7a5a13', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 999, padding: '3px 8px' }}>
+                                    {gap}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {Array.isArray(school.riskFlags) && school.riskFlags.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
+                                {school.riskFlags.slice(0, 3).map(flag => (
+                                  <span key={flag} style={{ fontSize: 10.5, fontWeight: 700, color: '#9f3157', background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 999, padding: '3px 8px' }}>
+                                    {flag}
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -326,7 +374,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             {school.fit != null && (
                               <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div>
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
+                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
                               </div>
                             )}
                           </div>
@@ -375,7 +423,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {selected.length === 1 ? 'school selected' : 'schools selected'}
             </div>
             <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-              <button onClick={() => setSelected([])}
+              <button onClick={() => { setSelected([]); setChosenSchools && setChosenSchools([]); }}
                 style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#d9cbb3', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear
               </button>
