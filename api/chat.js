@@ -687,7 +687,7 @@ export default async function handler(req, res) {
     // The model sometimes confirms a portfolio is "live in the Analysis tab" without actually
     // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
     // Catch that mismatch here so the chat never claims data is available when it isn't.
-    const claimsPortfolioLive = /live in the Analysis tab/i.test(raw);
+    const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
     const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
     if (claimsPortfolioLive && !hasProgramsBlock) {
       raw = "Sorry, that portfolio didn't generate correctly — let me try again. Could you repeat which schools or criteria you'd like recommendations for?";
