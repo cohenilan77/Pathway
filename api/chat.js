@@ -112,7 +112,7 @@ FOUR TIERS, in order of severity — every school in a PROGRAMS or CHOSEN_SCHOOL
 GAP-BASED FIT FORMULA — apply in this exact order:
 
 STEP 0 — LOCKED GATE (check first, before any other scoring):
-  If GPA is more than 0.5 below the program median AND the test score is more than 50 points below the program median → tier:"locked", fit:0. Skip STEP 1–4 for this school. Populate "unlockConditions" with 1–2 specific, actionable items (e.g. "Retake the GMAT and target 680+", "Raise your GPA above 3.3 over your next academic term"). A locked school never appears in a Branch B recommended list — it can only appear if the candidate names it directly, and even then it still carries tier:"locked" (see BRANCH A GATE below).
+  If GPA is more than 0.5 below the program median OR the test score is more than 50 points below the program median → tier:"locked", fit:0. Skip STEP 1–4 for this school. Populate "unlockConditions" with 1–2 specific, actionable items (e.g. "Retake the GMAT and target 680+", "Raise your GPA above 3.3 over your next academic term"). A locked school never appears in a Branch B recommended list — it can only appear if the candidate names it directly, and even then it still carries tier:"locked" (see BRANCH A GATE below).
   EXCEPTION OVERRIDE (see EXCEPTION SCREENING below): a true exception skips this gate entirely for that candidate (fit floor 18%, "exceptionFlag":true, proceed through STEP 1–4 normally). A partial exception downgrades locked to stretch (still run STEP 1–4, soft scores count normally). With no exception, this gate applies in full and nothing — no soft score, no booster — can override it.
 
 STEP 1 — HARD METRIC GAP SCORES (use the candidate's actual test on the GMAT/GRE/LSAT/MCAT/SAT/ACT scale, see benchmarks below, to judge equivalent severity):
@@ -137,7 +137,7 @@ STEP 3 — ADDITIONAL MODIFIERS (apply after the booster):
 STEP 4 — TIER ASSIGNMENT:
   Below 20% → 🔴 Stretch. 20–55% → 🟡 Possible. Above 55% → 🟢 Safe.
 
-REALISM CAP: after STEP 1–3, if both GPA and test score are more than 0.5/50 below median, fit can never exceed 20% regardless of soft scores or modifiers — soft scores rank within a band, they never cross the locked boundary. Only an exception classification (below) can remove locked status; nothing else can. Cap final probability at 95%, floor at 5% (floor is 18% instead for a true-exception candidate). Keep existing tier caps as an additional ceiling: 82 for safe schools, 55 for possible, 20 for stretch — final fit is the lowest of the gap-based result (after boosters/modifiers) and the tier cap.
+REALISM CAP: after STEP 1–3, if either GPA or test score is more than 0.5/50 below median, fit can never exceed 20% regardless of soft scores or modifiers — soft scores rank within a band, they never cross the locked boundary. Only an exception classification (below) can remove locked status; nothing else can. Cap final probability at 95%, floor at 5% (floor is 18% instead for a true-exception candidate). Keep existing tier caps as an additional ceiling: 82 for safe schools, 55 for possible, 20 for stretch — final fit is the lowest of the gap-based result (after boosters/modifiers) and the tier cap.
 
 BRANCH A GATE — when a candidate names a specific school themselves:
   Run the LOCKED GATE first. If the named school comes back locked for this candidate, do not accept it silently and do not just add it to the list at a low fit. In your visible reply, before emitting any PROGRAMS block, state the real gap using their actual GPA/test numbers vs. that school's median, say plainly that realistic admission probability is under 5%, and offer two paths: (a) include it in their portfolio alongside 5 realistic schools, or (b) show them exactly what closing the gap would take. Wait for their answer before emitting the PROGRAMS block.
@@ -683,6 +683,16 @@ export default async function handler(req, res) {
     }).catch((err) => console.error('Failed to record usage:', err));
 
     let raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
+
+    // The model sometimes confirms a portfolio is "live in the Analysis tab" without actually
+    // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
+    // Catch that mismatch here so the chat never claims data is available when it isn't.
+    const claimsPortfolioLive = /live in the Analysis tab/i.test(raw);
+    const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
+    if (claimsPortfolioLive && !hasProgramsBlock) {
+      raw = "Sorry, that portfolio didn't generate correctly — let me try again. Could you repeat which schools or criteria you'd like recommendations for?";
+    }
+
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
     }
