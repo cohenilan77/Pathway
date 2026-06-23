@@ -12,24 +12,24 @@ import {
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
-const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 3 };
+const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
+const MAX_OUTPUT_TOKENS = 8192;
 
 // Lets the model look up real data for schools/programs outside the KPI database (see
-// DATA SOURCING ORDER in the system prompt). Falls back to a plain completion if the
-// web_search tool isn't enabled on this API key, instead of failing the whole chat turn.
-async function createChatCompletion({ system, messages }) {
+// DATA SOURCING ORDER in the system prompt). Search tool-use/tool-result blocks count
+// against max_tokens just like visible text, so useWebSearch can be turned off (e.g. on
+// a final retry) to guarantee the full budget goes to the actual reply instead of search
+// transcripts. Also falls back to a plain completion if the tool isn't enabled on this
+// API key at all, instead of failing the whole chat turn.
+async function createChatCompletion({ system, messages, useWebSearch = true }) {
+  const params = { model: CHAT_MODEL, max_tokens: MAX_OUTPUT_TOKENS, system, messages };
+  if (useWebSearch) params.tools = [WEB_SEARCH_TOOL];
   try {
-    return await client.messages.create({
-      model: CHAT_MODEL,
-      max_tokens: 5000,
-      system,
-      messages,
-      tools: [WEB_SEARCH_TOOL],
-    });
+    return await client.messages.create(params);
   } catch (err) {
-    if (/web_search/i.test(err?.message || '')) {
+    if (useWebSearch && /web_search/i.test(err?.message || '')) {
       console.error('web_search tool unavailable, retrying without it:', err.message);
-      return client.messages.create({ model: CHAT_MODEL, max_tokens: 5000, system, messages });
+      return client.messages.create({ model: CHAT_MODEL, max_tokens: MAX_OUTPUT_TOKENS, system, messages });
     }
     throw err;
   }
@@ -721,9 +721,15 @@ export default async function handler(req, res) {
     const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, emit the complete <PROGRAMS> block for the school(s)/program(s) already named in the conversation before any such confirmation line. If a named school is not in the LIVE KPI DATABASE, follow the DATA SOURCING ORDER (database, then web_search, then parallel-program analogy) instead of stalling. If it requires no standardized test at all, use a test gap score of 100 per the MISSING OR NOT-APPLICABLE TEST-SCORE DATA rule and omit avgGMAT — do not let that block you from emitting the block.';
     let raw;
     for (let attempt = 0; attempt < 3; attempt++) {
+      // Web search tool-use/tool-result content counts against max_tokens like any other
+      // output, so a school requiring a search can get truncated mid-<PROGRAMS> block before
+      // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
+      // token budget goes to the reply itself — the model still has the parallel-program
+      // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
       const response = await createChatCompletion({
         system: attempt === 0 ? systemPrompt : `${systemPrompt}${CORRECTIVE_NOTE}`,
         messages: anthropicMessages,
+        useWebSearch: attempt < 2,
       });
 
       recordUsage({
@@ -740,6 +746,9 @@ export default async function handler(req, res) {
       const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
       const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
       if (!claimsPortfolioLive || hasProgramsBlock) break;
+      if (response.stop_reason === 'max_tokens') {
+        console.error(`Chat response hit max_tokens on attempt ${attempt} without completing its <PROGRAMS> block (feature: ${feature})`);
+      }
     }
 
     const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
