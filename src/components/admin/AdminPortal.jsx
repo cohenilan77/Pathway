@@ -271,6 +271,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
         action === 'create' ? 'User created.' : 'User updated.'
       );
       if (action === 'delete' && userDetailId === userId) setUserDetailId(null);
+      if (action === 'delete' && selectedUserId === userId) {
+        setCandidateOpen(false);
+        setSelectedUserId(null);
+        setSelectedData(null);
+        setLiveChatMessages([]);
+        setAdminView('candidates');
+      }
       setUserForm(null);
       setPasswordResetId(null);
       setPasswordDraft('');
@@ -673,13 +680,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               ) : (
                 <div style={{ ...cardShell, overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 360px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span>{canManageUsers ? 'ASSIGNMENT' : ''}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? 'minmax(220px,1fr) 90px 110px minmax(150px,1fr) 430px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>TOP INSIGHT</span><span>{canManageUsers ? 'ACTIONS' : ''}</span>
                   </div>
                   {candidateUsers.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+                    const busyDelete = userActionBusy === `${u.id}:delete`;
                     return (
-                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: canManageUsers ? '1fr 90px 110px 1fr 360px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: canManageUsers ? 'minmax(220px,1fr) 90px 110px minmax(150px,1fr) 430px' : '1fr 90px 110px 1fr 40px', gap: 0, padding: '18px 20px', width: '100%', background: 'none', fontFamily: 'inherit', textAlign: 'left', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                         <button onClick={() => openCandidate(u.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <span style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(140deg,#94b3fb,#b899fb)', color: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>{uInitials}</span>
@@ -709,7 +717,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         </div>
                         <div>
                           {canManageUsers ? (
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                               <select
                                 value={u.consultantId || ''}
                                 onChange={(e) => performUserAction(u.id, 'assign', { patch: { consultantId: e.target.value } })}
@@ -729,6 +737,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                               </select>
                               <button onClick={() => setUserForm({ mode: 'edit', ...u, password: '' })} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Edit</button>
                               <button onClick={() => { setPasswordResetId(u.id); setPasswordDraft(''); }} style={{ ...btnGhost, padding: '7px 8px', fontSize: 12 }}>Reset</button>
+                              <button
+                                onClick={() => confirmUserAction(u.id, 'delete', `Permanently delete ${u.name} (${u.email}) and all candidate data? This cannot be undone.`)}
+                                disabled={busyDelete}
+                                style={{ ...btnDanger, padding: '7px 8px', fontSize: 12, cursor: busyDelete ? 'not-allowed' : 'pointer', opacity: busyDelete ? 0.5 : 1 }}>
+                                Delete
+                              </button>
                             </div>
                           ) : (
                             <div style={{ color: '#5b46e0', fontSize: 18, fontWeight: 700 }}>→</div>
