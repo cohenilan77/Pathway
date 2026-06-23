@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import AISchoolSearch from './AISchoolSearch.jsx';
 
 const BAR_COLORS = [
   { from: '#7dd3fc', to: '#4dbbec' }, // sky
@@ -84,10 +83,9 @@ const TIERS = [
   },
 ];
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, authToken, cvText, chosenSchools, setPrograms }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send }) {
   const hasData = !!scores;
   const [selected, setSelected] = useState([]);
-  const [showAiSearch, setShowAiSearch] = useState(false);
 
   const toggleSchool = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
@@ -140,7 +138,6 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   const displayPrograms = programs || [];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <div style={{ maxWidth: 980, margin: '0 auto', padding: '24px 34px 64px' }}>
         {/* Header */}
@@ -160,10 +157,6 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             <button onClick={() => setCandTab('documents')}
               style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
-            </button>
-            <button onClick={() => setShowAiSearch(v => !v)}
-              style={{ background: showAiSearch ? '#141b34' : '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: showAiSearch ? '#faf7f2' : '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
-              {showAiSearch ? 'Close AI Search' : "I'll Search with AI"}
             </button>
             <button onClick={() => setCandTab('advisor')}
               style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#faf7f2', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
@@ -394,23 +387,6 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           </div>
         </div>
       )}
-    </div>
-
-    {showAiSearch && (
-      <div style={{ width: 380, flexShrink: 0, padding: '24px 24px 24px 0' }}>
-        <AISchoolSearch
-          onClose={() => setShowAiSearch(false)}
-          authToken={authToken}
-          profile={profile}
-          scores={scores}
-          strengths={strengths}
-          weaknesses={weaknesses}
-          cvText={cvText}
-          chosenSchools={chosenSchools}
-          setPrograms={setPrograms}
-        />
-      </div>
-    )}
     </div>
   );
 }

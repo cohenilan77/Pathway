@@ -65,7 +65,7 @@ function NarrativeModal({ onClose, onChoose }) {
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -96,6 +96,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const showChips = !busy && chat.every(m => m.role === 'ai');
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
+  const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
 
   const taskList = tasks || [];
   const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
@@ -202,6 +203,25 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                           <span style={{ fontSize: 16 }}>{chip.emoji}</span>{chip.label}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                )}
+
+                {showSchoolPathChips && (
+                  <div style={{ marginTop: 4 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                      <button onClick={() => send("I have specific schools in mind.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        🎯 I know my schools
+                      </button>
+                      <button onClick={() => send("Recommend a tailored portfolio for me.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        ✨ Recommend me a portfolio
+                      </button>
+                      <button onClick={() => send("Let's do an AI-led search together.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        🤝 Search with me, step by step
+                      </button>
                     </div>
                   </div>
                 )}

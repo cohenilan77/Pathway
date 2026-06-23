@@ -658,7 +658,7 @@ export default function App() {
     chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
-    profile, scores, setScores, strengths, weaknesses, programs, setPrograms, chosenSchools, setChosenSchools, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, insights,
     tasks, completedTasks, setCompletedTasks,
     cvText, setCvText, cvFile, setCvFile,
     essayText, setEssayText,
