@@ -12,6 +12,39 @@ import {
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
+const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 3 };
+
+// Lets the model look up real data for schools/programs outside the KPI database (see
+// DATA SOURCING ORDER in the system prompt). Falls back to a plain completion if the
+// web_search tool isn't enabled on this API key, instead of failing the whole chat turn.
+async function createChatCompletion({ system, messages }) {
+  try {
+    return await client.messages.create({
+      model: CHAT_MODEL,
+      max_tokens: 5000,
+      system,
+      messages,
+      tools: [WEB_SEARCH_TOOL],
+    });
+  } catch (err) {
+    if (/web_search/i.test(err?.message || '')) {
+      console.error('web_search tool unavailable, retrying without it:', err.message);
+      return client.messages.create({ model: CHAT_MODEL, max_tokens: 5000, system, messages });
+    }
+    throw err;
+  }
+}
+
+// Web search responses interleave tool-use/tool-result blocks with text blocks, so the
+// final reply is the concatenation of every text block, not just content[0].
+function extractText(response) {
+  const text = (response.content || [])
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n')
+    .trim();
+  return text || 'I was unable to generate a response. Please try again.';
+}
 
 export const AI_CONFIG_SECTIONS = [
   {
@@ -88,7 +121,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 - Either metric more than 0.5 (GPA) or 50 points (test) below median → excluded from the recommended list entirely — this is the locked gate (see fitFormula below).
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
-Always include avgGMAT, avgGPA, location, and notes fields, EXCEPT for test-optional or portfolio/audition-based programs (see TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS in the fit formula below) — for those, omit avgGMAT entirely rather than inventing a number. Notes must mention the candidate's specific fit or gap for that school.
+Always include avgGMAT, avgGPA, location, and notes fields, EXCEPT for programs that genuinely require no standardized test (see MISSING OR NOT-APPLICABLE TEST-SCORE DATA in the fit formula below) — for those, omit avgGMAT entirely rather than inventing a number. Notes must mention the candidate's specific fit or gap for that school.
 
 MBA reference schools by tier:
 - stretch: Harvard Business School, Stanford GSB, Wharton
@@ -109,7 +142,10 @@ FOUR TIERS, in order of severity — every school in a PROGRAMS or CHOSEN_SCHOOL
 🟡 Possible — fit 20–55%.
 🟢 Safe — fit over 55%.
 
-TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS (check this before running the formula below): Some graduate programs — arts, design, film, or interactive-media MFA/MPS programs (e.g. NYU Tisch), and any other program that admits primarily on a portfolio, audition, or work sample and publishes no standardized test median — have no meaningful GMAT/GRE/LSAT/MCAT/SAT/ACT figure to score against. For these schools: skip the test-score half of STEP 1 and skip the test-score check in STEP 0's locked gate entirely — base fit on the GPA gap alone plus the soft-score booster and modifiers, and omit the "avgGMAT" field from that school's PROGRAMS object rather than inventing a number for it. A missing test score on a portfolio-based program is normal, not an error state — it must never stop you from emitting the <PROGRAMS> block or from naming the school in a <CHOSEN_SCHOOLS> block.
+MISSING OR NOT-APPLICABLE TEST-SCORE DATA — always substitute a number, never skip the calculation and never let it block you from emitting the <PROGRAMS> block:
+- If the program requires a standardized test (GMAT/GRE/LSAT/MCAT/SAT/ACT) but you cannot determine its real median — even after following the DATA SOURCING ORDER above (database, then web_search, then parallel-program analogy) — use a test gap score of 0 for STEP 1 and treat it as a severe gap for STEP 0's locked gate. Missing required data is a risk, not a free pass.
+- If the program genuinely does not require any standardized test at all — e.g. arts, design, film, or interactive-media MFA/MPS programs (NYU Tisch and similar), or any other program that admits primarily on a portfolio, audition, or work sample — use a test gap score of 100 for STEP 1 (no test required = no gap) and skip the test-score check in STEP 0's locked gate, since there is nothing to gap against. Base that school's tier on the GPA gap plus soft-score booster and modifiers, and omit the "avgGMAT" field from its PROGRAMS object rather than inventing a number for it.
+A missing or not-applicable test score must never stop you from emitting the <PROGRAMS> block or from naming the school in a <CHOSEN_SCHOOLS> block.
 
 GAP-BASED FIT FORMULA — apply in this exact order:
 
@@ -185,8 +221,13 @@ function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScor
   const kpiInstruction = kpiPromptSummary
     ? `\n\n==LIVE UNIVERSITY / PROGRAM KPI DATABASE==\n${kpiPromptSummary}\n\nUse the LIVE UNIVERSITY / PROGRAM KPI DATABASE as the baseline for school/program matching, KPI criteria, hard gates, evidence gaps, student action items, source awareness, and fit calibration. Keep using the required <PROGRAMS>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, and <TASKS> JSON block formats below.`
     : '';
+  const dataSourcingInstruction = `\n\nDATA SOURCING ORDER for any school/program you need to score — follow in this order, never skip straight to inventing numbers:
+1. The ==LIVE UNIVERSITY / PROGRAM KPI DATABASE== above, if the school/program appears there.
+2. If it does not appear there (a candidate named a school/program outside the database, including niche, regional, or portfolio/audition-based programs), use the web_search tool to find that program's real, current median GPA, its standardized test requirement if any and that test's median score, and its acceptance rate.
+3. Only if web_search returns nothing reliable, reason by analogy from the closest comparable/parallel program you do have real data for (same field, comparable selectivity tier, same country/region) — say so explicitly in that school's "notes" field (e.g. "Benchmarked against [comparable program] — exact published figures unavailable"). Never silently invent exact official figures.`;
   return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
 ${kpiInstruction}
+${dataSourcingInstruction}
 ${verifiedScoringSection}
 
 You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
@@ -440,7 +481,7 @@ ${config.ranking}
 ==DATA BLOCKS==
 Emit these structured blocks when you have enough data. The system parses and hides them. Your visible reply must contain ONLY conversational text.
 CRITICAL FORMAT RULE: every block must contain ONLY raw, strictly valid JSON between its opening and closing tag — never wrap it in markdown code fences (no triple-backtick fences of any kind), never add commentary inside the tag, never use trailing commas, and always escape any literal double-quote characters inside string values (e.g. write \" not "). A block that fails to parse as JSON will silently fail to update the UI, so correctness here is mandatory.
-FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup such as <function_calls>, <invoke>, <invoke>, "tool_use", "tool_code", or any other pseudo-code/tool-call wrapper anywhere in your reply — you have no tools and must never simulate one. The ONLY tags you ever write are the exact ones listed below (PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, PROGRAMS, CHOSEN_SCHOOLS, INSIGHTS, ESSAY, INTERVIEW_RESULT). Any other bracketed/angle-bracket markup in a reply is a failure.
+FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup such as <function_calls>, <invoke>, <invoke>, "tool_use", "tool_code", or any other pseudo-code/tool-call wrapper anywhere in your visible text — the only real tool available to you (web_search, per the DATA SOURCING ORDER above) is invoked automatically by the platform itself, never by you writing XML/JSON syntax for it. The ONLY tags you ever write yourself are the exact ones listed below (PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, PROGRAMS, CHOSEN_SCHOOLS, INSIGHTS, ESSAY, INTERVIEW_RESULT). Any other bracketed/angle-bracket markup in a reply is a failure.
 NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in the Analysis tab. If the candidate reports the Analysis tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text limited to something like "Here's your portfolio again — it's live in the Analysis tab now." Schools only ever reach the candidate through the rendered Analysis tab, never through chat text.
 
 "First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development"). Include "exceptionType" ("true", "partial", or "none") once the exception screening question has been asked and classified.
@@ -677,12 +718,10 @@ export default async function handler(req, res) {
     // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
     // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
     // instead of blindly resending the same input, since an identical retry tends to fail the same way.
-    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, emit the complete <PROGRAMS> block for the school(s)/program(s) already named in the conversation before any such confirmation line. If a named school has no standardized test median (e.g. it is portfolio/audition-based), score it on GPA gap and soft scores alone per the TEST-OPTIONAL & PORTFOLIO/AUDITION-BASED PROGRAMS rule and omit avgGMAT — do not let that block you from emitting the block.';
+    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, emit the complete <PROGRAMS> block for the school(s)/program(s) already named in the conversation before any such confirmation line. If a named school is not in the LIVE KPI DATABASE, follow the DATA SOURCING ORDER (database, then web_search, then parallel-program analogy) instead of stalling. If it requires no standardized test at all, use a test gap score of 100 per the MISSING OR NOT-APPLICABLE TEST-SCORE DATA rule and omit avgGMAT — do not let that block you from emitting the block.';
     let raw;
     for (let attempt = 0; attempt < 3; attempt++) {
-      const response = await client.messages.create({
-        model: CHAT_MODEL,
-        max_tokens: 5000,
+      const response = await createChatCompletion({
         system: attempt === 0 ? systemPrompt : `${systemPrompt}${CORRECTIVE_NOTE}`,
         messages: anthropicMessages,
       });
@@ -696,7 +735,7 @@ export default async function handler(req, res) {
         outputTokens: response.usage?.output_tokens,
       }).catch((err) => console.error('Failed to record usage:', err));
 
-      raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
+      raw = extractText(response);
 
       const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
       const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
