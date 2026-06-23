@@ -50,6 +50,7 @@ const WELCOME_MESSAGE = {
   Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك — هنا لصياغة القصة التي ستضمن قبولك.\n\nلنبدأ بمعرفة أين أنت في رحلتك. ما الذي يصفك أكثر؟\nبكالوريوس | دراسات عليا | دراسات عليا / دكتوراه | تطوير شخصي",
   Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师——在这里为您打造能助您成功录取的故事。\n\n让我们先了解您目前的阶段。以下哪项最符合您的情况？\n本科 | 研究生 | 研究生／博士 | 个人发展",
   French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions — ici pour construire le récit qui vous fera accepter.\n\nCommençons par savoir où vous en êtes dans votre parcours. Qu'est-ce qui vous décrit le mieux ?\nLicence | Master | Doctorat / Postdoctorat | Développement Personnel",
+  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões — aqui para construir a narrativa que vai garantir a sua aceitação.\n\nVamos começar por saber em que fase da sua jornada está. O que melhor o descreve?\nGraduação | Mestrado | Pós-graduação / Doutorado | Desenvolvimento Pessoal",
 };
 
 function buildInitialChat(language) {

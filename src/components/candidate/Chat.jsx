@@ -61,7 +61,7 @@ export default function Chat({ authUser, authToken, showToast, language }) {
   return (
     <div dir={dir} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '30px 36px' }}>
       <div style={{ maxWidth: 800 }}>
-        <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(language, 'viewing')}: {chatT(language, 'consultant')}</div>
+        <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(language, 'viewingConsultant')}</div>
         <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
@@ -77,19 +77,19 @@ export default function Chat({ authUser, authToken, showToast, language }) {
               )}
               {!loading && !loadError && messages.length === 0 && (
                 <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
-                  {chatT(language, 'noMessagesYet')} — {chatT(language, 'startConversation')}
+                  {chatT(language, 'emptyChatState')}
                 </div>
               )}
               {messages.map((m) => (
                 m.senderRole === 'candidate' ? (
                   <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
-                    {m.text}
-                    {m.sentAt && <div style={{ fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</div>}
+                    <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                    {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</bdi>}
                   </div>
                 ) : (
                   <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
-                    {m.text}
-                    {m.sentAt && <div style={{ fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</div>}
+                    <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                    {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</bdi>}
                   </div>
                 )
               ))}
