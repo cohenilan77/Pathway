@@ -143,6 +143,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     { key: 'diversity', title: 'Diversity', desc: 'Nationality, languages, and background relative to the cohort.' },
     { key: 'goalClarity', title: 'Goal Clarity', desc: 'Specificity of post-degree role, sector, and timeline.' },
     { key: 'narrative', title: 'Narrative', desc: 'Cohesion of personal brand and clarity of purpose.' },
+    { key: 'recommenders', title: 'Recommenders', desc: 'Status, direct relationship, evidence specificity, and fit with the target program.' },
     { key: 'potential', title: 'Potential', desc: 'Long-term upside and fit with program outcomes.' },
   ].filter(item => scores[item.key] != null);
 

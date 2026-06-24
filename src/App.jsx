@@ -141,7 +141,33 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
-const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'potential'];
+const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'recommenders', 'potential'];
+const SCORE_WEIGHTS = {
+  academic: 15,
+  testScore: 10,
+  professional: 13,
+  leadership: 10,
+  volunteering: 5,
+  uniqueness: 7,
+  diversity: 5,
+  goalClarity: 10,
+  narrative: 12,
+  recommenders: 10,
+  potential: 13,
+};
+
+function weightedOverallScore(scores) {
+  let total = 0;
+  let weight = 0;
+  for (const key of SCORE_KEYS) {
+    const value = scores?.[key];
+    if (typeof value !== 'number' || Number.isNaN(value)) continue;
+    const w = SCORE_WEIGHTS[key] || 1;
+    total += value * w;
+    weight += w;
+  }
+  return weight ? Math.round(total / weight) : 0;
+}
 
 function safeDocBaseName(value, fallback) {
   const raw = String(value || '').trim() || fallback;
@@ -531,8 +557,7 @@ export default function App() {
         const isUndergrad = category === 'Undergraduate';
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
-          const vals = SCORE_KEYS.map(k => parsed.scores[k]).filter(v => typeof v === 'number' && !isNaN(v));
-          const overall = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+          const overall = weightedOverallScore(parsed.scores);
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 1 : 2));
