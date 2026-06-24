@@ -135,11 +135,6 @@ export default function CandidatePortal(props) {
                 <span style={navIconStyle(active)}>{item.icon}</span>
                 <span style={{ minWidth: 0 }}>
                   <span>{item.label}</span>
-                  {item.key === 'analysis' && targetSummary && (
-                    <span style={{ display: 'block', fontSize: 10.5, fontWeight: 700, color: active ? '#f1eadd' : '#25785d', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 134 }}>
-                      {targetSummary}
-                    </span>
-                  )}
                 </span>
                 <span style={navDotStyle(active)} />
               </button>
