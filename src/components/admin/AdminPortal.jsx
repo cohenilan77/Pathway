@@ -369,6 +369,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const cvFile = sd.cvFile || null;
   const essayText = sd.essayText || '';
   const essays = sd.essays || {};
+  const repositoryDocuments = (sd.documents || []).filter(doc => doc.status !== 'Archived');
   const override = sd.override ?? scores?.overall ?? 0;
 
   useEffect(() => {
@@ -446,7 +447,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   };
 
   const savedEssaySchools = Object.keys(essays).filter((school) => essays[school]?.text);
-  const documents = [
+  const documents = repositoryDocuments.length ? repositoryDocuments.map(doc => ({
+    label: doc.name,
+    text: doc.text || '',
+    baseName: doc.name || 'candidate_document',
+    file: doc.file,
+    meta: [doc.type, doc.source, doc.status, doc.linkedSchool].filter(Boolean).join(' · '),
+  })) : [
     cvText && { label: 'CV / Resume', text: cvText, baseName: 'candidate_cv', file: cvFile },
     ...savedEssaySchools.map((school) => ({
       label: `Essay — ${school}`,
@@ -954,13 +961,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                             </span>
                             <div>
                               <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>{doc.label}</div>
-                              <div style={{ fontSize: 11, color: '#9098b5' }}>{doc.text.trim().split(/\s+/).length} words{doc.file ? ` · original: ${doc.file.name}` : ''}</div>
+                              <div style={{ fontSize: 11, color: '#9098b5' }}>{doc.meta || `${doc.text.trim().split(/\s+/).length} words${doc.file ? ` · original: ${doc.file.name}` : ''}`}</div>
                             </div>
                           </div>
                           <div style={{ display: 'flex', gap: 6 }}>
                             {doc.file && <button onClick={() => downloadOriginalFile(doc.file)} style={{ ...btnPrimary, borderRadius: 7, padding: '5px 9px', fontSize: 11, boxShadow: 'none' }}>Original</button>}
-                            <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>PDF</button>
-                            <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>Word</button>
+                            {doc.text && <button onClick={() => downloadAsPdf(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>PDF</button>}
+                            {doc.text && <button onClick={() => downloadAsDocx(doc.text, doc.baseName)} style={{ ...btnGhost, borderRadius: 7, padding: '5px 9px', fontSize: 11 }}>Word</button>}
                           </div>
                         </div>
                       ))}

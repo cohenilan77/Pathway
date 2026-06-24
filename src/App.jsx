@@ -143,6 +143,34 @@ function loadLanguage() {
 
 const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'potential'];
 
+function safeDocBaseName(value, fallback) {
+  const raw = String(value || '').trim() || fallback;
+  return raw
+    .replace(/^\s*#+\s*/, '')
+    .replace(/[\\/:*?"<>|]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 90) || fallback;
+}
+
+function titleFromText(text, fallback) {
+  const firstLine = String(text || '').split('\n').map(line => line.trim()).find(Boolean);
+  if (!firstLine) return fallback;
+  return safeDocBaseName(firstLine.replace(/[:\-–—]\s*$/, ''), fallback);
+}
+
+function uniqueDocumentName(existingDocs, desiredName, currentId = null) {
+  const names = new Set((existingDocs || []).filter(doc => doc.id !== currentId).map(doc => doc.name));
+  if (!names.has(desiredName)) return desiredName;
+  let index = 1;
+  let next = `${desiredName} (${index})`;
+  while (names.has(next)) {
+    index += 1;
+    next = `${desiredName} (${index})`;
+  }
+  return next;
+}
+
 export default function App() {
   const [auth, setAuthState] = useState(loadAuth); // {token, user} | null
 
@@ -178,6 +206,7 @@ export default function App() {
   const [essaySchool, setEssaySchool] = useState('');
   const [essayQuestion, setEssayQuestion] = useState('');
   const [essays, setEssays] = useState({});
+  const [documents, setDocuments] = useState([]);
   const [interviews, setInterviews] = useState({});
   const [insights, setInsights] = useState(null);
   const [override, setOverride] = useState(0);
@@ -289,6 +318,7 @@ export default function App() {
         setEssaySchool(data?.essaySchool || '');
         setEssayQuestion(data?.essayQuestion || '');
         setEssays(data?.essays || {});
+        setDocuments(data?.documents || []);
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
@@ -315,18 +345,56 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override },
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, interviews, insights, narrative, override]);
+  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(''), 2600);
   }, []);
+
+  const saveDocument = useCallback((doc) => {
+    let savedDoc;
+    setDocuments(prev => {
+      const existingIndex = doc.id ? prev.findIndex(item => item.id === doc.id) : -1;
+      const existing = existingIndex >= 0 ? prev[existingIndex] : null;
+      const baseName = safeDocBaseName(doc.name, `${doc.type || 'Document'} - ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`);
+      const name = existing ? existing.name : uniqueDocumentName(prev, baseName);
+      savedDoc = {
+        ...(existing || {}),
+        id: existing?.id || doc.id || `doc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        type: doc.type || existing?.type || 'other',
+        source: doc.source || existing?.source || 'Simulation',
+        status: doc.status || existing?.status || 'Ready',
+        text: doc.text ?? existing?.text ?? '',
+        file: doc.file ?? existing?.file ?? null,
+        linkedSchool: doc.linkedSchool ?? existing?.linkedSchool ?? '',
+        linkedWorkflow: doc.linkedWorkflow ?? existing?.linkedWorkflow ?? '',
+        version: (existing?.version || 0) + 1,
+        createdAt: existing?.createdAt || Date.now(),
+        updatedAt: Date.now(),
+      };
+      if (existingIndex >= 0) {
+        const next = [...prev];
+        next[existingIndex] = savedDoc;
+        return next;
+      }
+      return [savedDoc, ...prev];
+    });
+    showToast(`${savedDoc?.name || 'Document'} saved to Documents.`);
+    return savedDoc;
+  }, [showToast]);
+
+  const archiveDocument = useCallback((id) => {
+    setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, status: 'Archived', updatedAt: Date.now() } : doc));
+    showToast('Document archived.');
+  }, [showToast]);
 
   const go = useCallback((s) => { setScreen(s); window.scrollTo(0, 0); }, []);
 
@@ -395,7 +463,7 @@ export default function App() {
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
     setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
-    setEssayQuestion(''); setEssays({}); setInterviews({});
+    setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
@@ -485,10 +553,20 @@ export default function App() {
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
         if (parsed.essay && parsed.essay.school) {
+          const essayName = safeDocBaseName(parsed.essay.school ? `Essay - ${parsed.essay.school}` : titleFromText(parsed.essay.text, 'Essay Draft'), 'Essay Draft');
           setEssays(prev => ({ ...prev, [parsed.essay.school]: { question: parsed.essay.question || '', text: parsed.essay.text || '' } }));
           setEssaySchool(parsed.essay.school);
           setEssayQuestion(parsed.essay.question || '');
           setEssayText(parsed.essay.text || '');
+          saveDocument({
+            name: essayName,
+            type: 'essay',
+            source: 'Advisor Chat',
+            status: 'Generated',
+            text: parsed.essay.text || '',
+            linkedSchool: parsed.essay.school,
+            linkedWorkflow: 'advisor_chat',
+          });
           setStepIdx(prev => Math.max(prev, isUndergrad ? 5 : 7));
         }
         if (parsed.interviewResult && parsed.interviewResult.school) {
@@ -554,12 +632,21 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
     setCvText(cvDraft);
     setCvFile(cvFileDraft);
+    saveDocument({
+      name: cvFileDraft?.name || titleFromText(cvDraft, 'CV / Resume'),
+      type: 'resume',
+      source: cvFileDraft ? 'Upload' : 'Simulation',
+      status: 'Ready',
+      text: cvDraft,
+      file: cvFileDraft,
+      linkedWorkflow: 'my_cv',
+    });
     setShowCvModal(false);
     const draft = cvDraft;
     const extra = cvExtra;
@@ -570,7 +657,7 @@ export default function App() {
       ? `Here is my CV/resume:\n\n${draft}\n\n---ADDITIONAL BACKGROUND---\n\n${extra}`
       : `Here is my CV/resume:\n\n${draft}`;
     send(combined);
-  }, [cvDraft, cvFileDraft, cvExtra, send]);
+  }, [cvDraft, cvFileDraft, cvExtra, send, saveDocument]);
 
   const handleFileUpload = useCallback((e) => {
     const file = e.target.files[0];
@@ -638,12 +725,21 @@ export default function App() {
       if (data.result) {
         setEssayText(data.result);
         if (essaySchool) setEssays(prev => ({ ...prev, [essaySchool]: { question: essayQuestion, text: data.result } }));
+        saveDocument({
+          name: essaySchool ? `Essay - ${essaySchool}` : titleFromText(data.result, 'Essay Draft'),
+          type: 'essay',
+          source: 'AI Rewrite',
+          status: 'Generated',
+          text: data.result,
+          linkedSchool: essaySchool,
+          linkedWorkflow: 'essay_editor',
+        });
         showToast('Essay rewritten by AI.');
       }
       else showToast('Rewrite failed. Check your API key.');
     } catch { showToast('Rewrite failed. Please try again.'); }
     finally { setBusy(false); }
-  }, [essayText, essaySchool, essayQuestion, narrative, showToast]);
+  }, [essayText, essaySchool, essayQuestion, narrative, showToast, saveDocument]);
 
   const analyzeEssay = useCallback(() => {
     if (!essayText.trim()) { showToast('Paste your essay text first.'); return; }
@@ -651,6 +747,33 @@ export default function App() {
     setCandTab('advisor');
     send(msg);
   }, [essayText, essaySchool, essayQuestion, send, showToast]);
+
+  const saveEssayToDocuments = useCallback(() => {
+    if (!essayText.trim()) { showToast('Paste your essay text first.'); return; }
+    if (essaySchool) setEssays(prev => ({ ...prev, [essaySchool]: { question: essayQuestion, text: essayText } }));
+    saveDocument({
+      name: essaySchool ? `Essay - ${essaySchool}` : titleFromText(essayText, 'Essay Draft'),
+      type: 'essay',
+      source: 'Simulation',
+      status: 'Ready',
+      text: essayText,
+      linkedSchool: essaySchool,
+      linkedWorkflow: 'essay_editor',
+    });
+  }, [essayText, essaySchool, essayQuestion, setEssays, saveDocument, showToast]);
+
+  const saveCvToDocuments = useCallback((text = cvText) => {
+    if (!String(text || '').trim()) { showToast('Add your CV text first.'); return; }
+    saveDocument({
+      name: cvFile?.name || titleFromText(text, 'CV / Resume'),
+      type: 'resume',
+      source: cvFile ? 'Upload' : 'Simulation',
+      status: 'Ready',
+      text,
+      file: cvFile,
+      linkedWorkflow: 'my_cv',
+    });
+  }, [cvText, cvFile, saveDocument, showToast]);
 
   const selectEssaySchool = useCallback((school) => {
     if (essaySchool && essaySchool !== school) {
@@ -685,7 +808,7 @@ export default function App() {
     essayText, setEssayText,
     essaySchool, setEssaySchool,
     essayQuestion, setEssayQuestion,
-    essays, interviews,
+    essays, documents, setDocuments, archiveDocument, saveDocument, saveEssayToDocuments, saveCvToDocuments, interviews,
     showCvModal, setShowCvModal,
     showContactModal, setShowContactModal,
     cvDraft, setCvDraft,

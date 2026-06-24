@@ -10,7 +10,7 @@ const docNavStyle = (active) => ({
   boxShadow: active ? '0 10px 20px rgba(105,91,255,.32)' : 'none',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig }) {
+export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, saveEssayToDocuments, saveCvToDocuments, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig }) {
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
 
@@ -144,9 +144,17 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 />
               </div>
 
-              <h1 style={{ fontSize: 24, lineHeight: 1.2, fontWeight: 800, color: '#141b34', margin: '0 0 24px', letterSpacing: '-.4px' }}>
-                Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
-              </h1>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
+                <h1 style={{ fontSize: 24, lineHeight: 1.2, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>
+                  Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
+                </h1>
+                {essayText && (
+                  <button onClick={saveEssayToDocuments}
+                    style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    Save to Documents
+                  </button>
+                )}
+              </div>
               {essayText ? (
                 <textarea
                   value={essayText}
@@ -202,7 +210,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                           style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#6b7392', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Cancel
                         </button>
-                        <button onClick={() => { setCvText(cvEdit); setEditingCv(false); showToast('CV saved.'); }}
+                        <button onClick={() => { setCvText(cvEdit); saveCvToDocuments(cvEdit); setEditingCv(false); showToast('CV saved.'); }}
                           style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(105,91,255,.3)' }}>
                           Save
                         </button>
@@ -217,7 +225,14 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 )}
               </div>
               {cvText ? (
-                editingCv ? (
+                <>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+                  <button onClick={() => saveCvToDocuments(cvText)}
+                    style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Save to Documents
+                  </button>
+                </div>
+                {editingCv ? (
                   <textarea
                     value={cvEdit}
                     onChange={e => setCvEdit(e.target.value)}
@@ -227,7 +242,8 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   <div style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#33405e', fontFamily: 'inherit', minHeight: 400, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
                     {cvText}
                   </div>
-                )
+                )}
+                </>
               ) : (
                 <div style={{ background: '#faf7f2', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
                   <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>

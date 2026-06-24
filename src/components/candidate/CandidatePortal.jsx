@@ -7,6 +7,7 @@ import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
+import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -58,8 +59,142 @@ function navDotStyle(active) {
     : { marginLeft: 'auto', width: 7, height: 7, borderRadius: '50%', background: 'transparent' };
 }
 
+function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocument, showToast }) {
+  const [category, setCategory] = useState('all');
+  const [query, setQuery] = useState('');
+  const [source, setSource] = useState('all');
+  const [selected, setSelected] = useState(() => new Set());
+  const visibleDocs = documents
+    .filter(doc => doc.status !== 'Archived')
+    .filter(doc => category === 'all' || doc.type === category)
+    .filter(doc => source === 'all' || doc.source === source)
+    .filter(doc => {
+      const q = query.trim().toLowerCase();
+      return !q || [doc.name, doc.type, doc.source, doc.status, doc.linkedSchool].filter(Boolean).join(' ').toLowerCase().includes(q);
+    });
+  const categories = [
+    ['all', 'All documents'],
+    ['resume', 'Resume / CV'],
+    ['essay', 'Essays'],
+    ['portfolio', 'Portfolio'],
+    ['transcript', 'Transcript'],
+    ['certificate', 'Certificates'],
+    ['ref_letter', 'Ref Letters'],
+  ];
+  const countFor = (key) => key === 'all'
+    ? documents.filter(doc => doc.status !== 'Archived').length
+    : documents.filter(doc => doc.status !== 'Archived' && doc.type === key).length;
+  const toggleSelected = (id) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const selectedDocs = documents.filter(doc => selected.has(doc.id));
+  const sendSelected = () => {
+    if (!selectedDocs.length) { showToast('Choose at least one document first.'); return; }
+    const body = selectedDocs.map(doc => `# ${doc.name}\nSource: ${doc.source}\nType: ${doc.type}\n\n${doc.text || '[Original file attached without extracted text]'}`).join('\n\n---\n\n');
+    setCandTab('advisor');
+    send(`Please review these selected documents and tell me what to improve:\n\n${body}`);
+  };
+  const typeLabel = (type) => ({
+    resume: 'Resume / CV',
+    essay: 'Essay',
+    portfolio: 'Portfolio',
+    transcript: 'Transcript',
+    certificate: 'Certificate',
+    ref_letter: 'Ref Letter',
+  }[type] || 'Other');
+  const statusColor = (status) => status === 'Needs review'
+    ? { bg: '#fff8ea', color: '#b27620' }
+    : status === 'Generated'
+      ? { bg: '#eef0ff', color: '#5b46e0' }
+      : { bg: '#eafdf6', color: '#119467' };
+
+  return (
+    <div style={{ flex: 1, minHeight: 0, padding: '24px 28px 28px', background: '#f6f1e8' }}>
+      <div style={{ height: '100%', display: 'grid', gridTemplateColumns: '270px 1fr', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
+        <aside style={{ borderRight: '1px solid #f1eadd', padding: 20, overflowY: 'auto' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.8px', color: '#9098b5', marginBottom: 16 }}>DOCUMENT REPOSITORY</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {categories.map(([key, label]) => (
+              <button key={key} onClick={() => setCategory(key)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', border: 'none', borderRadius: 12, padding: '11px 14px', background: category === key ? '#e5f5ef' : 'transparent', color: category === key ? '#145d4b' : '#3c4564', fontSize: 13.5, fontWeight: category === key ? 800 : 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <span>{label}</span><span>{countFor(key)}</span>
+              </button>
+            ))}
+          </div>
+        </aside>
+        <section style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: 24, borderBottom: '1px solid #f1eadd' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start', marginBottom: 18 }}>
+              <div>
+                <h1 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>Documents</h1>
+                <div style={{ fontSize: 13, color: '#6b7392', marginTop: 4 }}>Files saved from Advisor chat, Simulation, uploads, and generated work.</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <span style={{ padding: '9px 14px', border: '1px solid #d8dfeb', borderRadius: 10, background: '#f6f1e8', color: '#6b7392', fontSize: 13, fontWeight: 700 }}>{selected.size} selected</span>
+                <button onClick={sendSelected} style={{ background: '#faf7f2', border: '1.5px solid #d8dfeb', borderRadius: 10, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>Send selected to chat</button>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: 10 }}>
+              <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search documents, sources, schools" style={{ border: '1.5px solid #d8dfeb', borderRadius: 10, padding: '11px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', background: '#faf7f2' }} />
+              <select value={source} onChange={e => setSource(e.target.value)} style={{ border: '1.5px solid #d8dfeb', borderRadius: 10, padding: '11px 12px', fontSize: 14, fontFamily: 'inherit', background: '#faf7f2' }}>
+                <option value="all">Any source</option>
+                <option value="Simulation">Simulation</option>
+                <option value="Advisor Chat">Advisor Chat</option>
+                <option value="Upload">Upload</option>
+                <option value="AI Rewrite">AI Rewrite</option>
+              </select>
+            </div>
+          </div>
+          <div style={{ overflow: 'auto', flex: 1 }}>
+            {visibleDocs.length === 0 ? (
+              <div style={{ margin: 28, border: '2px dashed #e7dcc7', borderRadius: 16, padding: 44, textAlign: 'center', color: '#9098b5', fontSize: 14 }}>No documents yet. Save work from Simulation or upload/share files in Advisor to populate this repository.</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ color: '#6b7392', fontSize: 11, letterSpacing: '.7px' }}>
+                  <th style={{ textAlign: 'left', padding: '14px 20px', borderBottom: '1px solid #f1eadd' }}>NAME</th>
+                  <th style={{ textAlign: 'center', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>CHOOSE</th>
+                  <th style={{ textAlign: 'left', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>STATUS</th>
+                  <th style={{ textAlign: 'left', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>SOURCE</th>
+                  <th style={{ textAlign: 'left', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>UPDATED</th>
+                  <th style={{ padding: '14px 20px', borderBottom: '1px solid #f1eadd' }}></th>
+                </tr></thead>
+                <tbody>
+                  {visibleDocs.map(doc => {
+                    const color = statusColor(doc.status);
+                    return (
+                      <tr key={doc.id} style={{ background: selected.has(doc.id) ? '#f0faf6' : '#faf7f2' }}>
+                        <td style={{ padding: '14px 20px', borderBottom: '1px solid #f1eadd' }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>{doc.name}</div>
+                          <div style={{ fontSize: 12, color: '#6b7392', marginTop: 2 }}>{typeLabel(doc.type)}{doc.linkedSchool ? ` · ${doc.linkedSchool}` : ''} · v{doc.version || 1}</div>
+                        </td>
+                        <td style={{ textAlign: 'center', borderBottom: '1px solid #f1eadd' }}><input type="checkbox" checked={selected.has(doc.id)} onChange={() => toggleSelected(doc.id)} /></td>
+                        <td style={{ padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}><span style={{ background: color.bg, color: color.color, borderRadius: 999, padding: '5px 10px', fontSize: 12, fontWeight: 800 }}>{doc.status || 'Ready'}</span></td>
+                        <td style={{ padding: '14px 10px', borderBottom: '1px solid #f1eadd', fontSize: 13, color: '#141b34' }}>{doc.source}</td>
+                        <td style={{ padding: '14px 10px', borderBottom: '1px solid #f1eadd', fontSize: 13, color: '#141b34' }}>{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : '-'}</td>
+                        <td style={{ padding: '14px 20px', borderBottom: '1px solid #f1eadd', whiteSpace: 'nowrap' }}>
+                          {doc.text && <button onClick={() => downloadAsPdf(doc.text, doc.name)} style={{ border: '1px solid #d8dfeb', borderRadius: 8, background: '#faf7f2', padding: '6px 9px', marginRight: 6, cursor: 'pointer' }}>PDF</button>}
+                          {doc.text && <button onClick={() => downloadAsDocx(doc.text, doc.name)} style={{ border: '1px solid #d8dfeb', borderRadius: 8, background: '#faf7f2', padding: '6px 9px', marginRight: 6, cursor: 'pointer' }}>Word</button>}
+                          <button onClick={() => archiveDocument(doc.id)} style={{ border: '1px solid #d8dfeb', borderRadius: 8, background: '#faf7f2', padding: '6px 9px', cursor: 'pointer' }}>Archive</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -216,13 +351,7 @@ export default function CandidatePortal(props) {
         {candTab === 'advisor' && <Advisor {...props} />}
         {candTab === 'analysis' && <Analysis {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
-        {candTab === 'documentDepository' && (
-          <div style={{ flex: 1, minHeight: 0, padding: '24px 28px 28px', background: '#f6f1e8' }}>
-            <div style={{ height: '100%', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 32 }}>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>Documents</h1>
-            </div>
-          </div>
-        )}
+        {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
