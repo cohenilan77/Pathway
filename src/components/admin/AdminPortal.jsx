@@ -3,6 +3,7 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { saveBlob, downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import { chatT, chatDir, formatChatDate } from '../../lib/chatI18n.js';
 import { LANGUAGES } from '../../constants.js';
+import NotificationBell from '../NotificationBell.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -37,6 +38,67 @@ const tierBorder = (tier) => (tier === 'stretch' ? '#fbd3e2' : tier === 'safe' ?
 const NavIcon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>{children}</svg>
 );
+
+function buildAdminAlerts({ candidateUsers = [], consultantUsers = [], usageData, usageSettings }) {
+  const alerts = [];
+  const unread = candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0);
+  const unassigned = candidateUsers.filter(u => !u.consultantId);
+  const suspended = [...candidateUsers, ...consultantUsers].filter(u => u.suspended);
+  if (unread) alerts.push({ id: `admin-unread-${unread}`, title: 'Unread candidate messages', message: `${unread} message${unread === 1 ? '' : 's'} waiting for consultant review.`, priority: 'high' });
+  if (unassigned.length) alerts.push({ id: `admin-unassigned-${unassigned.length}`, title: 'Candidates need assignment', message: `${unassigned.length} candidate${unassigned.length === 1 ? '' : 's'} do not have a consultant yet.`, priority: 'high' });
+  if (suspended.length) alerts.push({ id: `admin-suspended-${suspended.length}`, title: 'Suspended accounts', message: `${suspended.length} account${suspended.length === 1 ? '' : 's'} currently suspended.`, priority: 'medium' });
+  consultantUsers.forEach(consultant => {
+    const assigned = candidateUsers.filter(u => u.consultantId === consultant.id).length;
+    if (assigned >= 8) alerts.push({ id: `admin-load-${consultant.id}-${assigned}`, title: 'Consultant capacity warning', message: `${consultant.name || consultant.email} has ${assigned} assigned candidates.`, priority: 'medium' });
+  });
+  if (usageSettings?.systemSuspended) alerts.push({ id: 'admin-system-suspended', title: 'System suspended', message: usageSettings.suspensionMessage || 'Candidate AI messages are currently blocked.', priority: 'high' });
+  if ((usageData?.budgetPercent || 0) >= 80) alerts.push({ id: `admin-budget-${Math.round(usageData.budgetPercent)}`, title: 'Monthly AI cost threshold', message: `$${Number(usageData.monthlyCost || 0).toFixed(2)} used, ${Math.round(usageData.budgetPercent || 0)}% of budget.`, priority: (usageData.budgetPercent || 0) >= 100 ? 'high' : 'medium' });
+  if ((usageData?.totalTokens || 0) >= 100000) alerts.push({ id: `admin-tokens-${Math.floor((usageData.totalTokens || 0) / 10000)}`, title: 'Token usage spike', message: `${Number(usageData.totalTokens || 0).toLocaleString()} tokens used across the platform.`, priority: 'medium' });
+  (usageData?.topUsersByCost || []).filter(u => (u.cost || 0) >= (usageSettings?.maxCostPerUser || 2)).slice(0, 3).forEach(u => alerts.push({
+    id: `admin-user-cost-${u.userId || u.id}-${Math.round((u.cost || 0) * 100)}`,
+    title: 'Candidate over cost allowance',
+    message: `${u.name || u.userId || 'A user'} used $${Number(u.cost || 0).toFixed(2)} this month.`,
+    priority: 'medium',
+  }));
+  (usageData?.recentHighCostConversations || []).slice(0, 3).forEach((c, i) => alerts.push({
+    id: `admin-expensive-conversation-${c.conversationId || i}`,
+    title: 'Expensive AI conversation',
+    message: `${c.feature || 'AI'} conversation cost $${Number(c.cost || 0).toFixed(2)}.`,
+    priority: 'medium',
+    createdAt: c.createdAt,
+  }));
+  (usageData?.alerts || []).slice(0, 5).forEach(a => alerts.push({
+    id: `admin-usage-alert-${a.id}`,
+    title: 'Usage alert',
+    message: a.message,
+    priority: 'high',
+    createdAt: a.createdAt,
+  }));
+  return alerts;
+}
+
+function buildConsultantAlerts({ candidateUsers = [] }) {
+  const alerts = [];
+  candidateUsers.filter(u => u.unreadMessages).forEach(u => alerts.push({
+    id: `consultant-message-${u.id}-${u.unreadMessages}`,
+    title: 'Candidate message',
+    message: `${u.name || 'A candidate'} sent ${u.unreadMessages} unread message${u.unreadMessages === 1 ? '' : 's'}.`,
+    priority: 'high',
+  }));
+  candidateUsers.filter(u => u.sessionActive).slice(0, 5).forEach(u => alerts.push({
+    id: `consultant-active-${u.id}`,
+    title: 'Active candidate session',
+    message: `${u.name || 'A candidate'} is currently working in the advisor.`,
+    priority: 'medium',
+  }));
+  candidateUsers.filter(u => !u.scores).slice(0, 5).forEach(u => alerts.push({
+    id: `consultant-pending-${u.id}`,
+    title: 'Candidate needs first review',
+    message: `${u.name || 'A candidate'} has not completed an initial score yet.`,
+    priority: 'low',
+  }));
+  return alerts;
+}
 
 export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast, STEPS, UNDERGRAD_STEPS, adminSecret,
   aiConfig, setAiConfig, authToken, authUser }) {
@@ -148,8 +210,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   }, [adminSecret, authToken, canManageUsers]);
 
   useEffect(() => {
-    if (adminView === 'usageCost' && canManageUsers) loadUsageData();
-  }, [adminView, canManageUsers, loadUsageData]);
+    if (canManageUsers) loadUsageData();
+  }, [canManageUsers, loadUsageData]);
 
   const saveUsageSettings = async () => {
     setUsageSettingsBusy(true);
@@ -525,6 +587,22 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const sortedPrograms = programs
     ? [...chosenPrograms, ...programs.filter(p => !chosenPrograms.some(c => c.name === p.name))]
     : [];
+  const portalRole = canManageUsers ? 'admin' : 'consultant';
+  const portalAlerts = canManageUsers
+    ? buildAdminAlerts({ candidateUsers, consultantUsers, usageData, usageSettings })
+    : buildConsultantAlerts({ candidateUsers });
+  const topIconButtonStyle = {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    border: '1.5px solid #f1eadd',
+    background: '#faf7f2',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    color: '#6b7392',
+  };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f1eadd', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif" }}>
@@ -620,6 +698,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'settings' && 'Settings'}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button onClick={() => showToast('Help center: use Candidates for profiles and Live Chat for messages. Admins can monitor costs in Usage & Cost.')} title="Help" style={topIconButtonStyle}>
+              <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
+            </button>
+            <NotificationBell
+              alerts={portalAlerts}
+              storageKey={`pathway_${portalRole}_alerts_${authUser?.id || authUser?.email || 'local'}`}
+              title={portalRole === 'admin' ? 'Admin alerts' : 'Consultant alerts'}
+            />
             {adminView === 'liveChat' && (
               <select
                 value={chatLanguage}

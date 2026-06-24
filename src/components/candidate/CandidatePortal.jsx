@@ -8,6 +8,7 @@ import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
+import NotificationBell from '../NotificationBell.jsx';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -57,6 +58,52 @@ function navDotStyle(active) {
   return active
     ? { marginLeft: 'auto', width: 7, height: 7, borderRadius: '50%', background: '#faf7f2', boxShadow: '0 0 8px rgba(255,255,255,.8)' }
     : { marginLeft: 'auto', width: 7, height: 7, borderRadius: '50%', background: 'transparent' };
+}
+
+function buildCandidateAlerts({ documents = [], chat = [], tasks = [], completedTasks = [], plan }) {
+  const activeDocs = documents.filter(doc => doc.status !== 'Archived');
+  const alerts = [];
+  const latestAdvisor = [...chat].reverse().find(m => m.role === 'ai' && !String(m.text || '').includes('Welcome'));
+  if (latestAdvisor) {
+    alerts.push({
+      id: `advisor-reply-${String(latestAdvisor.text || '').slice(0, 36)}`,
+      title: 'Advisor replied',
+      message: 'Open Advisor to continue the conversation.',
+      priority: 'medium',
+    });
+  }
+  activeDocs.filter(doc => doc.status === 'Needs review').slice(0, 3).forEach(doc => alerts.push({
+    id: `doc-review-${doc.id}`,
+    title: 'Document needs review',
+    message: `${doc.name} is saved but still needs review.`,
+    priority: 'high',
+    createdAt: doc.updatedAt,
+  }));
+  activeDocs.filter(doc => ['Generated', 'Ready'].includes(doc.status)).slice(0, 3).forEach(doc => alerts.push({
+    id: `doc-saved-${doc.id}`,
+    title: 'Document saved',
+    message: `${doc.name} is available in Documents.`,
+    priority: 'low',
+    createdAt: doc.updatedAt,
+  }));
+  const remainingTasks = Math.max(0, (tasks || []).length - (completedTasks || []).length);
+  if (remainingTasks) {
+    alerts.push({
+      id: `tasks-open-${remainingTasks}`,
+      title: 'Open application tasks',
+      message: `${remainingTasks} task${remainingTasks === 1 ? '' : 's'} still need attention.`,
+      priority: 'medium',
+    });
+  }
+  if (plan !== 'ai_strategy') {
+    alerts.push({
+      id: `plan-upgrade-${plan || 'free'}`,
+      title: 'Consultant chat locked',
+      message: 'Upgrade to AI + Strategy to message a human consultant.',
+      priority: 'low',
+    });
+  }
+  return alerts;
 }
 
 function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocument, showToast }) {
@@ -194,7 +241,7 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -222,6 +269,7 @@ export default function CandidatePortal(props) {
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
+  const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f1eadd', fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif", color: '#141b34', WebkitFontSmoothing: 'antialiased' }}>
@@ -336,10 +384,11 @@ export default function CandidatePortal(props) {
             <button onClick={handleHelp} title="Help" style={{ width: 42, height: 42, borderRadius: 13, border: '1.5px solid #f1eadd', background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392' }}>
               <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
             </button>
-            <button style={{ width: 42, height: 42, borderRadius: 13, border: '1.5px solid #f1eadd', background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392', position: 'relative' }}>
-              <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" /></svg>
-              <span style={{ position: 'absolute', top: 9, right: 10, width: 8, height: 8, borderRadius: '50%', background: '#fcb1c1', border: '2px solid #faf7f2' }} />
-            </button>
+            <NotificationBell
+              alerts={candidateAlerts}
+              storageKey={`pathway_candidate_alerts_${authUser?.id || authUser?.email || name}`}
+              title="Candidate alerts"
+            />
             <button onClick={resetSession} disabled={requiresOAuthDetails} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
               <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
               New session
