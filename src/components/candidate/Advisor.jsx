@@ -65,7 +65,7 @@ function NarrativeModal({ onClose, onChoose }) {
   );
 }
 
-function ScrollToTopButton({ position, onClick, label }) {
+function ScrollButton({ position, onClick, label, direction = 'up' }) {
   return (
     <button
       onClick={onClick}
@@ -88,7 +88,9 @@ function ScrollToTopButton({ position, onClick, label }) {
         boxShadow: '0 8px 18px rgba(105,91,255,.36)',
       }}>
       <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-        <path d="M12 19V5M5 12l7-7 7 7" />
+        {direction === 'down'
+          ? <path d="M12 5v14M5 12l7 7 7-7" />
+          : <path d="M12 19V5M5 12l7-7 7 7" />}
       </svg>
     </button>
   );
@@ -131,6 +133,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
   const doneCount = taskList.filter(t => completedTasks?.[t]).length;
   const scrollChatToTop = () => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollChatToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
@@ -169,15 +172,16 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #f1eadd', position: 'relative' }}>
             {showScrollTop && (
               <>
-                <ScrollToTopButton
+                <ScrollButton
                   onClick={scrollChatToTop}
                   label="Scroll conversation to top"
                   position={{ top: 16, right: 18 }}
                 />
-                <ScrollToTopButton
-                  onClick={scrollChatToTop}
-                  label="Scroll conversation to top"
+                <ScrollButton
+                  onClick={scrollChatToBottom}
+                  label="Scroll conversation to bottom"
                   position={{ bottom: 164, right: 18 }}
+                  direction="down"
                 />
               </>
             )}
