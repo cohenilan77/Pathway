@@ -65,7 +65,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-sidebar.pw-sidebar-open { transform: translateX(0); }
   .pw-advisor-rail { display: none !important; }
   .pw-advisor-grid { grid-template-columns: 1fr !important; }
-  .pw-doc-grid { grid-template-columns: 1fr !important; min-height: 0 !important; }
+  .pw-doc-grid { grid-template-columns: 1fr !important; min-height: 0 !important; height: auto !important; overflow: visible !important; border-radius: 18px !important; }
   .pw-analysis-grid { grid-template-columns: 1fr !important; }
   .pw-narrative-grid { grid-template-columns: 1fr !important; }
   .pw-settings-grid { grid-template-columns: 1fr !important; }
@@ -73,4 +73,169 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-school-checkbox { margin-top: 2px; }
   .pw-school-info { flex-basis: 100% !important; order: 1; }
   .pw-school-stats { order: 2; margin-left: 38px; gap: 16px !important; }
+
+  .pw-simulation-page,
+  .pw-depository-page {
+    padding: 12px !important;
+    overflow-y: auto !important;
+  }
+
+  .pw-sim-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid #f1eadd !important;
+    overflow: visible !important;
+  }
+
+  .pw-sim-nav,
+  .pw-depository-cats {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+  }
+
+  .pw-sim-nav::-webkit-scrollbar,
+  .pw-depository-cats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pw-sim-nav button,
+  .pw-depository-cats button {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+  }
+
+  .pw-sim-status {
+    display: none !important;
+  }
+
+  .pw-sim-main {
+    padding: 14px !important;
+    overflow: visible !important;
+  }
+
+  .pw-sim-editor-card {
+    padding: 18px !important;
+    min-height: 0 !important;
+    border-radius: 16px !important;
+  }
+
+  .pw-sim-title-row,
+  .pw-sim-cv-header,
+  .pw-sim-list-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .pw-sim-title-row button,
+  .pw-sim-cv-header > button {
+    width: 100% !important;
+  }
+
+  .pw-sim-actions {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  .pw-sim-actions button {
+    flex: 1 1 calc(50% - 8px) !important;
+    min-width: 110px !important;
+  }
+
+  .pw-sim-tools {
+    border-left: none !important;
+    border-top: 1px solid #f1eadd !important;
+    overflow: visible !important;
+  }
+
+  .pw-depository-grid {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    border-radius: 18px !important;
+  }
+
+  .pw-depository-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid #f1eadd !important;
+    padding: 14px !important;
+    overflow: visible !important;
+  }
+
+  .pw-depository-header {
+    padding: 16px !important;
+  }
+
+  .pw-depository-heading-row {
+    flex-direction: column !important;
+  }
+
+  .pw-depository-actions {
+    width: 100% !important;
+    justify-content: stretch !important;
+  }
+
+  .pw-depository-actions > * {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+  }
+
+  .pw-depository-filters {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pw-depository-table,
+  .pw-depository-table tbody,
+  .pw-depository-table tr,
+  .pw-depository-table td {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .pw-depository-table thead {
+    display: none !important;
+  }
+
+  .pw-depository-table tr {
+    margin: 12px 12px 0 !important;
+    border: 1px solid #f1eadd !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background: #faf7f2 !important;
+  }
+
+  .pw-depository-table td {
+    border-bottom: 1px solid #f6f1e8 !important;
+    padding: 10px 12px !important;
+    text-align: left !important;
+    white-space: normal !important;
+  }
+
+  .pw-depository-table td:nth-child(n+2)::before {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .6px;
+    color: #9098b5;
+  }
+
+  .pw-depository-table td:nth-child(2)::before { content: "CHOOSE"; }
+  .pw-depository-table td:nth-child(3)::before { content: "STATUS"; }
+  .pw-depository-table td:nth-child(4)::before { content: "SOURCE"; }
+  .pw-depository-table td:nth-child(5)::before { content: "UPDATED"; }
+
+  .pw-depository-table td:last-child {
+    border-bottom: none !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .pw-depository-table td:last-child button {
+    flex: 1 1 84px !important;
+    margin-right: 0 !important;
+  }
 }

@@ -51,17 +51,17 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
   ];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
+    <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
       <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px 1fr 290px', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
-        <div style={{ borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #f1eadd' }}>
             {currentConfig?.docLabel && (
               <div style={{ fontSize: 11.5, color: '#9098b5', lineHeight: 1.5, marginBottom: 14 }}>
                 Simulation for this track: <span style={{ color: '#5b46e0', fontWeight: 700 }}>{currentConfig.docLabel}</span>
               </div>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div className="pw-sim-nav" style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               {subNavItems.map(item => (
                 <button key={item.key} onClick={() => setDocTab(item.key)} style={docNavStyle(docTab === item.key)}>
                   {item.icon}{item.label}
@@ -70,7 +70,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
             </div>
           </div>
           {/* Status panel */}
-          <div style={{ padding: 18, flex: 1 }}>
+          <div className="pw-sim-status" style={{ padding: 18, flex: 1 }}>
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', marginBottom: 14 }}>STATUS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#eafdf6' : '#f6f1e8', border: `1px solid ${cvText ? '#a9eed1' : '#f1eadd'}` }}>
@@ -99,9 +99,9 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         </div>
 
         {/* Main content */}
-        <div style={{ background: '#f6f1e8', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <div className="pw-sim-main" style={{ background: '#f6f1e8', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
           {docTab === 'editor' && (
-            <div style={{ background: '#faf7f2', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #f1eadd' }}>
+            <div className="pw-sim-editor-card" style={{ background: '#faf7f2', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #f1eadd' }}>
               <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
 
               {savedSchools.length > 0 && (
@@ -144,7 +144,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
+              <div className="pw-sim-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
                 <h1 style={{ fontSize: 24, lineHeight: 1.2, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>
                   Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
                 </h1>
@@ -178,13 +178,13 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
 
           {docTab === 'documents' && (
             <div style={{ width: '100%', maxWidth: 680 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+              <div className="pw-sim-cv-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>My CV</h2>
                   {cvFile && <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>Original file saved: {cvFile.name}</div>}
                 </div>
                 {cvText ? (
-                  <div style={{ display: 'flex', gap: 10 }}>
+                  <div className="pw-sim-actions" style={{ display: 'flex', gap: 10 }}>
                     {cvFile && (
                       <button onClick={downloadOriginalCv}
                         style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -260,7 +260,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               {savedSchools.filter(s => essays?.[s]?.text).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {savedSchools.filter(s => essays?.[s]?.text).map(school => (
-                    <div key={school} style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
+                    <div className="pw-sim-list-row" key={school} style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
                       <div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{school}</div>
                         <div style={{ fontSize: 12, color: '#9098b5' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
@@ -383,7 +383,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         </div>
 
         {/* Right insights panel */}
-        <div style={{ borderLeft: '1px solid #f1eadd', background: '#f6f1e8', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+        <div className="pw-sim-tools" style={{ borderLeft: '1px solid #f1eadd', background: '#f6f1e8', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
           <div style={{ background: '#f1eadd', padding: 20, borderBottom: '1px solid #edf0f9' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <span style={{ color: '#5b46e0' }}>✦</span>
