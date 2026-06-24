@@ -65,6 +65,35 @@ function NarrativeModal({ onClose, onChoose }) {
   );
 }
 
+function ScrollToTopButton({ position, onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      style={{
+        position: 'absolute',
+        ...position,
+        zIndex: 5,
+        width: 42,
+        height: 42,
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg,#94b3fb,#b899fb)',
+        color: '#faf7f2',
+        border: 'none',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 8px 18px rgba(105,91,255,.36)',
+      }}>
+      <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+        <path d="M12 19V5M5 12l7-7 7 7" />
+      </svg>
+    </button>
+  );
+}
+
 export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
@@ -101,6 +130,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const taskList = tasks || [];
   const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
   const doneCount = taskList.filter(t => completedTasks?.[t]).length;
+  const scrollChatToTop = () => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
@@ -138,20 +168,18 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
           {/* chat */}
           <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #f1eadd', position: 'relative' }}>
             {showScrollTop && (
-              <button
-                onClick={() => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-                title="Scroll to top"
-                style={{
-                  position: 'absolute', bottom: 96, right: 24, zIndex: 5,
-                  width: 42, height: 42, borderRadius: '50%',
-                  background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 8px 18px rgba(105,91,255,.36)',
-                }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                  <path d="M12 19V5M5 12l7-7 7 7" />
-                </svg>
-              </button>
+              <>
+                <ScrollToTopButton
+                  onClick={scrollChatToTop}
+                  label="Scroll conversation to top"
+                  position={{ top: 18, right: 24 }}
+                />
+                <ScrollToTopButton
+                  onClick={scrollChatToTop}
+                  label="Scroll conversation to top"
+                  position={{ bottom: 126, right: 24 }}
+                />
+              </>
             )}
 
             <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '28px 32px' }}>
