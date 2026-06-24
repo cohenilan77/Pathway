@@ -297,7 +297,9 @@ export default function CandidatePortal(props) {
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
-  const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
+  const navItems = hasChatAccess
+    ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
+    : NAV_ITEMS;
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (
