@@ -7,7 +7,9 @@ export default function Chat({ authUser, authToken, showToast, language }) {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const messagesEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
   const candidateId = authUser?.id;
   const dir = chatDir(language);
 
@@ -32,6 +34,14 @@ export default function Chat({ authUser, authToken, showToast, language }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    const onScroll = () => setShowScrollTop(el.scrollTop > 60);
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -58,12 +68,43 @@ export default function Chat({ authUser, authToken, showToast, language }) {
     }
   };
 
+  const scrollChatToTop = () => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollButtonStyle = {
+    position: 'absolute',
+    zIndex: 5,
+    width: 42,
+    height: 42,
+    borderRadius: '50%',
+    background: 'linear-gradient(135deg,#94b3fb,#b899fb)',
+    color: '#faf7f2',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 8px 18px rgba(105,91,255,.36)',
+  };
+
   return (
     <div dir={dir} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '30px 36px' }}>
       <div style={{ maxWidth: 800 }}>
         <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(language, 'viewingConsultant')}</div>
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
+        <div style={{ position: 'relative', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
+          {showScrollTop && (
+            <>
+              <button onClick={scrollChatToTop} title="Scroll conversation to top" aria-label="Scroll conversation to top" style={{ ...scrollButtonStyle, top: 16, right: dir === 'rtl' ? 'auto' : 18, left: dir === 'rtl' ? 18 : 'auto' }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+              </button>
+              <button onClick={scrollChatToTop} title="Scroll conversation to top" aria-label="Scroll conversation to top" style={{ ...scrollButtonStyle, bottom: 164, right: dir === 'rtl' ? 'auto' : 18, left: dir === 'rtl' ? 18 : 'auto' }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+              </button>
+            </>
+          )}
+          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
               {loading && (
                 <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>

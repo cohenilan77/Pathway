@@ -107,7 +107,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   useEffect(() => {
     const el = chatScrollRef.current;
     if (!el) return;
-    const onScroll = () => setShowScrollTop(el.scrollTop > 200);
+    const onScroll = () => setShowScrollTop(el.scrollTop > 60);
     el.addEventListener('scroll', onScroll);
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
@@ -172,12 +172,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 <ScrollToTopButton
                   onClick={scrollChatToTop}
                   label="Scroll conversation to top"
-                  position={{ top: 18, right: 24 }}
+                  position={{ top: 16, right: 18 }}
                 />
                 <ScrollToTopButton
                   onClick={scrollChatToTop}
                   label="Scroll conversation to top"
-                  position={{ bottom: 126, right: 24 }}
+                  position={{ bottom: 164, right: 18 }}
                 />
               </>
             )}
