@@ -39,6 +39,30 @@ const NavIcon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>{children}</svg>
 );
 
+const sortableHeaderStyle = {
+  border: 'none',
+  background: 'transparent',
+  padding: 0,
+  color: 'inherit',
+  font: 'inherit',
+  letterSpacing: 'inherit',
+  cursor: 'pointer',
+  textAlign: 'left',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 5,
+};
+
+function SortHeader({ label, column, sort, onSort }) {
+  const active = sort.column === column;
+  return (
+    <button onClick={() => onSort(column)} style={{ ...sortableHeaderStyle, color: active ? '#5b46e0' : 'inherit' }}>
+      <span>{label}</span>
+      <span style={{ fontSize: 10, opacity: active ? 1 : 0.35 }}>{active ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
+    </button>
+  );
+}
+
 function buildAdminAlerts({ candidateUsers = [], consultantUsers = [], usageData, usageSettings }) {
   const alerts = [];
   const unread = candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0);
@@ -129,6 +153,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
+  const [candidateSort, setCandidateSort] = useState({ column: 'candidate', direction: 'asc' });
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedData, setSelectedData] = useState(null); // { user, data }
   const [selectedLoading, setSelectedLoading] = useState(false);
@@ -176,6 +201,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const candidateUsers = users.filter(u => (u.role || 'candidate') === 'candidate');
   const consultantUsers = users.filter(u => u.role === 'consultant');
   const assignableConsultants = consultantUsers.filter(u => !u.suspended);
+  const sortCandidates = (column) => {
+    setCandidateSort(prev => ({
+      column,
+      direction: prev.column === column && prev.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+  const sortedCandidateUsers = [...candidateUsers].sort((a, b) => {
+    const dir = candidateSort.direction === 'asc' ? 1 : -1;
+    const val = (u) => {
+      if (candidateSort.column === 'score') return u.scores?.overall ?? -1;
+      if (candidateSort.column === 'step') return stepsFor(u.category)[u.stepIdx] || 'Profile';
+      if (candidateSort.column === 'lastLogin') return u.lastLoginAt || 0;
+      return (u.name || '').toLowerCase();
+    };
+    const av = val(a);
+    const bv = val(b);
+    if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+    return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir;
+  });
 
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
@@ -774,9 +818,13 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               ) : (
                 <div style={{ ...cardShell, overflow: 'hidden' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: canManageUsers ? 'minmax(220px,1.2fr) 80px 105px minmax(130px,.8fr) minmax(150px,1fr) 430px' : 'minmax(220px,1.2fr) 80px 105px minmax(130px,.8fr) minmax(150px,1fr) 40px', gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                    <span>CANDIDATE</span><span>SCORE</span><span>STEP</span><span>LAST LOGIN</span><span>TOP INSIGHT</span><span>{canManageUsers ? 'ACTIONS' : ''}</span>
+                    <SortHeader label="CANDIDATE" column="candidate" sort={candidateSort} onSort={sortCandidates} />
+                    <SortHeader label="SCORE" column="score" sort={candidateSort} onSort={sortCandidates} />
+                    <SortHeader label="STEP" column="step" sort={candidateSort} onSort={sortCandidates} />
+                    <SortHeader label="LAST LOGIN" column="lastLogin" sort={candidateSort} onSort={sortCandidates} />
+                    <span>TOP INSIGHT</span><span>{canManageUsers ? 'ACTIONS' : ''}</span>
                   </div>
-                  {candidateUsers.map(u => {
+                  {sortedCandidateUsers.map(u => {
                     const uInitials = (u.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                     const busyDelete = userActionBusy === `${u.id}:delete`;
                     return (
