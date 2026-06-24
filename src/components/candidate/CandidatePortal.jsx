@@ -28,6 +28,10 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg>,
   },
   {
+    key: 'documentDepository', label: 'Documents',
+    icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></svg>,
+  },
+  {
     key: 'settings', label: 'Settings',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>,
   },
@@ -79,7 +83,7 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Simulation', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = hasChatAccess ? [...NAV_ITEMS, CHAT_NAV_ITEM] : NAV_ITEMS;
@@ -212,6 +216,13 @@ export default function CandidatePortal(props) {
         {candTab === 'advisor' && <Advisor {...props} />}
         {candTab === 'analysis' && <Analysis {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
+        {candTab === 'documentDepository' && (
+          <div style={{ flex: 1, minHeight: 0, padding: '24px 28px 28px', background: '#f6f1e8' }}>
+            <div style={{ height: '100%', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 32 }}>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>Documents</h1>
+            </div>
+          </div>
+        )}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
