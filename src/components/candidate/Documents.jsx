@@ -98,11 +98,26 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
           </div>
         </div>
 
+        <div className="pw-sim-mobile-status">
+          <div className="pw-sim-mobile-stat">
+            <span style={{ background: cvText ? '#3fdca9' : '#c7cce3' }} />
+            <div><strong>CV</strong><small>{cvText ? `${cvText.trim().split(/\s+/).length} words` : 'Missing'}</small></div>
+          </div>
+          <div className="pw-sim-mobile-stat">
+            <span style={{ background: essayText ? '#3fdca9' : '#c7cce3' }} />
+            <div><strong>Essay</strong><small>{essayText ? `${wordCount} words` : 'Draft'}</small></div>
+          </div>
+          <div className="pw-sim-mobile-stat">
+            <span style={{ background: insights ? '#3fdca9' : '#c7cce3' }} />
+            <div><strong>Insights</strong><small>{insights ? `${insights.length} items` : 'None'}</small></div>
+          </div>
+        </div>
+
         {/* Main content */}
         <div className="pw-sim-main" style={{ background: '#f6f1e8', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
           {docTab === 'editor' && (
             <div className="pw-sim-editor-card" style={{ background: '#faf7f2', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #f1eadd' }}>
-              <div style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
+              <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
 
               {savedSchools.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
@@ -155,6 +170,16 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   </button>
                 )}
               </div>
+              {essayText && (
+                <div className="pw-sim-mobile-ai-actions">
+                  <div>
+                    <strong>{wordCount} / 1000 words</strong>
+                    <div><span style={{ width: `${Math.min(essayPct, 100)}%`, background: wordCount > 1000 ? '#e384a5' : 'linear-gradient(90deg,#94b3fb,#b899fb)' }} /></div>
+                  </div>
+                  <button onClick={() => analyzeEssay()} disabled={busy}>Analyze</button>
+                  <button onClick={() => rewriteEssay()} disabled={busy}>{busy ? 'Writing...' : 'Rewrite'}</button>
+                </div>
+              )}
               {essayText ? (
                 <textarea
                   value={essayText}
@@ -265,7 +290,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{school}</div>
                         <div style={{ fontSize: 12, color: '#9098b5' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
                       </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                  <div className="pw-sim-actions" style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => selectEssaySchool(school)}
                           style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Open

@@ -200,6 +200,34 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
             {visibleDocs.length === 0 ? (
               <div style={{ margin: 28, border: '2px dashed #e7dcc7', borderRadius: 16, padding: 44, textAlign: 'center', color: '#9098b5', fontSize: 14 }}>No documents yet. Save work from Simulation or upload/share files in Advisor to populate this repository.</div>
             ) : (
+              <>
+              <div className="pw-depository-mobile-list">
+                {visibleDocs.map(doc => {
+                  const color = statusColor(doc.status);
+                  return (
+                    <article key={doc.id} className={selected.has(doc.id) ? 'pw-depository-mobile-card is-selected' : 'pw-depository-mobile-card'}>
+                      <div className="pw-depository-mobile-card-head">
+                        <label>
+                          <input type="checkbox" checked={selected.has(doc.id)} onChange={() => toggleSelected(doc.id)} />
+                          <span>{doc.name}</span>
+                        </label>
+                        <span style={{ background: color.bg, color: color.color }}>{doc.status || 'Ready'}</span>
+                      </div>
+                      <div className="pw-depository-mobile-meta">
+                        <span>{typeLabel(doc.type)}</span>
+                        <span>{doc.source}</span>
+                        <span>{doc.updatedAt ? new Date(doc.updatedAt).toLocaleDateString() : '-'}</span>
+                      </div>
+                      {doc.linkedSchool && <div className="pw-depository-mobile-school">{doc.linkedSchool}</div>}
+                      <div className="pw-depository-mobile-actions">
+                        {doc.text && <button onClick={() => downloadAsPdf(doc.text, doc.name)}>PDF</button>}
+                        {doc.text && <button onClick={() => downloadAsDocx(doc.text, doc.name)}>Word</button>}
+                        <button onClick={() => archiveDocument(doc.id)}>Archive</button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
               <table className="pw-depository-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ color: '#6b7392', fontSize: 11, letterSpacing: '.7px' }}>
                   <th style={{ textAlign: 'left', padding: '14px 20px', borderBottom: '1px solid #f1eadd' }}>NAME</th>
@@ -232,6 +260,7 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
                   })}
                 </tbody>
               </table>
+              </>
             )}
           </div>
         </section>
@@ -372,15 +401,15 @@ export default function CandidatePortal(props) {
       </div>
 
       {/* Main */}
-      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <div className="pw-candidate-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 
         {/* top bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '26px 36px', borderBottom: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
+        <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '26px 36px', borderBottom: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '-.5px', color: '#141b34' }}>Good {tod}, {first}</div>
             <div style={{ fontSize: 13.5, color: '#838bab', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="pw-candidate-top-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={handleHelp} title="Help" style={{ width: 42, height: 42, borderRadius: 13, border: '1.5px solid #f1eadd', background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392' }}>
               <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
             </button>
