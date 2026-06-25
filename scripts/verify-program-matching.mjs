@@ -76,13 +76,15 @@ assert.equal(byName.get('Harvard MBA').tier, 'safe', 'Harvard MBA synonym should
 assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra competitive', 'formula/M7 rule should override wrong provided selectivity');
 assert.equal(byName.get('Harvard MBA').selectivitySource, 'm7_rule', 'formula should run before LLM fallback');
 
-assert.equal(byName.get('Darden').tier, 'stretch', 'Darden fit 49 should be LOW FIT');
-assert.equal(byName.get('Michigan Ross').tier, 'possible', 'Ross fit 80 should be WORKABLE FIT, not green');
+assert.equal(byName.get('Darden').tier, 'safe', 'Darden should normalize to STRONG FIT when more selective MBA programs are Strong Fit and no specific mismatch exists');
+assert.equal(byName.get('Darden').admissionStatus, 'Strong', 'Darden visible fit status should normalize to Strong Fit');
+assert.equal(byName.get('Michigan Ross').tier, 'safe', 'Ross should normalize to STRONG FIT when more selective MBA programs are Strong Fit and no specific mismatch exists');
+assert.equal(byName.get('Michigan Ross').admissionStatus, 'Strong', 'Ross visible fit status should normalize to Strong Fit');
 
 const orderedTiers = adamMbaPrograms.map((program) => program.tier);
 assert.deepEqual(
   [...new Set(orderedTiers)],
-  ['safe', 'possible', 'stretch'],
+  ['safe'],
   'programs should sort green first, then yellow, then red; locked would come last',
 );
 
