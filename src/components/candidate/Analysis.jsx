@@ -170,12 +170,6 @@ function textFromProfile(profile) {
   ].filter(Boolean).join(' ');
 }
 
-function possessiveName(profile) {
-  const name = String(profile?.name || '').trim();
-  if (!name) return 'the candidate';
-  return `${name}${name.endsWith('s') ? "'" : "'s"}`;
-}
-
 function goalLabel(profile, school) {
   const source = [
     textFromProfile(profile),
@@ -210,6 +204,45 @@ function isWeakProgramInfo(value, school) {
   return /^(good school for business|strong university|this is a competitive program|located in\b|program relevance|mba relevance:? ?[^a-z]*$)/i.test(text);
 }
 
+function escapeRegExp(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function sanitizeProgramInfo(value, school, profile) {
+  let text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+
+  const schoolName = String(school?.name || '').trim();
+  if (schoolName) {
+    text = text.replace(new RegExp(`^${escapeRegExp(schoolName)}\\s+(?:is|offers|provides|stands out as|is strategically (?:relevant|interesting|strong))\\s+`, 'i'), '');
+  }
+
+  const candidateName = String(profile?.name || '').trim();
+  if (candidateName) {
+    text = text
+      .replace(new RegExp(`\\b${escapeRegExp(candidateName)}(?:'s)+\\b`, 'gi'), 'the')
+      .replace(new RegExp(`\\bfor\\s+${escapeRegExp(candidateName)}\\b`, 'gi'), 'for the candidate')
+      .replace(new RegExp(`\\b${escapeRegExp(candidateName)}\\b`, 'gi'), 'the candidate');
+  }
+
+  text = text
+    .replace(/\bthe's\b/gi, 'the')
+    .replace(/\bthe the\b/gi, 'the')
+    .replace(/^strategically relevant because/i, 'Strategic value comes from')
+    .replace(/^strategically relevant for the\s+/i, '')
+    .replace(/^strategically relevant for the candidate'?s?\s+/i, '')
+    .replace(/^This program is strategically relevant for the candidate only if/i, 'Best evaluated by whether')
+    .replace(/^This program is strategically relevant for the candidate'?s?\s+/i, '')
+    .replace(/^This school is strategically relevant for the candidate if/i, 'Strategic value depends on whether')
+    .replace(/^This program's value for the candidate depends on/i, 'Value depends on')
+    .replace(/\s+because of its\s+/i, ' through ')
+    .replace(/^([a-z][a-z\s/-]+ goal|[a-z][a-z\s/-]+ transition) through/i, 'Strong $1 relevance through')
+    .replace(/\s+for the candidate'?s?\s+/gi, ' for the ')
+    .trim();
+
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
+}
+
 function inferStrategicAngle(school, profile) {
   const schoolText = String(school?.name || '').toLowerCase();
   const source = [
@@ -237,7 +270,7 @@ function inferStrategicAngle(school, profile) {
 
 function buildProgramInfo(school, profile) {
   if (!isWeakProgramInfo(school?.programInfo, school)) {
-    return firstSentences(school.programInfo, '', 2);
+    return firstSentences(sanitizeProgramInfo(school.programInfo, school, profile), '', 2);
   }
 
   const source = [
@@ -249,7 +282,6 @@ function buildProgramInfo(school, profile) {
     textFromProfile(profile),
   ].filter(Boolean).join(' ').toLowerCase();
 
-  const candidate = possessiveName(profile);
   const goal = goalLabel(profile, school);
   const angle = inferStrategicAngle(school, profile);
   const benchmarks = [
@@ -261,15 +293,15 @@ function buildProgramInfo(school, profile) {
   const benchmarkText = benchmarks ? ` The ${benchmarks} makes it useful to separate strategic value from admissions difficulty.` : '';
 
   if (/phd|doctoral|research/.test(source)) {
-    return `This program is strategically relevant for ${candidate} only if supervisor/lab alignment supports the ${goal}; funding, methods fit, and research match matter more than brand alone.`;
+    return `Best evaluated through supervisor/lab alignment with the ${goal}; funding, methods fit, and research match matter more than brand alone.`;
   }
   if (/portfolio|mfa|mdes|mps|studio|creative|interactive/.test(source)) {
-    return `This program's value for ${candidate} depends on portfolio fit, studio culture, critique model, and the creative-technical ecosystem around the ${goal}.`;
+    return `Value depends on portfolio fit, studio culture, critique model, and the creative-technical ecosystem around the ${goal}.`;
   }
   if (/undergraduate|bachelor|college/.test(source)) {
-    return `This school is strategically relevant for ${candidate} if its intended-major strength, advising, internships, and student ecosystem support the ${goal}.`;
+    return `Strategic value depends on intended-major strength, advising, internships, and student ecosystem support for the ${goal}.`;
   }
-  return `${school?.name || 'This program'} is strategically relevant for ${candidate}'s ${goal} because of its ${angle}.${benchmarkText}`;
+  return `Strong ${goal} relevance through ${angle}.${benchmarkText}`;
 }
 
 function buildWhyThisFits(school) {
