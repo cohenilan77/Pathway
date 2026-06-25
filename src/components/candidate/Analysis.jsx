@@ -137,18 +137,19 @@ function firstSentences(value, fallback, maxSentences = 2) {
 }
 
 const PROGRAM_STRENGTHS = [
-  { match: /wharton|upenn|penn /, angle: 'finance reputation, buy-side recruiting, and investor alumni base', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /columbia business school|columbia\b|cbs\b/, angle: 'New York buy-side recruiting, Wall Street deal flow, and a dense finance alumni network', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'MIT AI, engineering, venture creation, and technical-founder ecosystem', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /stanford|gsb/, angle: 'Silicon Valley venture network, entrepreneurship platform, and deep-tech founder ecosystem', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /harvard business school|hbs|harvard/, angle: 'general-management brand, case-method leadership platform, and investor/operator alumni network', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
-  { match: /booth|chicago/, angle: 'analytical finance culture, investor network, and rigorous economics-driven decision training', goals: /pe|private equity|buyout|finance|invest|strategy/ },
-  { match: /kellogg|northwestern/, angle: 'marketing, leadership, consulting, and collaborative alumni network', goals: /consult|leadership|marketing|operator|strategy/ },
-  { match: /fuqua|duke/, angle: 'team-based leadership culture, healthcare/tech networks, and strong general-management recruiting', goals: /health|tech|consult|leadership|operator|strategy/ },
-  { match: /kelley|indiana/, angle: 'practical MBA recruiting, finance/accounting depth, and a value-oriented alumni network', goals: /finance|invest|operator|management|consult/ },
-  { match: /emory|goizueta/, angle: 'Atlanta business ecosystem, healthcare/consumer networks, and close-knit MBA recruiting', goals: /health|consumer|operator|consult|management|strategy/ },
-  { match: /nyu tisch|itp|interactive telecommunications/, angle: 'interactive-media studio culture, creative-technical prototyping, and New York product/design network', goals: /portfolio|creative|design|media|interactive|technology|tech|product/ },
-  { match: /insead/, angle: 'one-year global MBA structure, international cohort, and cross-border employer network', goals: /global|international|consult|operator|management|strategy/ },
+  { match: /wharton|upenn|penn /, angle: 'Known for exceptional finance depth, buy-side recruiting, and an investor alumni base that carries real weight in private capital.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /columbia business school|columbia\b|cbs\b/, angle: 'Distinctive for its access to Wall Street deal flow, buy-side recruiting, and a dense finance alumni network.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /stern|nyu/, angle: 'Strongest where finance ambition benefits from buy-side access, investor alumni reach, and proximity to major capital-markets employers.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'Distinguished by deep integration with AI, engineering, venture creation, and technical-founder ecosystems.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /stanford|gsb/, angle: 'Especially powerful for venture and deep-tech paths through entrepreneurship infrastructure, founder networks, and access to technical talent.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /harvard business school|hbs|harvard/, angle: 'Recognized for general-management training, case-method leadership development, and a broad investor/operator alumni network.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
+  { match: /booth|chicago/, angle: 'Known for analytical rigor, economics-driven decision training, and strong credibility with finance and investment employers.', goals: /pe|private equity|buyout|finance|invest|strategy/ },
+  { match: /kellogg|northwestern/, angle: 'Strong for candidates who need collaborative leadership, brand-building, consulting access, and a highly engaged alumni network.', goals: /consult|leadership|marketing|operator|strategy/ },
+  { match: /fuqua|duke/, angle: 'Distinctive for team-based leadership culture, general-management recruiting, and useful healthcare and technology networks.', goals: /health|tech|consult|leadership|operator|strategy/ },
+  { match: /kelley|indiana/, angle: 'Practical value comes from finance and accounting depth, grounded MBA recruiting, and a value-oriented alumni network.', goals: /finance|invest|operator|management|consult/ },
+  { match: /emory|goizueta/, angle: 'Useful for candidates targeting healthcare, consumer, or general-management roles through a close-knit MBA network and regional employer access.', goals: /health|consumer|operator|consult|management|strategy/ },
+  { match: /nyu tisch|itp|interactive telecommunications/, angle: 'Value depends on interaction-design fit, creative-technical prototyping strength, studio culture, and portfolio evidence.', goals: /portfolio|creative|design|media|interactive|technology|tech|product/ },
+  { match: /insead/, angle: 'Best known for one-year MBA speed, international cohort signal, and cross-border employer access for global career pivots.', goals: /global|international|consult|operator|management|strategy/ },
 ];
 
 function textFromProfile(profile) {
@@ -238,6 +239,8 @@ function sanitizeProgramInfo(value, school, profile) {
     .replace(/\s+because of its\s+/i, ' through ')
     .replace(/^([a-z][a-z\s/-]+ goal|[a-z][a-z\s/-]+ transition) through/i, 'Strong $1 relevance through')
     .replace(/\s+for the candidate'?s?\s+/gi, ' for the ')
+    .replace(/\bThe\s+(Ultra competitive|Highly competitive|Accessible|Unknown)[^.?!]*(?:difficulty|benchmark|admissions difficulty)[^.?!]*[.?!]?/gi, '')
+    .replace(/\b(Ultra competitive|Highly competitive|Accessible|Unknown)\s+program\b/gi, 'program')
     .trim();
 
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
@@ -257,15 +260,15 @@ function inferStrategicAngle(school, profile) {
   const namedStrength = PROGRAM_STRENGTHS.find(item => item.match.test(schoolText) && item.goals.test(source))
     || PROGRAM_STRENGTHS.find(item => item.match.test(schoolText));
   if (namedStrength) return namedStrength.angle;
-  if (/\bpe\b|private equity|buyout|private capital|finance|invest/.test(source)) return 'finance recruiting, investor alumni access, and private-capital signaling';
-  if (/deep[-\s]?tech|ai|technology|tech|innovation|entrepreneur|venture|startup|founder/.test(source)) return 'innovation ecosystem, technical network, and entrepreneurship platform';
-  if (/faculty|lab|research|supervisor|phd|doctoral/.test(source)) return 'supervisor/lab alignment, methods fit, and funding relevance';
-  if (/portfolio|studio|critique|design|creative|interactive|mfa|mdes|mps/.test(source)) return 'portfolio fit, studio culture, critique model, and creative-technical ecosystem';
-  if (/law|jd|llm|legal/.test(source)) return 'legal specialization, clerkship/employer pipeline, and alumni network';
-  if (/medicine|medical|md|clinical|health/.test(source)) return 'clinical exposure, research access, and health-system network';
-  if (/undergraduate|intended major|internship|advising/.test(source)) return 'intended-major strength, advising, internship pipeline, and student ecosystem';
-  if (/alumni|network|recruit|placement|employer|career/.test(source)) return 'alumni network, employer pipeline, and recruiting strength';
-  return 'brand signal, employer pipeline, and program-specific network';
+  if (/\bpe\b|private equity|buyout|private capital|finance|invest/.test(source)) return 'Known for finance recruiting, investor alumni access, and private-capital signaling.';
+  if (/deep[-\s]?tech|ai|technology|tech|innovation|entrepreneur|venture|startup|founder/.test(source)) return 'Distinguished by an innovation ecosystem, technical network, and entrepreneurship platform that can support deep-tech or founder goals.';
+  if (/faculty|lab|research|supervisor|phd|doctoral/.test(source)) return 'Strategic value depends on supervisor/lab alignment, methods fit, funding relevance, and research match more than brand alone.';
+  if (/portfolio|studio|critique|design|creative|interactive|mfa|mdes|mps/.test(source)) return 'Value depends on portfolio fit, studio culture, critique model, and the surrounding creative-technical ecosystem.';
+  if (/law|jd|llm|legal/.test(source)) return 'Most useful when its legal specialization, clerkship or employer pipeline, and alumni network match the intended practice area.';
+  if (/medicine|medical|md|clinical|health/.test(source)) return 'Strategic value comes from clinical exposure, research access, health-system partnerships, and fit with the intended medical path.';
+  if (/undergraduate|intended major|internship|advising/.test(source)) return 'Strength depends on intended-major depth, advising quality, internship access, and the student ecosystem around the academic direction.';
+  if (/alumni|network|recruit|placement|employer|career/.test(source)) return 'Recognized for alumni reach, employer access, and recruiting strength tied to the target outcome.';
+  return 'Strategic value should come from distinctive program strengths, employer access, alumni reach, and fit with the stated career goal.';
 }
 
 function buildProgramInfo(school, profile) {
@@ -284,13 +287,6 @@ function buildProgramInfo(school, profile) {
 
   const goal = goalLabel(profile, school);
   const angle = inferStrategicAngle(school, profile);
-  const benchmarks = [
-    school?.selectivityLabel,
-    school?.acceptanceRate != null ? `${school.acceptanceRate}% acceptance benchmark` : '',
-    school?.avgGMAT != null ? `${school.avgGMAT} GMAT benchmark` : '',
-    school?.avgGPA != null ? `${school.avgGPA} GPA benchmark` : '',
-  ].filter(Boolean).slice(0, 2).join(', ');
-  const benchmarkText = benchmarks ? ` The ${benchmarks} makes it useful to separate strategic value from admissions difficulty.` : '';
 
   if (/phd|doctoral|research/.test(source)) {
     return `Best evaluated through supervisor/lab alignment with the ${goal}; funding, methods fit, and research match matter more than brand alone.`;
@@ -301,7 +297,7 @@ function buildProgramInfo(school, profile) {
   if (/undergraduate|bachelor|college/.test(source)) {
     return `Strategic value depends on intended-major strength, advising, internships, and student ecosystem support for the ${goal}.`;
   }
-  return `Strong ${goal} relevance through ${angle}.${benchmarkText}`;
+  return angle;
 }
 
 function buildWhyThisFits(school) {
