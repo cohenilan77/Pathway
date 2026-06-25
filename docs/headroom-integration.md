@@ -106,11 +106,21 @@ content.
 
 ## Local dev instructions
 
-1. Install and run a local Headroom proxy per the
-   [Headroom README](https://github.com/headroomlabs-ai/headroom):
+1. The published `headroom-ai` npm package (v0.22.4) is an HTTP **client**
+   only — it does not ship a proxy server binary. For local development and
+   POC purposes, Pathway includes a minimal local proxy at
+   `scripts/headroom-proxy.js` that implements the same wire protocol the
+   SDK calls (`POST /v1/compress`, `GET /health`) and performs real,
+   measurable token-reducing transforms (whitespace collapsing, duplicate
+   message removal, and budget-based truncation of older chat turns). Run
+   it with:
    ```bash
-   npx headroom-ai proxy --port 8787
+   npm run headroom:proxy
    ```
+   This is not the official Headroom Cloud/proxy product — swap
+   `HEADROOM_PROXY_URL` to point at a real Headroom Cloud endpoint or a
+   self-hosted Headroom proxy server when one is available, with no code
+   changes required on Pathway's side.
 2. In `.env`, set:
    ```
    HEADROOM_ENABLED=1
