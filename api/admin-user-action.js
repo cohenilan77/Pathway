@@ -1,5 +1,6 @@
 import { canManageUsers, getActor } from '../lib/admin.js';
 import { createManagedUser, deleteUser, publicUser, resetUserPassword, setUserSuspended, updateManagedUser } from '../lib/db.js';
+import { safeError } from '../lib/api-error.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -46,6 +47,6 @@ export default async function handler(req, res) {
     }
     res.status(200).json({ ok: true });
   } catch (err) {
-    res.status(400).json({ error: err.message || 'Action failed.' });
+    res.status(400).json({ error: safeError(err, 'Action failed.') });
   }
 }

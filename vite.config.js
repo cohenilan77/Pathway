@@ -28,8 +28,9 @@ function withApiAdapter(handler) {
     res.json = (obj) => { res.end(JSON.stringify(obj)); return res; };
 
     const finish = (fn) => fn().catch((err) => {
+      console.error('[Pathway] API adapter error:', err);
       res.statusCode = 500;
-      res.end(JSON.stringify({ error: err.message || 'Internal error' }));
+      res.end(JSON.stringify({ error: 'Internal error' }));
     });
 
     if (req.method === 'GET' || req.method === 'HEAD') {
@@ -349,6 +350,7 @@ IMPORTANT: Never display block tag content in the visible chat.`;
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   if (env.ADMIN_SECRET) process.env.ADMIN_SECRET = env.ADMIN_SECRET;
+  if (env.SUPER_ADMIN_EMAIL) process.env.SUPER_ADMIN_EMAIL = env.SUPER_ADMIN_EMAIL;
   if (env.SUPER_ADMIN_INITIAL_PASSWORD) process.env.SUPER_ADMIN_INITIAL_PASSWORD = env.SUPER_ADMIN_INITIAL_PASSWORD;
   if (env.KV_REST_API_URL) process.env.KV_REST_API_URL = env.KV_REST_API_URL;
   if (env.KV_REST_API_TOKEN) process.env.KV_REST_API_TOKEN = env.KV_REST_API_TOKEN;
@@ -365,6 +367,15 @@ export default defineConfig(({ mode }) => {
   if (env.MICROSOFT_CLIENT_SECRET) process.env.MICROSOFT_CLIENT_SECRET = env.MICROSOFT_CLIENT_SECRET;
 
   return {
+    build: {
+      sourcemap: false,
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true,
+        },
+      },
+    },
     plugins: [
       react(),
       {
@@ -439,9 +450,9 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(200);
                 res.end(JSON.stringify({ raw }));
               } catch (err) {
-                console.error('[Pathway] Anthropic error:', err.message);
+                console.error('[Pathway] chat error:', err);
                 res.writeHead(500);
-                res.end(JSON.stringify({ error: 'Anthropic API error', details: err.message }));
+                res.end(JSON.stringify({ error: 'Failed to get response from AI' }));
               }
             });
           });
@@ -465,7 +476,7 @@ export default defineConfig(({ mode }) => {
                   messages: [{ role: 'user', content: `Summarize this admissions consulting session for the consultant in 4-5 concise bullet points. Cover: candidate background, key strengths, program targets, narrative direction, and current stage.\n\nTranscript:\n${transcript}` }],
                 });
                 res.writeHead(200); res.end(JSON.stringify({ summary: response.content[0]?.text || '' }));
-              } catch (err) { res.writeHead(500); res.end(JSON.stringify({ error: err.message })); }
+              } catch (err) { console.error('[Pathway] summarize error:', err); res.writeHead(500); res.end(JSON.stringify({ error: 'Failed to generate summary.' })); }
             });
           });
 
@@ -512,8 +523,9 @@ export default defineConfig(({ mode }) => {
                 res.writeHead(200);
                 res.end(JSON.stringify({ result: response.content[0]?.text }));
               } catch (err) {
+                console.error('[Pathway] rewrite error:', err);
                 res.writeHead(500);
-                res.end(JSON.stringify({ error: err.message }));
+                res.end(JSON.stringify({ error: 'Failed to rewrite essay.' }));
               }
             });
           });

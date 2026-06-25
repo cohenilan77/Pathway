@@ -1,11 +1,12 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, Suspense, lazy } from 'react';
 import Login from './components/Login.jsx';
 import Register from './components/Register.jsx';
 import Landing from './components/Landing.jsx';
 import LegalPage from './components/LegalPage.jsx';
-import CandidatePortal from './components/candidate/CandidatePortal.jsx';
-import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
+
+const CandidatePortal = lazy(() => import('./components/candidate/CandidatePortal.jsx'));
+const AdminPortal = lazy(() => import('./components/admin/AdminPortal.jsx'));
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 
@@ -926,8 +927,16 @@ export default function App() {
       {screen === 'landing' && <Landing {...sharedProps} />}
       {screen === 'terms' && <LegalPage {...sharedProps} type="terms" />}
       {screen === 'privacy' && <LegalPage {...sharedProps} type="privacy" />}
-      {screen === 'candidate' && <CandidatePortal {...sharedProps} />}
-      {screen === 'admin' && <AdminPortal {...sharedProps} />}
+      {screen === 'candidate' && (
+        <Suspense fallback={null}>
+          <CandidatePortal {...sharedProps} />
+        </Suspense>
+      )}
+      {screen === 'admin' && (
+        <Suspense fallback={null}>
+          <AdminPortal {...sharedProps} />
+        </Suspense>
+      )}
     </div>
   );
 }

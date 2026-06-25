@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
+import { safeError } from '../lib/api-error.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -50,6 +51,6 @@ export default async function handler(req, res) {
     }).catch((e) => console.error('Failed to record usage:', e));
     return res.status(200).json({ summary: response.content[0]?.text || '' });
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: safeError(err, 'Failed to generate summary.') });
   }
 }

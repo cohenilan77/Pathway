@@ -1,6 +1,7 @@
 import { getActor } from '../lib/admin.js';
 import { ROLES } from '../lib/db.js';
 import { saveUsageSettings, getUsageSettings, broadcastChatMessage } from '../lib/usage.js';
+import { safeError } from '../lib/api-error.js';
 
 const VALID_LIMIT_ACTIONS = ['warn_user', 'block_messages', 'notify_admin'];
 
@@ -48,6 +49,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({ settings });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Failed to save usage settings.' });
+    res.status(500).json({ error: safeError(error, 'Failed to save usage settings.') });
   }
 }
