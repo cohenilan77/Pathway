@@ -55,32 +55,32 @@ function ScoreBar({ score, title, last, color }) {
 
 const TIERS = [
   {
-    key: 'locked',
-    label: 'PREREQUISITES',
-    accent: '#9098b5',
-    bg: '#f4f5f8',
-    border: '#dde0e8',
-  },
-  {
-    key: 'stretch',
-    label: 'CHALLENGING FIT',
-    accent: '#e384a5',
-    bg: '#fff1f6',
-    border: '#ffd3e3',
+    key: 'safe',
+    label: 'STRONG FIT · >80%',
+    accent: '#3fdca9',
+    bg: '#eafdf6',
+    border: '#a9eed1',
   },
   {
     key: 'possible',
-    label: 'GOOD FIT',
+    label: 'WORKABLE FIT · 50-80%',
     accent: '#eaa129',
     bg: '#fff8ea',
     border: '#ffe3a8',
   },
   {
-    key: 'safe',
-    label: 'STRONG FIT',
-    accent: '#3fdca9',
-    bg: '#eafdf6',
-    border: '#a9eed1',
+    key: 'stretch',
+    label: 'LOW FIT · <50%',
+    accent: '#e384a5',
+    bg: '#fff1f6',
+    border: '#ffd3e3',
+  },
+  {
+    key: 'locked',
+    label: 'PREREQUISITES',
+    accent: '#9098b5',
+    bg: '#f4f5f8',
+    border: '#dde0e8',
   },
 ];
 
@@ -93,12 +93,10 @@ const STATUS_COLORS = {
 };
 
 const SELECTIVITY_BADGES = {
-  'Ultra-selective': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  Elite: { color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe' },
+  'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
-  Competitive: { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
   Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
-  'Unknown selectivity': { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
+  Unknown: { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
 };
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
@@ -335,7 +333,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                 </span>
                               )}
                               {school.selectivityLabel && (() => {
-                                const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES['Unknown selectivity'];
+                                const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Unknown;
                                 const programType = school.programGroup ? ` ${school.programGroup} program` : ' program';
                                 return (
                                   <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>

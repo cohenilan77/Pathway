@@ -35,7 +35,7 @@ const scoreColor = (s) => (s >= 75 ? '#3fdca9' : s >= 50 ? '#eaa129' : '#e384a5'
 const tierColor = (tier) => (tier === 'stretch' ? '#e384a5' : tier === 'safe' ? '#3fdca9' : tier === 'possible' ? '#eaa129' : '#9098b5');
 const tierBg = (tier) => (tier === 'stretch' ? '#fff1f6' : tier === 'safe' ? '#eafff6' : tier === 'possible' ? '#fff8ea' : '#f1eadd');
 const tierBorder = (tier) => (tier === 'stretch' ? '#fbd3e2' : tier === 'safe' ? '#aaeed1' : tier === 'possible' ? '#f5dfa6' : '#f1eadd');
-const tierLabel = (tier) => (tier === 'stretch' ? 'CHALLENGING FIT' : tier === 'possible' ? 'GOOD FIT' : tier === 'safe' ? 'STRONG FIT' : 'PREREQUISITES');
+const tierLabel = (tier) => (tier === 'stretch' ? 'LOW FIT' : tier === 'possible' ? 'WORKABLE FIT' : tier === 'safe' ? 'STRONG FIT' : 'PREREQUISITES');
 
 const NavIcon = ({ children }) => (
   <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}>{children}</svg>
@@ -985,9 +985,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
                     {/* Tier counts */}
                     <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-                      {[{ key: 'stretch', label: 'CHALLENGING FIT' },
-                        { key: 'possible', label: 'GOOD FIT' },
-                        { key: 'safe', label: 'STRONG FIT' }].map(t => {
+                      {[{ key: 'safe', label: 'STRONG FIT' },
+                        { key: 'possible', label: 'WORKABLE FIT' },
+                        { key: 'stretch', label: 'LOW FIT' }].map(t => {
                         const n = programs.filter(p => p.tier === t.key).length;
                         if (!n) return null;
                         return (

@@ -138,10 +138,10 @@ Weight calibration by degree type (which dimensions should anchor the overall im
 - LLM / JD: academic and professional matter most.
 - MD: academic dominates; clinical/research exposure folds into professional and potential.`,
 
-  programSearch: `- "stretch" means CHALLENGING FIT: 4–5 programs where candidate-program alignment is below 70 or evidence gaps materially weaken readiness.
-- "possible" means GOOD FIT: 6–8 programs where candidate-program alignment is 70–79.
-- "safe" means STRONG FIT: 4–6 programs where candidate-program alignment is 80+.
-- These tier keys control row/group color only. They are candidate fit/readiness buckets, NOT school prestige/selectivity buckets. A famous school can be tier:"safe" if the candidate fit is 80+.
+  programSearch: `- "stretch" means LOW FIT: programs where candidate-program alignment is below 50 or evidence gaps materially weaken readiness.
+- "possible" means WORKABLE FIT: programs where candidate-program alignment is 50-80.
+- "safe" means STRONG FIT: programs where candidate-program alignment is above 80.
+- These tier keys control row/group color only. They are candidate fit/readiness buckets, NOT school prestige/selectivity buckets. A famous school can be tier:"safe" if the candidate fit is above 80.
 
 PROFILE-FIRST ELIGIBILITY BAND — apply this before picking which schools to recommend, for every program type (MBA, LLM, MSc, PhD, undergraduate, all of them), in a Branch B recommended list:
 Compute the candidate's eligible band from hard metrics only (their GPA and test score vs. each candidate school's median) before any soft-score weighting:
@@ -150,7 +150,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 - Either metric more than 0.5 (GPA) or 50 points (test) below median → excluded from the recommended list entirely — this is the locked gate (see fitFormula below).
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
-Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, and fitDrivers fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra-selective", "Elite", "Highly competitive", "Competitive", "Accessible", "Unknown selectivity". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs; for creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit avgGMAT and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
+Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, and fitDrivers fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra competitive", "Highly competitive", "Accessible", "Unknown". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs; for creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit avgGMAT and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
 If scores.recommenders is below 60 or recommender facts are missing, add "Recommendation strategy missing" or "Direct evaluator recommender not confirmed" to evidenceGaps for selective programs. If the named recommender is famous/high-status but distant, unverified, family/friend, or unable to cite concrete work, add "Letters may be generic" or "Recommender relationship appears weak" to riskFlags. Strong direct evaluators can improve confidence, especially for MBA, research/PhD, creative portfolio programs, and scholarships, but they never override hard academic/test/prerequisite gates.
 
 MBA reference schools by tier:
@@ -183,36 +183,34 @@ PROGRAM-FAMILY READINESS LOGIC:
 SELECTIVITY IS SEPARATE FROM FIT:
 - Fit/tier = candidate-program alignment and row/group color.
 - selectivityLabel = school/program difficulty and badge color.
-- A program may be tier:"safe" (displayed as STRONG FIT) and selectivityLabel:"Ultra-selective" at the same time.
+- A program may be tier:"safe" (displayed as STRONG FIT) and selectivityLabel:"Ultra competitive" at the same time.
 - Never downgrade fit or tier purely because the school is famous. Reflect fame/selectivity in selectivityLabel, selectivitySource, selectivityScore, and riskFlags if useful.
 
 UNIVERSAL SELECTIVITY LABELS:
-- Ultra-selective
-- Elite
+- Ultra competitive
 - Highly competitive
-- Competitive
 - Accessible
-- Unknown selectivity
+- Unknown
 
 SELECTIVITY FORMULA — do formula first; infer only when data is missing:
-- MBA: M7 (HBS, Stanford GSB, Wharton, Booth, Kellogg, Columbia, MIT Sloan) = Ultra-selective. Else acceptanceRate <15 Ultra-selective, 15–25 Elite, 25–40 Highly competitive, 40–60 Competitive, >60 Accessible. Else avgGMAT >=725 Ultra-selective, 710–724 Elite, 690–709 Highly competitive, 650–689 Competitive, <650 Accessible. Else infer from name/reputation and mark selectivitySource:"inferred_reputation".
-- Undergraduate: Ivy / Stanford / MIT / Caltech / Oxford / Cambridge / top global equivalent = Ultra-selective. Else acceptanceRate <10 Ultra-selective, 10–20 Elite, 20–35 Highly competitive, 35–60 Competitive, >60 Accessible. Else SAT >=1530 or ACT >=35 Ultra-selective, SAT 1480–1529 or ACT 33–34 Elite, SAT 1400–1479 or ACT 30–32 Highly competitive, SAT 1250–1399 or ACT 26–29 Competitive, below Accessible.
-- Law / LLM / JD: T14 JD or elite global law schools = Ultra-selective or Elite. Else acceptanceRate <15 Ultra-selective, 15–30 Elite, 30–45 Highly competitive, 45–65 Competitive, >65 Accessible. For JD LSAT, >=172 Ultra-selective, 168–171 Elite, 163–167 Highly competitive, 155–162 Competitive, below Accessible.
-- MSc / MA / taught masters: globally elite institution/program in field = Ultra-selective or Elite. Else acceptanceRate <15 Ultra-selective, 15–30 Elite, 30–50 Highly competitive, 50–70 Competitive, >70 Accessible. Use GRE/GMAT medians if available; otherwise infer from institution/program reputation and mark inferred.
-- Portfolio / MFA / MDes / MPS / ITP: famous small-cohort portfolio programs = Ultra-selective. Else acceptanceRate <10 Ultra-selective, 10–25 Elite, 25–40 Highly competitive, 40–65 Competitive, >65 Accessible. cohortSize <50 + globally known = Ultra-selective/Elite. Do not rely on GMAT/GRE.
-- MD / health: acceptanceRate <5 Ultra-selective, 5–10 Elite, 10–25 Highly competitive, 25–50 Competitive, >50 Accessible. MCAT >=520 Ultra-selective, 516–519 Elite, 510–515 Highly competitive, 500–509 Competitive, below Accessible. Eligibility/international restrictions go into riskFlags, not selectivity.
-- PhD / research masters: top department + small funded cohort + global reputation = Ultra-selective. Else acceptanceRate <8 Ultra-selective, 8–15 Elite, 15–30 Highly competitive, 30–50 Competitive, >50 Accessible. If no acceptance data: top global funded PhD = Ultra-selective/Elite, strong department = Highly competitive, normal department = Competitive. Supervisor/lab fit goes into fitDrivers, not selectivity.
+- MBA: M7 (HBS, Stanford GSB, Wharton, Booth, Kellogg, Columbia, MIT Sloan) = Ultra competitive. Else acceptanceRate <15 Ultra competitive, 15–25 Highly competitive, 25–40 Highly competitive, 40–60 Highly competitive, >60 Accessible. Else avgGMAT >=725 Ultra competitive, 710–724 Highly competitive, 690–709 Highly competitive, 650–689 Highly competitive, <650 Accessible. Else infer from name/reputation and mark selectivitySource:"inferred_reputation".
+- Undergraduate: Ivy / Stanford / MIT / Caltech / Oxford / Cambridge / top global equivalent = Ultra competitive. Else acceptanceRate <10 Ultra competitive, 10–20 Highly competitive, 20–35 Highly competitive, 35–60 Highly competitive, >60 Accessible. Else SAT >=1530 or ACT >=35 Ultra competitive, SAT 1480–1529 or ACT 33–34 Highly competitive, SAT 1400–1479 or ACT 30–32 Highly competitive, SAT 1250–1399 or ACT 26–29 Highly competitive, below Accessible.
+- Law / LLM / JD: T14 JD or elite global law schools = Ultra competitive or Highly competitive. Else acceptanceRate <15 Ultra competitive, 15–30 Highly competitive, 30–45 Highly competitive, 45–65 Highly competitive, >65 Accessible. For JD LSAT, >=172 Ultra competitive, 168–171 Highly competitive, 163–167 Highly competitive, 155–162 Highly competitive, below Accessible.
+- MSc / MA / taught masters: globally elite institution/program in field = Ultra competitive or Highly competitive. Else acceptanceRate <15 Ultra competitive, 15–30 Highly competitive, 30–50 Highly competitive, 50–70 Highly competitive, >70 Accessible. Use GRE/GMAT medians if available; otherwise infer from institution/program reputation and mark inferred.
+- Portfolio / MFA / MDes / MPS / ITP: famous small-cohort portfolio programs = Ultra competitive. Else acceptanceRate <10 Ultra competitive, 10–25 Highly competitive, 25–40 Highly competitive, 40–65 Highly competitive, >65 Accessible. cohortSize <50 + globally known = Ultra competitive/Highly competitive. Do not rely on GMAT/GRE.
+- MD / health: acceptanceRate <5 Ultra competitive, 5–10 Highly competitive, 10–25 Highly competitive, 25–50 Highly competitive, >50 Accessible. MCAT >=520 Ultra competitive, 516–519 Highly competitive, 510–515 Highly competitive, 500–509 Highly competitive, below Accessible. Eligibility/international restrictions go into riskFlags, not selectivity.
+- PhD / research masters: top department + small funded cohort + global reputation = Ultra competitive. Else acceptanceRate <8 Ultra competitive, 8–15 Highly competitive, 15–30 Highly competitive, 30–50 Highly competitive, >50 Accessible. If no acceptance data: top global funded PhD = Ultra competitive/Highly competitive, strong department = Highly competitive, normal department = Highly competitive. Supervisor/lab fit goes into fitDrivers, not selectivity.
 
 FOUR FIT TIERS — every school in a PROGRAMS or CHOSEN_SCHOOLS context falls into exactly one:
 🔒 Locked — fit is 0, displayed as "—". A hard prerequisite gap away. Never appears in a Branch B recommended list.
-🔴 stretch — displayed as CHALLENGING FIT. Use only when fit < 70.
-🟡 possible — displayed as GOOD FIT. Use only when fit is 70–79.
-🟢 safe — displayed as STRONG FIT. Use only when fit >= 80.
+🔴 stretch — displayed as LOW FIT. Use only when fit < 50.
+🟡 possible — displayed as WORKABLE FIT. Use only when fit is 50-80.
+🟢 safe — displayed as STRONG FIT. Use only when fit > 80.
 
 TIER NORMALIZATION GUARD:
 - If locked/hard prerequisites are missing: tier = "locked".
-- Else if fit >= 80: tier = "safe".
-- Else if fit >= 70: tier = "possible".
+- Else if fit > 80: tier = "safe".
+- Else if fit >= 50: tier = "possible".
 - Else: tier = "stretch".
 - Never output fit 82 with tier:"stretch" unless tier is actually locked due to a real missing prerequisite/gate. Do not use "locked" for generic selectivity, prestige, low acceptance rate, or school fame.
 
@@ -246,9 +244,9 @@ STEP 3 — ADDITIONAL FIT MODIFIERS (apply after the booster; do not include sel
   Career gap flagged and unexplained → -5%.
 
 STEP 4 — TIER ASSIGNMENT:
-  Below 70 → 🔴 stretch / CHALLENGING FIT. 70–79 → 🟡 possible / GOOD FIT. 80+ → 🟢 safe / STRONG FIT.
+  Below 50 → 🔴 stretch / LOW FIT. 50-80 → 🟡 possible / WORKABLE FIT. Above 80 → 🟢 safe / STRONG FIT.
 
-REALISM CAP: after STEP 1–3, if either GPA or test score is more than 0.5/50 below median, fit can never exceed 69 unless a true exception classification removes the hard-metric gate. Only an exception classification (below) can remove locked status; nothing else can. Cap final fit index at 95, floor at 5 (floor is 18 instead for a true-exception candidate). Do not cap safe/strong-fit schools at 82 simply because they are selective.
+REALISM CAP: after STEP 1–3, if either GPA or test score is more than 0.5/50 below median, fit can never exceed 49 unless a true exception classification removes the hard-metric gate. Only an exception classification (below) can remove locked status; nothing else can. Cap final fit index at 95, floor at 5 (floor is 18 instead for a true-exception candidate). Do not cap safe/strong-fit schools at 82 simply because they are selective.
 
 BRANCH A GATE — when a candidate names a specific school themselves:
   Run the LOCKED GATE first for metric-based programs. If the named school comes back locked for this candidate, do not accept it silently and do not just add it to the list at a low fit. In your visible reply, before emitting any PROGRAMS block, state the real gap using their actual GPA/test numbers vs. that school's median, say plainly that it is below baseline, and offer two paths: (a) include it in their portfolio alongside 5 realistic schools, or (b) show them exactly what closing the gap would take. Wait for their answer before emitting the PROGRAMS block.
@@ -261,7 +259,7 @@ EXCEPTION SCREENING CLASSIFICATION (from the Step 2 exception question — never
 
 SCHEMA: PROGRAMS block objects must include selectivityLabel, selectivitySource, selectivityScore, and fitDrivers. They may optionally include "unlockConditions" (array of strings, only on tier:"locked" schools) and "exceptionFlag" (boolean, only when the exception classification applies to that school). Omit unlockConditions/exceptionFlag where they don't apply — never emit an empty array or false as filler.
 
-DISPLAY ORDER: among recommended schools, list locked (🔒) only if real hard gates are missing, then stretch (CHALLENGING FIT), possible (GOOD FIT), and safe (STRONG FIT), ranked by fit/readiness index descending within each group and then selectivityScore descending.`,
+DISPLAY ORDER: among recommended schools, list safe (STRONG FIT) first, then possible (WORKABLE FIT), then stretch (LOW FIT), and locked (PREREQUISITES) last, ranked by fit/readiness index descending within each group and then selectivityScore descending.`,
 
   testScores: `- MBA: GMAT, GRE, or EA only if useful/required by the school
 - MSc/MA taught: GRE only when officially required or strongly recommended; many programs do not require it
@@ -538,7 +536,7 @@ Ask: "Have you taken the SAT or ACT yet (or a practice test), and if so, what sc
 Once answered, calibrate using the SAT/ACT benchmarks below and reflect this in SCORES/STRENGTHS/WEAKNESSES/TASKS, then say exactly: "Let's build your university list." and move to Stage 5.
 
 STAGE 5 — UNIVERSITY LIST
-MANDATORY: this response MUST contain a <PROGRAMS> block of 15–20 universities tailored to their profile/interests, distributed across fit tiers using the same rules as elsewhere: stretch = CHALLENGING FIT (<70), possible = GOOD FIT (70–79), safe = STRONG FIT (80+). These are fit/readiness tiers, not selectivity tiers. Include selectivityLabel/selectivitySource/selectivityScore/fitDrivers, and use SAT/ACT-based avg scores instead of avgGMAT where applicable.
+MANDATORY: this response MUST contain a <PROGRAMS> block of 15–20 universities tailored to their profile/interests, distributed across fit tiers using the same rules as elsewhere: stretch = LOW FIT (<50), possible = WORKABLE FIT (50-80), safe = STRONG FIT (>80). These are fit/readiness tiers, not selectivity tiers. Include selectivityLabel/selectivitySource/selectivityScore/fitDrivers, and use SAT/ACT-based avg scores instead of avgGMAT where applicable.
 Visible reply must say ONLY: "Your university list is live in the Analysis tab — head there to see your full list. Which 3–5 schools excite you most?"
 When they name target schools, emit a CHOSEN_SCHOOLS block with those exact names, then say exactly: "Let's begin your essay workshop." and move to Stage 6.
 
@@ -584,16 +582,16 @@ Personalized action items — always specific to what the candidate has shared, 
 Undergraduate example: <TASKS>["Join a STEM club or competition team to deepen your academic profile","Raise your Chemistry grade — aim for an A this term","Take on a leadership role in Student Council, which you mentioned joining"]</TASKS>
 
 MBA example:
-<PROGRAMS>[{"name":"Harvard Business School","tier":"safe","fit":82,"location":"Cambridge, MA","programGroup":"MBA","admissionStatus":"Strong","selectivityLabel":"Ultra-selective","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":730,"avgGPA":3.7,"acceptanceRate":12,"evidenceGaps":["School-specific leadership story","Recommendation strategy"],"riskFlags":["Ultra-selective program"],"fitDrivers":["GMAT above median","GPA above median","elite leadership depth"],"notes":"Candidate-program fit is strong; the red selectivity badge reflects HBS difficulty, not row color."},{"name":"Wharton","tier":"safe","fit":84,"location":"Philadelphia, PA","programGroup":"MBA","admissionStatus":"Strong","selectivityLabel":"Ultra-selective","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":728,"avgGPA":3.6,"acceptanceRate":20,"evidenceGaps":["Clearer post-MBA goal"],"riskFlags":["Ultra-selective program"],"fitDrivers":["Finance goal alignment","test score above median","leadership evidence"],"notes":"Finance fit is strong; goal specificity is the remaining application risk."}]</PROGRAMS>
+<PROGRAMS>[{"name":"Harvard Business School","tier":"safe","fit":82,"location":"Cambridge, MA","programGroup":"MBA","admissionStatus":"Strong","selectivityLabel":"Ultra competitive","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":730,"avgGPA":3.7,"acceptanceRate":12,"evidenceGaps":["School-specific leadership story","Recommendation strategy"],"riskFlags":["Ultra competitive program"],"fitDrivers":["GMAT above median","GPA above median","elite leadership depth"],"notes":"Candidate-program fit is strong; the red selectivity badge reflects HBS difficulty, not row color."},{"name":"Wharton","tier":"safe","fit":84,"location":"Philadelphia, PA","programGroup":"MBA","admissionStatus":"Strong","selectivityLabel":"Ultra competitive","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":728,"avgGPA":3.6,"acceptanceRate":20,"evidenceGaps":["Clearer post-MBA goal"],"riskFlags":["Ultra competitive program"],"fitDrivers":["Finance goal alignment","test score above median","leadership evidence"],"notes":"Finance fit is strong; goal specificity is the remaining application risk."}]</PROGRAMS>
 
 Portfolio / creative technology master's example:
-<PROGRAMS>[{"name":"NYU Tisch — MPS Interactive Telecommunications Program (ITP)","tier":"possible","fit":74,"location":"New York, NY","programGroup":"Portfolio master's / creative technology","admissionStatus":"Competitive","selectivityLabel":"Ultra-selective","selectivitySource":"portfolio_reputation_rule","selectivityScore":92,"evidenceGaps":["Portfolio/project evidence needs review","Program-specific SOP","Creative-technical fit proof","Recommendation fit"],"riskFlags":["Portfolio is central","Exact official requirements must be verified"],"fitDrivers":["interactive-media project alignment","creative-technical fit","studio culture match"],"notes":"Evaluate around interactive-media projects, creative voice, technical craft, and fit with ITP's studio culture; do not use MBA/GMAT logic."}]</PROGRAMS>
+<PROGRAMS>[{"name":"NYU Tisch — MPS Interactive Telecommunications Program (ITP)","tier":"possible","fit":74,"location":"New York, NY","programGroup":"Portfolio master's / creative technology","admissionStatus":"Competitive","selectivityLabel":"Ultra competitive","selectivitySource":"portfolio_reputation_rule","selectivityScore":92,"evidenceGaps":["Portfolio/project evidence needs review","Program-specific SOP","Creative-technical fit proof","Recommendation fit"],"riskFlags":["Portfolio is central","Exact official requirements must be verified"],"fitDrivers":["interactive-media project alignment","creative-technical fit","studio culture match"],"notes":"Evaluate around interactive-media projects, creative voice, technical craft, and fit with ITP's studio culture; do not use MBA/GMAT logic."}]</PROGRAMS>
 
 Locked-tier example (only appears when the candidate names the school themselves — see BRANCH A GATE — and is excluded from Branch B lists entirely):
-<PROGRAMS>[{"name":"Stanford GSB","tier":"locked","fit":0,"location":"Stanford, CA","programGroup":"MBA","admissionStatus":"Not Eligible","selectivityLabel":"Ultra-selective","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":738,"avgGPA":3.8,"evidenceGaps":["GMAT below required baseline"],"riskFlags":["Hard metric gate missing"],"fitDrivers":[],"notes":"GPA and GMAT are both well below median","unlockConditions":["Retake the GMAT and target 700+","Raise your GPA above 3.3 over your next academic term"]}]</PROGRAMS>
+<PROGRAMS>[{"name":"Stanford GSB","tier":"locked","fit":0,"location":"Stanford, CA","programGroup":"MBA","admissionStatus":"Not Eligible","selectivityLabel":"Ultra competitive","selectivitySource":"m7_rule","selectivityScore":98,"avgGMAT":738,"avgGPA":3.8,"evidenceGaps":["GMAT below required baseline"],"riskFlags":["Hard metric gate missing"],"fitDrivers":[],"notes":"GPA and GMAT are both well below median","unlockConditions":["Retake the GMAT and target 700+","Raise your GPA above 3.3 over your next academic term"]}]</PROGRAMS>
 
 exceptionFlag example (candidate classified as a true exception in the exception screening question):
-<PROGRAMS>[{"name":"INSEAD","tier":"stretch","fit":68,"location":"Fontainebleau, France","programGroup":"MBA","admissionStatus":"Competitive","selectivityLabel":"Elite","selectivitySource":"acceptance_rate","selectivityScore":82,"avgGMAT":710,"avgGPA":3.5,"evidenceGaps":["School-specific international leadership story"],"riskFlags":["Metric gap remains a concern"],"fitDrivers":["national-level award","international career fit"],"notes":"Metric gap would normally lock this school, but a national-level award offsets it","exceptionFlag":true}]</PROGRAMS>
+<PROGRAMS>[{"name":"INSEAD","tier":"possible","fit":68,"location":"Fontainebleau, France","programGroup":"MBA","admissionStatus":"Competitive","selectivityLabel":"Highly competitive","selectivitySource":"acceptance_rate","selectivityScore":82,"avgGMAT":710,"avgGPA":3.5,"evidenceGaps":["School-specific international leadership story"],"riskFlags":["Metric gap remains a concern"],"fitDrivers":["national-level award","international career fit"],"notes":"Metric gap would normally lock this school, but a national-level award offsets it","exceptionFlag":true}]</PROGRAMS>
 
 Chosen schools block (emit once, right when the candidate names their target schools from the PROGRAMS list — use exact names from that list):
 <CHOSEN_SCHOOLS>["Wharton","Booth","Darden"]</CHOSEN_SCHOOLS>

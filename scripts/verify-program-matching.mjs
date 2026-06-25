@@ -38,7 +38,7 @@ const adamMbaPrograms = normalizeProgramList([
   {
     name: 'Darden',
     tier: 'safe',
-    fit: 69,
+    fit: 49,
     admissionStatus: 'Competitive',
     programGroup: 'MBA',
     avgGMAT: 720,
@@ -47,7 +47,7 @@ const adamMbaPrograms = normalizeProgramList([
   {
     name: 'Michigan Ross',
     tier: 'safe',
-    fit: 74,
+    fit: 80,
     admissionStatus: 'Competitive',
     programGroup: 'MBA',
     avgGMAT: 720,
@@ -67,17 +67,24 @@ const adamMbaPrograms = normalizeProgramList([
 const byName = new Map(adamMbaPrograms.map((program) => [program.name, program]));
 
 for (const name of ['Harvard Business School', 'Stanford GSB', 'Wharton']) {
-  assert.equal(byName.get(name).tier, 'safe', `${name} should be STRONG FIT when fit >= 80`);
-  assert.equal(byName.get(name).selectivityLabel, 'Ultra-selective', `${name} should carry Ultra-selective badge`);
+  assert.equal(byName.get(name).tier, 'safe', `${name} should be STRONG FIT when fit > 80`);
+  assert.equal(byName.get(name).selectivityLabel, 'Ultra competitive', `${name} should carry Ultra competitive tag`);
   assert.equal(byName.get(name).selectivitySource, 'm7_rule', `${name} should use M7 selectivity rule`);
 }
 
 assert.equal(byName.get('Harvard MBA').tier, 'safe', 'Harvard MBA synonym should normalize to STRONG FIT');
-assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra-selective', 'formula/M7 rule should override wrong provided selectivity');
+assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra competitive', 'formula/M7 rule should override wrong provided selectivity');
 assert.equal(byName.get('Harvard MBA').selectivitySource, 'm7_rule', 'formula should run before LLM fallback');
 
-assert.equal(byName.get('Darden').tier, 'stretch', 'Darden fit 69 should be CHALLENGING FIT, not green');
-assert.equal(byName.get('Michigan Ross').tier, 'possible', 'Ross fit 74 should be GOOD FIT, not green');
+assert.equal(byName.get('Darden').tier, 'stretch', 'Darden fit 49 should be LOW FIT');
+assert.equal(byName.get('Michigan Ross').tier, 'possible', 'Ross fit 80 should be WORKABLE FIT, not green');
+
+const orderedTiers = adamMbaPrograms.map((program) => program.tier);
+assert.deepEqual(
+  [...new Set(orderedTiers)],
+  ['safe', 'possible', 'stretch'],
+  'programs should sort green first, then yellow, then red; locked would come last',
+);
 
 const strongAdamFit = computeFit({
   gpa: 4.0,
@@ -98,7 +105,7 @@ const strongAdamFit = computeFit({
 });
 
 assert.equal(strongAdamFit.tier, 'safe', 'high-fit Adam MBA profile should compute as STRONG FIT');
-assert.ok(strongAdamFit.fit >= 80, 'high-fit Adam MBA profile should remain >=80 despite HBS selectivity');
+assert.ok(strongAdamFit.fit > 80, 'high-fit Adam MBA profile should remain >80 despite HBS selectivity');
 
 const partialExceptionGap = computeFit({
   gpa: 3.0,
@@ -117,7 +124,7 @@ const partialExceptionGap = computeFit({
   medianTest: 730,
 });
 
-assert.equal(partialExceptionGap.tier, 'stretch', 'partial exceptions with severe gates should stay CHALLENGING FIT');
-assert.ok(partialExceptionGap.fit < 70, 'partial exceptions with severe gates should not normalize to GOOD/STRONG FIT');
+assert.equal(partialExceptionGap.tier, 'stretch', 'partial exceptions with severe gates should stay LOW FIT');
+assert.ok(partialExceptionGap.fit < 50, 'partial exceptions with severe gates should not normalize to WORKABLE/STRONG FIT');
 
 console.log('Program matching regression checks passed.');
