@@ -142,6 +142,15 @@ function limitWords(value, maxWords = 80) {
   return `${words.slice(0, maxWords).join(' ').replace(/[.;,:-]+$/, '')}.`;
 }
 
+function asDisplayRate(value) {
+  if (value == null) return null;
+  const match = String(value).match(/\d+(?:\.\d+)?/);
+  if (!match) return null;
+  const rate = Number(match[0]);
+  if (!Number.isFinite(rate) || rate <= 0 || rate > 100) return null;
+  return Number.isInteger(rate) ? String(rate) : rate.toFixed(1).replace(/\.0$/, '');
+}
+
 const PROGRAM_STRENGTHS = [
   { match: /wharton|upenn|penn /, angle: 'A finance powerhouse with unusually deep buy-side recruiting, investor alumni density, and credibility across private capital.', fact: 'Its MBA network is one of the strongest finance brands in the market.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
   { match: /columbia business school|columbia\b|cbs\b/, angle: 'A buy-side-oriented platform with strong access to deal flow, investment firms, and a dense finance alumni network.', fact: 'Its value is strongest when the career story is explicitly tied to investing or capital markets.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
@@ -274,7 +283,7 @@ function stripRowVisibleFacts(value, school, profile) {
   }
 
   return text
-    .replace(/\b(GMAT|GRE|LSAT|MCAT|SAT|ACT|GPA|fit score|fit index|acceptance rate|acceptance benchmark|selectivity)\b[^.?!,;]*/gi, '')
+    .replace(/\b(GMAT|GRE|LSAT|MCAT|SAT|ACT|GPA|fit score|fit index|selectivity)\b[^.?!,;]*/gi, '')
     .replace(/\b(location|located in)\b[^.?!,;]*/gi, '')
     .replace(/\s+[,;:.]\s+/g, '. ')
     .replace(/\s{2,}/g, ' ')
@@ -373,8 +382,14 @@ function buildAccordionSummary(school, profile) {
   const fitEvidence = fitEvidenceSummary(school);
   const fitSentence = fitEvidence ? `The profile reads as a credible match because it shows ${fitEvidence}.` : '';
   const goal = goalLabel(profile, school);
-  const goalSentence = goal !== 'stated goal' ? `That makes it relevant for a ${goal}.` : '';
-  const summary = [programInsight, goalSentence, fitSentence].filter(Boolean).join(' ')
+  const rate = asDisplayRate(school?.acceptanceRate);
+  const acceptanceSentence = rate && !new RegExp(`\\b${escapeRegExp(rate)}\\s*%`).test(programInsight)
+    ? `Admits roughly ${rate}% of applicants, so the positioning needs to be sharp rather than generic.`
+    : '';
+  const goalSentence = goal !== 'stated goal'
+    ? `For a ${goal}, those strengths matter because they point toward the networks and outcomes the application must credibly reach.`
+    : '';
+  const summary = [programInsight, acceptanceSentence, goalSentence, fitSentence].filter(Boolean).join(' ')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
