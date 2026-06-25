@@ -153,6 +153,11 @@ Soft scores (professional, leadership, volunteering, uniqueness, diversity, goal
 Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, and fitDrivers fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra competitive", "Highly competitive", "Accessible", "Unknown". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs; for creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit avgGMAT and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
 If scores.recommenders is below 60 or recommender facts are missing, add "Recommendation strategy missing" or "Direct evaluator recommender not confirmed" to evidenceGaps for selective programs. If the named recommender is famous/high-status but distant, unverified, family/friend, or unable to cite concrete work, add "Letters may be generic" or "Recommender relationship appears weak" to riskFlags. Strong direct evaluators can improve confidence, especially for MBA, research/PhD, creative portfolio programs, and scholarships, but they never override hard academic/test/prerequisite gates.
 
+FIT CONSISTENCY RULE:
+- If the candidate is Strong Fit for a more selective program, less selective programs in the same category should normally also be Strong Fit.
+- Only downgrade a lower-selectivity same-category program when there is a real program-specific mismatch: poor career-goal alignment, weak recruiting pipeline for the candidate's target field, regional-only placement when the candidate wants global outcomes, missing prerequisite, format mismatch, PhD supervisor/research mismatch, creative portfolio/audition mismatch, or materially different evaluation criteria.
+- If a lower-ranked/easier program is less useful for the candidate's goal, do not lower candidate fit. Keep Strong Fit and explain the strategic caveat in notes, for example: "Strong Fit, but weaker strategic fit for top PE/deep-tech recruiting."
+
 MBA reference schools by tier:
 - for overall score >= 90: recommend mostly M7/top 10/top 15 or unusually relevant programs. Include only 0–2 backups unless the user asks for safeties.
 - for overall score 75–89: recommend a balanced list.
@@ -185,6 +190,7 @@ SELECTIVITY IS SEPARATE FROM FIT:
 - selectivityLabel = school/program difficulty and badge color.
 - A program may be tier:"safe" (displayed as STRONG FIT) and selectivityLabel:"Ultra competitive" at the same time.
 - Never downgrade fit or tier purely because the school is famous. Reflect fame/selectivity in selectivityLabel, selectivitySource, selectivityScore, and riskFlags if useful.
+- Visible fit labels are Strong Fit, Competitive Fit, and Plausible Fit. They describe candidate fit, not admission probability.
 
 UNIVERSAL SELECTIVITY LABELS:
 - Ultra competitive

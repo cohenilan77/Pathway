@@ -36,22 +36,34 @@ const adamMbaPrograms = normalizeProgramList([
     acceptanceRate: 20,
   },
   {
-    name: 'Darden',
+    name: 'Indiana Kelley',
     tier: 'safe',
-    fit: 49,
-    admissionStatus: 'Competitive',
+    fit: 58,
+    admissionStatus: 'Plausible',
     programGroup: 'MBA',
-    avgGMAT: 720,
-    acceptanceRate: 35,
+    avgGMAT: 685,
+    acceptanceRate: 38,
+    notes: 'Lower strategic value for PE/deep-tech outcomes.',
   },
   {
-    name: 'Michigan Ross',
+    name: 'Emory Goizueta',
     tier: 'safe',
-    fit: 80,
+    fit: 60,
+    admissionStatus: 'Plausible',
+    programGroup: 'MBA',
+    avgGMAT: 700,
+    acceptanceRate: 37,
+    notes: 'Less aligned with top-tier private equity recruiting.',
+  },
+  {
+    name: 'Regional Part-Time MBA',
+    tier: 'safe',
+    fit: 65,
     admissionStatus: 'Competitive',
     programGroup: 'MBA',
-    avgGMAT: 720,
-    acceptanceRate: 40,
+    avgGMAT: 650,
+    acceptanceRate: 70,
+    riskFlags: ['Format mismatch for full-time global outcome'],
   },
   {
     name: 'Harvard MBA',
@@ -76,14 +88,18 @@ assert.equal(byName.get('Harvard MBA').tier, 'safe', 'Harvard MBA synonym should
 assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra competitive', 'formula/M7 rule should override wrong provided selectivity');
 assert.equal(byName.get('Harvard MBA').selectivitySource, 'm7_rule', 'formula should run before LLM fallback');
 
-assert.equal(byName.get('Darden').tier, 'stretch', 'Darden fit 49 should be LOW FIT');
-assert.equal(byName.get('Michigan Ross').tier, 'possible', 'Ross fit 80 should be WORKABLE FIT, not green');
+assert.equal(byName.get('Indiana Kelley').tier, 'safe', 'Indiana should become STRONG FIT when HBS is strong and no real mismatch exists');
+assert.equal(byName.get('Indiana Kelley').fit, 81, 'Indiana should be raised to a strong-fit floor');
+assert.equal(byName.get('Indiana Kelley').admissionStatus, 'Strong', 'Indiana should not remain Plausible merely because it is less selective');
+assert.match(byName.get('Indiana Kelley').notes, /lower strategic value|weaker strategic fit/i, 'Indiana should explain strategic-fit caveat in notes');
+assert.equal(byName.get('Emory Goizueta').tier, 'safe', 'Emory should become STRONG FIT when HBS is strong and no real mismatch exists');
+assert.equal(byName.get('Regional Part-Time MBA').tier, 'possible', 'real format mismatch should preserve weaker fit');
 
 const orderedTiers = adamMbaPrograms.map((program) => program.tier);
 assert.deepEqual(
   [...new Set(orderedTiers)],
-  ['safe', 'possible', 'stretch'],
-  'programs should sort green first, then yellow, then red; locked would come last',
+  ['safe', 'possible'],
+  'programs should sort green first, then yellow; red and locked would follow if present',
 );
 
 const strongAdamFit = computeFit({
