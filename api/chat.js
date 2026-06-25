@@ -14,7 +14,8 @@ import {
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
-const MAX_OUTPUT_TOKENS = 8192;
+const MAX_OUTPUT_TOKENS = 16000;
+const FALLBACK_OUTPUT_TOKENS = 8192;
 
 // Lets the model look up real data for schools/programs outside the KPI database (see
 // DATA SOURCING ORDER in the system prompt). Search tool-use/tool-result blocks count
@@ -22,15 +23,19 @@ const MAX_OUTPUT_TOKENS = 8192;
 // a final retry) to guarantee the full budget goes to the actual reply instead of search
 // transcripts. Also falls back to a plain completion if the tool isn't enabled on this
 // API key at all, instead of failing the whole chat turn.
-async function createChatCompletion({ system, messages, useWebSearch = true }) {
-  const params = { model: CHAT_MODEL, max_tokens: MAX_OUTPUT_TOKENS, system, messages };
+async function createChatCompletion({ system, messages, useWebSearch = true, maxTokens = MAX_OUTPUT_TOKENS }) {
+  const params = { model: CHAT_MODEL, max_tokens: maxTokens, system, messages };
   if (useWebSearch) params.tools = [WEB_SEARCH_TOOL];
   try {
     return await client.messages.create(params);
   } catch (err) {
+    if (/max_tokens|maximum output/i.test(err?.message || '') && maxTokens !== FALLBACK_OUTPUT_TOKENS) {
+      console.error(`max_tokens=${maxTokens} rejected, retrying with ${FALLBACK_OUTPUT_TOKENS}:`, err.message);
+      return createChatCompletion({ system, messages, useWebSearch, maxTokens: FALLBACK_OUTPUT_TOKENS });
+    }
     if (useWebSearch && /web_search/i.test(err?.message || '')) {
       console.error('web_search tool unavailable, retrying without it:', err.message);
-      return client.messages.create({ model: CHAT_MODEL, max_tokens: MAX_OUTPUT_TOKENS, system, messages });
+      return createChatCompletion({ system, messages, useWebSearch: false, maxTokens });
     }
     throw err;
   }
@@ -150,7 +155,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 - Either metric more than 0.5 (GPA) or 50 points (test) below median → excluded from the recommended list entirely — this is the locked gate (see fitFormula below).
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
-Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, fitDrivers, and programInfo fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra competitive", "Highly competitive", "Accessible", "Unknown". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs; for creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit avgGMAT and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
+Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, fitDrivers, and programInfo fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra competitive", "Highly competitive", "Accessible", "Unknown". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs. Include avgGRE/avgLSAT/avgMCAT/avgSAT/avgACT only when the program type actually uses or reports that test. For LLM programs, omit LSAT/GRE unless the program requires or reports it; do not invent a test benchmark. For creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit irrelevant test fields and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
 programInfo definition: one short senior-admissions-consultant paragraph about the program's distinctive strategic value. Use the LIVE KPI DATABASE, school/program facts, notes, fitDrivers, evidenceGaps, riskFlags, candidate profile, and candidate goals. Focus on what the program is known for: PE/VC recruiting, deep-tech/AI/innovation ecosystem, alumni network, employer reputation, faculty/lab/supervisor fit, portfolio/studio strength, law/medicine/research specialization, cohort model, brand power in the target industry, funding/research alignment, entrepreneurship platform, or employer pipeline. Connect the angle to the candidate's stated career goal without using the candidate's name. Do not repeat anything already visible in the row: school/program name, location, selectivity label, acceptance rate, GMAT, GPA, or fit. Never write awkward phrases like "The Ultra competitive..." or "The Highly competitive...". Never make programInfo location-only, degree-type-only, selectivity-only, or generic; forbidden examples include "NYU Stern School of Business is strategically relevant for Adam's private equity transition", "MBA relevance: New York, NY.", "The Highly competitive MBA program...", "Located in Boston", "Strong university", and "This is a competitive program".
 If scores.recommenders is below 60 or recommender facts are missing, add "Recommendation strategy missing" or "Direct evaluator recommender not confirmed" to evidenceGaps for selective programs. If the named recommender is famous/high-status but distant, unverified, family/friend, or unable to cite concrete work, add "Letters may be generic" or "Recommender relationship appears weak" to riskFlags. Strong direct evaluators can improve confidence, especially for MBA, research/PhD, creative portfolio programs, and scholarships, but they never override hard academic/test/prerequisite gates.
 
@@ -202,7 +207,7 @@ UNIVERSAL SELECTIVITY LABELS:
 SELECTIVITY FORMULA — do formula first; infer only when data is missing:
 - MBA: M7 (HBS, Stanford GSB, Wharton, Booth, Kellogg, Columbia, MIT Sloan) = Ultra competitive. Else acceptanceRate <15 Ultra competitive, 15–25 Highly competitive, 25–40 Highly competitive, 40–60 Highly competitive, >60 Accessible. Else avgGMAT >=725 Ultra competitive, 710–724 Highly competitive, 690–709 Highly competitive, 650–689 Highly competitive, <650 Accessible. Else infer from name/reputation and mark selectivitySource:"inferred_reputation".
 - Undergraduate: Ivy / Stanford / MIT / Caltech / Oxford / Cambridge / top global equivalent = Ultra competitive. Else acceptanceRate <10 Ultra competitive, 10–20 Highly competitive, 20–35 Highly competitive, 35–60 Highly competitive, >60 Accessible. Else SAT >=1530 or ACT >=35 Ultra competitive, SAT 1480–1529 or ACT 33–34 Highly competitive, SAT 1400–1479 or ACT 30–32 Highly competitive, SAT 1250–1399 or ACT 26–29 Highly competitive, below Accessible.
-- Law / LLM / JD: T14 JD or elite global law schools = Ultra competitive or Highly competitive. Else acceptanceRate <15 Ultra competitive, 15–30 Highly competitive, 30–45 Highly competitive, 45–65 Highly competitive, >65 Accessible. For JD LSAT, >=172 Ultra competitive, 168–171 Highly competitive, 163–167 Highly competitive, 155–162 Highly competitive, below Accessible.
+- Law / LLM / JD: T14 JD or elite global law schools = Ultra competitive or Highly competitive. Else acceptanceRate <15 Ultra competitive, 15–30 Highly competitive, 30–45 Highly competitive, 45–65 Highly competitive, >65 Accessible. For JD, use LSAT benchmarks: >=172 Ultra competitive, 168–171 Highly competitive, 163–167 Highly competitive, 155–162 Highly competitive, below Accessible. For LLM, use GRE only if the program requires or reports it; otherwise omit test fields and evaluate legal academic record, specialization fit, writing, language proof, and professional legal/policy evidence.
 - MSc / MA / taught masters: globally elite institution/program in field = Ultra competitive or Highly competitive. Else acceptanceRate <15 Ultra competitive, 15–30 Highly competitive, 30–50 Highly competitive, 50–70 Highly competitive, >70 Accessible. Use GRE/GMAT medians if available; otherwise infer from institution/program reputation and mark inferred.
 - Portfolio / MFA / MDes / MPS / ITP: famous small-cohort portfolio programs = Ultra competitive. Else acceptanceRate <10 Ultra competitive, 10–25 Highly competitive, 25–40 Highly competitive, 40–65 Highly competitive, >65 Accessible. cohortSize <50 + globally known = Ultra competitive/Highly competitive. Do not rely on GMAT/GRE.
 - MD / health: acceptanceRate <5 Ultra competitive, 5–10 Highly competitive, 10–25 Highly competitive, 25–50 Highly competitive, >50 Accessible. MCAT >=520 Ultra competitive, 516–519 Highly competitive, 510–515 Highly competitive, 500–509 Highly competitive, below Accessible. Eligibility/international restrictions go into riskFlags, not selectivity.
@@ -223,7 +228,7 @@ TIER NORMALIZATION GUARD:
 
 MISSING OR NOT-APPLICABLE TEST-SCORE DATA — always substitute a number, never skip the calculation and never let it block you from emitting the <PROGRAMS> block:
 - If the program requires a standardized test (GMAT/GRE/LSAT/MCAT/SAT/ACT) but you cannot determine its real median — even after following the DATA SOURCING ORDER above (database, then web_search, then parallel-program analogy) — use a test gap score of 0 for STEP 1 and treat it as a severe gap for STEP 0's locked gate. Missing required data is a risk, not a free pass.
-- If the program genuinely does not require any standardized test at all — e.g. arts, design, film, or interactive-media MFA/MPS programs (NYU Tisch and similar), or any other program that admits primarily on a portfolio, audition, or work sample — use a test gap score of 100 for STEP 1 (no test required = no gap) and skip the test-score check in STEP 0's locked gate, since there is nothing to gap against. Base that school's tier on the GPA gap plus soft-score booster and modifiers, and omit the "avgGMAT" field from its PROGRAMS object rather than inventing a number for it.
+- If the program genuinely does not require any standardized test at all — e.g. LLM programs that evaluate prior legal academics/professional experience, arts/design/film/interactive-media MFA/MPS programs, or any other program that admits primarily on academic/professional/portfolio/research evidence — use a test gap score of 100 for STEP 1 (no test required = no gap) and skip the test-score check in STEP 0's locked gate, since there is nothing to gap against. Base that school's tier on GPA/prior academic record plus soft-score booster and program-specific evidence, and omit irrelevant test fields rather than inventing a number.
 A missing or not-applicable test score must never stop you from emitting the <PROGRAMS> block or from naming the school in a <CHOSEN_SCHOOLS> block.
 
 MBA GAP-BASED FIT FORMULA — apply ONLY for MBA-style programs where GPA/test benchmarks are relevant:
@@ -272,7 +277,8 @@ DISPLAY ORDER: among recommended schools, list safe (STRONG FIT) first, then pos
 - MSc/MA taught: GRE only when officially required or strongly recommended; many programs do not require it
 - Portfolio master's / MFA / MDes / MPS Interactive Media / creative technology: portfolio/project evidence is central; GRE/GMAT is usually not central unless the official program says so
 - Research master's / PhD: GRE only where required; research fit/writing sample/supervisor fit usually dominate
-- JD / LLM: LSAT
+- JD: LSAT
+- LLM: GRE only if officially required or useful; many LLM programs do not require LSAT/GRE, so evaluate prior legal academics, legal/policy experience, writing, language proof, specialization fit, and recommendations instead
 - MD: MCAT
 - Undergraduate: SAT or ACT
 
@@ -640,6 +646,14 @@ function buildCandidateFromProfile(profile, scores) {
   };
 }
 
+function programMedianTest(program = {}) {
+  const fields = ['avgGMAT', 'avgGRE', 'avgLSAT', 'avgMCAT', 'avgSAT', 'avgACT'];
+  for (const field of fields) {
+    if (program[field] != null && program[field] !== '') return program[field];
+  }
+  return undefined;
+}
+
 // Deterministically re-scores any school the client already has on record (from a prior
 // PROGRAMS/CHOSEN_SCHOOLS block) using lib/scoring.js, so Claude is handed ground-truth
 // fit/tier/unlockConditions/exceptionFlag values instead of recomputing them itself.
@@ -651,7 +665,7 @@ function buildVerifiedScoringSection(profile, scores, programs) {
   const lines = [];
   for (const program of programs) {
     if (!program?.name) continue;
-    const result = computeFit(candidate, { medianGPA: program.avgGPA, medianTest: program.avgGMAT });
+    const result = computeFit(candidate, { medianGPA: program.avgGPA, medianTest: programMedianTest(program) });
     if (!result) continue;
     const fields = [`tier=${result.tier}`, `fit=${result.tier === 'locked' ? '—' : `${result.fit}%`}`];
     if (result.unlockConditions?.length) fields.push(`unlockConditions=${JSON.stringify(result.unlockConditions)}`);
@@ -811,16 +825,19 @@ export default async function handler(req, res) {
     // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
     // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
     // instead of blindly resending the same input, since an identical retry tends to fail the same way.
-    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, emit the complete <PROGRAMS> block for the school(s)/program(s) already named in the conversation before any such confirmation line. If a named school is not in the LIVE KPI DATABASE, follow the DATA SOURCING ORDER (database, then web_search, then parallel-program analogy) instead of stalling. If it requires no standardized test at all, use a test gap score of 100 per the MISSING OR NOT-APPLICABLE TEST-SCORE DATA rule and omit avgGMAT — do not let that block you from emitting the block.';
+    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, put the complete <PROGRAMS> block FIRST, before any visible sentence. Keep each program object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
+    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY this structure, with strict JSON and no prose before it: <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate 8-12 programs if needed to fit the token budget. Every object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
     let raw;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 4; attempt++) {
       // Web search tool-use/tool-result content counts against max_tokens like any other
       // output, so a school requiring a search can get truncated mid-<PROGRAMS> block before
       // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
       // token budget goes to the reply itself — the model still has the parallel-program
       // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
       const response = await createChatCompletion({
-        system: attempt === 0 ? systemPrompt : `${systemPrompt}${CORRECTIVE_NOTE}`,
+        system: attempt === 0
+          ? systemPrompt
+          : `${systemPrompt}${CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
