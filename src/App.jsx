@@ -7,6 +7,7 @@ import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
+import { normalizeProgramList } from '../lib/program-normalizer.js';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
@@ -85,7 +86,7 @@ function parseBlocks(raw) {
     scores: extract('SCORES'),
     strengths: extract('STRENGTHS'),
     weaknesses: extract('WEAKNESSES'),
-    programs: extract('PROGRAMS'),
+    programs: normalizeProgramList(extract('PROGRAMS')),
     chosenSchools: extract('CHOSEN_SCHOOLS'),
     insights: extract('INSIGHTS'),
     essay: extract('ESSAY'),
