@@ -136,6 +136,12 @@ function firstSentences(value, fallback, maxSentences = 2) {
   return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 180) || fallback;
 }
 
+function limitWords(value, maxWords = 60) {
+  const words = String(value || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  if (words.length <= maxWords) return words.join(' ');
+  return `${words.slice(0, maxWords).join(' ').replace(/[.;,:-]+$/, '')}.`;
+}
+
 const PROGRAM_STRENGTHS = [
   { match: /wharton|upenn|penn /, angle: 'Known for exceptional finance depth, buy-side recruiting, and an investor alumni base that carries real weight in private capital.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
   { match: /columbia business school|columbia\b|cbs\b/, angle: 'Distinctive for its access to Wall Street deal flow, buy-side recruiting, and a dense finance alumni network.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
@@ -246,6 +252,37 @@ function sanitizeProgramInfo(value, school, profile) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
 }
 
+function stripRowVisibleFacts(value, school, profile) {
+  let text = sanitizeProgramInfo(value, school, profile);
+  const removals = [
+    school?.name,
+    school?.location,
+    school?.selectivityLabel,
+    school?.avgGMAT,
+    school?.avgGRE,
+    school?.avgLSAT,
+    school?.avgMCAT,
+    school?.avgSAT,
+    school?.avgACT,
+    school?.avgGPA,
+    school?.fit != null ? `${school.fit}%` : '',
+    profile?.name,
+  ].filter(Boolean);
+
+  for (const item of removals) {
+    text = text.replace(new RegExp(escapeRegExp(item), 'gi'), '');
+  }
+
+  return text
+    .replace(/\b(GMAT|GRE|LSAT|MCAT|SAT|ACT|GPA|fit score|fit index|acceptance rate|acceptance benchmark|selectivity)\b[^.?!,;]*/gi, '')
+    .replace(/\b(location|located in)\b[^.?!,;]*/gi, '')
+    .replace(/\s+[,;:.]\s+/g, '. ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\s+([,.!?;:])/g, '$1')
+    .trim();
+}
+
 function inferStrategicAngle(school, profile) {
   const schoolText = String(school?.name || '').toLowerCase();
   const source = [
@@ -300,23 +337,36 @@ function buildProgramInfo(school, profile) {
   return angle;
 }
 
-function buildWhyThisFits(school) {
-  const drivers = Array.isArray(school?.fitDrivers) ? school.fitDrivers.filter(Boolean).slice(0, 3) : [];
-  if (drivers.length) {
-    return truncateText(`Candidate fit is supported by ${drivers.join(', ')}.`, 180);
-  }
-  return firstSentences(school?.notes, 'Fit rationale not yet specified.');
+function fitEvidenceSummary(school) {
+  const source = [
+    ...(Array.isArray(school?.fitDrivers) ? school.fitDrivers : []),
+    school?.notes,
+  ].filter(Boolean).join(' ').toLowerCase();
+  const signals = [];
+
+  if (/leadership|manager|led|founded|impact|elite leadership/.test(source)) signals.push('leadership depth');
+  if (/professional|career|experience|operator|strategy|consult|public-sector|private-sector/.test(source)) signals.push('professional trajectory');
+  if (/goal|alignment|finance|private equity|\bpe\b|venture|vc|deep[-\s]?tech|technology/.test(source)) signals.push('career alignment');
+  if (/research|publication|thesis|faculty|lab|methods/.test(source)) signals.push('research readiness');
+  if (/portfolio|studio|creative|design|project|technical craft/.test(source)) signals.push('portfolio and project fit');
+  if (/recommender|recommendation|direct evaluator|supervisor/.test(source)) signals.push('recommendation potential');
+  if (/award|unique|distinctive|international|diversity|national-level/.test(source)) signals.push('distinctive background');
+  if (/academic|quantitative|rigor|analytical/.test(source)) signals.push('academic readiness');
+
+  return [...new Set(signals)].slice(0, 3).join(', ');
 }
 
-function getMissingItems(school) {
-  const note = school?.notes || '';
-  const noteSignalsGap = /\bbut\b|risk|gap|missing|weaker|less aligned|must|needs|sharpen/i.test(note);
-  const items = [
-    ...(Array.isArray(school?.evidenceGaps) ? school.evidenceGaps : []),
-    ...(Array.isArray(school?.riskFlags) ? school.riskFlags : []),
-    noteSignalsGap ? firstSentences(note, '', 1) : '',
-  ];
-  return [...new Set(items.filter(Boolean))].slice(0, 3);
+function buildAccordionSummary(school, profile) {
+  const programInsight = stripRowVisibleFacts(buildProgramInfo(school, profile), school, profile);
+  const fitEvidence = fitEvidenceSummary(school);
+  const fitSentence = fitEvidence
+    ? `The profile also fits through ${fitEvidence}, supporting the stated aspiration.`
+    : 'The overall profile appears directionally aligned with the stated aspiration.';
+  const summary = `${programInsight} ${fitSentence}`
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.!?;:])/g, '$1')
+    .trim();
+  return limitWords(summary, 60);
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
@@ -512,7 +562,6 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                         const rowKey = `${school.name || idx}-${tier.key}`;
                         const isExpanded = !!expanded[rowKey];
                         const testMetric = getTestMetric(school);
-                        const missingItems = getMissingItems(school);
                         return (
                         <div key={rowKey} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none' }}>
                           <div
@@ -607,28 +656,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                           </div>
 
                           {isExpanded && (
-                            <div style={{ padding: '0 22px 18px 58px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>PROGRAM INFO</div>
-                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildProgramInfo(school, profile)}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>WHY THIS FITS</div>
-                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildWhyThisFits(school)}</div>
-                              </div>
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>WHAT MAY BE MISSING</div>
-                                {missingItems.length > 0 ? (
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {missingItems.map(item => (
-                                      <span key={item} style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7392', background: '#ffffff99', border: '1px solid #d7ddec66', borderRadius: 999, padding: '3px 8px' }}>
-                                        {item}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>No major gaps flagged yet.</div>
-                                )}
+                            <div style={{ padding: '0 22px 18px 58px' }}>
+                              <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.55, maxWidth: 760 }}>
+                                {buildAccordionSummary(school, profile)}
                               </div>
                             </div>
                           )}
