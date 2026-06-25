@@ -122,6 +122,63 @@ function getTestMetric(school) {
   return null;
 }
 
+function truncateText(value, maxLength = 170) {
+  if (!value) return '';
+  const text = String(value).replace(/\s+/g, ' ').trim();
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).replace(/\s+\S*$/, '')}...`;
+}
+
+function firstSentences(value, fallback, maxSentences = 2) {
+  if (!value) return fallback;
+  const text = String(value).replace(/\s+/g, ' ').trim();
+  const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
+  return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 180) || fallback;
+}
+
+function buildProgramInfo(school) {
+  const source = [
+    school?.notes,
+    Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
+    school?.programGroup,
+    school?.location,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  const silverBullets = [];
+  if (/\bpe\b|private equity|buyout|investment/.test(source)) silverBullets.push('PE pipeline');
+  if (/deep[-\s]?tech|technology|tech|innovation|entrepreneur|venture/.test(source)) silverBullets.push('deep-tech ecosystem');
+  if (/faculty|lab|research|supervisor|studio/.test(source)) silverBullets.push('faculty/lab fit');
+  if (/alumni|network/.test(source)) silverBullets.push('alumni network');
+  if (/recruit|placement|career|employer/.test(source)) silverBullets.push('recruiting strength');
+  if (/culture|collaborative|case method|community/.test(source)) silverBullets.push('school culture');
+  if (school?.location) silverBullets.push(school.location);
+
+  const descriptor = silverBullets.length
+    ? silverBullets.slice(0, 3).join(', ')
+    : 'program positioning and stated goals';
+  const program = school?.programGroup || 'Program';
+  return `${program} relevance: ${descriptor}.`;
+}
+
+function buildWhyThisFits(school) {
+  const drivers = Array.isArray(school?.fitDrivers) ? school.fitDrivers.filter(Boolean).slice(0, 3) : [];
+  if (drivers.length) {
+    return truncateText(`Candidate fit is supported by ${drivers.join(', ')}.`, 180);
+  }
+  return firstSentences(school?.notes, 'Fit rationale not yet specified.');
+}
+
+function getMissingItems(school) {
+  const note = school?.notes || '';
+  const noteSignalsGap = /\bbut\b|risk|gap|missing|weaker|less aligned|must|needs|sharpen/i.test(note);
+  const items = [
+    ...(Array.isArray(school?.evidenceGaps) ? school.evidenceGaps : []),
+    ...(Array.isArray(school?.riskFlags) ? school.riskFlags : []),
+    noteSignalsGap ? firstSentences(note, '', 1) : '',
+  ];
+  return [...new Set(items.filter(Boolean))].slice(0, 3);
+}
+
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
   const [selected, setSelected] = useState(chosenSchools || []);
@@ -315,10 +372,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                         const rowKey = `${school.name || idx}-${tier.key}`;
                         const isExpanded = !!expanded[rowKey];
                         const testMetric = getTestMetric(school);
-                        const missingItems = [
-                          ...(Array.isArray(school.evidenceGaps) ? school.evidenceGaps : []),
-                          ...(Array.isArray(school.riskFlags) ? school.riskFlags : []),
-                        ];
+                        const missingItems = getMissingItems(school);
                         return (
                         <div key={rowKey} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none' }}>
                           <div
@@ -415,14 +469,18 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                           {isExpanded && (
                             <div style={{ padding: '0 22px 18px 58px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                               <div>
+                                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>PROGRAM INFO</div>
+                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildProgramInfo(school)}</div>
+                              </div>
+                              <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>WHY THIS FITS</div>
-                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{school.notes || 'Fit rationale not yet specified.'}</div>
+                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildWhyThisFits(school)}</div>
                               </div>
                               <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>WHAT MAY BE MISSING</div>
                                 {missingItems.length > 0 ? (
                                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {missingItems.slice(0, 5).map(item => (
+                                    {missingItems.map(item => (
                                       <span key={item} style={{ fontSize: 10.5, fontWeight: 700, color: '#6b7392', background: '#ffffff99', border: '1px solid #d7ddec66', borderRadius: 999, padding: '3px 8px' }}>
                                         {item}
                                       </span>
@@ -430,20 +488,6 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                   </div>
                                 ) : (
                                   <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>No major gaps flagged yet.</div>
-                                )}
-                              </div>
-                              <div>
-                                <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>FIT DRIVERS</div>
-                                {Array.isArray(school.fitDrivers) && school.fitDrivers.length > 0 ? (
-                                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                                    {school.fitDrivers.slice(0, 3).map(driver => (
-                                      <span key={driver} style={{ fontSize: 10.5, fontWeight: 700, color: '#25785d', background: '#eef7f3', border: '1px solid #cfe9df', borderRadius: 999, padding: '3px 8px' }}>
-                                        {driver}
-                                      </span>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>No specific fit drivers listed yet.</div>
                                 )}
                               </div>
                             </div>
