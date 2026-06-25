@@ -10,6 +10,7 @@ import {
   costForUserToday,
   createAlert,
 } from '../lib/usage.js';
+import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
@@ -815,10 +816,39 @@ export default async function handler(req, res) {
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
     const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection);
-    const anthropicMessages = messages.map(m => ({
+    let anthropicMessages = messages.map(m => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.text,
     }));
+
+    // Headroom is OFF by default and any failure here (proxy down, SDK missing,
+    // timeout) falls back to the original system prompt/chat history untouched —
+    // see lib/headroom.js. role mapping, web search behavior, the retry loop, and
+    // the structured blocks (PROFILE/SCORES/STRENGTHS/.../TASKS) are all built from
+    // these same strings before/after this step and are unaffected by compression.
+    const headroomStats = {
+      enabled: isHeadroomEnabled(),
+      mode: process.env.HEADROOM_MODE || 'off',
+      error: null,
+      originalInputChars: systemPrompt.length + JSON.stringify(anthropicMessages).length,
+      optimizedInputChars: systemPrompt.length + JSON.stringify(anthropicMessages).length,
+    };
+    let compressedSystemPrompt = systemPrompt;
+    if (headroomStats.enabled) {
+      const errors = [];
+      if (HeadroomFlags.compressSystem) {
+        const sysResult = await compressText(systemPrompt, { label: 'chat_system_prompt' });
+        if (sysResult.error) errors.push(sysResult.error);
+        compressedSystemPrompt = sysResult.text;
+      }
+      if (HeadroomFlags.compressChat) {
+        const chatResult = await compressMessages(anthropicMessages, { label: 'chat_history' });
+        if (chatResult.error) errors.push(chatResult.error);
+        anthropicMessages = chatResult.messages;
+      }
+      headroomStats.error = errors.length ? errors.join('; ') : null;
+      headroomStats.optimizedInputChars = compressedSystemPrompt.length + JSON.stringify(anthropicMessages).length;
+    }
 
     // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
     // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
@@ -836,8 +866,8 @@ export default async function handler(req, res) {
       // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
       const response = await createChatCompletion({
         system: attempt === 0
-          ? systemPrompt
-          : `${systemPrompt}${CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
+          ? compressedSystemPrompt
+          : `${compressedSystemPrompt}${CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
@@ -849,6 +879,16 @@ export default async function handler(req, res) {
         model: CHAT_MODEL,
         inputTokens: response.usage?.input_tokens,
         outputTokens: response.usage?.output_tokens,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
+        estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
       }).catch((err) => console.error('Failed to record usage:', err));
 
       raw = extractText(response);

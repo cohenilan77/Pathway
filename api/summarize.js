@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
+import { isHeadroomEnabled, compressText, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -25,10 +26,24 @@ export default async function handler(req, res) {
   const { chat } = req.body;
   if (!chat || !Array.isArray(chat)) return res.status(400).json({ error: 'chat array required' });
 
-  const transcript = chat
+  let transcript = chat
     .filter(m => m.text && m.text.length > 2)
     .map(m => `${m.role === 'ai' ? 'Advisor' : 'Candidate'}: ${m.text.slice(0, 600)}`)
     .join('\n\n');
+
+  const headroomStats = {
+    enabled: isHeadroomEnabled(),
+    mode: process.env.HEADROOM_MODE || 'off',
+    error: null,
+    originalInputChars: transcript.length,
+    optimizedInputChars: transcript.length,
+  };
+  if (headroomStats.enabled && HeadroomFlags.compressChat) {
+    const result = await compressText(transcript, { label: 'session_summary_transcript' });
+    headroomStats.error = result.error;
+    transcript = result.text;
+    headroomStats.optimizedInputChars = transcript.length;
+  }
 
   try {
     const response = await client.messages.create({
@@ -47,6 +62,13 @@ export default async function handler(req, res) {
       model: MODEL,
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,
+      endpoint: 'summarize',
+      headroomEnabled: headroomStats.enabled,
+      headroomMode: headroomStats.mode,
+      headroomError: headroomStats.error,
+      originalInputChars: headroomStats.originalInputChars,
+      optimizedInputChars: headroomStats.optimizedInputChars,
+      estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
     }).catch((e) => console.error('Failed to record usage:', e));
     return res.status(200).json({ summary: response.content[0]?.text || '' });
   } catch (err) {
