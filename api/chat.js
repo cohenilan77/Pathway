@@ -164,7 +164,7 @@ For non-MBA requests, do not use the MBA reference list. Recommend or evaluate p
   fitFormula: `FIT IS NOT ADMISSION PROBABILITY:
 - The PROGRAMS.fit field is a readiness/fit index from 0–100, not a predicted admission chance.
 - Never call it an "admission probability" or "odds" in visible text.
-- Use status labels for risk: Not Eligible, Below Baseline, Plausible, Competitive, Strong.
+- Use status labels as fit labels, not admission probability: Not Eligible, Below Baseline, Plausible Fit, Competitive Fit, Strong Fit. The underlying JSON admissionStatus values remain "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong".
 - Apply eligibility gates first. A missing hard gate can never be offset by narrative.
 
 PROGRAM-FAMILY READINESS LOGIC:
@@ -185,6 +185,8 @@ SELECTIVITY IS SEPARATE FROM FIT:
 - selectivityLabel = school/program difficulty and badge color.
 - A program may be tier:"safe" (displayed as STRONG FIT) and selectivityLabel:"Ultra competitive" at the same time.
 - Never downgrade fit or tier purely because the school is famous. Reflect fame/selectivity in selectivityLabel, selectivitySource, selectivityScore, and riskFlags if useful.
+- Fit consistency guard across every program family (MBA, undergraduate, LLM/JD, MSc/MA, MFA/MDes/MPS/portfolio, MD/health, PhD/research, personal development/career): if a candidate is Strong Fit for a more selective program, less selective programs in the same category should normally also be Strong Fit. Downgrade a less selective same-category program only for a clear program-specific mismatch: poor career-goal alignment, weak recruiting pipeline for the target field, regional-only placement when the candidate wants global outcomes, missing prerequisite, format mismatch, research/supervisor mismatch for PhD, portfolio/audition mismatch for creative programs, or materially different evaluation criteria.
+- For lower-ranked/easier programs that are less useful for the candidate goal, keep candidate fit high and explain strategic limitations in notes, e.g. "Strong Fit, but weaker strategic fit for PE/deep-tech outcomes" or "Strong candidate fit, but lower strategic value for the stated goal."
 
 UNIVERSAL SELECTIVITY LABELS:
 - Ultra competitive

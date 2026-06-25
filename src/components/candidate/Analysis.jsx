@@ -92,6 +92,30 @@ const STATUS_COLORS = {
   Strong: '#19a974',
 };
 
+const FIT_LABELS = {
+  Strong: 'Strong Fit',
+  Competitive: 'Competitive Fit',
+  Plausible: 'Plausible Fit',
+  'Below Baseline': 'Below Baseline Fit',
+  'Not Eligible': 'Not Eligible',
+};
+
+function fitLabel(status) {
+  return FIT_LABELS[status] || (status ? `${status} Fit` : '');
+}
+
+function relevantTestMetric(school) {
+  const tests = [
+    ['avgGMAT', 'AVG GMAT'],
+    ['avgGRE', 'AVG GRE'],
+    ['avgSAT', 'AVG SAT'],
+    ['avgACT', 'AVG ACT'],
+    ['avgLSAT', 'AVG LSAT'],
+    ['avgMCAT', 'AVG MCAT'],
+  ];
+  return tests.map(([key, label]) => school[key] != null ? { value: school[key], label } : null).find(Boolean);
+}
+
 const SELECTIVITY_BADGES = {
   'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
@@ -102,6 +126,7 @@ const SELECTIVITY_BADGES = {
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
   const [selected, setSelected] = useState(chosenSchools || []);
+  const [expandedRows, setExpandedRows] = useState({});
 
   useEffect(() => {
     setSelected(chosenSchools || []);
@@ -109,6 +134,10 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   const toggleSchool = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+  };
+
+  const toggleExpanded = (key) => {
+    setExpandedRows(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
   const confirmSelection = () => {
@@ -284,118 +313,86 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                       {schools.map((school, idx) => {
                         const isSelected = selected.includes(school.name);
                         const isLocked = tier.key === 'locked';
+                        const rowKey = `${school.name || idx}-${school.programGroup || ''}`;
+                        const isExpanded = !!expandedRows[rowKey];
+                        const testMetric = relevantTestMetric(school);
+                        const gaps = [...(Array.isArray(school.evidenceGaps) ? school.evidenceGaps : []), ...(Array.isArray(school.riskFlags) ? school.riskFlags : [])];
                         return (
                         <div
                           key={school.name || idx}
                           className="pw-school-row"
-                          onClick={() => toggleSchool(school.name)}
-                          role="checkbox"
-                          aria-checked={isSelected}
-                          tabIndex={0}
-                          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSchool(school.name); } }}
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '17px 22px',
                             borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none',
-                            gap: 16,
-                            cursor: 'pointer',
                             background: isSelected ? 'rgba(255,255,255,.55)' : 'transparent',
                             opacity: isLocked && !isSelected ? 0.72 : 1,
                             boxShadow: isSelected ? `inset 3px 0 0 0 ${tier.accent}` : 'none',
                             transition: 'background 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease',
                           }}
                         >
-                          {/* Checkbox */}
-                          <div className="pw-school-checkbox" style={{
-                            width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                            border: isSelected ? `2px solid ${tier.accent}` : '2px solid #e7dcc7',
-                            background: isSelected ? tier.accent : '#faf7f2',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.15s ease',
-                          }}>
-                            {isSelected && (
-                              <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                                <path d="M20 6 9 17l-5-5" />
-                              </svg>
-                            )}
-                          </div>
-                          {/* Left: name, location, notes */}
-                          <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
-                              <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>
-                                {school.name}
-                              </div>
-                              {school.admissionStatus && (
-                                <span style={{ fontSize: 10.5, fontWeight: 800, color: STATUS_COLORS[school.admissionStatus] || '#6b7392', background: '#ffffff99', border: `1px solid ${STATUS_COLORS[school.admissionStatus] || '#d7ddec'}55`, borderRadius: 999, padding: '3px 8px' }}>
-                                  {school.admissionStatus}
-                                </span>
+                          <div
+                            onClick={() => toggleSchool(school.name)}
+                            role="checkbox"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSchool(school.name); } }}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '17px 22px',
+                              gap: 16,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div className="pw-school-checkbox" style={{
+                              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                              border: isSelected ? `2px solid ${tier.accent}` : '2px solid #e7dcc7',
+                              background: isSelected ? tier.accent : '#faf7f2',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              transition: 'all 0.15s ease',
+                            }}>
+                              {isSelected && (
+                                <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                  <path d="M20 6 9 17l-5-5" />
+                                </svg>
                               )}
-                              {school.selectivityLabel && (() => {
-                                const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Unknown;
-                                const programType = school.programGroup ? ` ${school.programGroup} program` : ' program';
-                                return (
-                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
-                                    {school.selectivityLabel}{programType}
-                                  </span>
-                                );
-                              })()}
                             </div>
-                            {(school.location || school.programGroup) && (
-                              <div style={{ fontSize: 12, color: '#6b7392', marginBottom: (school.notes || (isLocked && school.unlockConditions?.length)) ? 4 : 0, fontWeight: 500 }}>
-                                {[school.location, school.programGroup].filter(Boolean).join(' · ')}
-                              </div>
-                            )}
-                            {isLocked && school.unlockConditions?.length > 0 ? (
-                              <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.45 }}>
-                                To compete here: {school.unlockConditions.join(' · ')}
-                              </div>
-                            ) : school.notes && (
-                              <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.45 }}>
-                                {school.notes}
-                              </div>
-                            )}
-                            {Array.isArray(school.evidenceGaps) && school.evidenceGaps.length > 0 && (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-                                {school.evidenceGaps.slice(0, 4).map(gap => (
-                                  <span key={gap} style={{ fontSize: 10.5, fontWeight: 700, color: '#7a5a13', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 999, padding: '3px 8px' }}>
-                                    {gap}
+                            <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 3 }}>
+                                <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>{school.name}</div>
+                                {school.admissionStatus && (
+                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: STATUS_COLORS[school.admissionStatus] || '#6b7392', background: '#ffffff99', border: `1px solid ${STATUS_COLORS[school.admissionStatus] || '#d7ddec'}55`, borderRadius: 999, padding: '3px 8px' }}>
+                                    {fitLabel(school.admissionStatus)}
                                   </span>
-                                ))}
+                                )}
+                                {school.selectivityLabel && (() => {
+                                  const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Unknown;
+                                  return <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>{school.selectivityLabel}</span>;
+                                })()}
                               </div>
-                            )}
-                            {Array.isArray(school.riskFlags) && school.riskFlags.length > 0 && (
-                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                                {school.riskFlags.slice(0, 3).map(flag => (
-                                  <span key={flag} style={{ fontSize: 10.5, fontWeight: 700, color: '#9f3157', background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 999, padding: '3px 8px' }}>
-                                    {flag}
-                                  </span>
-                                ))}
-                              </div>
-                            )}
+                              {(school.location || school.programGroup) && (
+                                <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>{[school.location, school.programGroup].filter(Boolean).join(' · ')}</div>
+                              )}
+                            </div>
+                            <div className="pw-school-stats" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
+                              {testMetric && <div style={{ textAlign: 'center' }}><div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{testMetric.value}</div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>{testMetric.label}</div></div>}
+                              {school.avgGPA != null && <div style={{ textAlign: 'center' }}><div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div></div>}
+                              {school.fit != null && <div style={{ textAlign: 'center' }}><div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div><div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div></div>}
+                              <button
+                                type="button"
+                                aria-label={isExpanded ? `Collapse ${school.name}` : `Expand ${school.name}`}
+                                onClick={(e) => { e.stopPropagation(); toggleExpanded(rowKey); }}
+                                style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #e7dcc7', background: '#faf7f2', color: '#33405e', cursor: 'pointer', fontSize: 18, fontWeight: 800, lineHeight: 1 }}
+                              >{isExpanded ? '⌄' : '⌃'}</button>
+                            </div>
                           </div>
-                          {/* Right: stats */}
-                          <div className="pw-school-stats" style={{ display: 'flex', alignItems: 'center', gap: 20, flexShrink: 0 }}>
-                            {school.avgGMAT != null && (
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGMAT}</div>
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GMAT</div>
-                              </div>
-                            )}
-                            {school.avgGPA != null && (
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
-                              </div>
-                            )}
-                            {school.fit != null && (
-                              <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div>
-                                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
-                              </div>
-                            )}
-                          </div>
+                          {isExpanded && (
+                            <div style={{ padding: '0 22px 18px 60px', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 16 }}>
+                              <div><div style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', marginBottom: 6 }}>WHY THIS FITS</div><div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5 }}>{school.notes || 'This program aligns with the current candidate evidence.'}</div></div>
+                              <div><div style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', marginBottom: 6 }}>WHAT MAY BE MISSING</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{gaps.length ? gaps.slice(0, 5).map(gap => <span key={gap} style={{ fontSize: 10.5, fontWeight: 700, color: '#7a5a13', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 999, padding: '3px 8px' }}>{gap}</span>) : <span style={{ fontSize: 12.5, color: '#33405e' }}>No major gaps flagged yet.</span>}</div></div>
+                              <div><div style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', marginBottom: 6 }}>FIT DRIVERS</div><div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{Array.isArray(school.fitDrivers) && school.fitDrivers.length ? school.fitDrivers.slice(0, 3).map(driver => <span key={driver} style={{ fontSize: 10.5, fontWeight: 700, color: '#25785d', background: '#eef7f3', border: '1px solid #cfe9df', borderRadius: 999, padding: '3px 8px' }}>{driver}</span>) : <span style={{ fontSize: 12.5, color: '#33405e' }}>No fit drivers listed yet.</span>}</div></div>
+                            </div>
+                          )}
                         </div>
                         );
                       })}
