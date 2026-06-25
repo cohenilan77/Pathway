@@ -337,7 +337,7 @@ export default function App() {
         setWeaknesses(data?.weaknesses || null);
         setTasks(data?.tasks || null);
         setCompletedTasks(data?.completedTasks || {});
-        setPrograms(data?.programs || null);
+        setPrograms(normalizeProgramList(data?.programs) || null);
         setChosenSchools(data?.chosenSchools || null);
         setCvText(data?.cvText || '');
         setCvFile(data?.cvFile || null);
@@ -372,7 +372,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
+          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
@@ -547,7 +547,7 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs: normalizeProgramList(programs) || programs }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';

@@ -1,5 +1,6 @@
 import { getUserIdByToken, getUserData, setUserData, getUserById, publicUser, touchActivity } from '../lib/db.js';
 import { toEnglish } from '../lib/translate.js';
+import { normalizeProgramList } from '../lib/program-normalizer.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -52,6 +53,7 @@ export default async function handler(req, res) {
       return;
     }
     const data = await getUserData(userId);
+    if (data?.programs) data.programs = normalizeProgramList(data.programs);
     await touchActivity(userId);
     res.status(200).json({ user: publicUser(user), data });
     return;
@@ -69,6 +71,7 @@ export default async function handler(req, res) {
     }
     const { data } = req.body || {};
     const translated = await translateNonChatFields(data || {}, userId);
+    if (translated?.programs) translated.programs = normalizeProgramList(translated.programs);
     await setUserData(userId, translated);
     await touchActivity(userId);
     res.status(200).json({ ok: true });

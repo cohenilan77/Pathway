@@ -3,6 +3,7 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { saveBlob, downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import { chatT, chatDir, formatChatDate } from '../../lib/chatI18n.js';
 import { LANGUAGES } from '../../constants.js';
+import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
@@ -466,7 +467,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const chat = sd.chat || [];
   const scores = sd.scores || null;
   const profile = sd.profile || null;
-  const programs = sd.programs || null;
+  const programs = normalizeProgramList(sd.programs) || null;
   const chosenSchools = sd.chosenSchools || null;
   const strengths = sd.strengths || null;
   const weaknesses = sd.weaknesses || null;

@@ -1,5 +1,6 @@
 import { canAccessCandidate, getActor } from '../lib/admin.js';
 import { getUserById, getUserData, setUserData, publicUser } from '../lib/db.js';
+import { normalizeProgramList } from '../lib/program-normalizer.js';
 
 export default async function handler(req, res) {
   const actor = await getActor(req);
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
       return;
     }
     const data = await getUserData(userId);
+    if (data?.programs) data.programs = normalizeProgramList(data.programs);
     res.status(200).json({ user: publicUser(user), data });
     return;
   }
@@ -41,6 +43,7 @@ export default async function handler(req, res) {
     }
     const existing = (await getUserData(userId)) || {};
     const updated = { ...existing, ...patch };
+    if (updated?.programs) updated.programs = normalizeProgramList(updated.programs);
     await setUserData(userId, updated);
     res.status(200).json({ ok: true, data: updated });
     return;
