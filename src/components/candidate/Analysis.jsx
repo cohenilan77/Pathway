@@ -108,18 +108,38 @@ const SELECTIVITY_BADGES = {
 };
 
 function getTestMetric(school) {
-  const fields = [
-    ['avgGMAT', 'AVG GMAT'],
-    ['avgGRE', 'AVG GRE'],
-    ['avgLSAT', 'AVG LSAT'],
-    ['avgMCAT', 'AVG MCAT'],
-    ['avgSAT', 'AVG SAT'],
-    ['avgACT', 'AVG ACT'],
-  ];
+  const text = `${school?.programGroup || ''} ${school?.degree || ''} ${school?.name || ''}`.toLowerCase();
+  let fields;
+  if (/mba|business school|gsb|sloan|wharton|booth|kellogg/.test(text)) {
+    fields = [['avgGMAT', 'AVG GMAT'], ['avgGRE', 'AVG GRE']];
+  } else if (/\b(llm|jd|law)\b/.test(text)) {
+    fields = [['avgGRE', 'AVG GRE'], ['avgLSAT', 'AVG LSAT']];
+  } else if (/\b(md|medicine|medical|health|mcat)\b/.test(text)) {
+    fields = [['avgMCAT', 'AVG MCAT']];
+  } else if (/\b(phd|doctoral|doctorate|research|msc|ms\b|ma\b|master|masters)\b/.test(text)) {
+    fields = [['avgGRE', 'AVG GRE'], ['avgGMAT', 'AVG GMAT']];
+  } else if (/undergraduate|bachelor|college|\bba\b|\bbs\b/.test(text)) {
+    fields = [['avgSAT', 'AVG SAT'], ['avgACT', 'AVG ACT']];
+  } else {
+    fields = [
+      ['avgGMAT', 'AVG GMAT'],
+      ['avgGRE', 'AVG GRE'],
+      ['avgLSAT', 'AVG LSAT'],
+      ['avgMCAT', 'AVG MCAT'],
+      ['avgSAT', 'AVG SAT'],
+      ['avgACT', 'AVG ACT'],
+    ];
+  }
+
   for (const [key, label] of fields) {
     if (school?.[key] != null) return { value: school[key], label };
   }
   return null;
+}
+
+function getAdmitRateMetric(school) {
+  const rate = asDisplayRate(school?.acceptanceRate);
+  return rate ? `${rate}%` : null;
 }
 
 function truncateText(value, maxLength = 170) {
@@ -154,7 +174,7 @@ function asDisplayRate(value) {
 const PROGRAM_STRENGTHS = [
   { match: /wharton|upenn|penn /, angle: 'A finance powerhouse with unusually deep buy-side recruiting, investor alumni density, and credibility across private capital.', fact: 'Its MBA network is one of the strongest finance brands in the market.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
   { match: /columbia business school|columbia\b|cbs\b/, angle: 'A buy-side-oriented platform with strong access to deal flow, investment firms, and a dense finance alumni network.', fact: 'Its value is strongest when the career story is explicitly tied to investing or capital markets.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /stern|nyu/, angle: 'A finance-heavy MBA platform with strong capital-markets employer access, investor alumni reach, and credible private-capital signaling.', fact: 'With an acceptance rate around 23%, it is useful as a serious but realistic finance target.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /stern|nyu/, angle: 'A finance-heavy MBA platform with strong capital-markets employer access, investor alumni reach, and credible private-capital signaling.', fact: 'It is useful as a serious but realistic finance target when the private-capital story is specific.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
   { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'A rare MBA platform where AI, engineering, venture creation, and technical-founder networks sit close to the management curriculum.', fact: 'That ecosystem is especially valuable for candidates aiming at deep-tech investing or company building.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
   { match: /stanford|gsb/, angle: 'A founder and venture platform built around entrepreneurship infrastructure, technical talent, and access to high-growth company networks.', fact: 'The strategic value is strongest for candidates with a credible innovation, venture, or deep-tech thesis.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
   { match: /harvard business school|hbs|harvard/, angle: 'A general-management and leadership platform with case-method training, global brand power, and broad investor/operator alumni reach.', fact: 'It rewards candidates who can turn achievement into a clear leadership narrative.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
@@ -382,14 +402,10 @@ function buildAccordionSummary(school, profile) {
   const fitEvidence = fitEvidenceSummary(school);
   const fitSentence = fitEvidence ? `The profile reads as a credible match because it shows ${fitEvidence}.` : '';
   const goal = goalLabel(profile, school);
-  const rate = asDisplayRate(school?.acceptanceRate);
-  const acceptanceSentence = rate && !new RegExp(`\\b${escapeRegExp(rate)}\\s*%`).test(programInsight)
-    ? `Admits roughly ${rate}% of applicants, so the positioning needs to be sharp rather than generic.`
-    : '';
   const goalSentence = goal !== 'stated goal'
     ? `For a ${goal}, those strengths matter because they point toward the networks and outcomes the application must credibly reach.`
     : '';
-  const summary = [programInsight, acceptanceSentence, goalSentence, fitSentence].filter(Boolean).join(' ')
+  const summary = [programInsight, goalSentence, fitSentence].filter(Boolean).join(' ')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
@@ -589,6 +605,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                         const rowKey = `${school.name || idx}-${tier.key}`;
                         const isExpanded = !!expanded[rowKey];
                         const testMetric = getTestMetric(school);
+                        const admitRate = getAdmitRateMetric(school);
                         return (
                         <div key={rowKey} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tier.border}` : 'none' }}>
                           <div
@@ -658,6 +675,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             </div>
 
                             <div className="pw-school-stats" style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+                              {admitRate && (
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{admitRate}</div>
+                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT RATE</div>
+                                </div>
+                              )}
                               {testMetric && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{testMetric.value}</div>
