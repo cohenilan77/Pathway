@@ -136,28 +136,140 @@ function firstSentences(value, fallback, maxSentences = 2) {
   return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 180) || fallback;
 }
 
-function buildProgramInfo(school) {
+const PROGRAM_STRENGTHS = [
+  { match: /wharton|upenn|penn /, angle: 'finance reputation, buy-side recruiting, and investor alumni base', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /columbia business school|columbia\b|cbs\b/, angle: 'New York buy-side recruiting, Wall Street deal flow, and a dense finance alumni network', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'MIT AI, engineering, venture creation, and technical-founder ecosystem', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /stanford|gsb/, angle: 'Silicon Valley venture network, entrepreneurship platform, and deep-tech founder ecosystem', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /harvard business school|hbs|harvard/, angle: 'general-management brand, case-method leadership platform, and investor/operator alumni network', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
+  { match: /booth|chicago/, angle: 'analytical finance culture, investor network, and rigorous economics-driven decision training', goals: /pe|private equity|buyout|finance|invest|strategy/ },
+  { match: /kellogg|northwestern/, angle: 'marketing, leadership, consulting, and collaborative alumni network', goals: /consult|leadership|marketing|operator|strategy/ },
+  { match: /fuqua|duke/, angle: 'team-based leadership culture, healthcare/tech networks, and strong general-management recruiting', goals: /health|tech|consult|leadership|operator|strategy/ },
+  { match: /kelley|indiana/, angle: 'practical MBA recruiting, finance/accounting depth, and a value-oriented alumni network', goals: /finance|invest|operator|management|consult/ },
+  { match: /emory|goizueta/, angle: 'Atlanta business ecosystem, healthcare/consumer networks, and close-knit MBA recruiting', goals: /health|consumer|operator|consult|management|strategy/ },
+  { match: /nyu tisch|itp|interactive telecommunications/, angle: 'interactive-media studio culture, creative-technical prototyping, and New York product/design network', goals: /portfolio|creative|design|media|interactive|technology|tech|product/ },
+  { match: /insead/, angle: 'one-year global MBA structure, international cohort, and cross-border employer network', goals: /global|international|consult|operator|management|strategy/ },
+];
+
+function textFromProfile(profile) {
+  if (!profile || typeof profile !== 'object') return '';
+  return [
+    profile.name,
+    profile.degree,
+    profile.program,
+    profile.industry,
+    profile.targetRole,
+    profile.target_role,
+    profile.careerGoal,
+    profile.career_goal,
+    profile.postDegreeGoal,
+    profile.post_degree_goal,
+    profile.goal,
+    profile.goals,
+    profile.experience,
+  ].filter(Boolean).join(' ');
+}
+
+function possessiveName(profile) {
+  const name = String(profile?.name || '').trim();
+  if (!name) return 'the candidate';
+  return `${name}${name.endsWith('s') ? "'" : "'s"}`;
+}
+
+function goalLabel(profile, school) {
   const source = [
+    textFromProfile(profile),
     school?.notes,
     Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
     school?.programGroup,
-    school?.location,
   ].filter(Boolean).join(' ').toLowerCase();
 
-  const silverBullets = [];
-  if (/\bpe\b|private equity|buyout|investment/.test(source)) silverBullets.push('PE pipeline');
-  if (/deep[-\s]?tech|technology|tech|innovation|entrepreneur|venture/.test(source)) silverBullets.push('deep-tech ecosystem');
-  if (/faculty|lab|research|supervisor|studio/.test(source)) silverBullets.push('faculty/lab fit');
-  if (/alumni|network/.test(source)) silverBullets.push('alumni network');
-  if (/recruit|placement|career|employer/.test(source)) silverBullets.push('recruiting strength');
-  if (/culture|collaborative|case method|community/.test(source)) silverBullets.push('school culture');
-  if (school?.location) silverBullets.push(school.location);
+  if (/\bpe\b|private equity|buyout|private capital/.test(source)) return 'private equity transition';
+  if (/\bvc\b|venture capital|venture/.test(source)) return 'venture capital goal';
+  if (/deep[-\s]?tech|ai|artificial intelligence|technical founder|startup|founder/.test(source)) return 'deep-tech or founder goal';
+  if (/law|jd|llm|legal/.test(source)) return 'legal career goal';
+  if (/medicine|medical|md|clinical|health/.test(source)) return 'health or medicine goal';
+  if (/phd|research|lab|supervisor|faculty/.test(source)) return 'research agenda';
+  if (/portfolio|mfa|design|studio|creative|interactive/.test(source)) return 'creative portfolio goal';
+  if (/consult|strategy/.test(source)) return 'strategy or consulting goal';
+  return 'stated goal';
+}
 
-  const descriptor = silverBullets.length
-    ? silverBullets.slice(0, 3).join(', ')
-    : 'program positioning and stated goals';
-  const program = school?.programGroup || 'Program';
-  return `${program} relevance: ${descriptor}.`;
+function isWeakProgramInfo(value, school) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return true;
+  const lower = text.toLowerCase();
+  const location = String(school?.location || '').toLowerCase();
+  const program = String(school?.programGroup || '').toLowerCase();
+  if (text.length < 45) return true;
+  if (location && lower.replace(/[^\w\s]/g, '').includes(location.replace(/[^\w\s]/g, ''))) {
+    const withoutLocation = lower.replace(location, '').replace(/mba relevance|program relevance|relevance|located in|location|[:.]/g, '').trim();
+    if (withoutLocation.length < 25) return true;
+  }
+  if (program && new RegExp(`^(program|${program.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}) relevance:?\\s*${program}\\.?$`, 'i').test(text)) return true;
+  return /^(good school for business|strong university|this is a competitive program|located in\b|program relevance|mba relevance:? ?[^a-z]*$)/i.test(text);
+}
+
+function inferStrategicAngle(school, profile) {
+  const schoolText = String(school?.name || '').toLowerCase();
+  const source = [
+    textFromProfile(profile),
+    school?.notes,
+    Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
+    Array.isArray(school?.evidenceGaps) ? school.evidenceGaps.join(' ') : '',
+    Array.isArray(school?.riskFlags) ? school.riskFlags.join(' ') : '',
+    school?.programGroup,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  const namedStrength = PROGRAM_STRENGTHS.find(item => item.match.test(schoolText) && item.goals.test(source))
+    || PROGRAM_STRENGTHS.find(item => item.match.test(schoolText));
+  if (namedStrength) return namedStrength.angle;
+  if (/\bpe\b|private equity|buyout|private capital|finance|invest/.test(source)) return 'finance recruiting, investor alumni access, and private-capital signaling';
+  if (/deep[-\s]?tech|ai|technology|tech|innovation|entrepreneur|venture|startup|founder/.test(source)) return 'innovation ecosystem, technical network, and entrepreneurship platform';
+  if (/faculty|lab|research|supervisor|phd|doctoral/.test(source)) return 'supervisor/lab alignment, methods fit, and funding relevance';
+  if (/portfolio|studio|critique|design|creative|interactive|mfa|mdes|mps/.test(source)) return 'portfolio fit, studio culture, critique model, and creative-technical ecosystem';
+  if (/law|jd|llm|legal/.test(source)) return 'legal specialization, clerkship/employer pipeline, and alumni network';
+  if (/medicine|medical|md|clinical|health/.test(source)) return 'clinical exposure, research access, and health-system network';
+  if (/undergraduate|intended major|internship|advising/.test(source)) return 'intended-major strength, advising, internship pipeline, and student ecosystem';
+  if (/alumni|network|recruit|placement|employer|career/.test(source)) return 'alumni network, employer pipeline, and recruiting strength';
+  return 'brand signal, employer pipeline, and program-specific network';
+}
+
+function buildProgramInfo(school, profile) {
+  if (!isWeakProgramInfo(school?.programInfo, school)) {
+    return firstSentences(school.programInfo, '', 2);
+  }
+
+  const source = [
+    school?.notes,
+    Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
+    Array.isArray(school?.evidenceGaps) ? school.evidenceGaps.join(' ') : '',
+    Array.isArray(school?.riskFlags) ? school.riskFlags.join(' ') : '',
+    school?.programGroup,
+    textFromProfile(profile),
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  const candidate = possessiveName(profile);
+  const goal = goalLabel(profile, school);
+  const angle = inferStrategicAngle(school, profile);
+  const benchmarks = [
+    school?.selectivityLabel,
+    school?.acceptanceRate != null ? `${school.acceptanceRate}% acceptance benchmark` : '',
+    school?.avgGMAT != null ? `${school.avgGMAT} GMAT benchmark` : '',
+    school?.avgGPA != null ? `${school.avgGPA} GPA benchmark` : '',
+  ].filter(Boolean).slice(0, 2).join(', ');
+  const benchmarkText = benchmarks ? ` The ${benchmarks} makes it useful to separate strategic value from admissions difficulty.` : '';
+
+  if (/phd|doctoral|research/.test(source)) {
+    return `This program is strategically relevant for ${candidate} only if supervisor/lab alignment supports the ${goal}; funding, methods fit, and research match matter more than brand alone.`;
+  }
+  if (/portfolio|mfa|mdes|mps|studio|creative|interactive/.test(source)) {
+    return `This program's value for ${candidate} depends on portfolio fit, studio culture, critique model, and the creative-technical ecosystem around the ${goal}.`;
+  }
+  if (/undergraduate|bachelor|college/.test(source)) {
+    return `This school is strategically relevant for ${candidate} if its intended-major strength, advising, internships, and student ecosystem support the ${goal}.`;
+  }
+  return `${school?.name || 'This program'} is strategically relevant for ${candidate}'s ${goal} because of its ${angle}.${benchmarkText}`;
 }
 
 function buildWhyThisFits(school) {
@@ -470,7 +582,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             <div style={{ padding: '0 22px 18px 58px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
                               <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>PROGRAM INFO</div>
-                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildProgramInfo(school)}</div>
+                                <div style={{ fontSize: 12, color: '#33405e', lineHeight: 1.45 }}>{buildProgramInfo(school, profile)}</div>
                               </div>
                               <div>
                                 <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.8px', color: tier.accent, marginBottom: 6 }}>WHY THIS FITS</div>
