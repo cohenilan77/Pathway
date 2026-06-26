@@ -398,6 +398,64 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     return String(av).localeCompare(String(bv), undefined, { numeric: true, sensitivity: 'base' }) * dir;
   });
 
+  // ── Live engagement metrics, derived from real candidate/consultant data ──
+  // Anything without a real data source (meetings, consultant actions, notes,
+  // avg response time, marketing signals) is left as the original mock value.
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const FOLLOW_UP_THRESHOLD_MS = 3 * DAY_MS;
+  const nowTs = Date.now();
+  const lastActivityTs = (u) => u.lastActiveAt || u.lastLoginAt || 0;
+  const formatInactive = (ms) => {
+    const days = Math.floor(ms / DAY_MS);
+    if (days >= 1) return `${days} day${days === 1 ? '' : 's'}`;
+    const hours = Math.floor(ms / (60 * 60 * 1000));
+    return hours >= 1 ? `${hours}h` : '<1h';
+  };
+
+  // Candidates that need a consultant follow-up: either inactive past the
+  // threshold or sitting on unread messages. Sorted least-recently-active first.
+  const followUpCandidatesLive = candidateUsers
+    .filter(u => !u.suspended)
+    .map(u => {
+      const ts = lastActivityTs(u);
+      const inactiveMs = ts ? nowTs - ts : Infinity;
+      return { u, ts, inactiveMs };
+    })
+    .filter(x => (x.ts && x.inactiveMs >= FOLLOW_UP_THRESHOLD_MS) || (x.u.unreadMessages || 0) > 0)
+    .sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  const followUpCount = followUpCandidatesLive.length;
+  const waitingCount = candidateUsers.filter(u => (u.unreadMessages || 0) > 0).length;
+
+  const followUpRowsLive = followUpCandidatesLive.slice(0, 6).map(({ u, ts, inactiveMs }) => ({
+    candidate: u.name || 'Candidate',
+    last: (u.unreadMessages || 0) > 0
+      ? `${u.unreadMessages} unread message${u.unreadMessages === 1 ? '' : 's'}`
+      : (stepsFor(u.category)[u.stepIdx] || 'Profile'),
+    inactive: ts ? formatInactive(inactiveMs) : 'No activity',
+    priority: ((u.unreadMessages || 0) > 0 || (ts && inactiveMs >= 7 * DAY_MS)) ? 'High' : 'Medium',
+  }));
+
+  // Real consultant leaderboard: live names + assigned-candidate counts. Columns
+  // we can't source (meetings/actions/notes/response) show a dash rather than a
+  // fabricated number against a real person.
+  const consultantLeaderboardLive = consultantUsers
+    .filter(c => !c.suspended)
+    .map(c => ({
+      consultant: c.name || c.email || 'Consultant',
+      candidates: candidateUsers.filter(u => u.consultantId === c.id).length,
+      meetings: '—',
+      actions: '—',
+      notes: '—',
+      response: '—',
+    }))
+    .sort((a, b) => b.candidates - a.candidates);
+
+  // Override only the engagement KPIs we can back with real data.
+  const engagementLiveValues = { 'FOLLOW-UPS': followUpCount, WAITING: waitingCount };
+  const engagementKpisLive = engagementKpis.map(kpi =>
+    kpi.label in engagementLiveValues ? { ...kpi, value: engagementLiveValues[kpi.label] } : kpi
+  );
+
   useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const loadKpiStatus = useCallback(() => {
@@ -1014,7 +1072,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       ['Consultant actions today', 126],
                       ['Meetings today', 18],
                       ['Notes written', 43],
-                      ['Need follow-up', 21],
+                      ['Need follow-up', usersLoading ? '…' : followUpCount],
                     ].map(([label, value]) => (
                       <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '13px 14px' }}>
                         <div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 6 }}>{String(label).toUpperCase()}</div>
@@ -1148,7 +1206,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
-                {engagementKpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
+                {engagementKpisLive.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} value={usersLoading ? '…' : kpi.value} />)}
               </div>
 
               <div>
@@ -1162,7 +1220,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     { key: 'notes', label: 'NOTES' },
                     { key: 'response', label: 'AVG RESPONSE' },
                   ]}
-                  rows={consultantLeaderboard}
+                  rows={consultantLeaderboardLive.length ? consultantLeaderboardLive : consultantLeaderboard}
                 />
               </div>
 
@@ -1189,7 +1247,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       { key: 'inactive', label: 'INACTIVE' },
                       { key: 'priority', label: 'PRIORITY', render: (value) => <StatusPill tone={value === 'High' ? 'risk' : 'warn'}>{value}</StatusPill> },
                     ]}
-                    rows={followUpCandidates}
+                    rows={followUpRowsLive.length ? followUpRowsLive : followUpCandidates}
                   />
                 </div>
               </div>
