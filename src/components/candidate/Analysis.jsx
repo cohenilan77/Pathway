@@ -101,6 +101,26 @@ const FIT_LABELS = {
   'Not Eligible': 'Not Eligible',
 };
 
+function fitBucketLabel(school) {
+  const tier = String(school?.tier || '').toLowerCase();
+  const fit = Number(school?.fit);
+  if (tier === 'locked') return 'Not Eligible';
+  if (tier === 'safe' || fit > 80) return 'Strong Fit';
+  if (tier === 'possible' || fit >= 50) return 'Competitive Fit';
+  if (tier === 'stretch' || Number.isFinite(fit)) return 'Reach';
+  return FIT_LABELS[school?.admissionStatus] || school?.admissionStatus || 'Competitive Fit';
+}
+
+function fitBucketColor(school) {
+  const tier = String(school?.tier || '').toLowerCase();
+  const fit = Number(school?.fit);
+  if (tier === 'locked') return '#9098b5';
+  if (tier === 'safe' || fit > 80) return '#19a974';
+  if (tier === 'possible' || fit >= 50) return '#eaa129';
+  if (tier === 'stretch' || Number.isFinite(fit)) return '#e0457a';
+  return STATUS_COLORS[school?.admissionStatus] || '#6b7392';
+}
+
 const SELECTIVITY_BADGES = {
   'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
@@ -779,9 +799,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                 <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>
                                   {school.name}
                                 </div>
-                                {school.admissionStatus && (
-                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: STATUS_COLORS[school.admissionStatus] || '#6b7392', background: '#ffffff99', border: `1px solid ${STATUS_COLORS[school.admissionStatus] || '#d7ddec'}55`, borderRadius: 999, padding: '3px 8px' }}>
-                                    {FIT_LABELS[school.admissionStatus] || school.admissionStatus}
+                                {(school.admissionStatus || school.tier || school.fit != null) && (
+                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: fitBucketColor(school), background: '#ffffff99', border: `1px solid ${fitBucketColor(school)}55`, borderRadius: 999, padding: '3px 8px' }}>
+                                    {fitBucketLabel(school)}
                                   </span>
                                 )}
                                 {school.selectivityLabel && (() => {
