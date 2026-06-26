@@ -101,11 +101,18 @@ const FIT_LABELS = {
 };
 
 const SELECTIVITY_BADGES = {
+  'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  Competitive: { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
   'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
   Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
-  Unknown: { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
 };
+
+function displaySelectivityLabel(label) {
+  if (/^ultra competitive$/i.test(String(label || ''))) return 'Ultra Competitive';
+  if (/^(highly competitive|competitive)$/i.test(String(label || ''))) return 'Competitive';
+  return 'Accessible';
+}
 
 function getTestMetric(school) {
   const text = `${school?.programGroup || ''} ${school?.degree || ''} ${school?.name || ''}`.toLowerCase();
@@ -274,8 +281,8 @@ function sanitizeProgramInfo(value, school, profile) {
     .replace(/\s+because of its\s+/i, ' through ')
     .replace(/^([a-z][a-z\s/-]+ goal|[a-z][a-z\s/-]+ transition) through/i, 'Strong $1 relevance through')
     .replace(/\s+for the candidate'?s?\s+/gi, ' for the ')
-    .replace(/\bThe\s+(Ultra competitive|Highly competitive|Accessible|Unknown)[^.?!]*(?:difficulty|benchmark|admissions difficulty)[^.?!]*[.?!]?/gi, '')
-    .replace(/\b(Ultra competitive|Highly competitive|Accessible|Unknown)\s+program\b/gi, 'program')
+    .replace(/\bThe\s+(Ultra Competitive|Ultra competitive|Competitive|Highly competitive|Accessible)[^.?!]*(?:difficulty|benchmark|admissions difficulty)[^.?!]*[.?!]?/gi, '')
+    .replace(/\b(Ultra Competitive|Ultra competitive|Competitive|Highly competitive|Accessible)\s+program\b/gi, 'program')
     .trim();
 
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
@@ -339,7 +346,7 @@ function inferStrategicAngle(school, profile) {
 
 function buildProgramInfo(school, profile) {
   if (!isWeakProgramInfo(school?.programInfo, school)) {
-    return firstSentences(sanitizeProgramInfo(school.programInfo, school, profile), '', 2);
+    return firstSentences(sanitizeProgramInfo(school.programInfo, school, profile), '', 4);
   }
 
   const source = [
@@ -364,6 +371,41 @@ function buildProgramInfo(school, profile) {
     return `Strategic value depends on intended-major strength, advising, internships, and student ecosystem support for the ${goal}.`;
   }
   return `${intelligence.angle} ${intelligence.fact || ''}`.trim();
+}
+
+function strategicTradeoff(school, profile) {
+  const source = [
+    school?.notes,
+    school?.programInfo,
+    Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
+    Array.isArray(school?.evidenceGaps) ? school.evidenceGaps.join(' ') : '',
+    Array.isArray(school?.riskFlags) ? school.riskFlags.join(' ') : '',
+    textFromProfile(profile),
+    school?.programGroup,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/\bpe\b|private equity|buyout|private capital|finance|invest/.test(source)) {
+    return 'The trade-off is that finance outcomes depend heavily on a precise investing thesis and targeted networking, not brand alone.';
+  }
+  if (/deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/.test(source)) {
+    return 'The strategic question is whether the application proves technical fluency strongly enough to access the venture and founder ecosystem.';
+  }
+  if (/consult|general management|operator|leadership/.test(source)) {
+    return 'It is strongest for broad leadership or consulting paths, but less ideal if the goal is a narrow specialist track.';
+  }
+  if (/phd|doctoral|research|faculty|lab|supervisor/.test(source)) {
+    return 'The trade-off is that faculty fit and funding alignment matter more than institutional brand.';
+  }
+  if (/portfolio|studio|creative|design|interactive|mfa|mdes|mps/.test(source)) {
+    return 'The trade-off is that portfolio distinctiveness will matter more than conventional academic strength.';
+  }
+  if (/law|jd|llm|legal/.test(source)) {
+    return 'The strategic value depends on matching the legal specialization and employer pipeline to the intended practice area.';
+  }
+  if (/medicine|medical|md|clinical|health/.test(source)) {
+    return 'The trade-off is that service maturity and clinical exposure must be as convincing as academic readiness.';
+  }
+  return 'The strategic trade-off is whether its strongest outcomes match the next career move closely enough to justify the application effort.';
 }
 
 function fitEvidenceSummary(school) {
@@ -405,11 +447,12 @@ function buildAccordionSummary(school, profile) {
   const goalSentence = goal !== 'stated goal'
     ? `For a ${goal}, those strengths matter because they point toward the networks and outcomes the application must credibly reach.`
     : '';
-  const summary = [programInsight, goalSentence, fitSentence].filter(Boolean).join(' ')
+  const tradeoff = strategicTradeoff(school, profile);
+  const summary = [programInsight, goalSentence, fitSentence, tradeoff].filter(Boolean).join(' ')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
-  return limitWords(summary, 80);
+  return firstSentences(limitWords(summary, 90), '', 4);
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
@@ -743,10 +786,10 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                   </span>
                                 )}
                                 {school.selectivityLabel && (() => {
-                                  const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Unknown;
+                                  const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
                                   return (
                                     <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
-                                      {school.selectivityLabel}
+                                      {displaySelectivityLabel(school.selectivityLabel)}
                                     </span>
                                   );
                                 })()}

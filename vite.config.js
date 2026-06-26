@@ -117,7 +117,12 @@ FIT BUCKETS VS SELECTIVITY:
 - "stretch" means LOW FIT / Reach: candidate-program alignment below 50 or material evidence gaps.
 - "possible" means WORKABLE / Competitive Fit: candidate-program alignment 50-80.
 - "safe" means STRONG FIT: candidate-program alignment above 80.
-- These tier keys control row/group color only. School selectivity is separate; Strong Fit + Ultra competitive is valid.
+- These tier keys control row/group color only. School selectivity is separate; Strong Fit + Ultra Competitive is valid.
+
+SELECTIVITY LABELS:
+- Use only Ultra Competitive, Competitive, and Accessible.
+- Calculate selectivity as a weighted institutional score using global reputation across respected rankings, average admitted GPA, applicable test medians, acceptance rate, historical competitiveness, and program reputation in its discipline.
+- Do not determine selectivity from one metric or a hardcoded school list alone.
 
 PORTFOLIO CONSTRUCTION GUIDANCE:
 - Start from the candidate's eligible universe, then diversify by fit bucket, selectivity, strategic value, geography, specialization, employer pipeline, and practical admissions outcome.
@@ -125,7 +130,7 @@ PORTFOLIO CONSTRUCTION GUIDANCE:
 - Prefer a strategic spread of 10-20 schools that maximizes admissions outcomes: likely admits, credible competitive options, and realistic upside.
 - For exceptional candidates, do not force a Reach bucket if the scoring engine naturally makes ultra-selective schools Strong Fit.
 
-Always include avgGMAT, avgGPA, location, and notes fields when relevant. Notes must mention the candidate's specific fit or gap for that school.`,
+Always include avgGMAT, avgGPA, location, and notes fields when relevant. Notes must mention the candidate's specific fit or gap for that school. programInfo must be one concise paragraph, maximum four sentences, starting with true program reputation, connecting strengths to the candidate, and ending with a real strategic trade-off. Never repeat school/program name or row KPIs in programInfo.`,
 
   fitFormula: `REAL ACCEPTANCE RATES (use as ceiling guidance):
 - Stanford GSB: 6% overall. Even exceptional profiles: 15–28% max.

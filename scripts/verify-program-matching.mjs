@@ -80,13 +80,13 @@ const byName = new Map(adamMbaPrograms.map((program) => [program.name, program])
 
 for (const name of ['Harvard Business School', 'Stanford GSB', 'Wharton']) {
   assert.equal(byName.get(name).tier, 'safe', `${name} should be STRONG FIT when fit > 80`);
-  assert.equal(byName.get(name).selectivityLabel, 'Ultra competitive', `${name} should carry Ultra competitive tag`);
-  assert.equal(byName.get(name).selectivitySource, 'm7_rule', `${name} should use M7 selectivity rule`);
+  assert.equal(byName.get(name).selectivityLabel, 'Ultra Competitive', `${name} should carry Ultra Competitive tag`);
+  assert.equal(byName.get(name).selectivitySource, 'weighted_selectivity', `${name} should use weighted selectivity`);
 }
 
 assert.equal(byName.get('Harvard MBA').tier, 'safe', 'Harvard MBA synonym should normalize to STRONG FIT');
-assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra competitive', 'formula/M7 rule should override wrong provided selectivity');
-assert.equal(byName.get('Harvard MBA').selectivitySource, 'm7_rule', 'formula should run before LLM fallback');
+assert.equal(byName.get('Harvard MBA').selectivityLabel, 'Ultra Competitive', 'weighted formula should override wrong provided selectivity');
+assert.equal(byName.get('Harvard MBA').selectivitySource, 'weighted_reputation', 'weighted reputation should run before LLM fallback');
 
 assert.equal(byName.get('Indiana Kelley').tier, 'safe', 'Indiana should become STRONG FIT when HBS is strong and no real mismatch exists');
 assert.equal(byName.get('Indiana Kelley').fit, 81, 'Indiana should be raised to a strong-fit floor');
