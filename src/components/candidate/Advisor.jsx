@@ -264,7 +264,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 )}
 
                 {/* Upload CV prompt */}
-                {!showChips && !hasScores && !busy && chat.some(m => m.role === 'user') && (
+                {!hasScores && !busy && chat.some(m => m.role === 'user') && (
                   <div style={{ background: '#fff8e8', border: '1px solid #f7e6b8', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 13.5, color: '#8a6a14', fontWeight: 700 }}>📄 Upload your CV to skip ahead and get instant analysis</span>
                     <button onClick={() => setShowCvModal(true)} style={{ background: 'linear-gradient(135deg,#fbd2a2,#fac18a)', color: '#faf7f2', border: 'none', borderRadius: 11, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
