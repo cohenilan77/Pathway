@@ -310,26 +310,111 @@ function intendedMajor(profile = {}) {
   return String(profile.intendedMajor || profile.major || profile.subjects || profile.interests || profile.goals || '').toLowerCase();
 }
 
+function cleanSchoolDescription(value, maxWords = 120) {
+  const text = String(value || '')
+    .replace(/\.{3,}/g, '.')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  const joined = sentences.slice(0, 4).join(' ').replace(/\s+/g, ' ').trim();
+  const words = joined.split(' ').filter(Boolean);
+  if (words.length <= maxWords) return joined.replace(/[,:;\-]+$/g, '').trim();
+  const cut = words.slice(0, maxWords).join(' ');
+  const sentenceEnd = Math.max(cut.lastIndexOf('.'), cut.lastIndexOf('!'), cut.lastIndexOf('?'));
+  if (sentenceEnd > 80) return cut.slice(0, sentenceEnd + 1).trim();
+  return `${cut.replace(/\s+\S*$/, '').replace(/[,:;\-]+$/, '').trim()}.`;
+}
+
+function undergradSchoolInsight(school = {}, profile = {}) {
+  const name = String(school.name || '').toLowerCase();
+  const major = intendedMajor(profile);
+  const premed = /medicine|medical|pre-med|biology|chemistry|health|neuro|biomedical/.test(major);
+  const cs = /computer science|cs|ai|software|data|technology|engineering|robotics/.test(major);
+  const business = /business|economics|finance|entrepreneur|management|accounting/.test(major);
+  const design = /design|architecture|arts|creative|studio|media/.test(major);
+  const lawPolicy = /law|politics|policy|international relations|government|humanities|history|philosophy/.test(major);
+
+  const rules = [
+    {
+      match: /mit|massachusetts institute of technology/,
+      text: cs
+        ? 'Exceptional for students aiming at computer science, AI, engineering, robotics, or technical entrepreneurship because undergraduate learning sits close to serious labs, founder culture, and top technology recruiting. The right application should show advanced coursework, original technical projects, and evidence of building rather than just consuming technology. The trade-off is that raw academic strength is not enough; the profile needs unusual initiative and technical depth.'
+        : 'Best known for engineering, computation, applied science, and founder-driven problem solving, with a culture that rewards builders who can handle intensity. It is most compelling when the intended major is technical and the activity record already shows independent projects, research, competitions, or product work. The trade-off is that students without a clear technical spike can look less differentiated here than at broader universities.',
+    },
+    {
+      match: /stanford/,
+      text: cs || business
+        ? 'Powerful for students interested in technology, entrepreneurship, AI, product building, or venture-backed innovation because the undergraduate ecosystem connects research, startups, design thinking, and ambitious peers. A strong match needs intellectual range plus evidence of initiative outside the classroom, not just high grades. The trade-off is that the story must feel original and self-directed rather than a generic Silicon Valley aspiration.'
+        : 'Known for academic flexibility, entrepreneurship, research access, and a student culture that rewards initiative across disciplines. It fits students who can connect academic curiosity with projects, leadership, or community impact that already show momentum. The trade-off is that broad excellence can disappear in this pool unless the application has a clear personal spike.',
+    },
+    {
+      match: /harvard/,
+      text: 'Known for liberal arts breadth, institutional leadership, alumni reach, research access, and unmatched convening power across politics, business, science, and public life. It fits students who can show academic excellence plus a leadership or impact record that suggests they will shape communities, not simply join them. The trade-off is that prestige alone is never the argument; the application needs a distinctive intellectual and personal contribution.',
+    },
+    {
+      match: /yale/,
+      text: lawPolicy
+        ? 'Especially strong for writing, humanities, politics, law-oriented exploration, global affairs, and close faculty-student intellectual culture. It fits students who can show depth of thought through debate, writing, research, civic work, or original inquiry. The trade-off is that the application should prove intellectual voice and community contribution, not only ambition for law or public life.'
+        : 'Known for residential-college community, humanities strength, arts culture, writing, and unusually strong faculty-student engagement. It fits students who combine academic seriousness with a clear voice, creative or civic contribution, and genuine curiosity. The trade-off is that the application must feel deeply personal and intellectually alive, not just high-achieving.',
+    },
+    {
+      match: /princeton/,
+      text: 'Known for undergraduate teaching, rigorous academics, senior thesis culture, quantitative strength, public policy, economics, engineering, and close advising. It fits students who can show disciplined academic depth and the maturity to pursue a serious independent project. The trade-off is that the profile should read as intellectually focused rather than only activity-heavy.',
+    },
+    {
+      match: /columbia/,
+      text: business || lawPolicy
+        ? 'Distinctive for its Core Curriculum, urban academic intensity, global affairs, finance, media, policy, and access to internships during the school year. It fits students who want a demanding intellectual base plus direct exposure to professional ecosystems. The trade-off is that the application should explain why an urban, structured, high-intensity environment is essential to the student direction.'
+        : 'Known for the Core Curriculum, serious academic culture, urban engagement, research access, and proximity to major cultural and professional institutions. It fits students who want intellectual structure and real-world exposure at the same time. The trade-off is that fit depends on showing maturity for an intense city campus rather than just liking a famous university.',
+    },
+    {
+      match: /penn|upenn|university of pennsylvania/,
+      text: business
+        ? 'Highly relevant for business, economics, finance, entrepreneurship, and interdisciplinary study because undergraduate options connect liberal arts with Wharton-level clubs, recruiting energy, and employer-facing student culture. It fits students who pair academic strength with leadership, initiative, and commercial curiosity. The trade-off is that the application must show substance behind business ambition, not just interest in finance or prestige.'
+        : 'Known for pre-professional energy, interdisciplinary flexibility, strong student organizations, research, and employer-connected opportunities. It fits students who want academic breadth with practical ambition and visible leadership. The trade-off is that the profile should show direction and initiative, otherwise the pre-professional environment can make the story feel generic.',
+    },
+    {
+      match: /duke/,
+      text: premed
+        ? 'Strong for future physicians through rigorous sciences, research access, hospital adjacency, service culture, and a collaborative undergraduate environment. It fits students who can combine biology or chemistry strength with sustained clinical exposure, volunteering, and leadership. The trade-off is that medical ambition must be supported by service maturity, not just strong grades.'
+        : 'Known for strong academics, school spirit, research, public policy, entrepreneurship, and a collaborative campus culture. It fits students who combine high achievement with leadership, service, and community energy. The trade-off is that the application should show contribution to campus life, not only academic ambition.',
+    },
+    {
+      match: /nyu|new york university/,
+      text: business || design
+        ? 'Valuable for students whose goals benefit from direct exposure to finance, media, arts, technology, startups, internships, and a highly independent urban environment. It fits applicants who already show maturity, initiative, and a reason to use the city as part of their education. The trade-off is that the student must be ready to self-direct; the opportunity is broad but less contained than a traditional campus.'
+        : 'Known for urban independence, global programs, arts, media, business, technology, and internship access across multiple industries. It fits students who can turn city exposure into concrete academic and professional growth. The trade-off is that the application should show self-management and purpose, because the environment rewards students who actively build their own path.',
+    },
+  ];
+
+  return rules.find(rule => rule.match.test(name))?.text || '';
+}
+
 function undergradUniversityDescription(school = {}, profile = {}) {
-  const stored = String(school.programInfo || school.notes || '').replace(/\s+/g, ' ').trim();
-  if (stored && stored.length > 90) return stored;
+  const specific = undergradSchoolInsight(school, profile);
+  if (specific) return cleanSchoolDescription(specific, 125);
+
+  const stored = cleanSchoolDescription(school.programInfo || school.notes, 120);
+  if (stored && stored.length > 120 && !/useful undergraduate platform|good school|strong university|located in|program relevance|mba relevance/i.test(stored)) return stored;
+
   const major = intendedMajor(profile);
   if (/medicine|medical|pre-med|biology|chemistry|health/.test(major)) {
-    return 'Outstanding undergraduate pathway for future physicians through strong science preparation, research access, hospital or community-health exposure, and advising toward medical school placement. Best fit when the student builds clinical service and biology/chemistry depth early.';
+    return 'Strong pathway for future physicians when the student can use science coursework, research access, service opportunities, and health-related advising to build a credible pre-med profile. The best fit comes from combining biology or chemistry depth with clinical volunteering, community impact, and maturity around patient-facing work. The trade-off is that medical-school readiness must be built over time, not assumed from grades alone.';
   }
   if (/computer science|cs|ai|software|data|technology|engineering/.test(major)) {
-    return 'Excellent undergraduate technology pathway with strong computer science depth, AI or engineering research, internship access, entrepreneurship opportunities, and credible recruiting into the technology ecosystem. The profile should keep building projects and advanced coursework.';
+    return 'Strong technology pathway when the student can access advanced CS or engineering coursework, project-based learning, research, internships, and entrepreneurship opportunities. It fits applicants who already show technical curiosity through coding, competitions, products, or independent builds. The trade-off is that the application needs proof of making things, not just saying AI or computer science sounds interesting.';
   }
   if (/business|economics|finance/.test(major)) {
-    return 'Strong undergraduate platform for business, economics, or finance through rigorous quantitative coursework, clubs, internships, alumni access, and employer signaling. The student should pair grades with leadership and market-facing activities.';
+    return 'Strong platform for business, economics, or finance when rigorous quantitative coursework connects with clubs, internships, competitions, alumni access, and early employer exposure. It fits students who can show leadership, commercial curiosity, and evidence of initiative beyond classroom performance. The trade-off is that finance or business goals need a sharper story than simply wanting a prestigious career.';
   }
   if (/design|architecture|arts|creative/.test(major)) {
-    return 'Valuable creative pathway when studio culture, portfolio development, critique, design resources, and interdisciplinary projects match the student direction. The deciding factor will be portfolio depth, not grades alone.';
+    return 'Valuable creative pathway when studio culture, critique, portfolio development, design resources, and interdisciplinary projects match the student direction. It fits applicants who can show original work, process, taste, and creative risk-taking rather than only academic strength. The trade-off is that portfolio depth and point of view will matter more than a broad activity list.';
   }
   if (/law|politics|policy|humanities/.test(major)) {
-    return 'Strong exploratory pathway for law, politics, or humanities through writing intensity, debate, research, civic engagement, and advising toward selective graduate or professional options. The student should develop evidence of argument, service, and leadership.';
+    return 'Strong exploratory pathway for law, politics, policy, or humanities when writing intensity, debate, research, civic engagement, and advising help the student build an intellectual voice. It fits applicants who can show argument, service, reading depth, and leadership in communities or ideas. The trade-off is that the application needs substance and perspective, not just a future-lawyer label.';
   }
-  return 'Useful undergraduate platform for exploring academic direction while building grades, activities, leadership, and a coherent intended-major story. Fit will sharpen as the student develops stronger coursework, projects, awards, and university preferences.';
+  return 'Useful undergraduate platform when the student can explore academic direction while building stronger grades, activities, leadership, projects, and a coherent intended-major story. It fits profiles that are still forming but show curiosity, initiative, and room to grow over Grades 9-12. The strategic priority is to turn exploration into evidence: coursework, projects, awards, service, or leadership that make the future application feel intentional.';
 }
 
 function UndergradCard({ title, children, action }) {

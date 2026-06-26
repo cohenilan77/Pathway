@@ -172,17 +172,17 @@ function getAdmitRateMetric(school) {
 
 function truncateText(value, maxLength = 420) {
   if (!value) return '';
-  const text = String(value).replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   if (text.length <= maxLength) return text;
   const slice = text.slice(0, maxLength);
   const sentenceEnd = Math.max(slice.lastIndexOf('.'), slice.lastIndexOf('!'), slice.lastIndexOf('?'));
   if (sentenceEnd >= 80) return slice.slice(0, sentenceEnd + 1).trim();
-  return `${slice.replace(/\s+\S*$/, '').replace(/[,:;–-]+$/, '').trim()}.`;
+  return `${slice.replace(/\s+\S*$/, '').replace(/[,:;\-]+$/, '').trim()}.`;
 }
 
 function firstSentences(value, fallback, maxSentences = 2) {
   if (!value) return fallback;
-  const text = String(value).replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
   return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 520) || fallback;
 }
@@ -203,17 +203,17 @@ function asDisplayRate(value) {
 }
 
 const PROGRAM_STRENGTHS = [
-  { match: /wharton|upenn|penn /, angle: 'A finance powerhouse with unusually deep buy-side recruiting, investor alumni density, and credibility across private capital.', fact: 'Its MBA network is one of the strongest finance brands in the market.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /columbia business school|columbia\b|cbs\b/, angle: 'A buy-side-oriented platform with strong access to deal flow, investment firms, and a dense finance alumni network.', fact: 'Its value is strongest when the career story is explicitly tied to investing or capital markets.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /stern|nyu/, angle: 'A finance-heavy MBA platform with strong capital-markets employer access, investor alumni reach, and credible private-capital signaling.', fact: 'It is useful as a serious but realistic finance target when the private-capital story is specific.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'A rare MBA platform where AI, engineering, venture creation, and technical-founder networks sit close to the management curriculum.', fact: 'That ecosystem is especially valuable for candidates aiming at deep-tech investing or company building.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /stanford|gsb/, angle: 'A founder and venture platform built around entrepreneurship infrastructure, technical talent, and access to high-growth company networks.', fact: 'The strategic value is strongest for candidates with a credible innovation, venture, or deep-tech thesis.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /harvard business school|hbs|harvard/, angle: 'A general-management and leadership platform with case-method training, global brand power, and broad investor/operator alumni reach.', fact: 'It rewards candidates who can turn achievement into a clear leadership narrative.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
-  { match: /booth|chicago/, angle: 'An analytically rigorous MBA environment with strong economics training and credibility among finance, investing, and strategy employers.', fact: 'The fit is strongest for candidates who can show disciplined decision-making and quantitative judgment.', goals: /pe|private equity|buyout|finance|invest|strategy/ },
-  { match: /kellogg|northwestern/, angle: 'A collaborative leadership and marketing-strength MBA with strong consulting access, brand-building depth, and an unusually engaged alumni culture.', fact: 'It is most powerful when the story emphasizes influence, teamwork, and customer-facing leadership.', goals: /consult|leadership|marketing|operator|strategy/ },
-  { match: /fuqua|duke/, angle: 'A team-based general-management platform with practical leadership culture, strong consulting pathways, and useful healthcare and technology networks.', fact: 'It can work well when the profile shows collaborative execution rather than only individual achievement.', goals: /health|tech|consult|leadership|operator|strategy/ },
-  { match: /kelley|indiana/, angle: 'A practical MBA option with real depth in finance and accounting, grounded employer access, and a value-oriented alumni base.', fact: 'It is strongest as a pragmatic career accelerator rather than a pure prestige play.', goals: /finance|invest|operator|management|consult/ },
-  { match: /emory|goizueta/, angle: 'A close-knit MBA platform with useful access to healthcare, consumer, consulting, and general-management employers.', fact: 'Its value rises when the target outcome fits relationship-driven recruiting and focused career support.', goals: /health|consumer|operator|consult|management|strategy/ },
+  { match: /wharton|upenn|penn /, angle: 'Known for finance depth, buy-side recruiting, analytical rigor, and one of the densest investor alumni networks in business education.', fact: 'That platform is unusually direct for private equity, venture capital, asset management, and finance leadership because employers already associate the brand with technical fluency and investing ambition.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /columbia business school|columbia\b|cbs\b/, angle: 'Known for finance, value investing, capital markets, and close access to buy-side recruiting, investment firms, and senior alumni in private capital.', fact: 'The platform is strongest when the candidate can connect prior experience to a specific investing thesis rather than a broad interest in business.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /stern|nyu/, angle: 'Known for finance, entertainment/media business, fintech exposure, and strong access to banks, funds, startups, and investor alumni.', fact: 'It can be a serious private-capital platform when the application shows a precise investing angle and uses the school as a bridge into deal flow rather than just a brand upgrade.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'Known for analytics, innovation, entrepreneurship, operations, and unusually tight links to engineering, AI, labs, venture creation, and technical founders.', fact: 'That makes it especially relevant for candidates aiming at deep-tech investing, AI commercialization, product-led entrepreneurship, or operating roles where technical credibility matters.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /stanford|gsb/, angle: 'Known for entrepreneurship, venture capital, leadership self-awareness, and access to technical founders, high-growth companies, and investor networks.', fact: 'The strategic value is highest when the candidate already has a credible innovation thesis, founder/operator evidence, or deep-tech market point of view that can stand out in a small class.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /harvard business school|hbs|harvard/, angle: 'Known for case-method leadership, general management, global brand power, and a broad alumni base across investors, founders, CEOs, and operators.', fact: 'It is powerful for candidates who can translate achievement into decisive leadership judgment and show why they will influence institutions, not only join elite employers.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
+  { match: /booth|chicago/, angle: 'Known for analytical rigor, economics, flexible curriculum, and strong credibility with finance, investing, consulting, and strategy employers.', fact: 'It fits candidates who can show disciplined judgment, quantitative comfort, and a career thesis that benefits from a more intellectually rigorous, less scripted MBA environment.', goals: /pe|private equity|buyout|finance|invest|strategy/ },
+  { match: /kellogg|northwestern/, angle: 'Known for collaborative leadership, marketing, general management, consulting, and one of the most engaged alumni cultures in business education.', fact: 'It fits candidates whose advantage is influence, team leadership, client-facing judgment, and broad management range rather than only technical finance specialization.', goals: /consult|leadership|marketing|operator|strategy/ },
+  { match: /fuqua|duke/, angle: 'Known for team-based leadership, practical general management, healthcare, consulting, and a culture that rewards collaboration and execution.', fact: 'It can be a strong strategic choice for candidates who need to prove operating maturity, cross-functional leadership, and a warmer leadership style rather than pure prestige signaling.', goals: /health|tech|consult|leadership|operator|strategy/ },
+  { match: /kelley|indiana/, angle: 'Known for practical finance, accounting, supply chain, and employer-oriented career support with a value-conscious alumni network.', fact: 'It is strongest as a pragmatic career accelerator when the goal is realistic mobility, focused recruiting, and a safer outcome rather than maximum prestige.', goals: /finance|invest|operator|management|consult/ },
+  { match: /emory|goizueta/, angle: 'Known for a close-knit MBA experience, strong career coaching, and useful access to healthcare, consumer, consulting, and Atlanta-linked employers.', fact: 'Its value rises when the candidate wants relationship-driven recruiting, smaller-cohort attention, and a realistic bridge into operating or consulting roles.', goals: /health|consumer|operator|consult|management|strategy/ },
   { match: /nyu tisch|itp|interactive telecommunications/, angle: 'A studio-driven creative technology program where interaction design, prototyping, critique culture, and portfolio evidence matter most.', fact: 'The best candidates show a clear creative-technical point of view, not just academic strength.', goals: /portfolio|creative|design|media|interactive|technology|tech|product/ },
   { match: /insead/, angle: 'A fast global MBA with a highly international cohort, cross-border employer access, and strong consulting and general-management recognition.', fact: 'It is particularly useful for candidates who need speed, mobility, and a global repositioning story.', goals: /global|international|consult|operator|management|strategy/ },
 ];
@@ -276,7 +276,7 @@ function escapeRegExp(value) {
 }
 
 function sanitizeProgramInfo(value, school, profile) {
-  let text = String(value || '').replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
+  let text = String(value || '').replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   if (!text) return '';
 
   const schoolName = String(school?.name || '').trim();
@@ -367,8 +367,8 @@ function inferStrategicAngle(school, profile) {
   if (/law|jd|llm|legal/.test(source)) return { angle: 'Most useful when its legal specialization, clerkship or employer pipeline, and alumni network match the intended practice area.', fact: 'The strongest case will tie prior legal or policy work to a specific practice direction.' };
   if (/medicine|medical|md|clinical|health/.test(source)) return { angle: 'Strategic value comes from clinical exposure, research access, health-system partnerships, and fit with the intended medical path.', fact: 'The profile must show service maturity and scientific readiness, not only academic strength.' };
   if (/undergraduate|intended major|internship|advising/.test(source)) return { angle: 'Strength depends on intended-major depth, advising quality, internship access, and the student ecosystem around the academic direction.', fact: 'The fit is strongest when academic direction and extracurricular evidence point the same way.' };
-  if (/alumni|network|recruit|placement|employer|career/.test(source)) return { angle: 'Recognized for alumni reach, employer access, and recruiting strength tied to the target outcome.', fact: 'The application should make the career bridge specific rather than broadly aspirational.' };
-  return { angle: 'Strategic value should come from distinctive program strengths, employer access, alumni reach, and fit with the stated career goal.', fact: 'The clearest application will connect those resources to a concrete next step.' };
+  if (/alumni|network|recruit|placement|employer|career/.test(source)) return { angle: 'Recognized for alumni reach, employer access, and recruiting strength tied to the target outcome.', fact: 'The strongest use of this platform is a precise career bridge: which employers, industries, mentors, or projects the candidate can realistically activate.' };
+  return { angle: 'Best evaluated through the program strengths that are specific to the candidate track: employer outcomes, academic depth, alumni reach, faculty or lab access, ecosystem fit, and culture.', fact: 'The application should show exactly which of those assets unlock the next step, because generic prestige is not a strategy.' };
 }
 
 function buildProgramInfo(school, profile) {
@@ -476,11 +476,11 @@ function buildAccordionSummary(school, profile) {
     : '';
   const tradeoff = strategicTradeoff(school, profile);
   const summary = [programInsight, goalSentence, fitSentence, tradeoff].filter(Boolean).join(' ')
-    .replace(/\.{3,}|…/g, '.')
+    .replace(/\.{3,}/g, '.')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
-  return firstSentences(limitWords(summary, 80), '', 4);
+  return firstSentences(limitWords(summary, 125), '', 4);
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
@@ -599,7 +599,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
                 <path d="M21 3v5h-5" />
               </svg>
-              {busy ? 'Refreshing…' : 'Refresh Analysis'}
+              {busy ? 'Refreshing...' : 'Refresh Analysis'}
             </button>
             <button onClick={() => setCandTab('documents')}
               style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -657,7 +657,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
               <path d="M21 3v5h-5" />
             </svg>
-            {busy ? 'Refreshing…' : 'Refresh Analysis'}
+            {busy ? 'Refreshing...' : 'Refresh Analysis'}
           </button>
         </div>
 
