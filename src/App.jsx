@@ -59,6 +59,22 @@ function buildInitialChat(language) {
 }
 
 const INITIAL_CHAT = buildInitialChat('English');
+const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
+
+function sanitizeVisibleText(text) {
+  return String(text || '')
+    .replace(new RegExp(`<(${DATA_BLOCK_TAGS})>[\\s\\S]*?<\\/\\1>`, 'gi'), '')
+    .replace(/<(thinking|analysis|reasoning|scratchpad|internal|hidden)>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<function_calls>[\s\S]*?<\/function_calls>/gi, '')
+    .replace(/<invoke[\s\S]*?<\/invoke>/gi, '')
+    .replace(/```(?:json)?[\s\S]*?```/gi, '')
+    .replace(/<\/?(thinking|analysis|reasoning|scratchpad|internal|hidden)[^>]*>/gi, '')
+    .replace(/<\/?(?:tool_use|tool_code|function_calls|invoke)[^>]*>/gi, '')
+    .replace(/^\s*(?:\{[\s\S]*\}|\[[\s\S]*\])\s*$/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 function parseBlocks(raw) {
   const extract = (tag) => {
@@ -77,9 +93,7 @@ function parseBlocks(raw) {
     }
     return null;
   };
-  const clean = raw
-    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>[\s\S]*?<\/\1>/g, '')
-    .trim();
+  const clean = sanitizeVisibleText(raw);
   return {
     clean,
     profile: extract('PROFILE'),
@@ -96,20 +110,17 @@ function parseBlocks(raw) {
 }
 
 function safeVisibleReply(raw, parsed) {
-  const clean = (parsed.clean || '')
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/<\/?(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>/g, '')
-    .replace(/<function_calls>[\s\S]*?<\/function_calls>/gi, '')
-    .replace(/<invoke[\s\S]*?<\/invoke>/gi, '')
-    .replace(/\b(tool_use|tool_code|function_calls)\b[\s\S]*$/gi, '')
-    .trim();
+  const clean = sanitizeVisibleText(parsed.clean || '');
+  if (parsed.profile && parsed.scores && parsed.programs) {
+    return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
+  }
   if (clean) return clean;
   if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
   if (parsed.chosenSchools) return 'Your target schools are saved.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
   if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
-  return raw.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, '').trim() || 'Done — I updated your workspace.';
+  return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
 }
 
 function loadAuth() {

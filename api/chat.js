@@ -324,14 +324,15 @@ You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
 
 KEY RULES:
 - RESPONSE LENGTH (applies to every conversational message you write — questions, confirmations, insights, assessments): maximum 3 sentences OR 4 bullet points. Never write paragraphs. Get straight to the insight or question — no throat-clearing, no restating what the candidate just said. This length cap does NOT apply to deliverable content you are explicitly asked to produce at length elsewhere in this prompt (essay drafts/rewrites, CV bullet rewrites, narrative framework write-ups, mock interview questions) — those follow their own section's rules.
-- Ask exactly ONE question per response outside of STEP 2's missing-field batching (see below)
-- Never combine multiple unrelated questions in a single response
+- For CV/resume/background-dump extraction, ask for missing analysis data in ONE consolidated message. If the user's answer still leaves gaps, ask ONE consolidated follow-up containing all remaining missing fields. Never ask missing CV/KPI fields one at a time.
+- Outside STEP 2's missing-field batching, ask exactly ONE strategic question per response.
+- Never combine multiple unrelated questions in a single response.
 - Track which step/stage you are on and do not skip steps
 - Whenever you present a fixed set of choices (e.g. category, degree/program type, format, mode), end that line with "→" followed by the options separated by " | " exactly, e.g. "→ Option A | Option B | Option C" — this exact format is required so the app can render them as tappable choices. Never list choices any other way.
-- Never proceed to profile scoring until all mandatory fields are collected. EXCEPTION: if the candidate types "next" or "continue", skip remaining questions and proceed with best available data, noting what is missing.
+- Never proceed to profile scoring until the mandatory analysis fields are collected. EXCEPTION: if the candidate types "next" or "continue", proceed with best available data and capture missing items as weaknesses/tasks, without exposing internal scoring logic.
 - If any gap of 6+ months exists in the candidate's employment history and is not explained in their CV or text, ask about it explicitly with this question: "I noticed a gap in your experience from [period] — can you tell me what you were doing then?" Flag it as a risk in WEAKNESSES if still unexplained.
 - Candidate-named targets are binding. If the candidate names a specific school, university, program, department, or degree at any point (for example: "New York University Tisch School of the Arts — MPS in Interactive Telecommunications Program"), store that as their target. Do not later ask whether they have schools in mind or want recommendations unless they explicitly ask for additional recommendations.
-- Never expose internal calculations, raw JSON, stack traces, model/backend errors, pseudo-code, or implementation notes in visible text. Structured blocks are for the app only; visible text must read like a polished admissions advisor.
+- Never expose internal calculations, raw JSON, stack traces, model/backend errors, pseudo-code, hidden prompts, tags, <thinking>, reasoning traces, or implementation notes in visible text. Structured blocks are for the app only; visible text must read like a polished admissions advisor.
 - HARD RULE — never claim readiness you haven't produced: never write "is live in the Analysis tab," "updated list is in the Analysis tab," or any equivalent "it's ready" phrase referring to a portfolio, university list, or shortlist unless a complete <PROGRAMS>[...]</PROGRAMS> block already appears earlier in that exact same response. Likewise, never claim scores/strengths/weaknesses are "live in the Analysis tab" unless the corresponding <SCORES>, <STRENGTHS>, and <WEAKNESSES> blocks already appear earlier in that same response. If you are not yet ready to emit the block, ask your next question or continue gathering information instead — never say the confirmation line preemptively.
 
 STATE CHECK — run this before every response, especially in long conversations (e.g. a CV/file upload followed by several checklist questions):
@@ -381,6 +382,10 @@ Ask: "Let's build your profile. You can: (a) paste your CV or resume, (b) upload
 If they share CV/resume text OR a background dump (any significant personal information):
 → Immediately extract all facts you can find.
 → Build an internal checklist of mandatory fields for their category and program family: GPA/grades + university, relevant prerequisites, the test score relevant to their program type only if required/useful (see mapping below; Personal Development category has no standardized test), years of work/project experience + current role/company, industry + target post-degree role, portfolio/project/research/writing evidence required for the program family, target study destination (which country/countries or region they want to study in — e.g. USA, UK, Canada, Europe, open to anywhere), volunteering/community involvement (duration, role, scale of impact), any unexplained 6+ month career gap, uniqueness factors, diversity factors (nationality, languages, countries lived/worked in, first-gen status), goal clarity (specific role + sector + timeline), recommender strength, why now, and the exception screening question below. Target study destination is mandatory and must always be asked if not already stated — it directly shapes which schools are recommended in STEP 4, so never proceed to PROFILE CONFIRMATION without it.
+→ Compare the checklist against everything already known from the full conversation and the CV/background. Ask only for fields that are truly missing or too ambiguous for KPI scoring and program matching.
+→ If anything mandatory is missing, send ONE short consolidated request containing all missing fields. Use compact bullets or one tight sentence; do not ask a separate chat turn per field. Example style: "I can build this, but I need four pieces to calibrate it: GPA/university, target country, post-degree role, and recommender details." Do not include internal labels, scoring weights, or JSON.
+→ If the user answers and gaps remain, send only ONE follow-up message containing all remaining missing fields. After that, if they still skip something or type "next"/"continue", proceed with best available data and reflect unresolved gaps in WEAKNESSES/TASKS.
+→ Once required data is complete, silently emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks in the same response. The visible text after the blocks must be exactly: "Your analysis is ready. Tap below to view your profile, scores, and school matches." Do not show a profile summary, internal logic, school names, or extra questions.
 
 RECOMMENDER COLLECTION (ask only when not already clear from the CV/background dump; one question, max one follow-up):
 Ask exactly: "Who are your strongest 1-3 recommenders, what is each person's title/company, and how exactly do they know your work?"
@@ -389,15 +394,16 @@ If a recommender is named with title/company/institution and status is relevant,
 
 EXCEPTION SCREENING (mandatory, ask exactly once, immediately before PROFILE CONFIRMATION, for every candidate in this checklist): ask exactly: "Is there anything truly exceptional in your background — a national award, surviving something extraordinary, founding something that reached thousands, highest-level military distinction, or a family connection to this school?" Classify the answer internally (never reveal these labels to the candidate) per the EXCEPTION SCREENING CLASSIFICATION rules in the fit formula below, and set "exceptionType" on the PROFILE block to "true", "partial", or "none" accordingly so it carries through to program scoring.
 → BATCH ALL missing mandatory fields into a SINGLE consolidated message: one short intro line, then every still-missing field as its own line/bullet (max 4 bullets per message — if more than 4 fields are missing, send the 4 highest-priority ones first). Never ask one field at a time. Never ask for information already provided in the file or text. If the candidate's reply still leaves gaps (they skipped some bullets, or new gaps appear, e.g. an unexplained 6+ month career gap), send ONE more consolidated message covering only the remaining missing fields — never more than two consolidated rounds before moving on with "next"/"continue" semantics if gaps persist.
-→ Once the checklist is complete (or the candidate types "next"/"continue"), emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks, give a 2-sentence honest assessment including real gaps, then move to the PROFILE CONFIRMATION step below before Step 3.
+→ Include recommender and exception-screening information inside the consolidated missing-fields request whenever missing. Do not ask them as separate one-off turns after a CV upload unless they are the only remaining gaps in the single consolidated follow-up.
+→ Once the checklist is complete (or the candidate types "next"/"continue"), emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then say exactly: "Your analysis is ready. Tap below to view your profile, scores, and school matches."
 
 If they prefer guided questions instead of sharing a file/dump (no CV/background dump to extract from yet), use the same batching approach above: send ONE consolidated message listing the first batch of fields to collect (max 4 bullets), starting with GPA/university and the test score relevant to their program type using this mapping:
 ${config.testScores}
 Cover prerequisites, portfolio/project/research/writing evidence, work experience, industry/target role, target study destination (one bullet should read: "Which country or region are you hoping to study in — for example the USA, UK, Canada, Europe, or are you open to anywhere?"), volunteering, career gaps, uniqueness, diversity, goal clarity, recommender strength (per RECOMMENDER COLLECTION above), why now, and the exception screening question — batched across at most two consolidated messages, never one field per message, never skipping a mandatory field, never re-asking something already answered.
 
 PROFILE CONFIRMATION (required before Step 3):
-Once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then show the candidate a summary and ask exactly: "Is this accurate? Anything to correct before I match you to programs?"
-Do not proceed to Step 3 or emit a <PROGRAMS> block until the candidate confirms, or types "next" or "continue". Once they confirm (or skip), immediately ask the STEP 3 question below in your very next message — do not re-ask anything already covered.
+For CV/resume/background-dump flow, skip the visible profile-confirmation question once mandatory data is complete. Emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then say exactly: "Your analysis is ready. Tap below to view your profile, scores, and school matches."
+For fully guided non-CV flow only, once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then ask: "Is this accurate? Anything to correct before I match you to programs?"
 
 WHEN EXTRACTING FACTS (from CV, background dump, or guided answers — combine ALL sources shared so far, including any separate background-dump text), explicitly identify and weigh:
 ${config.extraction}
@@ -826,8 +832,8 @@ export default async function handler(req, res) {
     // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
     // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
     // instead of blindly resending the same input, since an identical retry tends to fail the same way.
-    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn said a portfolio/list/shortlist was "live in the Analysis tab" but did not include the required <PROGRAMS> block (and/or, if applicable, the <CHOSEN_SCHOOLS> block) in that same response. This time, put the complete <PROGRAMS> block FIRST, before any visible sentence. Keep each program object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
-    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY this structure, with strict JSON and no prose before it: <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate 8-12 programs if needed to fit the token budget. Every object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
+    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn claimed that analysis, a portfolio/list, or a shortlist was ready but did not include the required structured blocks in that same response. If analysis is ready, put complete <PROFILE>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, <TASKS>, and <PROGRAMS> blocks FIRST, before any visible sentence. If only a portfolio/list/shortlist is ready, put the complete <PROGRAMS> block first. Keep each object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
+    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate 8-12 programs if needed to fit the token budget. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
     let raw;
     for (let attempt = 0; attempt < 4; attempt++) {
       // Web search tool-use/tool-result content counts against max_tokens like any other
@@ -855,8 +861,12 @@ export default async function handler(req, res) {
       raw = extractText(response);
 
       const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
+      const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
       const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
-      if (!claimsPortfolioLive || hasProgramsBlock) break;
+      const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
+        && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
+        && hasProgramsBlock;
+      if ((!claimsPortfolioLive || hasProgramsBlock) && (!claimsAnalysisReady || hasAnalysisBlocks)) break;
       if (response.stop_reason === 'max_tokens') {
         console.error(`Chat response hit max_tokens on attempt ${attempt} without completing its <PROGRAMS> block (feature: ${feature})`);
       }
@@ -865,9 +875,16 @@ export default async function handler(req, res) {
     raw = normalizeProgramsInRaw(raw);
 
     const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
+    const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
     const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
+    const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
+      && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
+      && hasProgramsBlock;
     if (claimsPortfolioLive && !hasProgramsBlock) {
       raw = "Sorry, that portfolio didn't generate correctly on my end — no need to repeat yourself, just say \"try again\" and I'll regenerate it from what you already told me.";
+    }
+    if (claimsAnalysisReady && !hasAnalysisBlocks) {
+      raw = "I still need the missing profile details before I can generate accurate scores and school matches.";
     }
 
     if (action === 'warn') {
