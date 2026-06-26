@@ -1462,6 +1462,46 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 ))}
               </div>
 
+              {/* Headroom Compression Panel */}
+              <div style={{ ...cardShell, padding: '20px 24px', marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>HEADROOM COMPRESSION</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: '#141b34' }}>Token Savings via AI Context Compression</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: usageData?.costByHeadroom?.enabled?.count > 0 ? '#22c55e' : '#d1d5db' }} />
+                    <span style={{ fontSize: 12, color: '#6b7280' }}>{usageData?.costByHeadroom?.enabled?.count > 0 ? 'Active' : 'Off'}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#f0fdf4' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>COMPRESSED CALLS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{usageData?.costByHeadroom?.enabled?.count ?? 0}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#fefce8' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>UNCOMPRESSED CALLS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#ca8a04' }}>{usageData?.costByHeadroom?.disabled?.count ?? 0}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#eff6ff' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>COST W/ COMPRESSION</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{'$'}{Number(usageData?.costByHeadroom?.enabled?.cost || 0).toFixed(4)}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#fdf4ff' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>AVG COMPRESSION</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#9333ea' }}>{usageData?.averageEstimatedCompressionPercent > 0 ? (usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '—'}</div>
+                  </div>
+                </div>
+                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#9098b5', marginBottom: 6 }}>COMPRESSION RATIO PROGRESS</div>
+                  <div style={{ position: 'relative', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, #22c55e, #16a34a)', width: usageData?.averageEstimatedCompressionPercent > 0 ? Math.min(100, usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '0%', transition: 'width .5s ease' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#94a3b8' }}>
+                    <span>0%</span><span>Avg saved: {usageData?.averageEstimatedCompressionPercent > 0 ? (usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '—'}</span><span>100%</span>
+                  </div>
+                </div>
+              </div>
               {/* System cost controls */}
               <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>System Cost Controls</h3>
