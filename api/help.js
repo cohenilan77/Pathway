@@ -1,4 +1,4 @@
-import { createAnthropicClient } from '../lib/anthropic-client.js';
+import Anthropic from '@anthropic-ai/sdk';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -39,7 +39,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const client = createAnthropicClient();
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: MODEL,
       max_tokens: 700,
