@@ -55,6 +55,18 @@ const sortableHeaderStyle = {
   gap: 5,
 };
 
+const usageRowsScrollStyle = {
+  maxHeight: 204,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+};
+
+const usageCompactRowsScrollStyle = {
+  maxHeight: 118,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+};
+
 function SortHeader({ label, column, sort, onSort }) {
   const active = sort.column === column;
   return (
@@ -1958,10 +1970,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 {!usageData?.costOverTime?.length ? (
                   <div style={{ fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ ...usageCompactRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
                     {(() => {
                       const maxCost = Math.max(0.01, ...usageData.costOverTime.map(d => d.cost || 0));
-                      return usageData.costOverTime.slice(-14).map((d) => (
+                      return [...usageData.costOverTime].slice(-14).reverse().map((d) => (
                         <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 11, color: '#9098b5', width: 80, flexShrink: 0 }}>{d.date}</span>
                           <div style={{ flex: 1, height: 10, background: '#f1eadd', borderRadius: 5, overflow: 'hidden' }}>
@@ -1987,23 +1999,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                       <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>STATUS</span>
                     </div>
-                    {usageData.topUsersByCost.map((u) => (
-                      <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
-                        <span>
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
-                            background: u.status === 'high' ? '#fff1f6' : u.status === 'warning' ? '#fff8ea' : '#eafff6',
-                            color: u.status === 'high' ? '#e384a5' : u.status === 'warning' ? '#eaa129' : '#3fdca9',
-                            border: `1px solid ${u.status === 'high' ? '#fbd3e2' : u.status === 'warning' ? '#f5dfa6' : '#aaeed1'}`,
-                          }}>{u.status}</span>
-                        </span>
-                      </div>
-                    ))}
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.topUsersByCost.map((u) => (
+                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
+                          <span>
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
+                              background: u.status === 'high' ? '#fff1f6' : u.status === 'warning' ? '#fff8ea' : '#eafff6',
+                              color: u.status === 'high' ? '#e384a5' : u.status === 'warning' ? '#eaa129' : '#3fdca9',
+                              border: `1px solid ${u.status === 'high' ? '#fbd3e2' : u.status === 'warning' ? '#f5dfa6' : '#aaeed1'}`,
+                            }}>{u.status}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
@@ -2016,13 +2030,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                   <span>FEATURE</span><span>COST</span><span>TOKENS</span>
                 </div>
-                {(usageData?.costByFeature || []).map((f) => (
-                  <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
-                    <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
-                  </div>
-                ))}
+                <div style={usageRowsScrollStyle}>
+                  {(usageData?.costByFeature || []).map((f) => (
+                    <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
+                      <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Recent high-cost conversations */}
@@ -2037,15 +2053,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                       <span>CONVERSATION</span><span>USER</span><span>FEATURE</span><span>COST</span><span>WHEN</span>
                     </div>
-                    {usageData.recentHighCostConversations.map((c, i) => (
-                      <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                        <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
-                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
-                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
-                        <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
-                      </div>
-                    ))}
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.recentHighCostConversations.map((c, i) => (
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
@@ -2058,7 +2076,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     No alerts.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ ...usageRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
                     {usageData.alerts.map((a) => (
                       <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px' }}>
                         <span style={{ fontSize: 13, color: '#33405e' }}>{a.message}</span>
