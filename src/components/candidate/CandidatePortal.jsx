@@ -6,6 +6,7 @@ import Documents from './Documents.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
+import NarrativeStrategy from './NarrativeStrategy.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
@@ -601,7 +602,7 @@ export default function CandidatePortal(props) {
         {/* nav */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
-            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
+            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad) || (item.key === 'advisor' && candTab === 'strategy');
             const locked = requiresOAuthDetails && item.key !== 'settings';
             return (
               <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -690,6 +691,7 @@ export default function CandidatePortal(props) {
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'settings' && <Settings {...props} />}
+        {candTab === 'strategy' && <NarrativeStrategy {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
 
