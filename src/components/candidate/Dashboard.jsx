@@ -40,7 +40,7 @@ function CardLabel({ children }) {
   return <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
 }
 
-export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab }) {
+export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails }) {
   const overall = scores?.overall;
   const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
   const steps = STEPS || [];
@@ -48,8 +48,8 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
   const visibleTasks = (tasks || []).slice(0, 3);
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 20, maxWidth: 920 }}>
+    <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
+      <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 20, maxWidth: 920 }}>
 
         {/* Score card */}
         <Card style={{ display: 'flex', alignItems: 'center', gap: 22, gridColumn: '1 / -1' }}>
@@ -59,10 +59,16 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
             <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>
               {overall != null ? `${overall} / 100` : 'Not analyzed yet'}
             </div>
-            <button onClick={() => setCandTab('advisor')}
-              style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
-              Go to Advisor →
-            </button>
+            <div className="pw-dashboard-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button onClick={() => setCandTab('advisor')}
+                style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                Go to Advisor →
+              </button>
+              <button className="pw-dashboard-new-session" onClick={resetSession} disabled={requiresOAuthDetails}
+                style={{ background: '#faf7f2', color: '#5b46e0', border: '1.5px solid #e7dcc7', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
+                New session
+              </button>
+            </div>
           </div>
         </Card>
 
