@@ -55,6 +55,18 @@ const sortableHeaderStyle = {
   gap: 5,
 };
 
+const usageRowsScrollStyle = {
+  maxHeight: 204,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+};
+
+const usageCompactRowsScrollStyle = {
+  maxHeight: 118,
+  overflowY: 'auto',
+  overscrollBehavior: 'contain',
+};
+
 function SortHeader({ label, column, sort, onSort }) {
   const active = sort.column === column;
   return (
@@ -62,6 +74,169 @@ function SortHeader({ label, column, sort, onSort }) {
       <span>{label}</span>
       <span style={{ fontSize: 10, opacity: active ? 1 : 0.35 }}>{active ? (sort.direction === 'asc' ? '↑' : '↓') : '↕'}</span>
     </button>
+  );
+}
+
+const marketingKpis = [
+  { label: 'ORGANIC VISITS', value: '18.4K', color: '#141b34' },
+  { label: 'PAID CLICKS', value: '4,920', color: '#5b46e0' },
+  { label: 'CTR', value: '4.8%', color: '#19c08a' },
+  { label: 'LEADS', value: '642', color: '#141b34' },
+  { label: 'CPA', value: '$41', color: '#eaa129' },
+  { label: 'SPEND', value: '$26.3K', color: '#e0457a' },
+];
+
+const marketingCampaigns = [
+  { campaign: 'MBA Profile Review', platform: 'Google', budget: '$12,000', spend: '$8,840', clicks: '1,920', leads: 188, cpa: '$47', status: 'Active' },
+  { campaign: 'Undergrad Journey', platform: 'Meta', budget: '$7,500', spend: '$4,910', clicks: '2,140', leads: 246, cpa: '$20', status: 'Scaling' },
+  { campaign: 'LLM Admissions', platform: 'LinkedIn', budget: '$6,000', spend: '$3,720', clicks: 520, leads: 74, cpa: '$50', status: 'Active' },
+  { campaign: 'Consultant Webinar', platform: 'Google', budget: '$4,000', spend: '$2,180', clicks: 340, leads: 54, cpa: '$40', status: 'Testing' },
+];
+
+const seoKeywords = [
+  { keyword: 'mba admissions consultant', rank: 4, traffic: '3,420', page: '/mba-admissions' },
+  { keyword: 'undergraduate application roadmap', rank: 7, traffic: '2,180', page: '/undergraduate' },
+  { keyword: 'llm application strategy', rank: 9, traffic: '940', page: '/law' },
+  { keyword: 'college essay review', rank: 12, traffic: '1,260', page: '/essays' },
+];
+
+const paidChannels = [
+  { name: 'Google', spend: 8840, budget: 12000, color: '#5b46e0' },
+  { name: 'Meta', spend: 4910, budget: 7500, color: '#19c08a' },
+  { name: 'LinkedIn', spend: 3720, budget: 6000, color: '#eaa129' },
+];
+
+const engagementKpis = [
+  { label: 'MEETINGS', value: 18, color: '#141b34' },
+  { label: 'CONSULTANT ACTIONS', value: 126, color: '#5b46e0' },
+  { label: 'NOTES', value: 43, color: '#19c08a' },
+  { label: 'FOLLOW-UPS', value: 21, color: '#eaa129' },
+  { label: 'WAITING', value: 9, color: '#e0457a' },
+];
+
+const consultantLeaderboard = [
+  { consultant: 'Jessica Cohen', candidates: 18, meetings: 7, actions: 42, notes: 15, response: '18m' },
+  { consultant: 'David Rosen', candidates: 14, meetings: 5, actions: 31, notes: 10, response: '24m' },
+  { consultant: 'Sarah Levy', candidates: 12, meetings: 4, actions: 28, notes: 9, response: '32m' },
+  { consultant: 'Michael Stein', candidates: 10, meetings: 2, actions: 25, notes: 9, response: '41m' },
+];
+
+const upcomingMeetings = [
+  { candidate: 'Adam G.', consultant: 'Jessica Cohen', date: 'Today, 14:30', status: 'Confirmed' },
+  { candidate: 'Galit S.', consultant: 'David Rosen', date: 'Today, 16:00', status: 'Prep Needed' },
+  { candidate: 'Noa L.', consultant: 'Sarah Levy', date: 'Tomorrow, 10:15', status: 'Confirmed' },
+];
+
+const followUpCandidates = [
+  { candidate: 'Adam G.', last: 'Essay draft reviewed', inactive: '3 days', priority: 'High' },
+  { candidate: 'Maya R.', last: 'Profile scores updated', inactive: '5 days', priority: 'Medium' },
+  { candidate: 'Daniel K.', last: 'Waiting on transcript', inactive: '7 days', priority: 'High' },
+  { candidate: 'Lior P.', last: 'University list opened', inactive: '4 days', priority: 'Medium' },
+];
+
+const activityFeed = [
+  { actor: 'Jessica', action: 'reviewed essay', target: 'Adam G.', time: '12 min ago' },
+  { actor: 'David', action: 'completed interview prep', target: 'Galit S.', time: '38 min ago' },
+  { actor: 'Sarah', action: 'met candidate', target: 'Noa L.', time: '1h ago' },
+  { actor: 'Michael', action: 'added notes', target: 'Daniel K.', time: '2h ago' },
+];
+
+function AdminMetricCard({ label, value, color = '#141b34', detail }) {
+  return (
+    <div style={{ ...cardShell, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', right: -18, top: -18, width: 72, height: 72, borderRadius: 24, background: 'linear-gradient(135deg,rgba(148,179,251,.2),rgba(184,153,251,.18))' }} />
+      <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 8, position: 'relative' }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, color, lineHeight: 1, position: 'relative' }}>{value}</div>
+      {detail && <div style={{ fontSize: 12, color: '#9098b5', marginTop: 8, position: 'relative' }}>{detail}</div>}
+    </div>
+  );
+}
+
+function SectionTitle({ eyebrow, title, action }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, marginBottom: 14 }}>
+      <div>
+        {eyebrow && <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.7px', color: '#9098b5', marginBottom: 5 }}>{eyebrow}</div>}
+        <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: 0 }}>{title}</h3>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function StatusPill({ children, tone = 'neutral' }) {
+  const tones = {
+    good: { bg: '#eafff6', color: '#19c08a', border: '#aaeed1' },
+    warn: { bg: '#fff8ea', color: '#c77f0a', border: '#f5dfa6' },
+    risk: { bg: '#fff1f6', color: '#e0457a', border: '#fbd3e2' },
+    neutral: { bg: '#f1eadd', color: '#5b46e0', border: '#e7dcc7' },
+  };
+  const style = tones[tone] || tones.neutral;
+  return (
+    <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.3px', padding: '4px 10px', borderRadius: 8, background: style.bg, color: style.color, border: `1px solid ${style.border}`, whiteSpace: 'nowrap' }}>
+      {children}
+    </span>
+  );
+}
+
+function DataTable({ columns, rows }) {
+  return (
+    <div style={{ ...cardShell, overflow: 'hidden' }}>
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{ minWidth: Math.max(620, columns.length * 115) }}>
+          <div style={{ display: 'grid', gridTemplateColumns: columns.map(c => c.width || '1fr').join(' '), gap: 0, padding: '10px 20px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+            {columns.map(c => <span key={c.key}>{c.label}</span>)}
+          </div>
+          {rows.map((row, idx) => (
+            <div key={idx} style={{ display: 'grid', gridTemplateColumns: columns.map(c => c.width || '1fr').join(' '), gap: 0, padding: '15px 20px', alignItems: 'center', borderBottom: idx < rows.length - 1 ? '1px solid #f6f1e8' : 'none' }}>
+              {columns.map(c => (
+                <span key={c.key} style={{ fontSize: 13, color: c.strong ? '#141b34' : '#33405e', fontWeight: c.strong ? 700 : 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: 12 }}>
+                  {c.render ? c.render(row[c.key], row) : row[c.key]}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BudgetBar({ value, max, color = '#5b46e0' }) {
+  const pct = Math.min(100, Math.round((Number(value || 0) / Math.max(1, Number(max || 1))) * 100));
+  return (
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7392', marginBottom: 7 }}>
+        <span>${Number(value || 0).toLocaleString()}</span>
+        <span>{pct}%</span>
+      </div>
+      <div style={{ height: 8, background: '#f1eadd', borderRadius: 6, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 6 }} />
+      </div>
+    </div>
+  );
+}
+
+function ActivityFeed({ items }) {
+  return (
+    <div style={{ ...cardShell, padding: 22 }}>
+      <SectionTitle eyebrow="RECENT ACTIVITY" title="Consultant Activity Feed" />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {items.map((item, idx) => (
+          <div key={`${item.actor}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ width: 34, height: 34, borderRadius: 11, background: idx % 2 ? '#fff8ea' : '#f1eadd', color: idx % 2 ? '#c77f0a' : '#5b46e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
+              {item.actor.slice(0, 1)}
+            </span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.4 }}>
+                <b style={{ color: '#141b34' }}>{item.actor}</b> {item.action} <b style={{ color: '#141b34' }}>{item.target}</b>
+              </div>
+              <div style={{ fontSize: 11.5, color: '#9098b5', marginTop: 2 }}>{item.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -673,6 +848,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Consultants
             </button>
           )}
+          {canManageUsers && (
+            <button onClick={() => setAdminView('marketing')} style={sideStyle(adminView === 'marketing')}>
+              <NavIcon><path d="M3 11l18-7-7 18-3-8-8-3Z" /><path d="M11 14 21 4" /></NavIcon>
+              Marketing
+            </button>
+          )}
+          {canManageUsers && (
+            <button onClick={() => setAdminView('engagement')} style={sideStyle(adminView === 'engagement')}>
+              <NavIcon><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6" /><path d="M22 11h-6" /></NavIcon>
+              Engagement
+            </button>
+          )}
           {selectedUserId && (
             <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
               <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
@@ -740,6 +927,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'session' && 'Live Session'}
             {adminView === 'liveChat' && chatT(chatLanguage, 'liveChat')}
             {adminView === 'dashboard' && 'Dashboard'}
+            {adminView === 'marketing' && 'Marketing'}
+            {adminView === 'engagement' && 'Engagement'}
             {adminView === 'usageCost' && 'Usage & Cost'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -775,22 +964,260 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── DASHBOARD ── */}
           {adminView === 'dashboard' && (
-            <div style={{ maxWidth: 1100 }}>
+            <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8, marginBottom: 20 }}>
-                Overview of your assigned candidates.
+                Overview of candidate progress, acquisition and consultant momentum.
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14 }}>
                 {[
-                  { label: 'TOTAL ASSIGNED CANDIDATES', value: candidateUsers.length, color: '#141b34' },
-                  { label: 'ACTIVE CANDIDATES', value: candidateUsers.filter(u => u.sessionActive).length, color: '#5b46e0' },
-                  { label: 'CANDIDATES WITH PENDING TASKS', value: candidateUsers.filter(u => !u.scores).length, color: '#c77f0a' },
-                  { label: 'UNREAD MESSAGES', value: candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0), color: '#e0457a' },
+                  { label: 'TOTAL CANDIDATES', value: candidateUsers.length, color: '#141b34', detail: `${consultantUsers.length} consultants available` },
+                  { label: 'ACTIVE CANDIDATES', value: candidateUsers.filter(u => u.sessionActive).length, color: '#5b46e0', detail: 'currently in advisor flow' },
+                  { label: 'PENDING TASKS', value: candidateUsers.filter(u => !u.scores).length, color: '#c77f0a', detail: 'need first profile review' },
+                  { label: 'UNREAD MESSAGES', value: candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0), color: '#e0457a', detail: 'waiting for response' },
                 ].map((kpi) => (
-                  <div key={kpi.label} style={{ ...cardShell, padding: '16px 18px' }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 8 }}>{kpi.label}</div>
-                    <div style={{ fontSize: 28, fontWeight: 800, color: kpi.color }}>{usersLoading ? '…' : kpi.value}</div>
-                  </div>
+                  <AdminMetricCard key={kpi.label} {...kpi} value={usersLoading ? '...' : kpi.value} />
                 ))}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px,1fr) minmax(280px,1fr)', gap: 18 }}>
+                <div style={{ ...cardShell, padding: 24 }}>
+                  <SectionTitle
+                    eyebrow="ACQUISITION"
+                    title="Marketing Snapshot"
+                    action={<button onClick={() => setAdminView('marketing')} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12.5 }}>Open Marketing</button>}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
+                    {[
+                      ['Organic traffic', '18.4K'],
+                      ['Paid traffic', '4.9K'],
+                      ['Campaigns running', '4'],
+                      ['Ad spend', '$26.3K'],
+                      ['Leads generated', '642'],
+                      ['Cost per lead', '$41'],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '12px 13px' }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 6 }}>{label.toUpperCase()}</div>
+                        <div style={{ fontSize: 19, fontWeight: 800, color: '#141b34' }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ ...cardShell, padding: 24 }}>
+                  <SectionTitle
+                    eyebrow="CONSULTANT OPERATIONS"
+                    title="Engagement Snapshot"
+                    action={<button onClick={() => setAdminView('engagement')} style={{ ...btnPrimary, padding: '8px 14px', fontSize: 12.5 }}>Open Engagement</button>}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
+                    {[
+                      ['Consultant actions today', 126],
+                      ['Meetings today', 18],
+                      ['Notes written', 43],
+                      ['Need follow-up', 21],
+                    ].map(([label, value]) => (
+                      <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '13px 14px' }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 6 }}>{String(label).toUpperCase()}</div>
+                        <div style={{ fontSize: 23, fontWeight: 800, color: label === 'Need follow-up' ? '#e0457a' : '#141b34' }}>{value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.25fr .75fr', gap: 18 }}>
+                <div style={{ ...cardShell, padding: 24 }}>
+                  <SectionTitle eyebrow="APPLICATIONS" title="Application Overview" />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.5px', marginBottom: 12 }}>PIPELINE STAGE</div>
+                      {[
+                        ['Profile', candidateUsers.filter(u => (stepsFor(u.category)[u.stepIdx] || 'Profile') === 'Profile').length || 8, '#94b3fb'],
+                        ['Analysis', candidateUsers.filter(u => u.scores).length || 12, '#b899fb'],
+                        ['School List', candidateUsers.filter(u => u.programs?.length).length || 9, '#eaa129'],
+                        ['Applications', candidateUsers.filter(u => (u.stepIdx || 0) >= 5).length || 5, '#3fdca9'],
+                      ].map(([label, value, color]) => {
+                        const max = Math.max(1, candidateUsers.length || 18);
+                        return (
+                          <div key={label} style={{ marginBottom: 12 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: '#33405e', marginBottom: 6 }}>
+                              <span style={{ fontWeight: 700 }}>{label}</span><span>{value}</span>
+                            </div>
+                            <div style={{ height: 8, background: '#f1eadd', borderRadius: 6, overflow: 'hidden' }}>
+                              <div style={{ width: `${Math.min(100, (value / max) * 100)}%`, height: '100%', background: color }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.5px', marginBottom: 12 }}>SCORE HEALTH</div>
+                      {[
+                        ['Strong', candidateUsers.filter(u => (u.scores?.overall || 0) >= 75).length || 7, '#3fdca9'],
+                        ['Workable', candidateUsers.filter(u => (u.scores?.overall || 0) >= 50 && (u.scores?.overall || 0) < 75).length || 11, '#eaa129'],
+                        ['Needs Review', candidateUsers.filter(u => !u.scores || (u.scores?.overall || 0) < 50).length || 6, '#e384a5'],
+                      ].map(([label, value, color]) => (
+                        <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 13, padding: '10px 12px', marginBottom: 9 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                            <span style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{label}</span>
+                          </div>
+                          <span style={{ fontSize: 16, fontWeight: 800, color }}>{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <ActivityFeed items={activityFeed} />
+              </div>
+            </div>
+          )}
+
+          {/* ── MARKETING ── */}
+          {adminView === 'marketing' && canManageUsers && (
+            <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 18, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
+                  Marketing command center with mock acquisition, SEO and paid media signals.
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button onClick={() => showToast('Campaign creation placeholder.')} style={{ ...btnPrimary, padding: '9px 16px', fontSize: 13 }}>Add Campaign</button>
+                  <button onClick={() => showToast('Marketing export placeholder.')} style={{ ...btnGhost, padding: '9px 16px', fontSize: 13 }}>Export</button>
+                  <button onClick={() => showToast('Report creation placeholder.')} style={{ ...btnGhost, padding: '9px 16px', fontSize: 13 }}>Create Report</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
+                {marketingKpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
+              </div>
+
+              <div>
+                <SectionTitle eyebrow="PAID ACQUISITION" title="Campaign Performance" />
+                <DataTable
+                  columns={[
+                    { key: 'campaign', label: 'CAMPAIGN', width: '1.5fr', strong: true },
+                    { key: 'platform', label: 'PLATFORM' },
+                    { key: 'budget', label: 'BUDGET' },
+                    { key: 'spend', label: 'SPEND' },
+                    { key: 'clicks', label: 'CLICKS' },
+                    { key: 'leads', label: 'LEADS' },
+                    { key: 'cpa', label: 'CPA' },
+                    { key: 'status', label: 'STATUS', render: (value) => <StatusPill tone={value === 'Scaling' ? 'good' : value === 'Testing' ? 'warn' : 'neutral'}>{value}</StatusPill> },
+                  ]}
+                  rows={marketingCampaigns}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 18 }}>
+                <div>
+                  <SectionTitle eyebrow="ORGANIC GROWTH" title="SEO Snapshot" />
+                  <DataTable
+                    columns={[
+                      { key: 'keyword', label: 'TOP KEYWORDS', width: '1.5fr', strong: true },
+                      { key: 'rank', label: 'RANK' },
+                      { key: 'traffic', label: 'TRAFFIC' },
+                      { key: 'page', label: 'LANDING PAGE', width: '1.2fr' },
+                    ]}
+                    rows={seoKeywords}
+                  />
+                </div>
+
+                <div style={{ ...cardShell, padding: 24 }}>
+                  <SectionTitle eyebrow="PAID ADS" title="Budget Progress" />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                    {paidChannels.map(channel => (
+                      <div key={channel.name}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>{channel.name}</div>
+                          <div style={{ fontSize: 12, color: '#9098b5' }}>${channel.budget.toLocaleString()} budget</div>
+                        </div>
+                        <BudgetBar value={channel.spend} max={channel.budget} color={channel.color} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── ENGAGEMENT ── */}
+          {adminView === 'engagement' && canManageUsers && (
+            <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
+                Consultant productivity, meetings and candidate follow-up health.
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
+                {engagementKpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
+              </div>
+
+              <div>
+                <SectionTitle eyebrow="CONSULTANT PRODUCTIVITY" title="Leaderboard" />
+                <DataTable
+                  columns={[
+                    { key: 'consultant', label: 'CONSULTANT', width: '1.4fr', strong: true },
+                    { key: 'candidates', label: 'CANDIDATES' },
+                    { key: 'meetings', label: 'MEETINGS' },
+                    { key: 'actions', label: 'ACTIONS' },
+                    { key: 'notes', label: 'NOTES' },
+                    { key: 'response', label: 'AVG RESPONSE' },
+                  ]}
+                  rows={consultantLeaderboard}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+                <div>
+                  <SectionTitle eyebrow="CALENDAR" title="Upcoming Meetings" />
+                  <DataTable
+                    columns={[
+                      { key: 'candidate', label: 'CANDIDATE', strong: true },
+                      { key: 'consultant', label: 'CONSULTANT', width: '1.2fr' },
+                      { key: 'date', label: 'DATE', width: '1.2fr' },
+                      { key: 'status', label: 'STATUS', render: (value) => <StatusPill tone={value === 'Prep Needed' ? 'warn' : 'good'}>{value}</StatusPill> },
+                    ]}
+                    rows={upcomingMeetings}
+                  />
+                </div>
+
+                <div>
+                  <SectionTitle eyebrow="FOLLOW-UP QUEUE" title="Candidates Needing Follow-Up" />
+                  <DataTable
+                    columns={[
+                      { key: 'candidate', label: 'CANDIDATE', strong: true },
+                      { key: 'last', label: 'LAST ACTIVITY', width: '1.4fr' },
+                      { key: 'inactive', label: 'INACTIVE' },
+                      { key: 'priority', label: 'PRIORITY', render: (value) => <StatusPill tone={value === 'High' ? 'risk' : 'warn'}>{value}</StatusPill> },
+                    ]}
+                    rows={followUpCandidates}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 18 }}>
+                <ActivityFeed items={[
+                  { actor: 'Jessica', action: 'completed meeting', target: 'Adam G.', time: '9 min ago' },
+                  { actor: 'David', action: 'reviewed essay', target: 'Galit S.', time: '28 min ago' },
+                  { actor: 'Sarah', action: 'approved CV', target: 'Noa L.', time: '54 min ago' },
+                  { actor: 'Michael', action: 'booked interview', target: 'Daniel K.', time: '1h ago' },
+                ]} />
+                <div style={{ ...cardShell, padding: 24 }}>
+                  <SectionTitle eyebrow="WORKFLOW" title="Engagement Rhythm" />
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                    {[
+                      ['Meeting completed', 18, '#3fdca9'],
+                      ['Essay reviewed', 27, '#5b46e0'],
+                      ['CV approved', 11, '#eaa129'],
+                      ['Interview booked', 9, '#e384a5'],
+                    ].map(([label, value, color]) => (
+                      <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 16, padding: 14 }}>
+                        <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, marginBottom: 12 }} />
+                        <div style={{ fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>{value}</div>
+                        <div style={{ fontSize: 11.5, color: '#6b7392', marginTop: 7, lineHeight: 1.35, fontWeight: 700 }}>{label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1577,16 +2004,55 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </button>
               </div>
 
+              {/* Token savings via AI context compression */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Token Savings via AI Context Compression</h3>
+                  <div style={{ fontSize: 12.5, color: '#9098b5', margin: '0 0 14px' }}>
+                    Context compression per conversation via Anthropic prompt caching, and the cost saved (cached tokens × discounted price). Rows marked REAL reflect actual cache reads; others are estimated from input size.
+                    {usageData?.totalCompressionSaved ? ` Total saved: $${Number(usageData.totalCompressionSaved).toFixed(2)}.` : ''}
+                  </div>
+                </div>
+                {!usageData?.contextCompression?.length ? (
+                  <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>CONVERSATION</span><span>FEATURE</span><span>ORIGINAL TOKENS</span><span>COMPRESSED</span><span>SAVED</span><span>WHEN</span><span>SOURCE</span>
+                    </div>
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.contextCompression.map((c, i) => (
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{Number(c.inputTokens || 0).toLocaleString()}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>{Number(c.compressionPct || 0).toFixed(0)}%</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>${Number(c.costSaved || 0).toFixed(3)}</span>
+                          <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                          <span style={{
+                            fontSize: 10.5, fontWeight: 700, letterSpacing: '.3px', textAlign: 'center', padding: '2px 6px', borderRadius: 6,
+                            color: c.real ? '#19c08a' : '#9098b5',
+                            background: c.real ? 'rgba(25,192,138,0.12)' : 'rgba(144,152,181,0.12)',
+                          }}>
+                            {c.real ? 'REAL' : 'EST.'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* Cost over time */}
               <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Cost Over Time</h3>
                 {!usageData?.costOverTime?.length ? (
                   <div style={{ fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ ...usageCompactRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
                     {(() => {
                       const maxCost = Math.max(0.01, ...usageData.costOverTime.map(d => d.cost || 0));
-                      return usageData.costOverTime.slice(-14).map((d) => (
+                      return [...usageData.costOverTime].slice(-14).reverse().map((d) => (
                         <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 11, color: '#9098b5', width: 80, flexShrink: 0 }}>{d.date}</span>
                           <div style={{ flex: 1, height: 10, background: '#f1eadd', borderRadius: 5, overflow: 'hidden' }}>
@@ -1612,23 +2078,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                       <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>STATUS</span>
                     </div>
-                    {usageData.topUsersByCost.map((u) => (
-                      <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                        <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
-                        <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
-                        <span>
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
-                            background: u.status === 'high' ? '#fff1f6' : u.status === 'warning' ? '#fff8ea' : '#eafff6',
-                            color: u.status === 'high' ? '#e384a5' : u.status === 'warning' ? '#eaa129' : '#3fdca9',
-                            border: `1px solid ${u.status === 'high' ? '#fbd3e2' : u.status === 'warning' ? '#f5dfa6' : '#aaeed1'}`,
-                          }}>{u.status}</span>
-                        </span>
-                      </div>
-                    ))}
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.topUsersByCost.map((u) => (
+                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
+                          <span>
+                            <span style={{
+                              fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
+                              background: u.status === 'high' ? '#fff1f6' : u.status === 'warning' ? '#fff8ea' : '#eafff6',
+                              color: u.status === 'high' ? '#e384a5' : u.status === 'warning' ? '#eaa129' : '#3fdca9',
+                              border: `1px solid ${u.status === 'high' ? '#fbd3e2' : u.status === 'warning' ? '#f5dfa6' : '#aaeed1'}`,
+                            }}>{u.status}</span>
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
@@ -1641,13 +2109,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                   <span>FEATURE</span><span>COST</span><span>TOKENS</span>
                 </div>
-                {(usageData?.costByFeature || []).map((f) => (
-                  <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
-                    <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
-                  </div>
-                ))}
+                <div style={usageRowsScrollStyle}>
+                  {(usageData?.costByFeature || []).map((f) => (
+                    <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
+                      <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Recent high-cost conversations */}
@@ -1662,15 +2132,17 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
                       <span>CONVERSATION</span><span>USER</span><span>FEATURE</span><span>COST</span><span>WHEN</span>
                     </div>
-                    {usageData.recentHighCostConversations.map((c, i) => (
-                      <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                        <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
-                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
-                        <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
-                        <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
-                      </div>
-                    ))}
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.recentHighCostConversations.map((c, i) => (
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                        </div>
+                      ))}
+                    </div>
                   </>
                 )}
               </div>
@@ -1683,9 +2155,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     No alerts.
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ ...usageRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
                     {usageData.alerts.map((a) => (
-                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px' }}>
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px', flexShrink: 0 }}>
                         <span style={{ fontSize: 13, color: '#33405e' }}>{a.message}</span>
                         <span style={{ fontSize: 11, color: '#9098b5', flexShrink: 0, marginLeft: 12 }}>{a.createdAt ? new Date(a.createdAt).toLocaleString() : '—'}</span>
                       </div>

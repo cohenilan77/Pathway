@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
+import { getTrackConfig } from '../../trackConfig.js';
 
 const BAR_COLORS = [
   { from: '#7dd3fc', to: '#4dbbec' }, // sky
@@ -100,12 +101,39 @@ const FIT_LABELS = {
   'Not Eligible': 'Not Eligible',
 };
 
+function fitBucketLabel(school) {
+  const tier = String(school?.tier || '').toLowerCase();
+  const fit = Number(school?.fit);
+  if (tier === 'locked') return 'Not Eligible';
+  if (tier === 'safe' || fit > 80) return 'Strong Fit';
+  if (tier === 'possible' || fit >= 50) return 'Competitive Fit';
+  if (tier === 'stretch' || Number.isFinite(fit)) return 'Reach';
+  return FIT_LABELS[school?.admissionStatus] || school?.admissionStatus || 'Competitive Fit';
+}
+
+function fitBucketColor(school) {
+  const tier = String(school?.tier || '').toLowerCase();
+  const fit = Number(school?.fit);
+  if (tier === 'locked') return '#9098b5';
+  if (tier === 'safe' || fit > 80) return '#19a974';
+  if (tier === 'possible' || fit >= 50) return '#eaa129';
+  if (tier === 'stretch' || Number.isFinite(fit)) return '#e0457a';
+  return STATUS_COLORS[school?.admissionStatus] || '#6b7392';
+}
+
 const SELECTIVITY_BADGES = {
+  'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
   'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+  Competitive: { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
   'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
   Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
-  Unknown: { color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db' },
 };
+
+function displaySelectivityLabel(label) {
+  if (/^ultra competitive$/i.test(String(label || ''))) return 'Ultra Competitive';
+  if (/^(highly competitive|competitive)$/i.test(String(label || ''))) return 'Competitive';
+  return 'Accessible';
+}
 
 function getTestMetric(school) {
   const text = `${school?.programGroup || ''} ${school?.degree || ''} ${school?.name || ''}`.toLowerCase();
@@ -142,18 +170,21 @@ function getAdmitRateMetric(school) {
   return rate ? `${rate}%` : null;
 }
 
-function truncateText(value, maxLength = 170) {
+function truncateText(value, maxLength = 420) {
   if (!value) return '';
-  const text = String(value).replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength).replace(/\s+\S*$/, '')}...`;
+  const slice = text.slice(0, maxLength);
+  const sentenceEnd = Math.max(slice.lastIndexOf('.'), slice.lastIndexOf('!'), slice.lastIndexOf('?'));
+  if (sentenceEnd >= 80) return slice.slice(0, sentenceEnd + 1).trim();
+  return `${slice.replace(/\s+\S*$/, '').replace(/[,:;\-]+$/, '').trim()}.`;
 }
 
 function firstSentences(value, fallback, maxSentences = 2) {
   if (!value) return fallback;
-  const text = String(value).replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
-  return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 180) || fallback;
+  return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 520) || fallback;
 }
 
 function limitWords(value, maxWords = 80) {
@@ -172,17 +203,17 @@ function asDisplayRate(value) {
 }
 
 const PROGRAM_STRENGTHS = [
-  { match: /wharton|upenn|penn /, angle: 'A finance powerhouse with unusually deep buy-side recruiting, investor alumni density, and credibility across private capital.', fact: 'Its MBA network is one of the strongest finance brands in the market.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /columbia business school|columbia\b|cbs\b/, angle: 'A buy-side-oriented platform with strong access to deal flow, investment firms, and a dense finance alumni network.', fact: 'Its value is strongest when the career story is explicitly tied to investing or capital markets.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /stern|nyu/, angle: 'A finance-heavy MBA platform with strong capital-markets employer access, investor alumni reach, and credible private-capital signaling.', fact: 'It is useful as a serious but realistic finance target when the private-capital story is specific.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
-  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'A rare MBA platform where AI, engineering, venture creation, and technical-founder networks sit close to the management curriculum.', fact: 'That ecosystem is especially valuable for candidates aiming at deep-tech investing or company building.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /stanford|gsb/, angle: 'A founder and venture platform built around entrepreneurship infrastructure, technical talent, and access to high-growth company networks.', fact: 'The strategic value is strongest for candidates with a credible innovation, venture, or deep-tech thesis.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
-  { match: /harvard business school|hbs|harvard/, angle: 'A general-management and leadership platform with case-method training, global brand power, and broad investor/operator alumni reach.', fact: 'It rewards candidates who can turn achievement into a clear leadership narrative.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
-  { match: /booth|chicago/, angle: 'An analytically rigorous MBA environment with strong economics training and credibility among finance, investing, and strategy employers.', fact: 'The fit is strongest for candidates who can show disciplined decision-making and quantitative judgment.', goals: /pe|private equity|buyout|finance|invest|strategy/ },
-  { match: /kellogg|northwestern/, angle: 'A collaborative leadership and marketing-strength MBA with strong consulting access, brand-building depth, and an unusually engaged alumni culture.', fact: 'It is most powerful when the story emphasizes influence, teamwork, and customer-facing leadership.', goals: /consult|leadership|marketing|operator|strategy/ },
-  { match: /fuqua|duke/, angle: 'A team-based general-management platform with practical leadership culture, strong consulting pathways, and useful healthcare and technology networks.', fact: 'It can work well when the profile shows collaborative execution rather than only individual achievement.', goals: /health|tech|consult|leadership|operator|strategy/ },
-  { match: /kelley|indiana/, angle: 'A practical MBA option with real depth in finance and accounting, grounded employer access, and a value-oriented alumni base.', fact: 'It is strongest as a pragmatic career accelerator rather than a pure prestige play.', goals: /finance|invest|operator|management|consult/ },
-  { match: /emory|goizueta/, angle: 'A close-knit MBA platform with useful access to healthcare, consumer, consulting, and general-management employers.', fact: 'Its value rises when the target outcome fits relationship-driven recruiting and focused career support.', goals: /health|consumer|operator|consult|management|strategy/ },
+  { match: /wharton|upenn|penn /, angle: 'Known for finance depth, buy-side recruiting, analytical rigor, and one of the densest investor alumni networks in business education.', fact: 'That platform is unusually direct for private equity, venture capital, asset management, and finance leadership because employers already associate the brand with technical fluency and investing ambition.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /columbia business school|columbia\b|cbs\b/, angle: 'Known for finance, value investing, capital markets, and close access to buy-side recruiting, investment firms, and senior alumni in private capital.', fact: 'The platform is strongest when the candidate can connect prior experience to a specific investing thesis rather than a broad interest in business.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /stern|nyu/, angle: 'Known for finance, entertainment/media business, fintech exposure, and strong access to banks, funds, startups, and investor alumni.', fact: 'It can be a serious private-capital platform when the application shows a precise investing angle and uses the school as a bridge into deal flow rather than just a brand upgrade.', goals: /pe|private equity|buyout|vc|venture|finance|invest/ },
+  { match: /mit sloan|sloan|massachusetts institute of technology/, angle: 'Known for analytics, innovation, entrepreneurship, operations, and unusually tight links to engineering, AI, labs, venture creation, and technical founders.', fact: 'That makes it especially relevant for candidates aiming at deep-tech investing, AI commercialization, product-led entrepreneurship, or operating roles where technical credibility matters.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /stanford|gsb/, angle: 'Known for entrepreneurship, venture capital, leadership self-awareness, and access to technical founders, high-growth companies, and investor networks.', fact: 'The strategic value is highest when the candidate already has a credible innovation thesis, founder/operator evidence, or deep-tech market point of view that can stand out in a small class.', goals: /deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/ },
+  { match: /harvard business school|hbs|harvard/, angle: 'Known for case-method leadership, general management, global brand power, and a broad alumni base across investors, founders, CEOs, and operators.', fact: 'It is powerful for candidates who can translate achievement into decisive leadership judgment and show why they will influence institutions, not only join elite employers.', goals: /pe|private equity|buyout|vc|venture|leadership|management|entrepreneur|founder/ },
+  { match: /booth|chicago/, angle: 'Known for analytical rigor, economics, flexible curriculum, and strong credibility with finance, investing, consulting, and strategy employers.', fact: 'It fits candidates who can show disciplined judgment, quantitative comfort, and a career thesis that benefits from a more intellectually rigorous, less scripted MBA environment.', goals: /pe|private equity|buyout|finance|invest|strategy/ },
+  { match: /kellogg|northwestern/, angle: 'Known for collaborative leadership, marketing, general management, consulting, and one of the most engaged alumni cultures in business education.', fact: 'It fits candidates whose advantage is influence, team leadership, client-facing judgment, and broad management range rather than only technical finance specialization.', goals: /consult|leadership|marketing|operator|strategy/ },
+  { match: /fuqua|duke/, angle: 'Known for team-based leadership, practical general management, healthcare, consulting, and a culture that rewards collaboration and execution.', fact: 'It can be a strong strategic choice for candidates who need to prove operating maturity, cross-functional leadership, and a warmer leadership style rather than pure prestige signaling.', goals: /health|tech|consult|leadership|operator|strategy/ },
+  { match: /kelley|indiana/, angle: 'Known for practical finance, accounting, supply chain, and employer-oriented career support with a value-conscious alumni network.', fact: 'It is strongest as a pragmatic career accelerator when the goal is realistic mobility, focused recruiting, and a safer outcome rather than maximum prestige.', goals: /finance|invest|operator|management|consult/ },
+  { match: /emory|goizueta/, angle: 'Known for a close-knit MBA experience, strong career coaching, and useful access to healthcare, consumer, consulting, and Atlanta-linked employers.', fact: 'Its value rises when the candidate wants relationship-driven recruiting, smaller-cohort attention, and a realistic bridge into operating or consulting roles.', goals: /health|consumer|operator|consult|management|strategy/ },
   { match: /nyu tisch|itp|interactive telecommunications/, angle: 'A studio-driven creative technology program where interaction design, prototyping, critique culture, and portfolio evidence matter most.', fact: 'The best candidates show a clear creative-technical point of view, not just academic strength.', goals: /portfolio|creative|design|media|interactive|technology|tech|product/ },
   { match: /insead/, angle: 'A fast global MBA with a highly international cohort, cross-border employer access, and strong consulting and general-management recognition.', fact: 'It is particularly useful for candidates who need speed, mobility, and a global repositioning story.', goals: /global|international|consult|operator|management|strategy/ },
 ];
@@ -245,7 +276,7 @@ function escapeRegExp(value) {
 }
 
 function sanitizeProgramInfo(value, school, profile) {
-  let text = String(value || '').replace(/\s+/g, ' ').trim();
+  let text = String(value || '').replace(/\.{3,}/g, '.').replace(/\s+/g, ' ').trim();
   if (!text) return '';
 
   const schoolName = String(school?.name || '').trim();
@@ -274,8 +305,8 @@ function sanitizeProgramInfo(value, school, profile) {
     .replace(/\s+because of its\s+/i, ' through ')
     .replace(/^([a-z][a-z\s/-]+ goal|[a-z][a-z\s/-]+ transition) through/i, 'Strong $1 relevance through')
     .replace(/\s+for the candidate'?s?\s+/gi, ' for the ')
-    .replace(/\bThe\s+(Ultra competitive|Highly competitive|Accessible|Unknown)[^.?!]*(?:difficulty|benchmark|admissions difficulty)[^.?!]*[.?!]?/gi, '')
-    .replace(/\b(Ultra competitive|Highly competitive|Accessible|Unknown)\s+program\b/gi, 'program')
+    .replace(/\bThe\s+(Ultra Competitive|Ultra competitive|Competitive|Highly competitive|Accessible)[^.?!]*(?:difficulty|benchmark|admissions difficulty)[^.?!]*[.?!]?/gi, '')
+    .replace(/\b(Ultra Competitive|Ultra competitive|Competitive|Highly competitive|Accessible)\s+program\b/gi, 'program')
     .trim();
 
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : '';
@@ -294,6 +325,8 @@ function stripRowVisibleFacts(value, school, profile) {
     school?.avgSAT,
     school?.avgACT,
     school?.avgGPA,
+    school?.acceptanceRate,
+    school?.acceptanceRate != null ? `${school.acceptanceRate}%` : '',
     school?.fit != null ? `${school.fit}%` : '',
     profile?.name,
   ].filter(Boolean);
@@ -304,6 +337,7 @@ function stripRowVisibleFacts(value, school, profile) {
 
   return text
     .replace(/\b(GMAT|GRE|LSAT|MCAT|SAT|ACT|GPA|fit score|fit index|selectivity)\b[^.?!,;]*/gi, '')
+    .replace(/\b(?:admit|admission|acceptance)\s+rate\b[^.?!,;]*/gi, '')
     .replace(/\b(location|located in)\b[^.?!,;]*/gi, '')
     .replace(/\s+[,;:.]\s+/g, '. ')
     .replace(/\s{2,}/g, ' ')
@@ -333,13 +367,13 @@ function inferStrategicAngle(school, profile) {
   if (/law|jd|llm|legal/.test(source)) return { angle: 'Most useful when its legal specialization, clerkship or employer pipeline, and alumni network match the intended practice area.', fact: 'The strongest case will tie prior legal or policy work to a specific practice direction.' };
   if (/medicine|medical|md|clinical|health/.test(source)) return { angle: 'Strategic value comes from clinical exposure, research access, health-system partnerships, and fit with the intended medical path.', fact: 'The profile must show service maturity and scientific readiness, not only academic strength.' };
   if (/undergraduate|intended major|internship|advising/.test(source)) return { angle: 'Strength depends on intended-major depth, advising quality, internship access, and the student ecosystem around the academic direction.', fact: 'The fit is strongest when academic direction and extracurricular evidence point the same way.' };
-  if (/alumni|network|recruit|placement|employer|career/.test(source)) return { angle: 'Recognized for alumni reach, employer access, and recruiting strength tied to the target outcome.', fact: 'The application should make the career bridge specific rather than broadly aspirational.' };
-  return { angle: 'Strategic value should come from distinctive program strengths, employer access, alumni reach, and fit with the stated career goal.', fact: 'The clearest application will connect those resources to a concrete next step.' };
+  if (/alumni|network|recruit|placement|employer|career/.test(source)) return { angle: 'Recognized for alumni reach, employer access, and recruiting strength tied to the target outcome.', fact: 'The strongest use of this platform is a precise career bridge: which employers, industries, mentors, or projects the candidate can realistically activate.' };
+  return { angle: 'Best evaluated through the program strengths that are specific to the candidate track: employer outcomes, academic depth, alumni reach, faculty or lab access, ecosystem fit, and culture.', fact: 'The application should show exactly which of those assets unlock the next step, because generic prestige is not a strategy.' };
 }
 
 function buildProgramInfo(school, profile) {
   if (!isWeakProgramInfo(school?.programInfo, school)) {
-    return firstSentences(sanitizeProgramInfo(school.programInfo, school, profile), '', 2);
+    return firstSentences(sanitizeProgramInfo(school.programInfo, school, profile), '', 4);
   }
 
   const source = [
@@ -364,6 +398,41 @@ function buildProgramInfo(school, profile) {
     return `Strategic value depends on intended-major strength, advising, internships, and student ecosystem support for the ${goal}.`;
   }
   return `${intelligence.angle} ${intelligence.fact || ''}`.trim();
+}
+
+function strategicTradeoff(school, profile) {
+  const source = [
+    school?.notes,
+    school?.programInfo,
+    Array.isArray(school?.fitDrivers) ? school.fitDrivers.join(' ') : '',
+    Array.isArray(school?.evidenceGaps) ? school.evidenceGaps.join(' ') : '',
+    Array.isArray(school?.riskFlags) ? school.riskFlags.join(' ') : '',
+    textFromProfile(profile),
+    school?.programGroup,
+  ].filter(Boolean).join(' ').toLowerCase();
+
+  if (/\bpe\b|private equity|buyout|private capital|finance|invest/.test(source)) {
+    return 'The trade-off is that finance outcomes depend heavily on a precise investing thesis and targeted networking, not brand alone.';
+  }
+  if (/deep[-\s]?tech|ai|technology|tech|venture|startup|founder|innovation/.test(source)) {
+    return 'The strategic question is whether the application proves technical fluency strongly enough to access the venture and founder ecosystem.';
+  }
+  if (/consult|general management|operator|leadership/.test(source)) {
+    return 'It is strongest for broad leadership or consulting paths, but less ideal if the goal is a narrow specialist track.';
+  }
+  if (/phd|doctoral|research|faculty|lab|supervisor/.test(source)) {
+    return 'The trade-off is that faculty fit and funding alignment matter more than institutional brand.';
+  }
+  if (/portfolio|studio|creative|design|interactive|mfa|mdes|mps/.test(source)) {
+    return 'The trade-off is that portfolio distinctiveness will matter more than conventional academic strength.';
+  }
+  if (/law|jd|llm|legal/.test(source)) {
+    return 'The strategic value depends on matching the legal specialization and employer pipeline to the intended practice area.';
+  }
+  if (/medicine|medical|md|clinical|health/.test(source)) {
+    return 'The trade-off is that service maturity and clinical exposure must be as convincing as academic readiness.';
+  }
+  return 'The strategic trade-off is whether its strongest outcomes match the next career move closely enough to justify the application effort.';
 }
 
 function fitEvidenceSummary(school) {
@@ -405,15 +474,18 @@ function buildAccordionSummary(school, profile) {
   const goalSentence = goal !== 'stated goal'
     ? `For a ${goal}, those strengths matter because they point toward the networks and outcomes the application must credibly reach.`
     : '';
-  const summary = [programInsight, goalSentence, fitSentence].filter(Boolean).join(' ')
+  const tradeoff = strategicTradeoff(school, profile);
+  const summary = [programInsight, goalSentence, fitSentence, tradeoff].filter(Boolean).join(' ')
+    .replace(/\.{3,}/g, '.')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
-  return limitWords(summary, 80);
+  return firstSentences(limitWords(summary, 125), '', 4);
 }
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
+  const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
   const [expanded, setExpanded] = useState({});
 
@@ -435,6 +507,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     const msg = `I'd like to move forward with: ${selected.join(', ')}.`;
     setCandTab('advisor');
     send(msg);
+  };
+
+  const refreshAnalysis = () => {
+    if (!send || busy) return;
+    send('Refresh Analysis.');
   };
 
   if (!hasData) {
@@ -459,19 +536,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     );
   }
 
-  const scoreItems = [
-    { key: 'academic', title: 'Academic', desc: 'GPA, test scores, and quantitative aptitude relative to program benchmarks.' },
-    { key: 'testScore', title: 'Test Score', desc: 'Standardized test score gap relative to program medians.' },
-    { key: 'professional', title: 'Professional', desc: 'Career trajectory, impact, and industry positioning.' },
-    { key: 'leadership', title: 'Leadership', desc: 'Team leadership, initiative, and influence track record.' },
-    { key: 'volunteering', title: 'Volunteering', desc: 'Sustained community involvement and leadership in service.' },
-    { key: 'uniqueness', title: 'Uniqueness', desc: 'Non-linear path, rare achievements, and what sets you apart.' },
-    { key: 'diversity', title: 'Diversity', desc: 'Nationality, languages, and background relative to the cohort.' },
-    { key: 'goalClarity', title: 'Goal Clarity', desc: 'Specificity of post-degree role, sector, and timeline.' },
-    { key: 'narrative', title: 'Narrative', desc: 'Cohesion of personal brand and clarity of purpose.' },
-    { key: 'recommenders', title: 'Recommenders', desc: 'Status, direct relationship, evidence specificity, and fit with the target program.' },
-    { key: 'potential', title: 'Potential', desc: 'Long-term upside and fit with program outcomes.' },
-  ].filter(item => scores[item.key] != null);
+  const scoreItems = (trackConfig.kpis || [])
+    .map(([key, title, desc]) => ({ key, title, desc }))
+    .filter(item => scores[item.key] != null);
 
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];
@@ -504,6 +571,36 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             )}
           </div>
           <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+            <button onClick={refreshAnalysis} disabled={busy}
+              title="Refresh analysis using the latest chat details"
+              style={{
+                background: busy
+                  ? 'linear-gradient(135deg,#d7ddec,#c8cfdf)'
+                  : 'linear-gradient(135deg,#fef7d6,#f5c94c 45%,#d9a62c)',
+                border: '1px solid rgba(255,255,255,.55)',
+                borderRadius: 999,
+                padding: '11px 18px',
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: busy ? '#788198' : '#4b3708',
+                cursor: busy ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: busy
+                  ? 'inset 0 1px 0 rgba(255,255,255,.35)'
+                  : '0 12px 24px rgba(217,166,44,.28), inset 0 1px 0 rgba(255,255,255,.72)',
+                opacity: busy ? 0.7 : 1,
+              }}>
+              <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16" />
+                <path d="M3 21v-5h5" />
+                <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
+                <path d="M21 3v5h-5" />
+              </svg>
+              {busy ? 'Refreshing...' : 'Refresh Analysis'}
+            </button>
             <button onClick={() => setCandTab('documents')}
               style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
@@ -513,6 +610,55 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               Ask Advisor
             </button>
           </div>
+        </div>
+
+        {/* Refresh analysis CTA */}
+        <div style={{
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg,#fff8de,#f5c94c 52%,#d8a326)',
+          border: '1px solid rgba(255,255,255,.7)',
+          borderRadius: 20,
+          padding: '18px 22px',
+          marginBottom: 24,
+          boxShadow: '0 16px 32px rgba(217,166,44,.24), inset 0 1px 0 rgba(255,255,255,.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 18,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ position: 'absolute', top: -28, right: 24, width: 82, height: 82, borderRadius: '50%', background: 'rgba(255,255,255,.24)' }} />
+          <div style={{ position: 'absolute', bottom: -34, left: -18, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.16)' }} />
+          <div style={{ position: 'relative', minWidth: 220 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '1px', color: '#70510a', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#3d2d08' }}>Refresh scores and school matches with new info.</div>
+          </div>
+          <button onClick={refreshAnalysis} disabled={busy}
+            style={{
+              position: 'relative',
+              background: busy ? 'rgba(255,255,255,.62)' : '#faf7f2',
+              border: '1px solid rgba(112,81,10,.14)',
+              borderRadius: 999,
+              padding: '12px 20px',
+              fontSize: 13.5,
+              fontWeight: 900,
+              color: busy ? '#8d7b50' : '#4b3708',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 9,
+              boxShadow: '0 10px 20px rgba(85,58,4,.16), inset 0 1px 0 rgba(255,255,255,.8)',
+            }}>
+            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16" />
+              <path d="M3 21v-5h5" />
+              <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+            {busy ? 'Refreshing...' : 'Refresh Analysis'}
+          </button>
         </div>
 
         {/* Overall score banner */}
@@ -653,16 +799,16 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                 <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>
                                   {school.name}
                                 </div>
-                                {school.admissionStatus && (
-                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: STATUS_COLORS[school.admissionStatus] || '#6b7392', background: '#ffffff99', border: `1px solid ${STATUS_COLORS[school.admissionStatus] || '#d7ddec'}55`, borderRadius: 999, padding: '3px 8px' }}>
-                                    {FIT_LABELS[school.admissionStatus] || school.admissionStatus}
+                                {(school.admissionStatus || school.tier || school.fit != null) && (
+                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: fitBucketColor(school), background: '#ffffff99', border: `1px solid ${fitBucketColor(school)}55`, borderRadius: 999, padding: '3px 8px' }}>
+                                    {fitBucketLabel(school)}
                                   </span>
                                 )}
                                 {school.selectivityLabel && (() => {
-                                  const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Unknown;
+                                  const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
                                   return (
                                     <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
-                                      {school.selectivityLabel}
+                                      {displaySelectivityLabel(school.selectivityLabel)}
                                     </span>
                                   );
                                 })()}

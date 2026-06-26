@@ -23,8 +23,35 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 .pw-sim-mobile-ai-actions,
 .pw-depository-mobile-list { display: none; }
 
+@media (max-width: 1180px) {
+  .pw-dashboard-grid,
+  .pw-analysis-grid,
+  .pw-narrative-grid,
+  .pw-settings-grid,
+  .pw-undergrad-grid,
+  .pw-undergrad-buckets {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pw-dashboard-grid {
+    max-width: none !important;
+  }
+
+  .pw-advisor-grid {
+    grid-template-columns: minmax(0, 1fr) 280px !important;
+  }
+
+  .pw-candidate-topbar {
+    padding: 20px 24px !important;
+  }
+}
+
 @media (max-width: 860px) {
-  .pw-shell { flex-direction: column !important; }
+  .pw-shell {
+    flex-direction: column !important;
+    min-height: 100dvh !important;
+    height: 100dvh !important;
+  }
   .pw-candidate-main {
     height: auto !important;
     min-height: 0 !important;
@@ -101,11 +128,56 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     height: 38px !important;
     border-radius: 12px !important;
   }
-  .pw-candidate-top-actions > button:last-child {
+  .pw-new-session-button {
+    display: flex !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+  .pw-new-session-button span {
     display: none !important;
   }
+  .pw-dashboard-page {
+    padding: 14px 12px 18px !important;
+  }
+  .pw-undergrad-page {
+    padding: 14px 12px 18px !important;
+  }
+  .pw-dashboard-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    max-width: none !important;
+  }
+  .pw-dashboard-grid > div {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+  .pw-dashboard-grid > div:first-child {
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+  .pw-dashboard-grid > div:first-child svg {
+    width: 76px !important;
+    height: 76px !important;
+  }
+  .pw-dashboard-actions {
+    width: 100% !important;
+  }
+  .pw-dashboard-actions button {
+    flex: 1 1 150px !important;
+    min-height: 42px !important;
+  }
+  .pw-dashboard-new-session {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
   .pw-advisor-rail { display: none !important; }
-  .pw-advisor-grid { grid-template-columns: 1fr !important; }
+  .pw-advisor-grid { grid-template-columns: 1fr !important; overflow: visible !important; }
+  .pw-advisor-grid > section:first-child {
+    min-height: calc(100dvh - 170px) !important;
+  }
   .pw-doc-grid { grid-template-columns: 1fr !important; min-height: 0 !important; height: auto !important; overflow: visible !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; background: transparent !important; }
   .pw-analysis-grid { grid-template-columns: 1fr !important; }
   .pw-narrative-grid { grid-template-columns: 1fr !important; }
@@ -114,6 +186,24 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-school-checkbox { margin-top: 2px; }
   .pw-school-info { flex-basis: 100% !important; order: 1; }
   .pw-school-stats { order: 2; margin-left: 38px; gap: 16px !important; }
+
+  .pw-school-stats > div {
+    min-width: 58px !important;
+  }
+
+  .pw-analysis-grid,
+  .pw-narrative-grid,
+  .pw-settings-grid,
+  .pw-undergrad-grid,
+  .pw-undergrad-buckets {
+    gap: 12px !important;
+  }
+
+  .pw-settings-grid input,
+  .pw-settings-grid select,
+  .pw-settings-grid textarea {
+    min-width: 0 !important;
+  }
 
   .pw-simulation-page,
   .pw-depository-page {
@@ -457,5 +547,47 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     font-size: 12px;
     font-weight: 800;
     font-family: inherit;
+  }
+}
+
+@media (max-width: 520px) {
+  .pw-candidate-topbar {
+    padding: 10px 12px !important;
+  }
+
+  .pw-candidate-top-actions {
+    gap: 5px !important;
+  }
+
+  .pw-candidate-top-actions > button,
+  .pw-candidate-top-actions > div > button,
+  .pw-new-session-button {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+  }
+
+  .pw-dashboard-grid > div:first-child {
+    flex-direction: column !important;
+  }
+
+  .pw-dashboard-actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .pw-school-stats {
+    margin-left: 0 !important;
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .pw-sim-mobile-status {
+    grid-template-columns: 1fr !important;
+  }
+
+  .pw-depository-mobile-actions {
+    grid-template-columns: 1fr !important;
   }
 }

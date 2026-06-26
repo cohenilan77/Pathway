@@ -1,9 +1,9 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
+import { createAnthropicClient } from '../lib/anthropic-client.js';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = createAnthropicClient();
 const MODEL = 'claude-haiku-4-5-20251001';
 
 async function resolveUserId(req) {

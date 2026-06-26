@@ -8,32 +8,8 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
-
-export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
-export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
-
-export const TRACK_CONFIG = {
-  Undergraduate: {
-    scoreLabel: 'Application Readiness',
-    steps: UNDERGRAD_STEPS,
-    docLabel: 'CV, action plan, skills plan, university applications',
-  },
-  Graduate: {
-    scoreLabel: 'Competitiveness Score',
-    steps: STEPS,
-    docLabel: 'CV, essays, SOP, recommendations',
-  },
-  'Postgraduate / Doctoral': {
-    scoreLabel: 'Research Readiness',
-    steps: ['Profile', 'Academic Depth', 'Research Experience', 'Research Direction', 'Supervisor Fit', 'Proposal', 'Writing Sample', 'Recommendations', 'Interview'],
-    docLabel: 'Research proposal, writing sample, CV, papers',
-  },
-  'Personal Development': {
-    scoreLabel: 'Growth Score',
-    steps: ['Profile', 'Goals', 'Strengths', 'Gaps', 'Skills Plan', 'Experience Plan', 'Personal Brand', 'Execution', 'Review'],
-    docLabel: 'CV, action plan, skills plan, portfolio',
-  },
-};
+import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
+export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
 export const PLANS = {
   free: { label: 'Free' },
@@ -45,13 +21,13 @@ const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please up
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
 const WELCOME_MESSAGE = {
-  English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you?\nUndergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
-  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones — aquí para construir la narrativa que te abrirá las puertas.\n\nEmpecemos por saber en qué etapa de tu camino estás. ¿Cuál te describe mejor?\nPregrado | Posgrado | Posgrado / Doctorado | Desarrollo Personal",
-  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים — כאן כדי לבנות את הסיפור שיכניס אותך.\n\nנתחיל בלברר באיזה שלב במסע שלך אתה נמצא. מה הכי מתאר אותך?\nתואר ראשון | תואר שני | לימודים מתקדמים / דוקטורט | התפתחות אישית",
-  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك — هنا لصياغة القصة التي ستضمن قبولك.\n\nلنبدأ بمعرفة أين أنت في رحلتك. ما الذي يصفك أكثر؟\nبكالوريوس | دراسات عليا | دراسات عليا / دكتوراه | تطوير شخصي",
-  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师——在这里为您打造能助您成功录取的故事。\n\n让我们先了解您目前的阶段。以下哪项最符合您的情况？\n本科 | 研究生 | 研究生／博士 | 个人发展",
-  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions — ici pour construire le récit qui vous fera accepter.\n\nCommençons par savoir où vous en êtes dans votre parcours. Qu'est-ce qui vous décrit le mieux ?\nLicence | Master | Doctorat / Postdoctorat | Développement Personnel",
-  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões — aqui para construir a narrativa que vai garantir a sua aceitação.\n\nVamos começar por saber em que fase da sua jornada está. O que melhor o descreve?\nGraduação | Mestrado | Pós-graduação / Doutorado | Desenvolvimento Pessoal",
+  English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you? → Undergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
+  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones — aquí para construir la narrativa que te abrirá las puertas.\n\nEmpecemos por saber en qué etapa de tu camino estás. ¿Cuál te describe mejor? → Pregrado | Posgrado | Posgrado / Doctorado | Desarrollo Personal",
+  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים — כאן כדי לבנות את הסיפור שיכניס אותך.\n\nנתחיל בלברר באיזה שלב במסע שלך אתה נמצא. מה הכי מתאר אותך? → תואר ראשון | תואר שני | לימודים מתקדמים / דוקטורט | התפתחות אישית",
+  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك — هنا لصياغة القصة التي ستضمن قبولك.\n\nلنبدأ بمعرفة أين أنت في رحلتك. ما الذي يصفك أكثر؟ → بكالوريوس | دراسات عليا | دراسات عليا / دكتوراه | تطوير شخصي",
+  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师——在这里为您打造能助您成功录取的故事。\n\n让我们先了解您目前的阶段。以下哪项最符合您的情况？ → 本科 | 研究生 | 研究生／博士 | 个人发展",
+  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions — ici pour construire le récit qui vous fera accepter.\n\nCommençons par savoir où vous en êtes dans votre parcours. Qu'est-ce qui vous décrit le mieux ? → Licence | Master | Doctorat / Postdoctorat | Développement Personnel",
+  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões — aqui para construir a narrativa que vai garantir a sua aceitação.\n\nVamos começar por saber em que fase da sua jornada está. O que melhor o descreve? → Graduação | Mestrado | Pós-graduação / Doutorado | Desenvolvimento Pessoal",
 };
 
 function buildInitialChat(language) {
@@ -59,6 +35,22 @@ function buildInitialChat(language) {
 }
 
 const INITIAL_CHAT = buildInitialChat('English');
+const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
+
+function sanitizeVisibleText(text) {
+  return String(text || '')
+    .replace(new RegExp(`<(${DATA_BLOCK_TAGS})>[\\s\\S]*?<\\/\\1>`, 'gi'), '')
+    .replace(/<(thinking|analysis|reasoning|scratchpad|internal|hidden)>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<function_calls>[\s\S]*?<\/function_calls>/gi, '')
+    .replace(/<invoke[\s\S]*?<\/invoke>/gi, '')
+    .replace(/```(?:json)?[\s\S]*?```/gi, '')
+    .replace(/<\/?(thinking|analysis|reasoning|scratchpad|internal|hidden)[^>]*>/gi, '')
+    .replace(/<\/?(?:tool_use|tool_code|function_calls|invoke)[^>]*>/gi, '')
+    .replace(/^\s*(?:\{[\s\S]*\}|\[[\s\S]*\])\s*$/g, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
 
 function parseBlocks(raw) {
   const extract = (tag) => {
@@ -77,9 +69,7 @@ function parseBlocks(raw) {
     }
     return null;
   };
-  const clean = raw
-    .replace(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>[\s\S]*?<\/\1>/g, '')
-    .trim();
+  const clean = sanitizeVisibleText(raw);
   return {
     clean,
     profile: extract('PROFILE'),
@@ -96,20 +86,20 @@ function parseBlocks(raw) {
 }
 
 function safeVisibleReply(raw, parsed) {
-  const clean = (parsed.clean || '')
-    .replace(/```[\s\S]*?```/g, '')
-    .replace(/<\/?(PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS)>/g, '')
-    .replace(/<function_calls>[\s\S]*?<\/function_calls>/gi, '')
-    .replace(/<invoke[\s\S]*?<\/invoke>/gi, '')
-    .replace(/\b(tool_use|tool_code|function_calls)\b[\s\S]*$/gi, '')
-    .trim();
+  const clean = sanitizeVisibleText(parsed.clean || '');
+  if (parsed.profile && parsed.scores && parsed.programs) {
+    if (parsed.profile?.category === 'Undergraduate') {
+      return clean || "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.";
+    }
+    return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
+  }
   if (clean) return clean;
   if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
   if (parsed.chosenSchools) return 'Your target schools are saved.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
   if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
-  return raw.replace(/<[^>]+>[\s\S]*?<\/[^>]+>/g, '').trim() || 'Done — I updated your workspace.';
+  return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
 }
 
 function loadAuth() {
@@ -142,28 +132,14 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
-const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'recommenders', 'potential'];
-const SCORE_WEIGHTS = {
-  academic: 15,
-  testScore: 10,
-  professional: 13,
-  leadership: 10,
-  volunteering: 5,
-  uniqueness: 7,
-  diversity: 5,
-  goalClarity: 10,
-  narrative: 12,
-  recommenders: 10,
-  potential: 13,
-};
-
-function weightedOverallScore(scores) {
+function weightedOverallScore(scores, profile) {
+  const weights = getTrackConfig(profile).scoreWeights || TRACK_CONFIG.Graduate.scoreWeights;
   let total = 0;
   let weight = 0;
-  for (const key of SCORE_KEYS) {
+  for (const key of Object.keys(weights)) {
     const value = scores?.[key];
     if (typeof value !== 'number' || Number.isNaN(value)) continue;
-    const w = SCORE_WEIGHTS[key] || 1;
+    const w = weights[key] || 1;
     total += value * w;
     weight += w;
   }
@@ -485,6 +461,8 @@ export default function App() {
   }, [setAuth]);
 
   const resetSession = useCallback(() => {
+    const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
+    if (!confirmed) return;
     setChat(buildInitialChat(language));
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
@@ -518,6 +496,13 @@ export default function App() {
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
+
+    const selectingUndergrad = /^undergraduate$/i.test(raw_t);
+    if (selectingUndergrad) {
+      setProfile(prev => ({ ...(prev || {}), category: 'Undergraduate', degree: 'Undergraduate' }));
+      setStepIdx(0);
+      setCandTab('studentProfile');
+    }
 
     if (plan === 'free' && scores) {
       setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
@@ -556,9 +541,10 @@ export default function App() {
         const parsed = parseBlocks(raw);
         const category = parsed.profile?.category || profile?.category;
         const isUndergrad = category === 'Undergraduate';
+        if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
-          const overall = weightedOverallScore(parsed.scores);
+          const overall = weightedOverallScore(parsed.scores, parsed.profile || profile);
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 1 : 2));
@@ -612,22 +598,22 @@ export default function App() {
         // Auto-advance stepper based on AI response keywords
         const lc = displayText.toLowerCase();
         if (isUndergrad) {
-          if (lc.includes("let's map your academic plan")) {
+          if (lc.includes('roadmap') || lc.includes('starting point today')) {
             setStepIdx(prev => Math.max(prev, 1));
           }
-          if (lc.includes("let's build your extracurricular profile")) {
+          if (lc.includes('activities') || lc.includes('outside school')) {
             setStepIdx(prev => Math.max(prev, 2));
           }
-          if (lc.includes("let's plan your testing timeline")) {
+          if (lc.includes('university list') || lc.includes('universities')) {
             setStepIdx(prev => Math.max(prev, 3));
           }
-          if (lc.includes("let's build your university list")) {
+          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing')) {
             setStepIdx(prev => Math.max(prev, 4));
           }
-          if (lc.includes("let's begin your essay workshop")) {
+          if (lc.includes('essay')) {
             setStepIdx(prev => Math.max(prev, 5));
           }
-          if (lc.includes("let's finalize your application strategy")) {
+          if (lc.includes('application')) {
             setStepIdx(prev => Math.max(prev, 6));
           }
         } else {
@@ -658,7 +644,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument, candTab]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -811,8 +797,8 @@ export default function App() {
     setEssayText(existing?.text || '');
   }, [essaySchool, essayQuestion, essayText, essays]);
 
-  const currentTrack = profile?.category || 'Graduate';
-  const currentConfig = TRACK_CONFIG[currentTrack] || TRACK_CONFIG.Graduate;
+  const currentTrack = resolveTrack(profile || {});
+  const currentConfig = getTrackConfig(profile || {});
   const currentSteps = currentConfig.steps;
 
   const sharedProps = {
@@ -871,7 +857,7 @@ export default function App() {
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
-              Paste your CV, upload a file, or share a <strong style={{ color: '#16233f' }}>background dump</strong> — anything about yourself: work history, achievements, experiences, test scores, recommender names, personal story. The more context, the sharper your strategy.
+              Paste your CV or upload a file. Add honors, awards, major achievements, test scores, goals, and recommenders if they are not already clear.
             </p>
 
             {/* File upload row */}
@@ -898,7 +884,7 @@ export default function App() {
             <div style={{ borderTop: '1px dashed #d7ddec', margin: '14px 0 14px', padding: '14px 0 0' }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 4 }}>ADDITIONAL BACKGROUND DUMP <span style={{ color: '#b6bdcd', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
               <div style={{ fontSize: 12, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>
-                Anything else: personal story, achievements, test scores, recommenders, career pivot context, life experiences not in your CV.
+                Use this for honors, awards, major achievements, goals, recommenders, or context missing from the CV.
               </div>
               <textarea
                 value={cvExtra}
