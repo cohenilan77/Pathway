@@ -27,7 +27,9 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-dashboard-grid,
   .pw-analysis-grid,
   .pw-narrative-grid,
-  .pw-settings-grid {
+  .pw-settings-grid,
+  .pw-undergrad-grid,
+  .pw-undergrad-buckets {
     grid-template-columns: 1fr !important;
   }
 
@@ -139,6 +141,9 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-dashboard-page {
     padding: 14px 12px 18px !important;
   }
+  .pw-undergrad-page {
+    padding: 14px 12px 18px !important;
+  }
   .pw-dashboard-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;
@@ -188,7 +193,9 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 
   .pw-analysis-grid,
   .pw-narrative-grid,
-  .pw-settings-grid {
+  .pw-settings-grid,
+  .pw-undergrad-grid,
+  .pw-undergrad-buckets {
     gap: 12px !important;
   }
 

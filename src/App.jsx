@@ -10,7 +10,7 @@ import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 
 export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
-export const UNDERGRAD_STEPS = ['Foundation', 'Academic Plan', 'Profile Building', 'Testing', 'University List', 'Essays', 'Applications'];
+export const UNDERGRAD_STEPS = ['Profile', 'Roadmap', 'Activities', 'Universities', 'Testing', 'Essays', 'Applications'];
 
 export const TRACK_CONFIG = {
   Undergraduate: {
@@ -112,6 +112,9 @@ function parseBlocks(raw) {
 function safeVisibleReply(raw, parsed) {
   const clean = sanitizeVisibleText(parsed.clean || '');
   if (parsed.profile && parsed.scores && parsed.programs) {
+    if (parsed.profile?.category === 'Undergraduate') {
+      return clean || "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.";
+    }
     return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
   }
   if (clean) return clean;
@@ -532,6 +535,13 @@ export default function App() {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
 
+    const selectingUndergrad = /^undergraduate$/i.test(raw_t);
+    if (selectingUndergrad) {
+      setProfile(prev => ({ ...(prev || {}), category: 'Undergraduate', degree: 'Undergraduate' }));
+      setStepIdx(0);
+      setCandTab('studentProfile');
+    }
+
     if (plan === 'free' && scores) {
       setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
       setInput('');
@@ -569,6 +579,7 @@ export default function App() {
         const parsed = parseBlocks(raw);
         const category = parsed.profile?.category || profile?.category;
         const isUndergrad = category === 'Undergraduate';
+        if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
           const overall = weightedOverallScore(parsed.scores);
@@ -625,22 +636,22 @@ export default function App() {
         // Auto-advance stepper based on AI response keywords
         const lc = displayText.toLowerCase();
         if (isUndergrad) {
-          if (lc.includes("let's map your academic plan")) {
+          if (lc.includes('roadmap') || lc.includes('starting point today')) {
             setStepIdx(prev => Math.max(prev, 1));
           }
-          if (lc.includes("let's build your extracurricular profile")) {
+          if (lc.includes('activities') || lc.includes('outside school')) {
             setStepIdx(prev => Math.max(prev, 2));
           }
-          if (lc.includes("let's plan your testing timeline")) {
+          if (lc.includes('university list') || lc.includes('universities')) {
             setStepIdx(prev => Math.max(prev, 3));
           }
-          if (lc.includes("let's build your university list")) {
+          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing')) {
             setStepIdx(prev => Math.max(prev, 4));
           }
-          if (lc.includes("let's begin your essay workshop")) {
+          if (lc.includes('essay')) {
             setStepIdx(prev => Math.max(prev, 5));
           }
-          if (lc.includes("let's finalize your application strategy")) {
+          if (lc.includes('application')) {
             setStepIdx(prev => Math.max(prev, 6));
           }
         } else {
@@ -671,7 +682,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument, candTab]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;

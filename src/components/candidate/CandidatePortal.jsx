@@ -44,6 +44,17 @@ const CHAT_NAV_ITEM = {
   icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
 };
 
+const UNDERGRAD_NAV_ITEMS = [
+  { key: 'dashboard', label: 'Dashboard', icon: NAV_ITEMS[0].icon },
+  { key: 'studentProfile', label: 'Student Profile', icon: NAV_ITEMS[1].icon },
+  { key: 'roadmap', label: 'Roadmap', icon: NAV_ITEMS[2].icon },
+  { key: 'activities', label: 'Activities', icon: NAV_ITEMS[3].icon },
+  { key: 'universities', label: 'University List', icon: NAV_ITEMS[2].icon },
+  { key: 'testing', label: 'Testing', icon: NAV_ITEMS[4].icon },
+  { key: 'essays', label: 'Essays', icon: NAV_ITEMS[3].icon },
+  { key: 'applications', label: 'Applications', icon: NAV_ITEMS[4].icon },
+];
+
 function navStyle(active) {
   return active
     ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 13, padding: '12px 15px', borderRadius: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#faf7f2', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 12px 24px rgba(105,91,255,.36), inset 0 1px 0 rgba(255,255,255,.32)' }
@@ -269,6 +280,126 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
   );
 }
 
+function undergradGradeNumber(profile) {
+  const grade = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/)?.[0];
+  return grade ? Number(grade) : null;
+}
+
+function splitUniversities(programs = []) {
+  return {
+    Reach: programs.filter(p => p.tier === 'stretch' || (p.fit ?? 0) < 50),
+    Target: programs.filter(p => p.tier === 'possible' || ((p.fit ?? 0) >= 50 && (p.fit ?? 0) <= 80)),
+    Likely: programs.filter(p => p.tier === 'safe' || (p.fit ?? 0) > 80),
+  };
+}
+
+function UndergradCard({ title, children, action }) {
+  return (
+    <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase' }}>{title}</div>
+        {action}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
+  const grade = undergradGradeNumber(profile);
+  const early = grade && grade <= 10;
+  const buckets = splitUniversities(programs || []);
+  const list = (items = [], empty) => items.length
+    ? items.slice(0, 6).map((item, i) => (
+      <div key={`${item}-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#b899fb', marginTop: 6, flexShrink: 0 }} />
+        <span>{typeof item === 'string' ? item : item?.name}</span>
+      </div>
+    ))
+    : <div style={{ fontSize: 13.5, color: '#9098b5' }}>{empty}</div>;
+  const roadmap = [
+    ['Weekly Coaching', 'Quick updates on grades, activities, problems, ideas, and goals.'],
+    ['Monthly Review', 'Review academics, leadership, projects, testing, and readiness.'],
+    ['Semester Review', 'Upload report card and achievements; generate briefing, summary, agenda, and tasks.'],
+    ['Summer Planning', 'Build internships, volunteering, research, competitions, summer schools, or personal projects.'],
+    ['Annual Review', 'Reset strategy, competitiveness, roadmap, and next-year objectives.'],
+  ];
+
+  if ((type === 'essays' || type === 'applications') && early) {
+    return (
+      <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
+        <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
+          <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: 0 }}>For Grade 9-10, the priority is grades, interests, activities, leadership, and a stronger profile foundation.</p>
+        </UndergradCard>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
+      {type === 'roadmap' && (
+        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, maxWidth: 980 }}>
+          {roadmap.map(([title, text]) => (
+            <UndergradCard key={title} title={title}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{title}</div>
+              <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.55 }}>{text}</div>
+            </UndergradCard>
+          ))}
+        </div>
+      )}
+
+      {type === 'activities' && (
+        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18, maxWidth: 1100 }}>
+          {['Planned', 'In Progress', 'Completed'].map((status, idx) => (
+            <UndergradCard key={status} title={status}>
+              {idx === 0 && list(tasks || [], 'Roadmap tasks will appear here.')}
+              {idx === 1 && list(strengths || [], 'Active strengths and activities will appear here.')}
+              {idx === 2 && list([], 'Mark roadmap tasks complete to build history.')}
+            </UndergradCard>
+          ))}
+        </div>
+      )}
+
+      {type === 'universities' && (
+        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18, maxWidth: 1180 }}>
+          {Object.entries(buckets).map(([label, schools]) => (
+            <UndergradCard key={label} title={`${label} Universities`}>
+              {schools.length ? schools.slice(0, 8).map(school => (
+                <div key={school.name} style={{ border: '1px solid #f1eadd', borderRadius: 15, padding: 14, marginBottom: 10, background: '#fffdf8' }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
+                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45 }}>{school.notes || school.programInfo || 'Fit will sharpen as grades, testing, and activities update.'}</div>
+                  <div style={{ marginTop: 8, fontSize: 11.5, color: '#9098b5', fontWeight: 800 }}>Fit index {school.fit ?? '-'}%</div>
+                </div>
+              )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>This bucket will populate after the starting snapshot.</div>}
+            </UndergradCard>
+          ))}
+        </div>
+      )}
+
+      {type === 'testing' && (
+        <UndergradCard title="Testing">
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>Testing plan</div>
+          <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>Track SAT, ACT, PSAT, AP, TOEFL, or IELTS plans here as the counselor learns more.</div>
+          {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
+        </UndergradCard>
+      )}
+
+      {(type === 'essays' || type === 'applications') && !early && (
+        <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>{type === 'essays' ? 'Essay preparation' : 'Application mode'}</div>
+          <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>
+            {type === 'essays' ? 'Use this space for personal statement, supplements, and school-specific drafts.' : 'Track deadlines, recommendations, transcripts, interviews, and final decisions.'}
+          </div>
+          <button onClick={() => setCandTab('studentProfile')} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+            Work with counselor
+          </button>
+        </UndergradCard>
+      )}
+    </div>
+  );
+}
+
 export default function CandidatePortal(props) {
   const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
@@ -294,10 +425,13 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
+  const isUndergrad = profile?.category === 'Undergraduate';
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Student Profile', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
-  const navItems = hasChatAccess
+  const navItems = isUndergrad
+    ? UNDERGRAD_NAV_ITEMS
+    : hasChatAccess
     ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
     : NAV_ITEMS;
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
@@ -346,7 +480,7 @@ export default function CandidatePortal(props) {
         {/* nav */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
-            const active = candTab === item.key;
+            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = requiresOAuthDetails && item.key !== 'settings';
             return (
               <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -428,8 +562,10 @@ export default function CandidatePortal(props) {
         </div>
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
-        {candTab === 'advisor' && <Advisor {...props} />}
-        {candTab === 'analysis' && <Analysis {...props} />}
+        {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
+        {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
+        {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
+        {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'settings' && <Settings {...props} />}

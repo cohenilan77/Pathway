@@ -13,6 +13,11 @@ function parseOptions(text) {
   return { mainText: text.slice(0, match.index).trim(), options };
 }
 
+function undergradGradeNumber(profile) {
+  const grade = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/)?.[0];
+  return grade ? Number(grade) : null;
+}
+
 function NarrativeModal({ onClose, onChoose }) {
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,27,52,.58)', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -134,6 +139,9 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
 
   const taskList = tasks || [];
+  const isUndergrad = profile?.category === 'Undergraduate';
+  const gradeNumber = undergradGradeNumber(profile);
+  const futureStages = isUndergrad && gradeNumber && gradeNumber <= 10 ? new Set(['Essays', 'Applications']) : new Set();
   const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
   const doneCount = taskList.filter(t => completedTasks?.[t]).length;
   const scrollChatToTop = () => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -149,19 +157,23 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
             const active = i === stepIdx;
             const done = i < stepIdx;
             const on = active || done;
+            const future = futureStages.has(label);
             return (
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                 <span style={{
                   width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 13, fontWeight: 800, flexShrink: 0,
-                  ...(on
+                  ...(future
+                    ? { background: '#faf7f2', color: '#c8a85c', border: '1.5px dashed #dfcfaa' }
+                    : on
                     ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', boxShadow: '0 6px 14px rgba(105,91,255,.3)' }
                     : { background: '#faf7f2', color: '#aab2cc', border: '1.5px solid #e7dcc7' }),
                 }}>
                   {done ? '✓' : i + 1}
                 </span>
-                <span style={{ fontSize: 13.5, fontWeight: active ? 800 : 600, color: active ? '#141b34' : '#aab2cc', whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 13.5, fontWeight: active ? 800 : 600, color: active ? '#141b34' : future ? '#b58522' : '#aab2cc', whiteSpace: 'nowrap' }}>
                   {label}
+                  {future && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, color: '#c08a1a', background: '#fff8ea', border: '1px solid #f4deb0', borderRadius: 999, padding: '2px 6px' }}>Future</span>}
                 </span>
                 {i < STEPS.length - 1 && <span style={{ width: 30, height: 2, borderRadius: 2, background: done ? '#b9a8ff' : '#e7dcc7', margin: '0 2px' }} />}
               </div>
@@ -212,10 +224,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                     (() => {
                       const parsed = parseOptions(m.text);
                       return (
-                        <div key={i} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                          {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                        <React.Fragment key={i}>
+                          <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
+                            {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                          </div>
                           {parsed && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                            <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
                               {parsed.options.map(opt => (
                                 <button key={opt} onClick={() => send(opt)} disabled={busy}
                                   style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
@@ -224,7 +238,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                               ))}
                             </div>
                           )}
-                        </div>
+                        </React.Fragment>
                       );
                     })()
                   ) : (

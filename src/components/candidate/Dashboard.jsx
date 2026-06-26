@@ -40,12 +40,22 @@ function CardLabel({ children }) {
   return <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
 }
 
-export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails }) {
+function bucketPrograms(programs = []) {
+  return {
+    Reach: programs.filter(p => p.tier === 'stretch' || (p.fit ?? 0) < 50),
+    Target: programs.filter(p => p.tier === 'possible' || ((p.fit ?? 0) >= 50 && (p.fit ?? 0) <= 80)),
+    Likely: programs.filter(p => p.tier === 'safe' || (p.fit ?? 0) > 80),
+  };
+}
+
+export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, programs }) {
   const overall = scores?.overall;
   const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
   const steps = STEPS || [];
   const safeStepIdx = Math.min(stepIdx ?? 0, Math.max(steps.length - 1, 0));
   const visibleTasks = (tasks || []).slice(0, 3);
+  const isUndergrad = profile?.category === 'Undergraduate';
+  const buckets = bucketPrograms(programs || []);
 
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
@@ -60,9 +70,9 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
               {overall != null ? `${overall} / 100` : 'Not analyzed yet'}
             </div>
             <div className="pw-dashboard-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button onClick={() => setCandTab('advisor')}
+              <button onClick={() => setCandTab(isUndergrad ? 'studentProfile' : 'advisor')}
                 style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
-                Go to Advisor →
+                {isUndergrad ? 'Open Counselor →' : 'Go to Advisor →'}
               </button>
               <button className="pw-dashboard-new-session" onClick={resetSession} disabled={requiresOAuthDetails}
                 style={{ background: '#faf7f2', color: '#5b46e0', border: '1.5px solid #e7dcc7', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
@@ -72,9 +82,18 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
           </div>
         </Card>
 
+        {isUndergrad && (
+          <Card style={{ gridColumn: '1 / -1', background: '#fffaf0' }}>
+            <CardLabel>Starting Point</CardLabel>
+            <div style={{ fontSize: 15, lineHeight: 1.55, color: '#33405e', fontWeight: 650 }}>
+              This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.
+            </div>
+          </Card>
+        )}
+
         {/* Current step card */}
         <Card>
-          <CardLabel>Current Progress</CardLabel>
+          <CardLabel>{isUndergrad ? 'Current Journey Stage' : 'Current Progress'}</CardLabel>
           <div style={{ fontSize: 17, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>
             Step {safeStepIdx + 1} of {steps.length || '–'}
           </div>
@@ -83,6 +102,43 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
             <div style={{ width: `${steps.length ? ((safeStepIdx + 1) / steps.length) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,#94b3fb,#b899fb)' }} />
           </div>
         </Card>
+
+        {isUndergrad && (
+          <>
+            <Card>
+              <CardLabel>Student Profile</CardLabel>
+              <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.55 }}>
+                <strong>{profile?.grade || 'Grade not set'}</strong>{profile?.school ? ` · ${profile.school}` : ''}
+                <br />{profile?.interests || profile?.intendedMajor || profile?.goals || 'Interests and intended majors will appear as the counselor learns more.'}
+              </div>
+            </Card>
+            <Card>
+              <CardLabel>Current Strengths</CardLabel>
+              {(strengths || []).slice(0, 4).length ? (strengths || []).slice(0, 4).map((s, i) => (
+                <div key={i} style={{ fontSize: 13.5, color: '#33405e', marginBottom: 8, lineHeight: 1.45 }}>{s}</div>
+              )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>Strengths will appear after discovery.</div>}
+            </Card>
+            <Card>
+              <CardLabel>Current Gaps</CardLabel>
+              {(weaknesses || []).slice(0, 4).length ? (weaknesses || []).slice(0, 4).map((w, i) => (
+                <div key={i} style={{ fontSize: 13.5, color: '#33405e', marginBottom: 8, lineHeight: 1.45 }}>{w}</div>
+              )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>Gaps will appear after discovery.</div>}
+            </Card>
+            <Card style={{ gridColumn: '1 / -1' }}>
+              <CardLabel>Current University Competitiveness</CardLabel>
+              <div className="pw-undergrad-buckets" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+                {Object.entries(buckets).map(([label, schools]) => (
+                  <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: 14 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>{label}</div>
+                    <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45 }}>
+                      {schools.length ? schools.slice(0, 3).map(s => s.name).join(', ') : 'Will populate after the starting snapshot.'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </>
+        )}
 
         {/* Tasks card */}
         <Card>
