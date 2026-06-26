@@ -67,6 +67,62 @@ function normalizeProgramsInRaw(raw) {
   });
 }
 
+function parseProgramsFromRaw(raw) {
+  if (typeof raw !== 'string' || !raw.includes('<PROGRAMS>')) return [];
+  const programs = [];
+  const matches = raw.matchAll(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/g);
+  for (const match of matches) {
+    const cleanBody = String(match[1] || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
+    try {
+      const parsed = JSON.parse(cleanBody);
+      const normalized = normalizeProgramList(parsed);
+      if (Array.isArray(normalized)) programs.push(...normalized);
+    } catch {
+      // Invalid JSON is handled by the existing missing-block retry path.
+    }
+  }
+  return programs;
+}
+
+function programTier(program) {
+  const tier = String(program?.tier || '').toLowerCase();
+  if (['safe', 'possible', 'stretch', 'locked'].includes(tier)) return tier;
+  const fit = Number(program?.fit);
+  if (Number.isFinite(fit)) {
+    if (fit >= 80) return 'safe';
+    if (fit >= 50) return 'possible';
+    return 'stretch';
+  }
+  return 'possible';
+}
+
+function needsPortfolioMixRetry(raw) {
+  const programs = parseProgramsFromRaw(raw);
+  if (programs.length < 10) return false;
+
+  const unlocked = programs.filter((program) => programTier(program) !== 'locked');
+  if (unlocked.length < 8) return false;
+
+  const counts = unlocked.reduce((acc, program) => {
+    const tier = programTier(program);
+    acc[tier] = (acc[tier] || 0) + 1;
+    return acc;
+  }, {});
+  const activeTiers = Object.entries(counts).filter(([, count]) => count > 0);
+  const largestShare = Math.max(...Object.values(counts)) / unlocked.length;
+
+  const allStrong = activeTiers.length === 1 && counts.safe === unlocked.length;
+  if (allStrong) {
+    const averageFit = unlocked.reduce((sum, program) => sum + (Number(program?.fit) || 0), 0) / unlocked.length;
+    const ultraCount = unlocked.filter((program) => /ultra/i.test(String(program?.selectivityLabel || ''))).length;
+    // A rare all-green portfolio is acceptable only when the fit values themselves
+    // support an exceptional candidate and the list includes genuinely selective options.
+    return !(averageFit >= 86 && ultraCount >= 2);
+  }
+
+  return activeTiers.length <= 1 || largestShare >= 0.85;
+}
+
 export const AI_CONFIG_SECTIONS = [
   {
     key: 'extraction',
@@ -149,6 +205,7 @@ Weight calibration by degree type (which dimensions should anchor the overall im
 - Use the existing fit calculation and overall candidate score only. Do not invent a new score, candidate tier, or admission-probability model.
 - The mix must be dynamic and progressive. Default behavior for an average candidate is roughly 20-30% Strong Fit, 40-50% Competitive/Workable, and 20-30% Reach, but those are guidelines, not fixed quotas.
 - Adapt continuously to candidate strength: weaker candidates get more Strong Fit schools and only a few realistic reaches; average candidates get a balanced portfolio; strong candidates shift toward mostly Strong Fit and Competitive schools; exceptional candidates may have almost entirely Strong Fit schools, including ultra-competitive schools if their profile genuinely supports it.
+- A one-color or nearly one-color portfolio is usually a failure. It is allowed only when the candidate profile genuinely justifies it; otherwise rebuild the list before responding so the portfolio includes a realistic spread of Strong Fit, Competitive, and Reach options.
 - Do not add Harvard, Stanford GSB, Wharton, M7, Ivy, or other ultra-selective programs just to populate a Reach bucket. Reach must be realistic under the existing scoring/eligibility rules.
 - If the scoring engine naturally produces little or no Reach for an exceptional candidate, that is acceptable. If it naturally produces little Reach for a weaker candidate because elite schools are unrealistic, use only realistic reach options near the candidate's actual band.
 
@@ -166,7 +223,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
 Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, fitDrivers, and programInfo fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra Competitive", "Competitive", "Accessible". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs. Include avgGRE/avgLSAT/avgMCAT/avgSAT/avgACT only when the program type actually uses or reports that test. For LLM programs, omit LSAT/GRE unless the program requires or reports it; do not invent a test benchmark. For creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit irrelevant test fields and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
-programInfo definition: one concise senior-admissions-consultant paragraph, 3-4 compact lines. Start immediately with the program's true reputation for THIS track and intended major, not a generic university brand statement. Never reuse the same university description across Undergraduate, Graduate, MBA, PhD, law, or medicine. Dynamically tailor it: Undergraduate should connect intended major to academics, advising, research, internships, activities, clinical exposure, portfolio/studio access, honors, or placement; MBA should focus on recruiting outcomes, alumni, leadership platform, finance/consulting/entrepreneurship strength, and career outcomes; PhD/research should focus on faculty, labs, publications, methods fit, funding, research ecosystem, and academic placement; law/medicine/health should focus on specialization, clinical/legal exposure, placements, licensing/prerequisites, ethics/service fit. Never repeat the school, university, or program name. Do not mention the candidate's name. Do not repeat location, selectivity label, acceptance rate, GMAT, GPA, fit, or any row KPI. No bullets, no generic AI language, no marketing fluff. Forbidden examples include "MBA relevance: New York, NY.", "Good school for business", "Strong university", or any location-only description.
+programInfo definition: one concise senior-admissions-consultant paragraph, 3-4 compact lines. Start immediately with the program's true reputation for THIS track and intended major, not a generic university brand statement. Never reuse the same university description across Undergraduate, Graduate, MBA, PhD, law, or medicine. Dynamically tailor it: Undergraduate should connect intended major to academics, advising, research, internships, activities, clinical exposure, portfolio/studio access, honors, or placement; MBA should focus on recruiting outcomes, alumni, leadership platform, finance/consulting/entrepreneurship strength, and career outcomes; PhD/research should focus on faculty, labs, publications, methods fit, funding, research ecosystem, and academic placement; law/medicine/health should focus on specialization, clinical/legal exposure, placements, licensing/prerequisites, ethics/service fit. Never repeat the school, university, or program name. Do not mention the candidate's name. Do not repeat location, selectivity label, acceptance rate, GMAT, GPA, fit, or any row KPI. No bullets, no generic AI language, no marketing fluff. Never end with "..." or a truncated thought; if space is tight, cut cleanly at a sentence boundary. Forbidden examples include "MBA relevance: New York, NY.", "Good school for business", "Strong university", or any location-only description.
 If scores.recommenders is below 60 or recommender facts are missing, add "Recommendation strategy missing" or "Direct evaluator recommender not confirmed" to evidenceGaps for selective programs. If the named recommender is famous/high-status but distant, unverified, family/friend, or unable to cite concrete work, add "Letters may be generic" or "Recommender relationship appears weak" to riskFlags. Strong direct evaluators can improve confidence, especially for MBA, research/PhD, creative portfolio programs, and scholarships, but they never override hard academic/test/prerequisite gates.
 
 FIT CONSISTENCY RULE:
@@ -886,8 +943,10 @@ export default async function handler(req, res) {
     // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
     // instead of blindly resending the same input, since an identical retry tends to fail the same way.
     const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn claimed that analysis, a portfolio/list, or a shortlist was ready but did not include the required structured blocks in that same response. If analysis is ready, put complete <PROFILE>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, <TASKS>, and <PROGRAMS> blocks FIRST, before any visible sentence. If only a portfolio/list/shortlist is ready, put the complete <PROGRAMS> block first. Keep each object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
+    const PORTFOLIO_MIX_NOTE = '\n\nCORRECTION NEEDED: your previous <PROGRAMS> block created a same-color or heavily clustered portfolio. Rebuild the PROGRAMS block as a strategic admissions portfolio, not a top-fit ranking: at least 10 schools, usually a visible spread of Strong Fit/safe, Competitive/possible, and realistic Reach/stretch for normal candidates. Do not add impossible elite schools just to create red rows. Keep fit bucket separate from selectivity label, preserve the existing scoring/fit rules, and make each programInfo paragraph specific, complete, and cut cleanly at a sentence boundary.';
     const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate at least 10 programs, normally 10-14 if needed to fit the token budget, using a dynamic portfolio mix rather than fixed bucket quotas. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
     let raw;
+    let retryReason = '';
     for (let attempt = 0; attempt < 4; attempt++) {
       // Web search tool-use/tool-result content counts against max_tokens like any other
       // output, so a school requiring a search can get truncated mid-<PROGRAMS> block before
@@ -897,7 +956,7 @@ export default async function handler(req, res) {
       const response = await createChatCompletion({
         system: attempt === 0
           ? systemPrompt
-          : `${systemPrompt}${CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
+          : `${systemPrompt}${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
@@ -919,9 +978,14 @@ export default async function handler(req, res) {
       const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
         && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
         && hasProgramsBlock;
-      if ((!claimsPortfolioLive || hasProgramsBlock) && (!claimsAnalysisReady || hasAnalysisBlocks)) break;
+      const hasRequiredBlocks = (!claimsPortfolioLive || hasProgramsBlock) && (!claimsAnalysisReady || hasAnalysisBlocks);
+      const badPortfolioMix = hasRequiredBlocks && hasProgramsBlock && needsPortfolioMixRetry(raw);
+      if (hasRequiredBlocks && !badPortfolioMix) break;
+      retryReason = badPortfolioMix ? 'portfolio_mix' : 'missing_blocks';
       if (response.stop_reason === 'max_tokens') {
         console.error(`Chat response hit max_tokens on attempt ${attempt} without completing its <PROGRAMS> block (feature: ${feature})`);
+      } else if (badPortfolioMix) {
+        console.error(`Chat response produced a clustered same-color <PROGRAMS> portfolio on attempt ${attempt} (feature: ${feature}); retrying.`);
       }
     }
 

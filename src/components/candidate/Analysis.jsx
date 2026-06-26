@@ -150,18 +150,21 @@ function getAdmitRateMetric(school) {
   return rate ? `${rate}%` : null;
 }
 
-function truncateText(value, maxLength = 170) {
+function truncateText(value, maxLength = 420) {
   if (!value) return '';
-  const text = String(value).replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
   if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength).replace(/\s+\S*$/, '')}...`;
+  const slice = text.slice(0, maxLength);
+  const sentenceEnd = Math.max(slice.lastIndexOf('.'), slice.lastIndexOf('!'), slice.lastIndexOf('?'));
+  if (sentenceEnd >= 80) return slice.slice(0, sentenceEnd + 1).trim();
+  return `${slice.replace(/\s+\S*$/, '').replace(/[,:;–-]+$/, '').trim()}.`;
 }
 
 function firstSentences(value, fallback, maxSentences = 2) {
   if (!value) return fallback;
-  const text = String(value).replace(/\s+/g, ' ').trim();
+  const text = String(value).replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
   const sentences = text.match(/[^.!?]+[.!?]?/g) || [text];
-  return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 180) || fallback;
+  return truncateText(sentences.slice(0, maxSentences).join(' ').trim(), 520) || fallback;
 }
 
 function limitWords(value, maxWords = 80) {
@@ -253,7 +256,7 @@ function escapeRegExp(value) {
 }
 
 function sanitizeProgramInfo(value, school, profile) {
-  let text = String(value || '').replace(/\s+/g, ' ').trim();
+  let text = String(value || '').replace(/\.{3,}|…/g, '.').replace(/\s+/g, ' ').trim();
   if (!text) return '';
 
   const schoolName = String(school?.name || '').trim();
@@ -302,6 +305,8 @@ function stripRowVisibleFacts(value, school, profile) {
     school?.avgSAT,
     school?.avgACT,
     school?.avgGPA,
+    school?.acceptanceRate,
+    school?.acceptanceRate != null ? `${school.acceptanceRate}%` : '',
     school?.fit != null ? `${school.fit}%` : '',
     profile?.name,
   ].filter(Boolean);
@@ -312,6 +317,7 @@ function stripRowVisibleFacts(value, school, profile) {
 
   return text
     .replace(/\b(GMAT|GRE|LSAT|MCAT|SAT|ACT|GPA|fit score|fit index|selectivity)\b[^.?!,;]*/gi, '')
+    .replace(/\b(?:admit|admission|acceptance)\s+rate\b[^.?!,;]*/gi, '')
     .replace(/\b(location|located in)\b[^.?!,;]*/gi, '')
     .replace(/\s+[,;:.]\s+/g, '. ')
     .replace(/\s{2,}/g, ' ')
@@ -450,10 +456,11 @@ function buildAccordionSummary(school, profile) {
     : '';
   const tradeoff = strategicTradeoff(school, profile);
   const summary = [programInsight, goalSentence, fitSentence, tradeoff].filter(Boolean).join(' ')
+    .replace(/\.{3,}|…/g, '.')
     .replace(/\s+/g, ' ')
     .replace(/\s+([,.!?;:])/g, '$1')
     .trim();
-  return firstSentences(limitWords(summary, 90), '', 4);
+  return firstSentences(limitWords(summary, 80), '', 4);
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
