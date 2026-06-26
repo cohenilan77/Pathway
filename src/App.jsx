@@ -496,6 +496,8 @@ export default function App() {
   }, [setAuth]);
 
   const resetSession = useCallback(() => {
+    const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
+    if (!confirmed) return;
     setChat(buildInitialChat(language));
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);

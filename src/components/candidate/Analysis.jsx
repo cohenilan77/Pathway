@@ -550,6 +550,55 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           </div>
         </div>
 
+        {/* Refresh analysis CTA */}
+        <div style={{
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg,#fff8de,#f5c94c 52%,#d8a326)',
+          border: '1px solid rgba(255,255,255,.7)',
+          borderRadius: 20,
+          padding: '18px 22px',
+          marginBottom: 24,
+          boxShadow: '0 16px 32px rgba(217,166,44,.24), inset 0 1px 0 rgba(255,255,255,.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 18,
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ position: 'absolute', top: -28, right: 24, width: 82, height: 82, borderRadius: '50%', background: 'rgba(255,255,255,.24)' }} />
+          <div style={{ position: 'absolute', bottom: -34, left: -18, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.16)' }} />
+          <div style={{ position: 'relative', minWidth: 220 }}>
+            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '1px', color: '#70510a', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#3d2d08' }}>Refresh scores and school matches with new info.</div>
+          </div>
+          <button onClick={refreshAnalysis} disabled={busy}
+            style={{
+              position: 'relative',
+              background: busy ? 'rgba(255,255,255,.62)' : '#faf7f2',
+              border: '1px solid rgba(112,81,10,.14)',
+              borderRadius: 999,
+              padding: '12px 20px',
+              fontSize: 13.5,
+              fontWeight: 900,
+              color: busy ? '#8d7b50' : '#4b3708',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 9,
+              boxShadow: '0 10px 20px rgba(85,58,4,.16), inset 0 1px 0 rgba(255,255,255,.8)',
+            }}>
+            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16" />
+              <path d="M3 21v-5h5" />
+              <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
+              <path d="M21 3v5h-5" />
+            </svg>
+            {busy ? 'Refreshing…' : 'Refresh Analysis'}
+          </button>
+        </div>
+
         {/* Overall score banner */}
         {scores.overall != null && (
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
