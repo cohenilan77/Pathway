@@ -106,10 +106,22 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         {isUndergrad && (
           <>
             <Card>
-              <CardLabel>Student Profile</CardLabel>
+              <CardLabel>Academic Progress</CardLabel>
               <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.55 }}>
                 <strong>{profile?.grade || 'Grade not set'}</strong>{profile?.school ? ` · ${profile.school}` : ''}
-                <br />{profile?.interests || profile?.intendedMajor || profile?.goals || 'Interests and intended majors will appear as the counselor learns more.'}
+                <br />{profile?.curriculum || profile?.grades || profile?.gpa || 'Transcript, curriculum, and grade trend will appear here.'}
+              </div>
+            </Card>
+            <Card>
+              <CardLabel>Activity Progress</CardLabel>
+              <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.55 }}>
+                {profile?.activities || profile?.strongestActivity || 'Activities will appear as the counselor learns more.'}
+              </div>
+            </Card>
+            <Card>
+              <CardLabel>Leadership</CardLabel>
+              <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.55 }}>
+                {profile?.leadership || (strengths || []).find(s => /lead|captain|founder|council|club/i.test(s)) || 'Leadership roles and opportunities will appear here.'}
               </div>
             </Card>
             <Card>
@@ -125,7 +137,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
               )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>Gaps will appear after discovery.</div>}
             </Card>
             <Card style={{ gridColumn: '1 / -1' }}>
-              <CardLabel>Current University Competitiveness</CardLabel>
+              <CardLabel>University Movement · Reach → Target → Likely</CardLabel>
               <div className="pw-undergrad-buckets" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
                 {Object.entries(buckets).map(([label, schools]) => (
                   <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: 14 }}>

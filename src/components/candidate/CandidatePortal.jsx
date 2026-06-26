@@ -9,6 +9,7 @@ import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
+import { getTrackConfig } from '../../trackConfig.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -44,16 +45,28 @@ const CHAT_NAV_ITEM = {
   icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
 };
 
-const UNDERGRAD_NAV_ITEMS = [
-  { key: 'dashboard', label: 'Dashboard', icon: NAV_ITEMS[0].icon },
-  { key: 'studentProfile', label: 'Student Profile', icon: NAV_ITEMS[1].icon },
-  { key: 'roadmap', label: 'Roadmap', icon: NAV_ITEMS[2].icon },
-  { key: 'activities', label: 'Activities', icon: NAV_ITEMS[3].icon },
-  { key: 'universities', label: 'University List', icon: NAV_ITEMS[2].icon },
-  { key: 'testing', label: 'Testing', icon: NAV_ITEMS[4].icon },
-  { key: 'essays', label: 'Essays', icon: NAV_ITEMS[3].icon },
-  { key: 'applications', label: 'Applications', icon: NAV_ITEMS[4].icon },
-];
+const ICON_BY_KEY = Object.fromEntries(NAV_ITEMS.map(item => [item.key, item.icon]));
+ICON_BY_KEY.chat = CHAT_NAV_ITEM.icon;
+ICON_BY_KEY.studentProfile = ICON_BY_KEY.advisor;
+ICON_BY_KEY.roadmap = ICON_BY_KEY.analysis;
+ICON_BY_KEY.activities = ICON_BY_KEY.documents;
+ICON_BY_KEY.universities = ICON_BY_KEY.analysis;
+ICON_BY_KEY.testing = ICON_BY_KEY.documentDepository;
+ICON_BY_KEY.essays = ICON_BY_KEY.documents;
+ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
+
+function navFromConfig(config, hasChatAccess) {
+  if (Array.isArray(config?.nav) && config.nav.length) {
+    return config.nav.map(([key, label, iconKey]) => ({
+      key,
+      label,
+      icon: ICON_BY_KEY[iconKey] || ICON_BY_KEY[key] || ICON_BY_KEY.dashboard,
+    }));
+  }
+  return hasChatAccess
+    ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
+    : NAV_ITEMS;
+}
 
 function navStyle(active) {
   return active
@@ -293,6 +306,32 @@ function splitUniversities(programs = []) {
   };
 }
 
+function intendedMajor(profile = {}) {
+  return String(profile.intendedMajor || profile.major || profile.subjects || profile.interests || profile.goals || '').toLowerCase();
+}
+
+function undergradUniversityDescription(school = {}, profile = {}) {
+  const stored = String(school.programInfo || school.notes || '').replace(/\s+/g, ' ').trim();
+  if (stored && stored.length > 90) return stored;
+  const major = intendedMajor(profile);
+  if (/medicine|medical|pre-med|biology|chemistry|health/.test(major)) {
+    return 'Outstanding undergraduate pathway for future physicians through strong science preparation, research access, hospital or community-health exposure, and advising toward medical school placement. Best fit when the student builds clinical service and biology/chemistry depth early.';
+  }
+  if (/computer science|cs|ai|software|data|technology|engineering/.test(major)) {
+    return 'Excellent undergraduate technology pathway with strong computer science depth, AI or engineering research, internship access, entrepreneurship opportunities, and credible recruiting into the technology ecosystem. The profile should keep building projects and advanced coursework.';
+  }
+  if (/business|economics|finance/.test(major)) {
+    return 'Strong undergraduate platform for business, economics, or finance through rigorous quantitative coursework, clubs, internships, alumni access, and employer signaling. The student should pair grades with leadership and market-facing activities.';
+  }
+  if (/design|architecture|arts|creative/.test(major)) {
+    return 'Valuable creative pathway when studio culture, portfolio development, critique, design resources, and interdisciplinary projects match the student direction. The deciding factor will be portfolio depth, not grades alone.';
+  }
+  if (/law|politics|policy|humanities/.test(major)) {
+    return 'Strong exploratory pathway for law, politics, or humanities through writing intensity, debate, research, civic engagement, and advising toward selective graduate or professional options. The student should develop evidence of argument, service, and leadership.';
+  }
+  return 'Useful undergraduate platform for exploring academic direction while building grades, activities, leadership, and a coherent intended-major story. Fit will sharpen as the student develops stronger coursework, projects, awards, and university preferences.';
+}
+
 function UndergradCard({ title, children, action }) {
   return (
     <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
@@ -368,7 +407,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
               {schools.length ? schools.slice(0, 8).map(school => (
                 <div key={school.name} style={{ border: '1px solid #f1eadd', borderRadius: 15, padding: 14, marginBottom: 10, background: '#fffdf8' }}>
                   <div style={{ fontSize: 14.5, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45 }}>{school.notes || school.programInfo || 'Fit will sharpen as grades, testing, and activities update.'}</div>
+                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, minHeight: 68 }}>{undergradUniversityDescription(school, profile)}</div>
                   <div style={{ marginTop: 8, fontSize: 11.5, color: '#9098b5', fontWeight: 800 }}>Fit index {school.fit ?? '-'}%</div>
                 </div>
               )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>This bucket will populate after the starting snapshot.</div>}
@@ -425,15 +464,12 @@ export default function CandidatePortal(props) {
   const hour = new Date().getHours();
   const tod = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
 
-  const isUndergrad = profile?.category === 'Undergraduate';
+  const trackConfig = getTrackConfig(profile || {});
+  const isUndergrad = trackConfig.key === 'undergraduate';
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Student Profile', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
-  const navItems = isUndergrad
-    ? UNDERGRAD_NAV_ITEMS
-    : hasChatAccess
-    ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
-    : NAV_ITEMS;
+  const navItems = navFromConfig(trackConfig, hasChatAccess);
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (

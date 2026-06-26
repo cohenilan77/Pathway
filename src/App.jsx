@@ -8,32 +8,8 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
-
-export const STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
-export const UNDERGRAD_STEPS = ['Profile', 'Roadmap', 'Activities', 'Universities', 'Testing', 'Essays', 'Applications'];
-
-export const TRACK_CONFIG = {
-  Undergraduate: {
-    scoreLabel: 'Application Readiness',
-    steps: UNDERGRAD_STEPS,
-    docLabel: 'CV, action plan, skills plan, university applications',
-  },
-  Graduate: {
-    scoreLabel: 'Competitiveness Score',
-    steps: STEPS,
-    docLabel: 'CV, essays, SOP, recommendations',
-  },
-  'Postgraduate / Doctoral': {
-    scoreLabel: 'Research Readiness',
-    steps: ['Profile', 'Academic Depth', 'Research Experience', 'Research Direction', 'Supervisor Fit', 'Proposal', 'Writing Sample', 'Recommendations', 'Interview'],
-    docLabel: 'Research proposal, writing sample, CV, papers',
-  },
-  'Personal Development': {
-    scoreLabel: 'Growth Score',
-    steps: ['Profile', 'Goals', 'Strengths', 'Gaps', 'Skills Plan', 'Experience Plan', 'Personal Brand', 'Execution', 'Review'],
-    docLabel: 'CV, action plan, skills plan, portfolio',
-  },
-};
+import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
+export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
 export const PLANS = {
   free: { label: 'Free' },
@@ -156,28 +132,14 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
-const SCORE_KEYS = ['academic', 'testScore', 'professional', 'leadership', 'volunteering', 'uniqueness', 'diversity', 'goalClarity', 'narrative', 'recommenders', 'potential'];
-const SCORE_WEIGHTS = {
-  academic: 15,
-  testScore: 10,
-  professional: 13,
-  leadership: 10,
-  volunteering: 5,
-  uniqueness: 7,
-  diversity: 5,
-  goalClarity: 10,
-  narrative: 12,
-  recommenders: 10,
-  potential: 13,
-};
-
-function weightedOverallScore(scores) {
+function weightedOverallScore(scores, profile) {
+  const weights = getTrackConfig(profile).scoreWeights || TRACK_CONFIG.Graduate.scoreWeights;
   let total = 0;
   let weight = 0;
-  for (const key of SCORE_KEYS) {
+  for (const key of Object.keys(weights)) {
     const value = scores?.[key];
     if (typeof value !== 'number' || Number.isNaN(value)) continue;
-    const w = SCORE_WEIGHTS[key] || 1;
+    const w = weights[key] || 1;
     total += value * w;
     weight += w;
   }
@@ -582,7 +544,7 @@ export default function App() {
         if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
-          const overall = weightedOverallScore(parsed.scores);
+          const overall = weightedOverallScore(parsed.scores, parsed.profile || profile);
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 1 : 2));
@@ -835,8 +797,8 @@ export default function App() {
     setEssayText(existing?.text || '');
   }, [essaySchool, essayQuestion, essayText, essays]);
 
-  const currentTrack = profile?.category || 'Graduate';
-  const currentConfig = TRACK_CONFIG[currentTrack] || TRACK_CONFIG.Graduate;
+  const currentTrack = resolveTrack(profile || {});
+  const currentConfig = getTrackConfig(profile || {});
   const currentSteps = currentConfig.steps;
 
   const sharedProps = {

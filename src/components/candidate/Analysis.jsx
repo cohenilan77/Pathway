@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
+import { getTrackConfig } from '../../trackConfig.js';
 
 const BAR_COLORS = [
   { from: '#7dd3fc', to: '#4dbbec' }, // sky
@@ -457,6 +458,7 @@ function buildAccordionSummary(school, profile) {
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
+  const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
   const [expanded, setExpanded] = useState({});
 
@@ -507,19 +509,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     );
   }
 
-  const scoreItems = [
-    { key: 'academic', title: 'Academic', desc: 'GPA, test scores, and quantitative aptitude relative to program benchmarks.' },
-    { key: 'testScore', title: 'Test Score', desc: 'Standardized test score gap relative to program medians.' },
-    { key: 'professional', title: 'Professional', desc: 'Career trajectory, impact, and industry positioning.' },
-    { key: 'leadership', title: 'Leadership', desc: 'Team leadership, initiative, and influence track record.' },
-    { key: 'volunteering', title: 'Volunteering', desc: 'Sustained community involvement and leadership in service.' },
-    { key: 'uniqueness', title: 'Uniqueness', desc: 'Non-linear path, rare achievements, and what sets you apart.' },
-    { key: 'diversity', title: 'Diversity', desc: 'Nationality, languages, and background relative to the cohort.' },
-    { key: 'goalClarity', title: 'Goal Clarity', desc: 'Specificity of post-degree role, sector, and timeline.' },
-    { key: 'narrative', title: 'Narrative', desc: 'Cohesion of personal brand and clarity of purpose.' },
-    { key: 'recommenders', title: 'Recommenders', desc: 'Status, direct relationship, evidence specificity, and fit with the target program.' },
-    { key: 'potential', title: 'Potential', desc: 'Long-term upside and fit with program outcomes.' },
-  ].filter(item => scores[item.key] != null);
+  const scoreItems = (trackConfig.kpis || [])
+    .map(([key, title, desc]) => ({ key, title, desc }))
+    .filter(item => scores[item.key] != null);
 
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];

@@ -166,7 +166,7 @@ Compute the candidate's eligible band from hard metrics only (their GPA and test
 Soft scores (professional, leadership, volunteering, uniqueness, diversity, goalClarity) only rank schools within the band hard metrics already put them in — they never expand a school into a higher band and never pull a locked school back into the list. A below-median candidate's Branch B list must never contain an elite/reach school they are not eligible for under this band — those schools only ever appear if the candidate names them directly (Branch A), where the locked-school gate applies instead.
 
 Always include name, tier, fit, location, notes, programGroup, admissionStatus, evidenceGaps, riskFlags, selectivityLabel, selectivitySource, selectivityScore, fitDrivers, and programInfo fields. The fit field is a 0–100 readiness/fit index, NOT an admission probability. admissionStatus must be one of: "Not Eligible", "Below Baseline", "Plausible", "Competitive", "Strong". selectivityLabel must be one of: "Ultra Competitive", "Competitive", "Accessible". Include avgGPA when relevant. Include avgGMAT only for MBA-style programs. Include avgGRE/avgLSAT/avgMCAT/avgSAT/avgACT only when the program type actually uses or reports that test. For LLM programs, omit LSAT/GRE unless the program requires or reports it; do not invent a test benchmark. For creative, arts, technology, undergraduate, PhD, MD, LLM/JD, or test-optional programs, omit irrelevant test fields and use notes to explain the most relevant admissions evidence instead. Notes must mention the candidate's specific fit or gap for that school/program. fitDrivers should list the candidate-specific reasons behind the fit score, such as "GMAT above median", "research fit", "portfolio quality", "direct evaluator recommender", or "leadership depth".
-programInfo definition: one concise senior-admissions-consultant paragraph, maximum four short sentences. Start immediately with the program's true reputation using curated program knowledge, not a template. Naturally combine: what it is genuinely famous for; its strongest differentiators such as recruiting outcomes, alumni network, employer reputation, faculty, entrepreneurship ecosystem, research leadership, or industry specialization; why those strengths fit this candidate's background/goals; and one meaningful strategic consideration or trade-off. Never repeat the school, university, or program name. Do not mention the candidate's name. Do not repeat location, selectivity label, acceptance rate, GMAT, GPA, fit, or any row KPI. No bullets, no generic AI language, no marketing fluff. The final sentence must provide a real strategic insight or trade-off, not a generic warning. Never make programInfo location-only, degree-type-only, selectivity-only, or generic; forbidden examples include "NYU Stern School of Business is strategically relevant for Adam's private equity transition", "MBA relevance: New York, NY.", "The Competitive MBA program...", "Located in Boston", "Strong university", and "This is a competitive program".
+programInfo definition: one concise senior-admissions-consultant paragraph, 3-4 compact lines. Start immediately with the program's true reputation for THIS track and intended major, not a generic university brand statement. Never reuse the same university description across Undergraduate, Graduate, MBA, PhD, law, or medicine. Dynamically tailor it: Undergraduate should connect intended major to academics, advising, research, internships, activities, clinical exposure, portfolio/studio access, honors, or placement; MBA should focus on recruiting outcomes, alumni, leadership platform, finance/consulting/entrepreneurship strength, and career outcomes; PhD/research should focus on faculty, labs, publications, methods fit, funding, research ecosystem, and academic placement; law/medicine/health should focus on specialization, clinical/legal exposure, placements, licensing/prerequisites, ethics/service fit. Never repeat the school, university, or program name. Do not mention the candidate's name. Do not repeat location, selectivity label, acceptance rate, GMAT, GPA, fit, or any row KPI. No bullets, no generic AI language, no marketing fluff. Forbidden examples include "MBA relevance: New York, NY.", "Good school for business", "Strong university", or any location-only description.
 If scores.recommenders is below 60 or recommender facts are missing, add "Recommendation strategy missing" or "Direct evaluator recommender not confirmed" to evidenceGaps for selective programs. If the named recommender is famous/high-status but distant, unverified, family/friend, or unable to cite concrete work, add "Letters may be generic" or "Recommender relationship appears weak" to riskFlags. Strong direct evaluators can improve confidence, especially for MBA, research/PhD, creative portfolio programs, and scholarships, but they never override hard academic/test/prerequisite gates.
 
 FIT CONSISTENCY RULE:
@@ -184,6 +184,8 @@ PORTFOLIO CONSTRUCTION GUIDANCE:
 - For a strong profile, a good portfolio should naturally move upward in brand/selectivity while still including enough strong-fit choices to protect outcomes.
 - For an exceptional profile, do not force a Reach bucket; ultra-selective schools may still be Strong Fit if fit is above 80.
 - Do not make Darden/Ross appear greener than HBS/Stanford/Wharton solely because they are less selective. Selectivity belongs in selectivityLabel, not tier.
+- Never use one static university score across tracks. Rank the same institution differently depending on track, degree, and intended major. Example: MIT can be Elite for undergraduate CS, Medium for MBA, Low for law, Strong for medicine/pre-med, and Elite for engineering PhD.
+- selectivityScore and selectivityLabel must reflect institutional/program difficulty for the exact track, not generic fame.
 
 For non-MBA requests, do not use the MBA reference list. Recommend or evaluate programs in the candidate's actual field and degree type, using the live KPI database when available and explicitly marking anything that needs official verification in notes.`,
 
@@ -198,10 +200,11 @@ PROGRAM-FAMILY READINESS LOGIC:
 2. Identify hard gates: degree/credential, prerequisite coursework, portfolio/audition/writing sample, English proof, test if officially required, deadline/admin requirements.
 3. If a required hard gate is absent, admissionStatus is "Not Eligible" or "Below Baseline" and tier should not be safe.
 4. Score fit by weighted evidence for the program family:
-   - MBA: leadership impact, career logic, analytical readiness, work progression, recommendations/interview, community contribution.
-   - MSc/MA taught: prerequisite match, academic readiness, SOP/program fit, project/work evidence, references.
+   - Undergraduate: academics, course rigor, testing, activities, leadership, community impact, awards/projects, essays/narrative, potential, intended-major fit. Do not use professional experience.
+   - MBA: work experience, leadership, promotions/career progression, GMAT/GRE, international exposure, career logic, academic readiness, recommendations/interview.
+   - MSc/MA taught: prerequisite match, academic readiness, research/projects, testing, SOP/program fit, references, goals.
    - Portfolio master's / MFA / MDes / MPS Interactive Media / creative technology: portfolio/project quality, creative-technical fit, process maturity, program/faculty fit, SOP/story, references, academic/admin eligibility.
-   - Research master's / PhD: research question, methods readiness, supervisor/faculty fit, writing sample/publications, research letters, funding/admin fit.
+   - Research master's / PhD: research question, publications, methods readiness, supervisor/faculty/lab fit, GPA, research interests, research letters, funding/admin fit.
    - LLM/JD/MD/professional degrees: official prerequisites/tests, field-specific academic strength, exposure, writing/interview, ethics/fit.
 5. Use fit index bands for admissionStatus: 0–24 Not Eligible/Below Baseline, 25–49 Plausible but high risk, 50–69 Competitive, 70–85 Strong. Reserve 86+ for unusually complete evidence and verified program fit.
 6. Recommendation risk modifier: if recommendations are required or strategically important and scores.recommenders is below 40, profile readiness should not be presented as fully ready and high-selectivity fit should be capped conservatively. If scores.recommenders is 0/missing for a program requiring letters, include a recommendation evidence gap. If scores.recommenders is 80+ with at least one verified direct evaluator, it can modestly strengthen fit confidence but cannot compensate for hard gates.
@@ -622,6 +625,9 @@ Undergraduate PROFILE example (grade/school replace gpa/gmat/experience as relev
 <PROFILE>{"name":"First Last","category":"Undergraduate","degree":"Undergraduate","grade":"10th","school":"Lincoln High School","interests":"Robotics, debate, biology"}</PROFILE>
 
 <SCORES>{"academic":68,"testScore":72,"professional":70,"leadership":61,"volunteering":45,"uniqueness":55,"diversity":60,"goalClarity":70,"narrative":55,"recommenders":62,"potential":74}</SCORES>
+Undergraduate SCORES example (no professional key): <SCORES>{"academic":78,"testScore":55,"activities":62,"leadership":48,"volunteering":40,"awards":35,"narrative":52,"goalClarity":60,"potential":74,"uniqueness":58}</SCORES>
+MBA SCORES example: <SCORES>{"professional":76,"leadership":72,"careerProgression":70,"internationalExposure":55,"testScore":68,"academic":64,"narrative":66,"goalClarity":70,"recommenders":62}</SCORES>
+PhD SCORES example: <SCORES>{"academic":82,"research":76,"publications":58,"facultyFit":64,"potential":78,"narrative":62,"recommenders":70,"goalClarity":74}</SCORES>
 
 <STRENGTHS>["Strong quantitative background","Consistent career progression","International experience"]</STRENGTHS>
 <WEAKNESSES>["GPA below T10 averages — needs compensating GMAT","Volunteering score low — only occasional involvement","Career gap 2021-2022 unexplained — must address in application","Goal clarity vague — needs specific post-degree role defined","Recommender strategy unclear — direct evaluator not confirmed"]</WEAKNESSES>
@@ -667,16 +673,34 @@ function buildCandidateFromProfile(profile, scores) {
     }
   }
   if (Number.isNaN(gpa) || testScore == null || Number.isNaN(testScore)) return null;
+  const degree = `${profile.degree || profile.program || ''}`.toLowerCase();
+  const track = profile.category === 'Undergraduate'
+    ? 'undergraduate'
+    : profile.category === 'Postgraduate / Doctoral' || /\bphd|doctoral|doctorate\b/.test(degree)
+      ? 'phd'
+      : /\bmba\b/.test(degree)
+        ? 'mba'
+        : 'graduate';
   return {
+    track,
     gpa,
     testScore,
     softScores: scores ? {
+      activities: scores.activities,
+      awards: scores.awards,
+      research: scores.research,
+      publications: scores.publications,
+      facultyFit: scores.facultyFit,
+      careerProgression: scores.careerProgression,
+      internationalExposure: scores.internationalExposure,
       professional: scores.professional,
       leadership: scores.leadership,
       volunteering: scores.volunteering,
       uniqueness: scores.uniqueness,
       diversity: scores.diversity,
       goalClarity: scores.goalClarity,
+      potential: scores.potential,
+      recommenders: scores.recommenders,
     } : {},
     exceptionType: profile.exceptionType || 'none',
   };
