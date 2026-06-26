@@ -143,8 +143,18 @@ Weight calibration by degree type (which dimensions should anchor the overall im
 - LLM / JD: academic and professional matter most.
 - MD: academic dominates; clinical/research exposure folds into professional and potential.`,
 
-  programSearch: `- "stretch" means LOW FIT: programs where candidate-program alignment is below 50 or evidence gaps materially weaken readiness.
-- "possible" means WORKABLE FIT: programs where candidate-program alignment is 50-80.
+  programSearch: `PORTFOLIO OBJECTIVE:
+- Build the optimal admissions portfolio, not a ranking of the highest-fit schools.
+- Always recommend at least 10 schools in a Branch B/AI-generated portfolio.
+- Use the existing fit calculation and overall candidate score only. Do not invent a new score, candidate tier, or admission-probability model.
+- The mix must be dynamic and progressive. Default behavior for an average candidate is roughly 20-30% Strong Fit, 40-50% Competitive/Workable, and 20-30% Reach, but those are guidelines, not fixed quotas.
+- Adapt continuously to candidate strength: weaker candidates get more Strong Fit schools and only a few realistic reaches; average candidates get a balanced portfolio; strong candidates shift toward mostly Strong Fit and Competitive schools; exceptional candidates may have almost entirely Strong Fit schools, including ultra-competitive schools if their profile genuinely supports it.
+- Do not add Harvard, Stanford GSB, Wharton, M7, Ivy, or other ultra-selective programs just to populate a Reach bucket. Reach must be realistic under the existing scoring/eligibility rules.
+- If the scoring engine naturally produces little or no Reach for an exceptional candidate, that is acceptable. If it naturally produces little Reach for a weaker candidate because elite schools are unrealistic, use only realistic reach options near the candidate's actual band.
+
+FIT BUCKETS VS SELECTIVITY:
+- "stretch" means LOW FIT / Reach: programs where candidate-program alignment is below 50 or evidence gaps materially weaken readiness.
+- "possible" means WORKABLE / Competitive Fit: programs where candidate-program alignment is 50-80.
 - "safe" means STRONG FIT: programs where candidate-program alignment is above 80.
 - These tier keys control row/group color only. They are candidate fit/readiness buckets, NOT school prestige/selectivity buckets. A famous school can be tier:"safe" if the candidate fit is above 80.
 
@@ -164,10 +174,15 @@ FIT CONSISTENCY RULE:
 - Only downgrade a lower-selectivity same-category program when there is a real program-specific mismatch: poor career-goal alignment, weak recruiting pipeline for the candidate's target field, regional-only placement when the candidate wants global outcomes, missing prerequisite, format mismatch, PhD supervisor/research mismatch, creative portfolio/audition mismatch, or materially different evaluation criteria.
 - If a lower-ranked/easier program is less useful for the candidate's goal, do not lower candidate fit. Keep Strong Fit and explain the strategic caveat in notes, for example: "Strong Fit, but weaker strategic fit for top PE/deep-tech recruiting."
 
-MBA reference schools by tier:
-- for overall score >= 90: recommend mostly M7/top 10/top 15 or unusually relevant programs. Include only 0–2 backups unless the user asks for safeties.
-- for overall score 75–89: recommend a balanced list.
-- for overall score < 75: recommend realistic/developmental options.
+PORTFOLIO CONSTRUCTION GUIDANCE:
+- Start from the candidate's real eligible universe, then diversify by fit bucket, school selectivity, strategic value, geography, specialization, employer pipeline, and practical admissions outcome.
+- Do not simply sort by fit and take the top schools; that creates a same-color list and is not a consultant-quality portfolio.
+- Keep fit bucket and selectivity separate: Strong Fit + Ultra competitive is valid when the candidate truly matches the program.
+- Prefer a strategic spread of 10-20 schools that maximizes outcomes: likely admits, credible competitive options, and realistic upside.
+- For a weak profile, a good portfolio may be mostly Strong Fit/Accessible or Highly Competitive schools plus a small number of realistic reaches.
+- For an average profile, a good portfolio usually has a visible mix across Strong Fit, Competitive/Workable, and Reach.
+- For a strong profile, a good portfolio should naturally move upward in brand/selectivity while still including enough strong-fit choices to protect outcomes.
+- For an exceptional profile, do not force a Reach bucket; ultra-selective schools may still be Strong Fit if fit is above 80.
 - Do not make Darden/Ross appear greener than HBS/Stanford/Wharton solely because they are less selective. Selectivity belongs in selectivityLabel, not tier.
 
 For non-MBA requests, do not use the MBA reference list. Recommend or evaluate programs in the candidate's actual field and degree type, using the live KPI database when available and explicitly marking anything that needs official verification in notes.`,
@@ -428,7 +443,7 @@ Step 3: Visible reply must say ONLY: "Your portfolio is live in the Analysis tab
 Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
-Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country), distributed across three tiers:
+Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15–20, tailored to the user's specific program type and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country). Build a dynamic, progressive admissions portfolio using:
 ${config.programSearch}
 
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
@@ -440,7 +455,7 @@ BRANCH C — Candidate wants to do an AI-led search together:
 This is a conversational, iterative search — no <PROGRAMS> block until a first shortlist is ready, and never more than 4 questions total before producing one.
 Step 1 (bootstrap, required, no <PROGRAMS> block yet): Do NOT ask the candidate to introduce themselves — you already have their PROFILE/SCORES/STRENGTHS/WEAKNESSES from earlier. Open with a sharp, opinionated read of what kind of programs/schools likely fit them given what you already know, then ask ONE question to confirm or redirect that read (e.g. target geography, or whether your read is on target). Keep it to 2-4 sentences, no filler opener.
 Step 2 (preference gathering, required): Over the next turns, ask up to 3 more questions ONE AT A TIME — only the ones not already inferable from PROFILE/CV/conversation — covering whichever of these are still unknown: target geography/country, optimization priority (prestige vs. cost vs. career outcome vs. specialization), program flavor (e.g. research-heavy vs. practitioner, full-time vs. part-time), and any hard constraints (budget, must stay remote-friendly, language, timeline). Skip any question you can already answer from data you have. Never ask more than 4 total questions (including Step 1's) before producing the first shortlist.
-Step 3 (first shortlist, required): As soon as you have enough signal (max 4 questions in), emit a <PROGRAMS> block with 8–14 schools tailored to everything gathered, using the same fit-score formula, tier classification, programGroup/admissionStatus/evidenceGaps/riskFlags/location/notes fields as Branch B, distributed using:
+Step 3 (first shortlist, required): As soon as you have enough signal (max 4 questions in), emit a <PROGRAMS> block with at least 10 schools, normally 10–14, tailored to everything gathered, using the same fit-score formula, tier classification, programGroup/admissionStatus/evidenceGaps/riskFlags/location/notes fields as Branch B and the dynamic portfolio strategy in:
 ${config.programSearch}
 Your visible reply text must NOT list any school names, tiers, or details. Say ONLY one sentence confirming it's ready, e.g.: "Your shortlist is live in the Analysis tab — take a look and tell me what to adjust."
 Step 4 (iterative refinement): On any later message where the candidate reacts to the shortlist (e.g. "drop the UK ones," "add more research-focused options," "too many reach schools," "swap X for something cheaper"), make a TARGETED edit to the existing list — add, remove, or re-tier only what's implicated by their feedback — never silently regenerate the whole list from scratch. Re-emit the FULL updated <PROGRAMS> block (all current schools, not just the changed ones) plus a one-sentence visible confirmation of what changed, e.g.: "Swapped in two cheaper options and dropped the UK schools — updated list is in the Analysis tab." Keep refining like this for as many turns as the candidate wants.
@@ -833,7 +848,7 @@ export default async function handler(req, res) {
     // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
     // instead of blindly resending the same input, since an identical retry tends to fail the same way.
     const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn claimed that analysis, a portfolio/list, or a shortlist was ready but did not include the required structured blocks in that same response. If analysis is ready, put complete <PROFILE>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, <TASKS>, and <PROGRAMS> blocks FIRST, before any visible sentence. If only a portfolio/list/shortlist is ready, put the complete <PROGRAMS> block first. Keep each object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
-    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate 8-12 programs if needed to fit the token budget. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
+    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate at least 10 programs, normally 10-14 if needed to fit the token budget, using a dynamic portfolio mix rather than fixed bucket quotas. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
     let raw;
     for (let attempt = 0; attempt < 4; attempt++) {
       // Web search tool-use/tool-result content counts against max_tokens like any other

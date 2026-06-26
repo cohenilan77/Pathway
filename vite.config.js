@@ -105,16 +105,27 @@ Weight calibration by degree type (which dimensions should anchor the overall im
 - LLM / JD: academic and professional matter most.
 - MD: academic dominates; clinical/research exposure folds into professional and potential.`,
 
-  programSearch: `- "stretch": 4–5 schools, admission probability below 25%
-- "possible": 6–8 schools, admission probability 25–60%
-- "safe": 4–6 schools, admission probability above 60%
+  programSearch: `PORTFOLIO OBJECTIVE:
+- Build the optimal admissions portfolio, not a ranking of the highest-fit schools.
+- Always recommend at least 10 schools.
+- Use the existing fit calculation and overall candidate score only. Do not invent a new score, candidate tier, or admission-probability model.
+- The mix must be dynamic and progressive. Default behavior for an average candidate is roughly 20-30% Strong Fit, 40-50% Competitive/Workable, and 20-30% Reach, but those are guidelines, not fixed quotas.
+- Adapt continuously to candidate strength: weaker candidates get more Strong Fit schools and only a few realistic reaches; average candidates get a balanced portfolio; strong candidates shift toward mostly Strong Fit and Competitive schools; exceptional candidates may have almost entirely Strong Fit schools.
+- Do not add Harvard, Stanford GSB, Wharton, M7, Ivy, or other ultra-selective programs just to populate a Reach bucket. Reach must be realistic under the existing scoring/eligibility rules.
 
-Always include avgGMAT, avgGPA, location, and notes fields. Notes must mention the candidate's specific fit or gap for that school.
+FIT BUCKETS VS SELECTIVITY:
+- "stretch" means LOW FIT / Reach: candidate-program alignment below 50 or material evidence gaps.
+- "possible" means WORKABLE / Competitive Fit: candidate-program alignment 50-80.
+- "safe" means STRONG FIT: candidate-program alignment above 80.
+- These tier keys control row/group color only. School selectivity is separate; Strong Fit + Ultra competitive is valid.
 
-MBA reference schools by tier:
-- stretch: Harvard Business School, Stanford GSB, Wharton
-- possible: Booth, Kellogg, Columbia, MIT Sloan, Tuck, Yale SOM
-- safe: Darden, Fuqua, Haas, Ross, Stern, Mendoza`,
+PORTFOLIO CONSTRUCTION GUIDANCE:
+- Start from the candidate's eligible universe, then diversify by fit bucket, selectivity, strategic value, geography, specialization, employer pipeline, and practical admissions outcome.
+- Do not simply sort by fit and take the top schools.
+- Prefer a strategic spread of 10-20 schools that maximizes admissions outcomes: likely admits, credible competitive options, and realistic upside.
+- For exceptional candidates, do not force a Reach bucket if the scoring engine naturally makes ultra-selective schools Strong Fit.
+
+Always include avgGMAT, avgGPA, location, and notes fields when relevant. Notes must mention the candidate's specific fit or gap for that school.`,
 
   fitFormula: `REAL ACCEPTANCE RATES (use as ceiling guidance):
 - Stanford GSB: 6% overall. Even exceptional profiles: 15–28% max.
@@ -228,7 +239,7 @@ Step 3: Visible reply must say ONLY: "Your portfolio is live in the Analysis tab
 Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
-Step 1 (required): Emit a <PROGRAMS> block with 15–20 schools tailored to the user's specific program type, distributed across three tiers:
+Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15–20, tailored to the user's specific program type using the dynamic portfolio strategy in:
 ${config.programSearch}
 
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3–5 schools excite you most? Name them and we'll tailor everything around those programs."
