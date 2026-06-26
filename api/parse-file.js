@@ -2,6 +2,7 @@ import mammoth from 'mammoth';
 import { put } from '@vercel/blob';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
+import { isHeadroomEnabled, compressText, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { createAnthropicClient } from '../lib/anthropic-client.js';
 
 const client = createAnthropicClient();
@@ -77,8 +78,30 @@ export default async function handler(req, res) {
 
     const file = await saveOriginalFile(buffer, { fileName, mediaType });
 
+    // Headroom never receives the raw base64/binary file — only plain text extracted
+    // below (by mammoth for .docx, by Anthropic's document extraction for PDF), and
+    // only if HEADROOM_COMPRESS_FILES is enabled.
+    async function maybeCompressExtractedText(text) {
+      const stats = {
+        enabled: isHeadroomEnabled(),
+        mode: process.env.HEADROOM_MODE || 'off',
+        error: null,
+        originalInputChars: text.length,
+        optimizedInputChars: text.length,
+      };
+      let outText = text;
+      if (stats.enabled && HeadroomFlags.compressFiles) {
+        const result = await compressText(text, { label: 'parsed_file_text' });
+        stats.error = result.error;
+        outText = result.text;
+        stats.optimizedInputChars = outText.length;
+      }
+      return { text: outText, stats };
+    }
+
     if (mediaType === DOCX_MEDIA_TYPE) {
-      const { value: text } = await mammoth.extractRawText({ buffer });
+      const { value: extractedText } = await mammoth.extractRawText({ buffer });
+      const { text } = await maybeCompressExtractedText(extractedText);
       return res.status(200).json({ text, file });
     }
 
@@ -94,6 +117,8 @@ export default async function handler(req, res) {
       }],
     });
     const userId = await resolveUserId(req);
+    const extractedText = response.content[0]?.text || '';
+    const { text, stats: headroomStats } = await maybeCompressExtractedText(extractedText);
     recordUsage({
       userId,
       conversationId: 'session',
@@ -101,8 +126,15 @@ export default async function handler(req, res) {
       model: MODEL,
       inputTokens: response.usage?.input_tokens,
       outputTokens: response.usage?.output_tokens,
+      endpoint: 'parse-file',
+      headroomEnabled: headroomStats.enabled,
+      headroomMode: headroomStats.mode,
+      headroomError: headroomStats.error,
+      originalInputChars: headroomStats.originalInputChars,
+      optimizedInputChars: headroomStats.optimizedInputChars,
+      estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
     }).catch((e) => console.error('Failed to record usage:', e));
-    return res.status(200).json({ text: response.content[0]?.text || '', file });
+    return res.status(200).json({ text, file });
   } catch (err) {
     console.error('parse-file error:', err.message);
     return res.status(500).json({ error: 'Failed to extract text', details: err.message });

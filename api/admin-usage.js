@@ -50,6 +50,13 @@ export default async function handler(req, res) {
   const byFeature = new Map(FEATURE_LABELS.map((f) => [f.feature, { cost: 0, tokens: 0 }]));
   const byUser = new Map(); // userId -> { cost, tokens, conversationIds: Set }
   const byDate = new Map(); // YYYY-MM-DD -> cost
+  const byEndpoint = new Map(); // endpoint -> { cost, inputTokens, outputTokens, inputCost, outputCost, count }
+  const byWebSearch = { enabled: { cost: 0, count: 0 }, disabled: { cost: 0, count: 0 } };
+  const byHeadroom = { enabled: { cost: 0, count: 0 }, disabled: { cost: 0, count: 0 } };
+  let totalInputCost = 0;
+  let totalOutputCost = 0;
+  let compressionPercentSum = 0;
+  let compressionPercentCount = 0;
 
   for (const r of records) {
     const d = new Date(r.createdAt);
@@ -57,6 +64,8 @@ export default async function handler(req, res) {
     totalTokens += r.totalTokens || 0;
     inputTokens += r.inputTokens || 0;
     outputTokens += r.outputTokens || 0;
+    totalInputCost += r.inputCost || 0;
+    totalOutputCost += r.outputCost || 0;
 
     const featureBucket = byFeature.get(r.feature) || byFeature.get('general_chat');
     if (featureBucket) {
@@ -74,7 +83,37 @@ export default async function handler(req, res) {
 
     const key = dateKey(r.createdAt);
     byDate.set(key, (byDate.get(key) || 0) + (r.totalCost || 0));
+
+    const endpointKey = r.endpoint || 'unknown';
+    if (!byEndpoint.has(endpointKey)) {
+      byEndpoint.set(endpointKey, { cost: 0, inputTokens: 0, outputTokens: 0, inputCost: 0, outputCost: 0, count: 0 });
+    }
+    const endpointBucket = byEndpoint.get(endpointKey);
+    endpointBucket.cost += r.totalCost || 0;
+    endpointBucket.inputTokens += r.inputTokens || 0;
+    endpointBucket.outputTokens += r.outputTokens || 0;
+    endpointBucket.inputCost += r.inputCost || 0;
+    endpointBucket.outputCost += r.outputCost || 0;
+    endpointBucket.count += 1;
+
+    const webSearchBucket = r.useWebSearch ? byWebSearch.enabled : byWebSearch.disabled;
+    webSearchBucket.cost += r.totalCost || 0;
+    webSearchBucket.count += 1;
+
+    const headroomBucket = r.headroomEnabled ? byHeadroom.enabled : byHeadroom.disabled;
+    headroomBucket.cost += r.totalCost || 0;
+    headroomBucket.count += 1;
+
+    if (typeof r.estimatedCompressionPercent === 'number') {
+      compressionPercentSum += r.estimatedCompressionPercent;
+      compressionPercentCount += 1;
+    }
   }
+
+  const costByEndpoint = [...byEndpoint.entries()].map(([endpoint, bucket]) => ({ endpoint, ...bucket }));
+  const averageEstimatedCompressionPercent = compressionPercentCount > 0
+    ? compressionPercentSum / compressionPercentCount
+    : 0;
 
   const budgetPercent = settings.monthlyBudget > 0 ? (monthlyCost / settings.monthlyBudget) * 100 : 0;
   const totalUsers = byUser.size;
@@ -129,6 +168,12 @@ export default async function handler(req, res) {
       userId: r.userId,
       cost: r.totalCost || 0,
       feature: r.feature,
+      endpoint: r.endpoint || null,
+      inputTokens: r.inputTokens || 0,
+      outputTokens: r.outputTokens || 0,
+      useWebSearch: r.useWebSearch ?? null,
+      headroomEnabled: r.headroomEnabled ?? null,
+      estimatedCompressionPercent: r.estimatedCompressionPercent ?? null,
       createdAt: r.createdAt,
     }));
 
@@ -158,10 +203,16 @@ export default async function handler(req, res) {
     totalTokens,
     inputTokens,
     outputTokens,
+    totalInputCost,
+    totalOutputCost,
     totalUsers,
     avgCostPerUser,
     avgCostPerSession,
     costByFeature,
+    costByEndpoint,
+    costByWebSearch: byWebSearch,
+    costByHeadroom: byHeadroom,
+    averageEstimatedCompressionPercent,
     costOverTime,
     topUsersByCost,
     recentHighCostConversations,
