@@ -1969,7 +1969,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ padding: '20px 24px 0' }}>
                   <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Token Savings via AI Context Compression</h3>
                   <div style={{ fontSize: 12.5, color: '#9098b5', margin: '0 0 14px' }}>
-                    Estimated context compressed per conversation and the resulting cost saved (compressed input tokens × model price).
+                    Context compression per conversation via Anthropic prompt caching, and the cost saved (cached tokens × discounted price). Rows marked REAL reflect actual cache reads; others are estimated from input size.
                     {usageData?.totalCompressionSaved ? ` Total saved: $${Number(usageData.totalCompressionSaved).toFixed(2)}.` : ''}
                   </div>
                 </div>
@@ -1977,18 +1977,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                      <span>CONVERSATION</span><span>FEATURE</span><span>ORIGINAL TOKENS</span><span>COMPRESSED</span><span>EST. SAVED</span><span>WHEN</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>CONVERSATION</span><span>FEATURE</span><span>ORIGINAL TOKENS</span><span>COMPRESSED</span><span>SAVED</span><span>WHEN</span><span>SOURCE</span>
                     </div>
                     <div style={usageRowsScrollStyle}>
                       {usageData.contextCompression.map((c, i) => (
-                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                           <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
                           <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
                           <span style={{ fontSize: 12.5, color: '#33405e' }}>{Number(c.inputTokens || 0).toLocaleString()}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>{Number(c.compressionPct || 0).toFixed(0)}%</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>${Number(c.costSaved || 0).toFixed(3)}</span>
                           <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                          <span style={{
+                            fontSize: 10.5, fontWeight: 700, letterSpacing: '.3px', textAlign: 'center', padding: '2px 6px', borderRadius: 6,
+                            color: c.real ? '#19c08a' : '#9098b5',
+                            background: c.real ? 'rgba(25,192,138,0.12)' : 'rgba(144,152,181,0.12)',
+                          }}>
+                            {c.real ? 'REAL' : 'EST.'}
+                          </span>
                         </div>
                       ))}
                     </div>

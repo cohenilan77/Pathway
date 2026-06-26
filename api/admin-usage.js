@@ -136,7 +136,7 @@ export default async function handler(req, res) {
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 30)
     .map((r) => {
-      const { compressionPct, tokensSaved, costSaved } = estimateCompressionForRecord(r);
+      const { compressionPct, tokensSaved, costSaved, real } = estimateCompressionForRecord(r);
       return {
         conversationId: r.conversationId,
         userId: r.userId,
@@ -145,6 +145,7 @@ export default async function handler(req, res) {
         compressionPct,
         tokensSaved,
         costSaved,
+        real,
         createdAt: r.createdAt,
       };
     });

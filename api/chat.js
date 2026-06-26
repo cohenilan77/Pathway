@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropicClient } from '../lib/anthropic-client.js';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
@@ -11,7 +11,7 @@ import {
   createAlert,
 } from '../lib/usage.js';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = createAnthropicClient();
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
 const MAX_OUTPUT_TOKENS = 16000;
@@ -953,10 +953,19 @@ export default async function handler(req, res) {
       // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
       // token budget goes to the reply itself — the model still has the parallel-program
       // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
+      // The system prompt is identical across every retry attempt in this loop (only the
+      // appended retry note changes), so it's marked as an Anthropic prompt-cache breakpoint:
+      // attempt 0 pays full price to write the cache, attempts 1-3 read it back at a steep
+      // discount instead of reprocessing the same multi-thousand-token prompt from scratch.
+      const retryNote = attempt === 0
+        ? ''
+        : `${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`;
+      const system = [
+        { type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } },
+        ...(retryNote ? [{ type: 'text', text: retryNote }] : []),
+      ];
       const response = await createChatCompletion({
-        system: attempt === 0
-          ? systemPrompt
-          : `${systemPrompt}${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
+        system,
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
@@ -968,6 +977,8 @@ export default async function handler(req, res) {
         model: CHAT_MODEL,
         inputTokens: response.usage?.input_tokens,
         outputTokens: response.usage?.output_tokens,
+        cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
+        cacheReadInputTokens: response.usage?.cache_read_input_tokens,
       }).catch((err) => console.error('Failed to record usage:', err));
 
       raw = extractText(response);
