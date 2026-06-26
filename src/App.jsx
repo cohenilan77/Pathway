@@ -882,7 +882,7 @@ export default function App() {
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
-              Paste your CV, upload a file, or share a <strong style={{ color: '#16233f' }}>background dump</strong> — anything about yourself: work history, achievements, experiences, test scores, recommender names, personal story. The more context, the sharper your strategy.
+              Paste your CV or upload a file. Add honors, awards, major achievements, test scores, goals, and recommenders if they are not already clear.
             </p>
 
             {/* File upload row */}
@@ -909,7 +909,7 @@ export default function App() {
             <div style={{ borderTop: '1px dashed #d7ddec', margin: '14px 0 14px', padding: '14px 0 0' }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 4 }}>ADDITIONAL BACKGROUND DUMP <span style={{ color: '#b6bdcd', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
               <div style={{ fontSize: 12, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>
-                Anything else: personal story, achievements, test scores, recommenders, career pivot context, life experiences not in your CV.
+                Use this for honors, awards, major achievements, goals, recommenders, or context missing from the CV.
               </div>
               <textarea
                 value={cvExtra}
