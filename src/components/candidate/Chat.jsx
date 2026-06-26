@@ -47,8 +47,18 @@ export default function Chat({ authUser, authToken, showToast, language }) {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
   };
 
-  const send = async () => {
-    const text = input.trim();
+const OPTIONS_PATTERN = /→\s*(.+)$/;
+
+  function parseOptions(text) {
+    const match = OPTIONS_PATTERN.exec(text || '');
+    if (!match) return null;
+    const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+    if (options.length < 2) return null;
+    return { mainText: text.slice(0, match.index).trim(), options };
+  }
+
+  const send = async (overrideText) => {
+    const text = (overrideText ?? input).trim();
     if (!text || sending) return;
     setSending(true);
     setInput('');
@@ -129,10 +139,29 @@ export default function Chat({ authUser, authToken, showToast, language }) {
                     {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</bdi>}
                   </div>
                 ) : (
-                  <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
-                    <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
-                    {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</bdi>}
-                  </div>
+                  (() => {
+                    const parsed = parseOptions(m.text);
+                    return (
+                      <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
+                        <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{parsed ? parsed.mainText : m.text}</bdi>
+                        {parsed && (
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                            {parsed.options.map((opt) => (
+                              <button
+                                key={opt}
+                                onClick={() => send(opt)}
+                                disabled={sending}
+                                style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 600, color: '#33405e', cursor: sending ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, language)}</bdi>}
+                      </div>
+                    );
+                  })()
                 )
               ))}
               <div ref={messagesEndRef} />
@@ -148,7 +177,7 @@ export default function Chat({ authUser, authToken, showToast, language }) {
                 placeholder={chatT(language, 'writeMessageToConsultant')}
                 style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 12px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, textAlign: dir === 'rtl' ? 'right' : 'left' }}
               />
-              <button onClick={send} disabled={sending || !input.trim()} aria-label={chatT(language, 'send')}
+              <button onClick={() => send()} disabled={sending || !input.trim()} aria-label={chatT(language, 'send')}
                 style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: sending || !input.trim() ? 'not-allowed' : 'pointer', color: '#faf7f2', flexShrink: 0, boxShadow: '0 8px 18px rgba(105,91,255,.36)', opacity: sending || !input.trim() ? 0.55 : 1 }}>
                 <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round', transform: dir === 'rtl' ? 'scaleX(-1)' : 'none' }}>
                   <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />

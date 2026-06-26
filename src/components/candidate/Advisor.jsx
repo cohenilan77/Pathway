@@ -1,12 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 
-const CATEGORY_CHIPS = [
-  { label: 'Undergraduate', emoji: '🎓', text: 'Undergraduate' },
-  { label: 'Graduate', emoji: '📚', text: 'Graduate' },
-  { label: 'Postgraduate / Doctoral', emoji: '🔬', text: 'Postgraduate / Doctoral' },
-  { label: 'Personal Development', emoji: '✨', text: 'Personal Development' },
-];
+const OPTIONS_PATTERN = /→\s*(.+)$/;
+
+// AI messages present fixed-choice questions as "...question? → A | B | C" — parse that
+// trailing segment so the UI can render tappable chips instead of plain piped text.
+function parseOptions(text) {
+  const match = OPTIONS_PATTERN.exec(text || '');
+  if (!match) return null;
+  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+  if (options.length < 2) return null;
+  return { mainText: text.slice(0, match.index).trim(), options };
+}
 
 function NarrativeModal({ onClose, onChoose }) {
   return (
@@ -124,7 +129,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   };
 
   const hasScores = !!scores;
-  const showChips = !busy && chat.every(m => m.role === 'ai');
   const lastAiText = chat.filter(m => m.role === 'ai').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
@@ -205,9 +209,24 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
                 {chat.map((m, i) => (
                   m.role === 'ai' ? (
-                    <div key={i} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                      {renderFormattedText(m.text)}
-                    </div>
+                    (() => {
+                      const parsed = parseOptions(m.text);
+                      return (
+                        <div key={i} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
+                          {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                          {parsed && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                              {parsed.options.map(opt => (
+                                <button key={opt} onClick={() => send(opt)} disabled={busy}
+                                  style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                  {opt}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()
                   ) : (
                     <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
                       {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
@@ -222,20 +241,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                         <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#9aa3c0', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                       ))}
                     </span>
-                  </div>
-                )}
-
-                {showChips && (
-                  <div style={{ marginTop: 4 }}>
-                    <div style={{ fontSize: 11, fontWeight: 800, color: '#aeb6cf', letterSpacing: '1px', marginBottom: 12 }}>CHOOSE YOUR PATH</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                      {CATEGORY_CHIPS.map(chip => (
-                        <button key={chip.label} onClick={() => send(chip.text)} disabled={busy}
-                          style={{ display: 'flex', alignItems: 'center', gap: 9, background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
-                          <span style={{ fontSize: 16 }}>{chip.emoji}</span>{chip.label}
-                        </button>
-                      ))}
-                    </div>
                   </div>
                 )}
 
