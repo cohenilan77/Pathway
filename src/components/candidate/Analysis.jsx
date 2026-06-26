@@ -412,7 +412,7 @@ function buildAccordionSummary(school, profile) {
   return limitWords(summary, 80);
 }
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, chosenSchools, setChosenSchools }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
   const hasData = !!scores;
   const [selected, setSelected] = useState(chosenSchools || []);
   const [expanded, setExpanded] = useState({});
@@ -435,6 +435,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     const msg = `I'd like to move forward with: ${selected.join(', ')}.`;
     setCandTab('advisor');
     send(msg);
+  };
+
+  const refreshAnalysis = () => {
+    if (!send || busy) return;
+    send('Refresh Analysis.');
   };
 
   if (!hasData) {
@@ -504,6 +509,36 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             )}
           </div>
           <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+            <button onClick={refreshAnalysis} disabled={busy}
+              title="Refresh analysis using the latest chat details"
+              style={{
+                background: busy
+                  ? 'linear-gradient(135deg,#d7ddec,#c8cfdf)'
+                  : 'linear-gradient(135deg,#fef7d6,#f5c94c 45%,#d9a62c)',
+                border: '1px solid rgba(255,255,255,.55)',
+                borderRadius: 999,
+                padding: '11px 18px',
+                fontSize: 13.5,
+                fontWeight: 800,
+                color: busy ? '#788198' : '#4b3708',
+                cursor: busy ? 'not-allowed' : 'pointer',
+                fontFamily: 'inherit',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                boxShadow: busy
+                  ? 'inset 0 1px 0 rgba(255,255,255,.35)'
+                  : '0 12px 24px rgba(217,166,44,.28), inset 0 1px 0 rgba(255,255,255,.72)',
+                opacity: busy ? 0.7 : 1,
+              }}>
+              <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16" />
+                <path d="M3 21v-5h5" />
+                <path d="M3 12A9 9 0 0 1 18.4 5.6L21 8" />
+                <path d="M21 3v5h-5" />
+              </svg>
+              {busy ? 'Refreshing…' : 'Refresh Analysis'}
+            </button>
             <button onClick={() => setCandTab('documents')}
               style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
