@@ -1864,10 +1864,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── USAGE & COST ── */}
           {adminView === 'usageCost' && canManageUsers && (
             <div style={{ maxWidth: 1100, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: -8, flexWrap: 'wrap' }}>
-                <div style={{ fontSize: 14, color: '#6b7392' }}>
-                  Estimated from real Anthropic usage counters and current Haiku 4.5 list pricing. All tables use the selected period.
-                </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginTop: -8, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <select value={usagePeriod} onChange={(e) => setUsagePeriod(e.target.value)} style={{ border: '1px solid #e7dcc7', borderRadius: 10, padding: '8px 10px', background: '#fff', color: '#33405e', fontFamily: 'inherit', fontWeight: 700 }}>
                     <option value="today">Today</option>
@@ -1883,30 +1880,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {usageError && (
                 <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 18, color: '#e0457a', fontSize: 13.5, fontWeight: 600 }}>
                   {usageError}
-                </div>
-              )}
-
-              {usageData && (
-                <div style={{ ...cardShell, padding: '16px 20px', background: '#f8fafc', borderColor: '#dbeafe' }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
-                    <div>
-                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#5b46e0', marginBottom: 5 }}>CORRECTED COST MODEL · {usageData.periodLabel}</div>
-                      <div style={{ fontSize: 13, color: '#33405e', lineHeight: 1.55 }}>
-                        Haiku 4.5: $1/M input · $5/M output · $1.25/M 5m cache write · $0.10/M cache read · $0.01/search.
-                        Historical rows are repriced from their raw token counters; stored legacy estimates remain visible for comparison.
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 11, color: '#9098b5' }}>LAST REFRESH</div>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#33405e' }}>{usageRefreshedAt ? new Date(usageRefreshedAt).toLocaleTimeString() : '—'}</div>
-                    </div>
-                  </div>
-                  {(usageData.legacySearchTelemetryRecords > 0 || usageData.unknownPricingRecords > 0) && (
-                    <div style={{ marginTop: 10, fontSize: 12, color: '#a16207' }}>
-                      {usageData.legacySearchTelemetryRecords > 0 ? `${usageData.legacySearchTelemetryRecords} older search-enabled calls lack actual search counts; their search surcharge is unknown. ` : ''}
-                      {usageData.unknownPricingRecords > 0 ? `${usageData.unknownPricingRecords} calls use an unknown model price.` : ''}
-                    </div>
-                  )}
                 </div>
               )}
 
@@ -2240,6 +2213,30 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                 )}
               </div>
+
+              {usageData && (
+                <div style={{ ...cardShell, padding: '16px 20px', background: '#f8fafc', borderColor: '#dbeafe' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#5b46e0', marginBottom: 5 }}>CORRECTED COST MODEL · {usageData.periodLabel}</div>
+                      <div style={{ fontSize: 13, color: '#33405e', lineHeight: 1.55 }}>
+                        Haiku 4.5: $1/M input · $5/M output · $1.25/M 5m cache write · $0.10/M cache read · $0.01/search.
+                        Historical rows are repriced from their raw token counters; stored legacy estimates remain visible for comparison.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: '#9098b5' }}>LAST REFRESH</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#33405e' }}>{usageRefreshedAt ? new Date(usageRefreshedAt).toLocaleTimeString() : '—'}</div>
+                    </div>
+                  </div>
+                  {(usageData.legacySearchTelemetryRecords > 0 || usageData.unknownPricingRecords > 0) && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#a16207' }}>
+                      {usageData.legacySearchTelemetryRecords > 0 ? `${usageData.legacySearchTelemetryRecords} older search-enabled calls lack actual search counts; their search surcharge is unknown. ` : ''}
+                      {usageData.unknownPricingRecords > 0 ? `${usageData.unknownPricingRecords} calls use an unknown model price.` : ''}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
