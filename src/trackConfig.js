@@ -9,7 +9,7 @@ export const TRACK_CONFIG = {
     docLabel: 'Roadmap, activities, testing, essays, applications',
     nav: [
       ['dashboard', 'Dashboard', 'dashboard'],
-      ['studentProfile', 'Student Profile', 'advisor'],
+      ['studentProfile', 'Advisor', 'advisor'],
       ['roadmap', 'Roadmap', 'analysis'],
       ['activities', 'Activities', 'documents'],
       ['universities', 'University List', 'analysis'],
