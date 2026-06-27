@@ -90,8 +90,10 @@ export default async function handler(req, res) {
         optimizedInputChars: text.length,
       };
       let outText = text;
+      console.log(`[Headroom-File] enabled=${stats.enabled}, compressFiles=${HeadroomFlags.compressFiles}, textSize=${text.length}`);
       if (stats.enabled && HeadroomFlags.compressFiles) {
         const result = await compressText(text, { label: 'parsed_file_text' });
+        console.log(`[Headroom-File] Extracted text: ${text.length} → ${result.text.length} chars, compressed=${result.compressed}, error=${result.error}`);
         stats.error = result.error;
         outText = result.text;
         stats.optimizedInputChars = outText.length;
