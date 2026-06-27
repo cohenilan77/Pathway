@@ -375,9 +375,12 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '') {
+function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
+    : '';
+  const stageInstruction = stageContext
+    ? `\n\n==STUDENT JOURNEY STAGE==\n${stageContext}\n\nUse this stage context to ask stage-appropriate questions and nudge the student toward natural progression through their journey. Each stage has specific goals and questions.`
     : '';
   const kpiInstruction = kpiPromptSummary
     ? `\n\n==LIVE UNIVERSITY / PROGRAM KPI DATABASE==\n${kpiPromptSummary}\n\nUse the LIVE UNIVERSITY / PROGRAM KPI DATABASE as the baseline for school/program matching, KPI criteria, hard gates, evidence gaps, student action items, source awareness, and fit calibration. Keep using the required <PROGRAMS>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, and <TASKS> JSON block formats below.`
@@ -386,7 +389,7 @@ function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScor
 1. The ==LIVE UNIVERSITY / PROGRAM KPI DATABASE== above, if the school/program appears there.
 2. If it does not appear there (a candidate named a school/program outside the database, including niche, regional, or portfolio/audition-based programs), use the web_search tool to find that program's real, current median GPA, its standardized test requirement if any and that test's median score, and its acceptance rate.
 3. Only if web_search returns nothing reliable, reason by analogy from the closest comparable/parallel program you do have real data for (same field, comparable selectivity tier, same country/region) — say so explicitly in that school's "notes" field (e.g. "Benchmarked against [comparable program] — exact published figures unavailable"). Never silently invent exact official figures.`;
-  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
+  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}${stageInstruction}
 ${kpiInstruction}
 ${dataSourcingInstruction}
 ${verifiedScoringSection}
@@ -893,7 +896,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, stage, systemContext } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -933,7 +936,7 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection);
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
     let anthropicMessages = messages.map(m => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.text,
