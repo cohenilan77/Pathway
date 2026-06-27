@@ -966,6 +966,10 @@ export default async function handler(req, res) {
       }
       headroomStats.error = errors.length ? errors.join('; ') : null;
       headroomStats.optimizedInputChars = compressedSystemPrompt.length + JSON.stringify(anthropicMessages).length;
+      const originalChars = headroomStats.originalInputChars;
+      const optimizedChars = headroomStats.optimizedInputChars;
+      const pct = originalChars > 0 ? ((originalChars - optimizedChars) / originalChars * 100).toFixed(1) : 0;
+      console.log(`[Headroom] Original: ${originalChars} chars, Optimized: ${optimizedChars} chars, Saved: ${pct}%`);
     }
 
     // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
