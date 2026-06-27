@@ -224,6 +224,11 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
+function createSessionId() {
+  const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  return `session_${randomPart}`;
+}
+
 function weightedOverallScore(scores, profile) {
   const weights = getTrackConfig(profile).scoreWeights || TRACK_CONFIG.Graduate.scoreWeights;
   let total = 0;
@@ -284,6 +289,7 @@ export default function App() {
   const [narrative, setNarrative] = useState(null);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState(INITIAL_CHAT);
+  const [sessionId, setSessionId] = useState(createSessionId);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
@@ -406,6 +412,7 @@ export default function App() {
         const loadedEssays = data?.essays || {};
 
         setChat(loadedChat);
+        setSessionId(data?.sessionId || createSessionId());
         setStepIdx(loadedStepIdx);
         setProfile(loadedProfile);
         setScores(loadedScores);
@@ -463,12 +470,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -578,6 +585,8 @@ export default function App() {
   const resetSession = useCallback(() => {
     const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
     if (!confirmed) return;
+    const nextSessionId = createSessionId();
+    setSessionId(nextSessionId);
     setChat(buildInitialChat(language));
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
@@ -589,7 +598,7 @@ export default function App() {
       fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ data: {} }),
+        body: JSON.stringify({ data: { sessionId: nextSessionId } }),
       }).catch(() => {});
     }
     showToast('Session cleared — starting fresh.');
@@ -649,7 +658,7 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';
@@ -727,7 +736,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument, candTab]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -782,8 +791,8 @@ export default function App() {
         try {
           const res = await fetch('/api/parse-file', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ base64, mediaType, fileName: file.name }),
+            headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
+            body: JSON.stringify({ base64, mediaType, fileName: file.name, conversationId: sessionId }),
           });
           const data = await res.json();
           if (data.text) {
@@ -805,7 +814,7 @@ export default function App() {
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
     reader.readAsText(file);
     e.target.value = '';
-  }, [showToast]);
+  }, [auth?.token, sessionId, showToast]);
 
   const rewriteEssay = useCallback(async () => {
     if (!essayText.trim()) { showToast('Paste your essay text in the editor first.'); return; }
@@ -894,7 +903,7 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
-    chat, setChat, input, setInput, busy,
+    sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, insights,

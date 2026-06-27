@@ -347,6 +347,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [usageData, setUsageData] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState('');
+  const [usagePeriod, setUsagePeriod] = useState('month');
+  const [usageRefreshedAt, setUsageRefreshedAt] = useState(null);
   const [usageSettings, setUsageSettings] = useState({
     usageLimitsEnabled: false,
     monthlyBudget: 100,
@@ -416,7 +418,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     if (!canManageUsers) return;
     setUsageLoading(true);
     setUsageError('');
-    fetch('/api/admin-usage', { headers: adminHeaders })
+    fetch(`/api/admin-usage?period=${encodeURIComponent(usagePeriod)}`, { headers: adminHeaders })
       .then(r => r.json())
       .then(d => {
         if (d.error) {
@@ -424,11 +426,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           return;
         }
         setUsageData(d);
+        setUsageRefreshedAt(Date.now());
         if (d.settings) setUsageSettings(prev => ({ ...prev, ...d.settings }));
       })
       .catch(() => setUsageError('Failed to load usage data.'))
       .finally(() => setUsageLoading(false));
-  }, [adminSecret, authToken, canManageUsers]);
+  }, [adminSecret, authToken, canManageUsers, usagePeriod]);
 
   useEffect(() => {
     if (canManageUsers) loadUsageData();
@@ -753,8 +756,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     try {
       const res = await fetch('/api/summarize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat }),
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ chat, conversationId: sd.sessionId, candidateId: selectedUserId }),
       });
       const data = await res.json();
       if (data.summary) setSummary(data.summary);
@@ -1861,8 +1864,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── USAGE & COST ── */}
           {adminView === 'usageCost' && canManageUsers && (
             <div style={{ maxWidth: 1100, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
-                Monitor token usage, costs and control system limits.
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: -8, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 14, color: '#6b7392' }}>
+                  Estimated from real Anthropic usage counters and current Haiku 4.5 list pricing. All tables use the selected period.
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <select value={usagePeriod} onChange={(e) => setUsagePeriod(e.target.value)} style={{ border: '1px solid #e7dcc7', borderRadius: 10, padding: '8px 10px', background: '#fff', color: '#33405e', fontFamily: 'inherit', fontWeight: 700 }}>
+                    <option value="today">Today</option>
+                    <option value="month">This month</option>
+                    <option value="all">All time</option>
+                  </select>
+                  <button onClick={loadUsageData} disabled={usageLoading} style={{ ...btnPrimary, padding: '8px 13px', fontSize: 12, opacity: usageLoading ? 0.6 : 1 }}>
+                    {usageLoading ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {usageError && (
@@ -1871,20 +1886,73 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               )}
 
+              {usageData && (
+                <div style={{ ...cardShell, padding: '16px 20px', background: '#f8fafc', borderColor: '#dbeafe' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#5b46e0', marginBottom: 5 }}>CORRECTED COST MODEL · {usageData.periodLabel}</div>
+                      <div style={{ fontSize: 13, color: '#33405e', lineHeight: 1.55 }}>
+                        Haiku 4.5: $1/M input · $5/M output · $1.25/M 5m cache write · $0.10/M cache read · $0.01/search.
+                        Historical rows are repriced from their raw token counters; stored legacy estimates remain visible for comparison.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: '#9098b5' }}>LAST REFRESH</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#33405e' }}>{usageRefreshedAt ? new Date(usageRefreshedAt).toLocaleTimeString() : '—'}</div>
+                    </div>
+                  </div>
+                  {(usageData.legacySearchTelemetryRecords > 0 || usageData.unknownPricingRecords > 0) && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#a16207' }}>
+                      {usageData.legacySearchTelemetryRecords > 0 ? `${usageData.legacySearchTelemetryRecords} older search-enabled calls lack actual search counts; their search surcharge is unknown. ` : ''}
+                      {usageData.unknownPricingRecords > 0 ? `${usageData.unknownPricingRecords} calls use an unknown model price.` : ''}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* KPI cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
                 {[
-                  { label: 'TOTAL COST THIS MONTH', value: `$${Number(usageData?.monthlyCost || 0).toFixed(2)}`, color: '#141b34' },
+                  { label: `CORRECTED COST · ${usageData?.periodLabel || 'PERIOD'}`, value: `$${Number(usageData?.selectedCost || 0).toFixed(2)}`, color: '#141b34' },
+                  { label: 'OLD STORED ESTIMATE', value: `$${Number(usageData?.selectedStoredCost || 0).toFixed(2)}`, color: '#e384a5' },
                   { label: 'TOTAL TOKENS', value: Number(usageData?.totalTokens || 0).toLocaleString(), color: '#141b34' },
                   { label: 'INPUT TOKENS', value: Number(usageData?.inputTokens || 0).toLocaleString(), color: '#5b46e0' },
                   { label: 'OUTPUT TOKENS', value: Number(usageData?.outputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'CACHE READ TOKENS', value: Number(usageData?.cacheReadInputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'WEB SEARCHES', value: Number(usageData?.webSearchRequests || 0).toLocaleString(), color: '#5b46e0' },
                   { label: 'USERS', value: Number(usageData?.totalUsers || 0).toLocaleString(), color: '#141b34' },
+                  { label: 'TRACKED SESSIONS', value: Number(usageData?.totalSessions || 0).toLocaleString(), color: '#141b34' },
                   { label: 'AVG COST / USER', value: `$${Number(usageData?.avgCostPerUser || 0).toFixed(2)}`, color: '#19c08a' },
-                  { label: 'AVG COST / SESSION', value: `$${Number(usageData?.avgCostPerSession || 0).toFixed(2)}`, color: '#19c08a' },
+                  { label: 'AVG / TRACKED SESSION', value: usageData?.avgCostPerSession == null ? '—' : `$${Number(usageData.avgCostPerSession).toFixed(2)}`, color: '#19c08a' },
                 ].map((kpi) => (
                   <div key={kpi.label} style={{ ...cardShell, padding: '14px 16px' }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>{kpi.label}</div>
                     <div style={{ fontSize: 21, fontWeight: 800, color: kpi.color }}>{usageLoading && !usageData ? '…' : kpi.value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Corrected cost components */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Corrected Cost Breakdown</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>Each billing category uses its own official Haiku 4.5 rate.</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                  <span>CATEGORY</span><span>USAGE</span><span>RATE</span><span>COST</span>
+                </div>
+                {[
+                  ['Base input', usageData?.inputTokens, '$1 / MTok', usageData?.inputCost],
+                  ['5-minute cache writes', usageData?.cacheCreationInputTokens, '$1.25 / MTok', usageData?.cacheCreationCost],
+                  ['Cache reads', usageData?.cacheReadInputTokens, '$0.10 / MTok', usageData?.cacheReadCost],
+                  ['Output', usageData?.outputTokens, '$5 / MTok', usageData?.totalOutputCost],
+                  ['Web searches', usageData?.webSearchRequests, '$0.01 / search', usageData?.webSearchCost],
+                ].map(([label, units, rate, cost]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 0, padding: '12px 24px', borderBottom: '1px solid #f6f1e8', fontSize: 13, color: '#33405e' }}>
+                    <span style={{ fontWeight: 700, color: '#141b34' }}>{label}</span>
+                    <span>{Number(units || 0).toLocaleString()}</span>
+                    <span>{rate}</span>
+                    <span style={{ fontWeight: 700, color: '#5b46e0' }}>${Number(cost || 0).toFixed(4)}</span>
                   </div>
                 ))}
               </div>
@@ -1916,16 +1984,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                   <div style={{ ...cardShell, padding: '12px 14px', background: '#fdf4ff' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>AVG COMPRESSION</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#9333ea' }}>{usageData?.averageEstimatedCompressionPercent > 0 ? (usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '—'}</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#9333ea' }}>{usageData?.averageEstimatedCompressionPercent > 0 ? Number(usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '—'}</div>
                   </div>
                 </div>
                 <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px' }}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: '#9098b5', marginBottom: 6 }}>COMPRESSION RATIO PROGRESS</div>
                   <div style={{ position: 'relative', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, #22c55e, #16a34a)', width: usageData?.averageEstimatedCompressionPercent > 0 ? Math.min(100, usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '0%', transition: 'width .5s ease' }} />
+                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, #22c55e, #16a34a)', width: usageData?.averageEstimatedCompressionPercent > 0 ? Math.min(100, usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '0%', transition: 'width .5s ease' }} />
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#94a3b8' }}>
-                    <span>0%</span><span>Avg saved: {usageData?.averageEstimatedCompressionPercent > 0 ? (usageData.averageEstimatedCompressionPercent * 100).toFixed(1) + '%' : '—'}</span><span>100%</span>
+                    <span>0%</span><span>Avg saved: {usageData?.averageEstimatedCompressionPercent > 0 ? Number(usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '—'}</span><span>100%</span>
                   </div>
                 </div>
               </div>
@@ -1949,7 +2017,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       onChange={(e) => setUsageSettings(s => ({ ...s, dailyBudget: Number(e.target.value) }))}
                       style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
                   </label>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Max Cost Per User ($)
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Daily Max Cost Per User ($)
                     <input type="number" min="0" step="0.1" value={usageSettings.maxCostPerUser}
                       onChange={(e) => setUsageSettings(s => ({ ...s, maxCostPerUser: Number(e.target.value) }))}
                       style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
@@ -2045,20 +2113,21 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
               {/* Cost over time */}
               <div style={{ ...cardShell, padding: 28 }}>
-                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Cost Over Time</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Cost Over Time</h3>
+                <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 18 }}>Corrected cost is shown in purple; the old stored estimate appears at right for audit.</div>
                 {!usageData?.costOverTime?.length ? (
                   <div style={{ fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <div style={{ ...usageCompactRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 6, paddingRight: 4 }}>
                     {(() => {
-                      const maxCost = Math.max(0.01, ...usageData.costOverTime.map(d => d.cost || 0));
+                      const maxCost = Math.max(0.01, ...usageData.costOverTime.flatMap(d => [d.cost || 0, d.storedCost || 0]));
                       return [...usageData.costOverTime].slice(-14).reverse().map((d) => (
                         <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                           <span style={{ fontSize: 11, color: '#9098b5', width: 80, flexShrink: 0 }}>{d.date}</span>
                           <div style={{ flex: 1, height: 10, background: '#f1eadd', borderRadius: 5, overflow: 'hidden' }}>
                             <div style={{ width: `${Math.max(2, (d.cost / maxCost) * 100)}%`, height: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)' }} />
                           </div>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#141b34', width: 60, textAlign: 'right' }}>${d.cost.toFixed(2)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#141b34', width: 118, textAlign: 'right' }}>${d.cost.toFixed(2)} <span style={{ color: '#b6a8bf', textDecoration: Math.abs((d.storedCost || 0) - d.cost) > 0.0001 ? 'line-through' : 'none' }}>${Number(d.storedCost || 0).toFixed(2)}</span></span>
                         </div>
                       ));
                     })()}
@@ -2069,23 +2138,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* Top users by cost */}
               <div style={{ ...cardShell, overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px 0' }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Top Users by Cost</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Top Users by Attributed Cost</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>Corrected estimates use raw Anthropic counters. “Legacy” identifies usage recorded before real session IDs.</div>
                 </div>
                 {!usageData?.topUsersByCost?.length ? (
                   <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                      <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>STATUS</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 0.8fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>CORRECTED</span><span>OLD EST.</span><span>AVG / SESSION</span><span>TODAY STATUS</span>
                     </div>
                     <div style={usageRowsScrollStyle}>
                       {usageData.topUsersByCost.map((u) => (
-                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 1fr 0.8fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                           <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
-                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions || '—'}{u.legacyIdentifiers ? <span style={{ display: 'block', fontSize: 10.5, color: '#a16207' }}>+ legacy usage</span> : null}</span>
                           <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
-                          <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#b28da0', textDecoration: Math.abs((u.storedCost || 0) - u.cost) > 0.0001 ? 'line-through' : 'none' }}>${Number(u.storedCost || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.avgPerSession == null ? '—' : `$${u.avgPerSession.toFixed(2)}`}</span>
                           <span>
                             <span style={{
                               fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
@@ -2106,14 +2177,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ padding: '20px 24px 0' }}>
                   <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Cost by Feature</h3>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                  <span>FEATURE</span><span>COST</span><span>TOKENS</span>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                  <span>FEATURE</span><span>CORRECTED COST</span><span>OLD EST.</span><span>TOKENS</span>
                 </div>
                 <div style={usageRowsScrollStyle}>
                   {(usageData?.costByFeature || []).map((f) => (
-                    <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                    <div key={f.feature} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                       <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{f.label}</span>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>${Number(f.cost || 0).toFixed(2)}</span>
+                      <span style={{ fontSize: 13, color: '#b28da0', textDecoration: Math.abs((f.storedCost || 0) - (f.cost || 0)) > 0.0001 ? 'line-through' : 'none' }}>${Number(f.storedCost || 0).toFixed(2)}</span>
                       <span style={{ fontSize: 13, color: '#33405e' }}>{Number(f.tokens || 0).toLocaleString()}</span>
                     </div>
                   ))}
@@ -2123,22 +2195,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* Recent high-cost conversations */}
               <div style={{ ...cardShell, overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px 0' }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Recent High-Cost Conversations</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Highest-Cost Sessions</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>API calls and paid retries are aggregated into one session row.</div>
                 </div>
                 {!usageData?.recentHighCostConversations?.length ? (
                   <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                      <span>CONVERSATION</span><span>USER</span><span>FEATURE</span><span>COST</span><span>WHEN</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .7fr .9fr .9fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>SESSION</span><span>USER</span><span>FEATURE</span><span>CALLS</span><span>CORRECTED</span><span>OLD EST.</span><span>LAST ACTIVITY</span>
                     </div>
                     <div style={usageRowsScrollStyle}>
                       {usageData.recentHighCostConversations.map((c, i) => (
-                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
-                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .7fr .9fr .9fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.legacy ? 'Legacy usage' : c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userName || c.userId}</span>
                           <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.attempts}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#b28da0', textDecoration: Math.abs((c.storedCost || 0) - (c.cost || 0)) > 0.0001 ? 'line-through' : 'none' }}>${Number(c.storedCost || 0).toFixed(2)}</span>
                           <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
                         </div>
                       ))}

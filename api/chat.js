@@ -9,6 +9,7 @@ import {
   getAllUsageRecords,
   costForUserToday,
   createAlert,
+  repriceUsageRecord,
 } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { logTokenUsage } from '../lib/token-usage-logger.js';
@@ -850,8 +851,9 @@ async function checkUsageLimits(userId) {
       const dayKey = now.toISOString().slice(0, 10);
       for (const r of allRecords) {
         const d = new Date(r.createdAt);
-        if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += r.totalCost || 0;
-        if (d.toISOString().slice(0, 10) === dayKey) dailyCost += r.totalCost || 0;
+        const correctedCost = repriceUsageRecord(r).totalCost;
+        if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += correctedCost;
+        if (d.toISOString().slice(0, 10) === dayKey) dailyCost += correctedCost;
       }
     }
 
@@ -1052,6 +1054,7 @@ export default async function handler(req, res) {
         estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
         cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
         cacheReadInputTokens: response.usage?.cache_read_input_tokens,
+        webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
       }).catch((err) => console.error('Failed to record usage:', err));
 
       raw = extractText(response);

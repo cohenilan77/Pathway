@@ -13,10 +13,11 @@ function getToken(req) {
 async function translateNonChatFields(data, userId) {
   if (!data) return data;
   const next = { ...data };
+  const conversationId = next.sessionId || 'legacy_session';
 
-  if (next.cvText) next.cvText = await toEnglish(next.cvText, userId);
-  if (next.essayText) next.essayText = await toEnglish(next.essayText, userId);
-  if (next.essayQuestion) next.essayQuestion = await toEnglish(next.essayQuestion, userId);
+  if (next.cvText) next.cvText = await toEnglish(next.cvText, userId, conversationId);
+  if (next.essayText) next.essayText = await toEnglish(next.essayText, userId, conversationId);
+  if (next.essayQuestion) next.essayQuestion = await toEnglish(next.essayQuestion, userId, conversationId);
 
   if (next.essays) {
     const schools = Object.keys(next.essays);
@@ -24,8 +25,8 @@ async function translateNonChatFields(data, userId) {
       const entry = next.essays[school];
       return [school, {
         ...entry,
-        question: entry.question ? await toEnglish(entry.question, userId) : entry.question,
-        text: entry.text ? await toEnglish(entry.text, userId) : entry.text,
+        question: entry.question ? await toEnglish(entry.question, userId, conversationId) : entry.question,
+        text: entry.text ? await toEnglish(entry.text, userId, conversationId) : entry.text,
       }];
     }));
     next.essays = Object.fromEntries(translatedEntries);
