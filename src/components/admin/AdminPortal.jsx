@@ -56,7 +56,7 @@ const sortableHeaderStyle = {
 };
 
 const usageRowsScrollStyle = {
-  maxHeight: 204,
+  maxHeight: 272,
   overflowY: 'auto',
   overscrollBehavior: 'contain',
 };
