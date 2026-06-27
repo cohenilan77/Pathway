@@ -944,8 +944,10 @@ export default async function handler(req, res) {
     // see lib/headroom.js. role mapping, web search behavior, the retry loop, and
     // the structured blocks (PROFILE/SCORES/STRENGTHS/.../TASKS) are all built from
     // these same strings before/after this step and are unaffected by compression.
+    const headroomEnabled = isHeadroomEnabled();
+    console.log(`[Headroom] Status: HEADROOM_ENABLED=${process.env.HEADROOM_ENABLED}, HEADROOM_MODE=${process.env.HEADROOM_MODE}, isEnabled=${headroomEnabled}`);
     const headroomStats = {
-      enabled: isHeadroomEnabled(),
+      enabled: headroomEnabled,
       mode: process.env.HEADROOM_MODE || 'off',
       error: null,
       originalInputChars: systemPrompt.length + JSON.stringify(anthropicMessages).length,
@@ -956,11 +958,15 @@ export default async function handler(req, res) {
       const errors = [];
       if (HeadroomFlags.compressSystem) {
         const sysResult = await compressText(systemPrompt, { label: 'chat_system_prompt' });
+        console.log(`[Headroom] System prompt: ${systemPrompt.length} → ${sysResult.text.length} chars, compressed=${sysResult.compressed}, error=${sysResult.error}`);
         if (sysResult.error) errors.push(sysResult.error);
         compressedSystemPrompt = sysResult.text;
       }
       if (HeadroomFlags.compressChat) {
         const chatResult = await compressMessages(anthropicMessages, { label: 'chat_history' });
+        const origSize = JSON.stringify(anthropicMessages).length;
+        const newSize = JSON.stringify(chatResult.messages).length;
+        console.log(`[Headroom] Chat history: ${origSize} → ${newSize} chars, compressed=${chatResult.compressed}, error=${chatResult.error}`);
         if (chatResult.error) errors.push(chatResult.error);
         anthropicMessages = chatResult.messages;
       }
