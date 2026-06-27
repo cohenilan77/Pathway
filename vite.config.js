@@ -12,6 +12,7 @@ import adminUserActionHandler from './api/admin-user-action.js';
 import adminSessionHandler from './api/admin-session.js';
 import adminUsageHandler from './api/admin-usage.js';
 import adminUsageSettingsHandler from './api/admin-usage-settings.js';
+import adminUsageResetHandler from './api/admin-usage-reset.js';
 import summarizeHandler from './api/summarize.js';
 import parseFileHandler from './api/parse-file.js';
 import downloadFileHandler from './api/download-file.js';
@@ -403,6 +404,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/admin-user-action', withApiAdapter(adminUserActionHandler));
           server.middlewares.use('/api/admin-session', withApiAdapter(adminSessionHandler));
           server.middlewares.use('/api/admin-usage-settings', withApiAdapter(adminUsageSettingsHandler));
+          server.middlewares.use('/api/admin-usage-reset', withApiAdapter(adminUsageResetHandler));
           server.middlewares.use('/api/admin-usage', withApiAdapter(adminUsageHandler));
           server.middlewares.use('/api/summarize', withApiAdapter(summarizeHandler));
           server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
