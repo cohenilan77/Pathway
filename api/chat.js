@@ -1015,6 +1015,8 @@ export default async function handler(req, res) {
         headroomEnabled: headroomStats.enabled,
         headroomMode: headroomStats.mode,
         headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
       }).catch((err) => console.error('Failed to log token usage:', err));
 
       recordUsage({
