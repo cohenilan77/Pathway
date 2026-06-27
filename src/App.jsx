@@ -37,6 +37,98 @@ function buildInitialChat(language) {
 const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
 
+// Stage context for AI engagement
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
+  const category = profile?.category;
+  const isUndergrad = category === 'Undergraduate';
+  const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
+  const currentStep = steps[Math.min(stepIdx, steps.length - 1)] || 'Profile';
+
+  // Calculate days in current stage (rough estimate based on chat history)
+  const daysInStage = lastChatTime ? Math.floor((Date.now() - lastChatTime) / (1000 * 60 * 60 * 24)) : 0;
+
+  return {
+    stepIdx,
+    stageName: currentStep,
+    totalSteps: steps.length,
+    isUndergrad,
+    grade: profile?.grade,
+    daysInStage,
+
+    // Completion tracking
+    hasProfile: !!profile?.category,
+    hasScores: !!scores?.overall,
+    hasActivities: Array.isArray(strengths) && strengths.length > 0,
+    hasUniversities: Array.isArray(programs) && programs.length > 0,
+    hasTestingScore: !!scores?.testScore,
+    hasEssays: Object.keys(essays || {}).length > 0,
+    hasTasks: Array.isArray(tasks) && tasks.length > 0,
+
+    // Stage-specific insights
+    nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
+    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3, // Nudge if stuck 60+ days or at universities
+  };
+}
+
+// Stage progression triggers
+function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
+  const lc = displayText.toLowerCase();
+
+  if (isUndergrad) {
+    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Roadmap
+    if (stepIdx === 1 && (lc.includes('activities') || lc.includes('roadmap'))) return 2; // Roadmap → Activities
+    if (stepIdx === 2 && (lc.includes('university') || parsed.programs)) return 3; // Activities → Universities
+    if (stepIdx === 3 && (lc.includes('sat') || lc.includes('act') || lc.includes('testing') || lc.includes('standardized') || parsed.scores?.testScore)) return 4; // Universities → Testing
+    if (stepIdx === 4 && (lc.includes('essay') || parsed.essay)) return 5; // Testing → Essays
+    if (stepIdx === 5 && (lc.includes('application') || lc.includes('submit'))) return 6; // Essays → Applications
+  } else {
+    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Recommender
+    if (stepIdx === 2 && parsed.programs) return 3; // Analysis → Programs
+    if (stepIdx === 3 && (lc.includes('narrative') || lc.includes('your story'))) return 4; // Programs → Narrative
+    if (stepIdx === 4 && (lc.includes('cv') || lc.includes('resume'))) return 5; // Narrative → CV
+    if (stepIdx === 5 && (lc.includes('essay') || parsed.essay)) return 6; // CV → Essay
+    if (stepIdx === 6 && (lc.includes('interview') || lc.includes('mock'))) return 7; // Essay → Interview
+    if (stepIdx === 7 && parsed.interviewResult) return 8; // Interview → Result
+  }
+
+  return null; // No advancement
+}
+
+// Build AI system context based on student stage for better guidance
+function buildAISystemContext(stage) {
+  const { stageName, nextStageName, isUndergrad, daysInStage, shouldNudgeToNextStage, hasUniversities, hasTestingScore } = stage;
+
+  let systemContext = `You are an admissions advisor guiding a student through their journey.
+
+CURRENT STAGE: "${stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
+STUDENT PROGRESS: ${stage.daysInStage} days in current stage
+TRACK: ${isUndergrad ? 'Undergraduate' : 'Graduate/Professional'}
+
+DATA COLLECTED:
+- Profile: ${stage.hasProfile ? '✓' : '✗'}
+- Scores: ${stage.hasScores ? '✓' : '✗'}
+- Activities: ${stage.hasActivities ? '✓' : '✗'}
+- Universities: ${stage.hasUniversities ? '✓' : '✗'}
+- Testing: ${stage.hasTestingScore ? '✓' : '✗'}
+- Essays: ${stage.hasEssays ? '✓' : '✗'}`;
+
+  // Add stage-specific guidance
+  if (isUndergrad) {
+    if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
+      systemContext += `
+
+⚠️ ENGAGEMENT ALERT: Student has been on university list for ${daysInStage} days.
+ACTION: Ask about testing (SAT/ACT). This is the natural next step.
+NUDGE QUESTIONS:
+- "Now that we have your university targets, let's talk testing..."
+- "When are you planning to take the SAT or ACT?"
+- "What's your target score for your reach schools?"`;
+    }
+  }
+
+  return systemContext;
+}
+
 function sanitizeVisibleText(text) {
   return String(text || '')
     .replace(new RegExp(`<(${DATA_BLOCK_TAGS})>[\\s\\S]*?<\\/\\1>`, 'gi'), '')
@@ -305,27 +397,50 @@ export default function App() {
           setScreen('admin');
           return;
         }
-        setChat(data?.chat?.length ? data.chat : INITIAL_CHAT);
-        setStepIdx(data?.stepIdx || 0);
-        setProfile(data?.profile || null);
-        setScores(data?.scores || null);
-        setStrengths(data?.strengths || null);
+        const loadedChat = data?.chat?.length ? data.chat : INITIAL_CHAT;
+        const loadedStepIdx = data?.stepIdx || 0;
+        const loadedProfile = data?.profile || null;
+        const loadedScores = data?.scores || null;
+        const loadedPrograms = normalizeProgramList(data?.programs) || null;
+        const loadedStrengths = data?.strengths || null;
+        const loadedEssays = data?.essays || {};
+
+        setChat(loadedChat);
+        setStepIdx(loadedStepIdx);
+        setProfile(loadedProfile);
+        setScores(loadedScores);
+        setStrengths(loadedStrengths);
         setWeaknesses(data?.weaknesses || null);
         setTasks(data?.tasks || null);
         setCompletedTasks(data?.completedTasks || {});
-        setPrograms(normalizeProgramList(data?.programs) || null);
+        setPrograms(loadedPrograms);
         setChosenSchools(data?.chosenSchools || null);
         setCvText(data?.cvText || '');
         setCvFile(data?.cvFile || null);
         setEssayText(data?.essayText || '');
         setEssaySchool(data?.essaySchool || '');
         setEssayQuestion(data?.essayQuestion || '');
-        setEssays(data?.essays || {});
+        setEssays(loadedEssays);
         setDocuments(data?.documents || []);
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
+
+        // Detect if student is stuck and needs nudge
+        const isUndergrad = loadedProfile?.category === 'Undergraduate';
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
+
+        if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
+          // Student has universities but hasn't discussed testing yet - add nudge
+          const nudgeMsg = {
+            role: 'ai',
+            text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
+          };
+          if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
+            setChat(prev => [...prev, nudgeMsg]);
+          }
+        }
       } catch {
         if (!cancelled) { setAuth(null); setScreen('login'); }
       }
@@ -526,13 +641,15 @@ export default function App() {
     setBusy(true);
 
     try {
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
+      const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs: normalizeProgramList(programs) || programs }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
       });
       const data = await res.json();
       const raw = data.raw || data.reply || '';
@@ -595,44 +712,10 @@ export default function App() {
         }
         const displayText = safeVisibleReply(raw, parsed);
 
-        // Auto-advance stepper based on AI response keywords
-        const lc = displayText.toLowerCase();
-        if (isUndergrad) {
-          if (lc.includes('roadmap') || lc.includes('starting point today') || parsed.profile) {
-            setStepIdx(prev => Math.max(prev, 1));
-          }
-          if (lc.includes('activities') || lc.includes('outside school')) {
-            setStepIdx(prev => Math.max(prev, 2));
-          }
-          if (lc.includes('university list') || lc.includes('universities') || lc.includes('school') && parsed.programs) {
-            setStepIdx(prev => Math.max(prev, 3));
-          }
-          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing') || lc.includes('standardized')) {
-            setStepIdx(prev => Math.max(prev, 4));
-          }
-          if (lc.includes('essay') || lc.includes('personal statement')) {
-            setStepIdx(prev => Math.max(prev, 5));
-          }
-          if (lc.includes('application') || lc.includes('applica')) {
-            setStepIdx(prev => Math.max(prev, 6));
-          }
-        } else {
-          if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
-            setStepIdx(prev => Math.max(prev, 4));
-          }
-          if (lc.includes('narrative strategy tab') || lc.includes('choose upgrade or pivot') || lc.includes('two narrative options')) {
-            setStepIdx(prev => Math.max(prev, 4));
-            setCandTab('strategy');
-          }
-          if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
-            setStepIdx(prev => Math.max(prev, 5));
-          }
-          if (lc.includes("let's craft your essays") || (lc.includes('essay prompt') && lc.includes('school'))) {
-            setStepIdx(prev => Math.max(prev, 6));
-          }
-          if (lc.includes('time for your mock interview') || lc.includes('simulate the admissions interview')) {
-            setStepIdx(prev => Math.max(prev, 7));
-          }
+        // Auto-advance stepper based on stage-aware triggers
+        const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
+        if (nextStep !== null) {
+          setStepIdx(prev => Math.max(prev, nextStep));
         }
 
         setChat(prev => [...prev, { role: 'ai', text: displayText }]);
