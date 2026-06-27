@@ -195,6 +195,7 @@ export default async function handler(req, res) {
       createdAt: log.timestamp,
     }));
   const totalCompressionSaved = contextCompression.reduce((sum, c) => sum + c.costSaved, 0);
+  const totalTokensSaved = contextCompression.reduce((sum, c) => sum + (c.tokensSaved || 0), 0);
   const avgCompressionPercent = contextCompression.length > 0
     ? contextCompression.reduce((sum, c) => sum + c.compressionPct, 0) / contextCompression.length
     : 0;
@@ -217,6 +218,7 @@ export default async function handler(req, res) {
     costByHeadroom: byHeadroom,
     averageEstimatedCompressionPercent,
     avgCompressionPercentReal: avgCompressionPercent, // Real compression from Anthropic cache data
+    totalTokensSavedViaHeadroom: totalTokensSaved, // Tokens reduced by headroom preprocessing
     compressionDataSource: tokenUsageLogs.length > 0 ? 'real' : 'none',
     costOverTime,
     topUsersByCost,
