@@ -546,6 +546,7 @@ function TestingSimulationCard({ title, testType, duration, questions }) {
 }
 
 function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
+  const [selectedTest, setSelectedTest] = React.useState(null);
   const grade = undergradGradeNumber(profile);
   const early = grade && grade <= 10;
   const buckets = splitUniversities(programs || []);
@@ -672,13 +673,29 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
         <div style={{ maxWidth: 1000 }}>
           <div style={{ marginBottom: 24 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
-            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Practice with timed simulations to prepare for standardized tests.</p>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Choose a test to practice with timed simulations.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
-            <TestingSimulationCard title="SAT Simulation" testType="sat" duration="10 minutes" questions={25} />
-            <TestingSimulationCard title="LSAT Simulation" testType="lsat" duration="10 minutes" questions={20} />
-          </div>
+          {!selectedTest ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
+              <button onClick={() => setSelectedTest('sat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>SAT Simulation</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>10 minutes · 25 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Test your math, reading, and writing skills with a realistic SAT practice test.</div>
+              </button>
+              <button onClick={() => setSelectedTest('lsat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>LSAT Simulation</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>10 minutes · 20 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Test your logical reasoning and reading comprehension with a realistic LSAT practice test.</div>
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 24 }}>
+              <button onClick={() => setSelectedTest(null)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 0', marginBottom: 16 }}>← Back to choose test</button>
+              {selectedTest === 'sat' && <TestingSimulationCard title="SAT Simulation" testType="sat" duration="10 minutes" questions={25} />}
+              {selectedTest === 'lsat' && <TestingSimulationCard title="LSAT Simulation" testType="lsat" duration="10 minutes" questions={20} />}
+            </div>
+          )}
 
           {tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)).length > 0 && (
             <UndergradCard title="Testing Roadmap">
