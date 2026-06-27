@@ -130,6 +130,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
   const handleNarrativeChoose = (kind) => {
     setNarrative && setNarrative(kind);
+    setShowNarrativeModal(false);
     send && send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
   };
 
