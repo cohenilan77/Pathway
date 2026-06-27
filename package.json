@@ -10,6 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test:usage-costs": "node scripts/verify-usage-costs.mjs",
+    "test:usage-reset": "node scripts/verify-usage-reset.mjs",
     "test:program-matching": "node scripts/verify-program-matching.mjs"
   },
   "dependencies": {
