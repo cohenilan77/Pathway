@@ -61,11 +61,11 @@ async function saveOriginalFile(buffer, { fileName, mediaType }) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { base64, mediaType, fileName } = req.body;
+  const { base64, mediaType, fileName, conversationId } = req.body;
   if (!base64 || (mediaType !== 'application/pdf' && mediaType !== DOCX_MEDIA_TYPE)) {
     return res.status(400).json({ error: 'Only PDF and Word (.docx) files are supported' });
   }
@@ -123,7 +123,7 @@ export default async function handler(req, res) {
     const { text, stats: headroomStats } = await maybeCompressExtractedText(extractedText);
     recordUsage({
       userId,
-      conversationId: 'session',
+      conversationId: conversationId || 'legacy_session',
       feature: 'document_parsing',
       model: MODEL,
       inputTokens: response.usage?.input_tokens,

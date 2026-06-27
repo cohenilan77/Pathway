@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 
-export default function HelpModal({ onClose }) {
+export default function HelpModal({ authToken, sessionId, onClose }) {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -10,7 +10,11 @@ export default function HelpModal({ onClose }) {
     let cancelled = false;
     setLoading(true);
     setError(false);
-    fetch('/api/help', { method: 'POST' })
+    fetch('/api/help', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+      body: JSON.stringify({ conversationId: sessionId }),
+    })
       .then(res => res.json())
       .then(data => {
         if (cancelled) return;
@@ -20,7 +24,7 @@ export default function HelpModal({ onClose }) {
       .catch(() => { if (!cancelled) setError(true); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [authToken, sessionId]);
 
   return (
     <div

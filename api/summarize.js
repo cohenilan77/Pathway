@@ -1,4 +1,6 @@
 import { getUserIdByToken } from '../lib/db.js';
+import { getUserById } from '../lib/db.js';
+import { canAccessCandidate, getActor } from '../lib/admin.js';
 import { recordUsage } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { createAnthropicClient } from '../lib/anthropic-client.js';
@@ -23,7 +25,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { chat } = req.body;
+  const { chat, conversationId, candidateId } = req.body;
   if (!chat || !Array.isArray(chat)) return res.status(400).json({ error: 'chat array required' });
 
   let transcript = chat
@@ -54,10 +56,15 @@ export default async function handler(req, res) {
         content: `Summarize this admissions consulting session for the consultant in 4-5 concise bullet points. Cover: candidate background/credentials, key strengths, program interest and school targets, narrative direction if discussed, and current stage in the process. Be specific and use the actual data from the conversation.\n\nTranscript:\n${transcript}`,
       }],
     });
-    const userId = await resolveUserId(req);
+    let userId = await resolveUserId(req);
+    if (candidateId) {
+      const actor = await getActor(req);
+      const candidate = await getUserById(candidateId);
+      if (canAccessCandidate(actor, candidate)) userId = candidateId;
+    }
     recordUsage({
       userId,
-      conversationId: 'session',
+      conversationId: conversationId || 'legacy_session',
       feature: 'session_summary',
       model: MODEL,
       inputTokens: response.usage?.input_tokens,

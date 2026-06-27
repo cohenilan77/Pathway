@@ -9,6 +9,7 @@
     "headroom:proxy": "node scripts/headroom-proxy.js",
     "build": "vite build",
     "preview": "vite preview",
+    "test:usage-costs": "node scripts/verify-usage-costs.mjs",
     "test:program-matching": "node scripts/verify-program-matching.mjs"
   },
   "dependencies": {

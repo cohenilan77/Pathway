@@ -794,7 +794,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -962,7 +962,7 @@ export default function CandidatePortal(props) {
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpModal authToken={authToken} sessionId={sessionId} onClose={() => setShowHelp(false)} />}
     </div>
   );
 }
