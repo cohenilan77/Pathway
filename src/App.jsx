@@ -560,7 +560,7 @@ export default function App() {
         }
         if (parsed.programs) {
           setPrograms(parsed.programs);
-          setStepIdx(prev => Math.max(prev, isUndergrad ? 4 : 3));
+          setStepIdx(prev => Math.max(prev, isUndergrad ? 3 : 3));
         }
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
@@ -598,22 +598,22 @@ export default function App() {
         // Auto-advance stepper based on AI response keywords
         const lc = displayText.toLowerCase();
         if (isUndergrad) {
-          if (lc.includes('roadmap') || lc.includes('starting point today')) {
+          if (lc.includes('roadmap') || lc.includes('starting point today') || parsed.profile) {
             setStepIdx(prev => Math.max(prev, 1));
           }
           if (lc.includes('activities') || lc.includes('outside school')) {
             setStepIdx(prev => Math.max(prev, 2));
           }
-          if (lc.includes('university list') || lc.includes('universities')) {
+          if (lc.includes('university list') || lc.includes('universities') || lc.includes('school') && parsed.programs) {
             setStepIdx(prev => Math.max(prev, 3));
           }
-          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing')) {
+          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing') || lc.includes('standardized')) {
             setStepIdx(prev => Math.max(prev, 4));
           }
-          if (lc.includes('essay')) {
+          if (lc.includes('essay') || lc.includes('personal statement')) {
             setStepIdx(prev => Math.max(prev, 5));
           }
-          if (lc.includes('application')) {
+          if (lc.includes('application') || lc.includes('applica')) {
             setStepIdx(prev => Math.max(prev, 6));
           }
         } else {
