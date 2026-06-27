@@ -429,6 +429,122 @@ function UndergradCard({ title, children, action }) {
   );
 }
 
+function TestingSimulationCard({ title, testType, duration, questions }) {
+  const [started, setStarted] = React.useState(false);
+  const [timeLeft, setTimeLeft] = React.useState(600); // 10 minutes in seconds
+  const [currentQuestion, setCurrentQuestion] = React.useState(0);
+  const [score, setScore] = React.useState(null);
+  const [answers, setAnswers] = React.useState({});
+
+  React.useEffect(() => {
+    if (!started || score !== null) return;
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          finishTest();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [started, score]);
+
+  const getTestQuestions = () => {
+    if (testType === 'sat') {
+      return [
+        { q: 'Which of the following is a prime number?', opts: ['4', '6', '7', '8'], correct: 2 },
+        { q: 'What is 15% of 200?', opts: ['20', '25', '30', '35'], correct: 2 },
+        { q: 'If x + 5 = 12, what is x?', opts: ['5', '7', '9', '12'], correct: 1 },
+        { q: 'What is the square root of 144?', opts: ['10', '11', '12', '13'], correct: 2 },
+        { q: 'Which word best completes: "The _____ discovery changed everything"?', opts: ['ordinary', 'groundbreaking', 'small', 'quiet'], correct: 1 },
+        { q: 'What is 7 × 8?', opts: ['54', '56', '58', '60'], correct: 1 },
+        { q: 'If a triangle has angles of 60° and 70°, what is the third angle?', opts: ['40°', '50°', '60°', '70°'], correct: 1 },
+        { q: 'Choose the correctly spelled word:', opts: ['occassion', 'occasion', 'ocassion', 'ocasion'], correct: 1 },
+        { q: 'What is 25% of 80?', opts: ['15', '18', '20', '25'], correct: 2 },
+        { q: '"Ephemeral" means:', opts: ['lasting forever', 'short-lived', 'colorful', 'mysterious'], correct: 1 },
+      ];
+    } else {
+      return [
+        { q: 'Which statement is most supported by the passage?', opts: ['A', 'B', 'C', 'D'], correct: 0 },
+        { q: 'The author\'s primary purpose is to:', opts: ['A', 'B', 'C', 'D'], correct: 2 },
+        { q: 'Based on the passage, what can be inferred?', opts: ['A', 'B', 'C', 'D'], correct: 1 },
+        { q: 'Which statement would the author likely agree with?', opts: ['A', 'B', 'C', 'D'], correct: 3 },
+        { q: 'The tone of the passage is best described as:', opts: ['A', 'B', 'C', 'D'], correct: 1 },
+        { q: 'Which logical fallacy is present?', opts: ['A', 'B', 'C', 'D'], correct: 0 },
+        { q: 'The argument relies on which assumption?', opts: ['A', 'B', 'C', 'D'], correct: 2 },
+        { q: 'What does "X" refer to in context?', opts: ['A', 'B', 'C', 'D'], correct: 1 },
+        { q: 'Which statement best summarizes the passage?', opts: ['A', 'B', 'C', 'D'], correct: 2 },
+        { q: 'The passage suggests that:', opts: ['A', 'B', 'C', 'D'], correct: 0 },
+      ];
+    }
+  };
+
+  const testQuestions = getTestQuestions().slice(0, questions);
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+
+  const handleAnswer = (questionIdx, answerIdx) => {
+    setAnswers(prev => ({ ...prev, [questionIdx]: answerIdx }));
+  };
+
+  const finishTest = () => {
+    const correctCount = testQuestions.reduce((acc, q, idx) =>
+      acc + (answers[idx] === q.correct ? 1 : 0), 0);
+    const percentage = Math.round((correctCount / testQuestions.length) * 100);
+    setScore(percentage);
+    setStarted(false);
+  };
+
+  const resetTest = () => {
+    setStarted(false);
+    setTimeLeft(600);
+    setCurrentQuestion(0);
+    setScore(null);
+    setAnswers({});
+  };
+
+  return (
+    <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: '#6b7392', marginBottom: 16 }}>{duration} · {questions} questions</div>
+
+      {!started && score === null ? (
+        <button onClick={() => setStarted(true)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%' }}>
+          Start {title} →
+        </button>
+      ) : score !== null ? (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, fontWeight: 800, color: '#5b46e0', marginBottom: 8 }}>{score}%</div>
+          <div style={{ fontSize: 14, color: '#6b7392', marginBottom: 16 }}>
+            You answered {Math.round(score / 100 * testQuestions.length)} out of {testQuestions.length} correctly
+          </div>
+          <button onClick={resetTest} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%' }}>
+            Retake Test
+          </button>
+        </div>
+      ) : (
+        <div style={{ background: '#f6f1e8', borderRadius: 15, padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Question {currentQuestion + 1} of {testQuestions.length}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: timeLeft < 60 ? '#e0457a' : '#5b46e0' }}>{formatTime(timeLeft)}</div>
+          </div>
+          <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#e7dcc7', marginBottom: 16 }}>
+            <div style={{ width: `${((currentQuestion + 1) / testQuestions.length) * 100}%`, height: '100%', borderRadius: 3, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width 0.3s ease' }} />
+          </div>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: '#141b34', marginBottom: 14 }}>{testQuestions[currentQuestion].q}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {testQuestions[currentQuestion].opts.map((opt, idx) => (
+              <button key={idx} onClick={() => { handleAnswer(currentQuestion, idx); if (currentQuestion < testQuestions.length - 1) setCurrentQuestion(c => c + 1); else finishTest(); }} style={{ background: answers[currentQuestion] === idx ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#faf7f2', color: answers[currentQuestion] === idx ? '#faf7f2' : '#141b34', border: `1.5px solid ${answers[currentQuestion] === idx ? '#b899fb' : '#f1eadd'}`, borderRadius: 12, padding: '12px 14px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                {String.fromCharCode(65 + idx)}. {opt}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
   const grade = undergradGradeNumber(profile);
   const early = grade && grade <= 10;
@@ -486,27 +602,91 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       )}
 
       {type === 'universities' && (
-        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18, maxWidth: 1180 }}>
-          {Object.entries(buckets).map(([label, schools]) => (
-            <UndergradCard key={label} title={`${label} Universities`}>
-              {schools.length ? schools.slice(0, 8).map(school => (
-                <div key={school.name} style={{ border: '1px solid #f1eadd', borderRadius: 15, padding: 14, marginBottom: 10, background: '#fffdf8' }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, minHeight: 68 }}>{undergradUniversityDescription(school, profile)}</div>
-                  <div style={{ marginTop: 8, fontSize: 11.5, color: '#9098b5', fontWeight: 800 }}>Fit index {school.fit ?? '-'}%</div>
-                </div>
-              )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>This bucket will populate after the starting snapshot.</div>}
-            </UndergradCard>
-          ))}
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>University List</h1>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
+              {programs?.length ? 'Tap schools to select your target list, then share with your advisor.' : 'Your university matches will appear here after your advisor learns more about your profile.'}
+            </p>
+          </div>
+
+          {programs?.length ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {Object.entries(buckets).map(([tierLabel, schools]) => {
+                const tierColors = {
+                  Reach: { accent: '#e384a5', bg: '#fff1f6', border: '#ffd3e3' },
+                  Target: { accent: '#eaa129', bg: '#fff8ea', border: '#ffe3a8' },
+                  Likely: { accent: '#3fdca9', bg: '#eafdf6', border: '#a9eed1' },
+                };
+                const tierConfig = tierColors[tierLabel];
+                if (!schools.length) return null;
+
+                return (
+                  <div key={tierLabel} style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, borderRadius: 18, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tierConfig.border}` }}>
+                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: tierConfig.accent, flexShrink: 0 }} />
+                      <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()} SCHOOLS</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {schools.map((school, idx) => (
+                        <div key={school.name} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tierConfig.border}` : 'none' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', padding: '17px 22px', gap: 16, cursor: 'pointer', background: 'transparent', transition: 'background 0.15s ease' }}>
+                            <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: `2px solid ${tierConfig.accent}`, background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
+                              {(school.location || school.programGroup) && (
+                                <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>{[school.location, school.programGroup].filter(Boolean).join(' · ')}</div>
+                              )}
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+                              {school.fit != null && (
+                                <div style={{ textAlign: 'center' }}>
+                                  <div style={{ fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
+                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ padding: '0 22px 14px 58px', fontSize: 12.5, color: '#33405e', lineHeight: 1.55 }}>
+                            {undergradUniversityDescription(school, profile)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
+              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
+            </div>
+          )}
         </div>
       )}
 
       {type === 'testing' && (
-        <UndergradCard title="Testing">
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>Testing plan</div>
-          <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>Track SAT, ACT, PSAT, AP, TOEFL, or IELTS plans here as the counselor learns more.</div>
-          {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
-        </UndergradCard>
+        <div style={{ maxWidth: 1000 }}>
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Practice with timed simulations to prepare for standardized tests.</p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
+            <TestingSimulationCard title="SAT Simulation" testType="sat" duration="10 minutes" questions={25} />
+            <TestingSimulationCard title="LSAT Simulation" testType="lsat" duration="10 minutes" questions={20} />
+          </div>
+
+          {tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)).length > 0 && (
+            <UndergradCard title="Testing Roadmap">
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>Your testing tasks</div>
+              {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
+            </UndergradCard>
+          )}
+        </div>
       )}
 
       {(type === 'essays' || type === 'applications') && !early && (
@@ -551,7 +731,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Student Profile', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = navFromConfig(trackConfig, hasChatAccess);
