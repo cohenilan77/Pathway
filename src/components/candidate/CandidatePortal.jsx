@@ -547,9 +547,35 @@ function TestingSimulationCard({ title, testType, duration, questions }) {
 
 function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
+  const [selectedSchools, setSelectedSchools] = React.useState([]);
+  const [expandedSchools, setExpandedSchools] = React.useState({});
   const grade = undergradGradeNumber(profile);
   const early = grade && grade <= 10;
   const buckets = splitUniversities(programs || []);
+
+  const SELECTIVITY_BADGES = {
+    'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    Competitive: { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
+    'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
+    Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
+  };
+
+  const displaySelectivityLabel = (label) => {
+    if (/^ultra competitive$/i.test(String(label || ''))) return 'Ultra Competitive';
+    if (/^(highly competitive|competitive)$/i.test(String(label || ''))) return 'Competitive';
+    return 'Accessible';
+  };
+
+  const toggleSchool = (schoolName) => {
+    setSelectedSchools(prev =>
+      prev.includes(schoolName) ? prev.filter(s => s !== schoolName) : [...prev, schoolName]
+    );
+  };
+
+  const toggleExpanded = (schoolName) => {
+    setExpandedSchools(prev => ({ ...prev, [schoolName]: !prev[schoolName] }));
+  };
   const list = (items = [], empty) => items.length
     ? items.slice(0, 6).map((item, i) => (
       <div key={`${item}-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
@@ -607,7 +633,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
           <div style={{ marginBottom: 24 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>University List</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
-              {programs?.length ? 'Tap schools to select your target list, then share with your advisor.' : 'Your university matches will appear here after your advisor learns more about your profile.'}
+              {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
             </p>
           </div>
 
@@ -630,32 +656,78 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      {schools.map((school, idx) => (
-                        <div key={school.name} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tierConfig.border}` : 'none' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', padding: '17px 22px', gap: 16, cursor: 'pointer', background: 'transparent', transition: 'background 0.15s ease' }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: `2px solid ${tierConfig.accent}`, background: '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+                      {schools.map((school, idx) => {
+                        const isSelected = selectedSchools.includes(school.name);
+                        const isExpanded = expandedSchools[school.name];
+                        return (
+                          <div key={school.name} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tierConfig.border}` : 'none' }}>
+                            <div
+                              onClick={() => toggleExpanded(school.name)}
+                              style={{ display: 'flex', alignItems: 'center', padding: '17px 22px', gap: 16, cursor: 'pointer', background: isSelected ? 'rgba(255,255,255,.55)' : 'transparent', boxShadow: isSelected ? `inset 3px 0 0 0 ${tierConfig.accent}` : 'none', transition: 'background 0.15s ease, box-shadow 0.15s ease' }}
+                            >
+                              <div
+                                onClick={(e) => { e.stopPropagation(); toggleSchool(school.name); }}
+                                style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: isSelected ? `2px solid ${tierConfig.accent}` : '2px solid #e7dcc7', background: isSelected ? tierConfig.accent : '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', cursor: 'pointer' }}
+                              >
+                                {isSelected && (
+                                  <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                    <path d="M20 6 9 17l-5-5" />
+                                  </svg>
+                                )}
+                              </div>
 
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
-                              {(school.location || school.programGroup) && (
-                                <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>{[school.location, school.programGroup].filter(Boolean).join(' · ')}</div>
-                              )}
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
-                              {school.fit != null && (
-                                <div style={{ textAlign: 'center' }}>
-                                  <div style={{ fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
-                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                                  <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{school.name}</div>
+                                  {school.selectivityLabel && (() => {
+                                    const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
+                                    return (
+                                      <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
+                                        {displaySelectivityLabel(school.selectivityLabel)}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
-                              )}
+                                {(school.location || school.programGroup) && (
+                                  <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>{[school.location, school.programGroup].filter(Boolean).join(' · ')}</div>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+                                {school.avgSAT != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgSAT}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
+                                  </div>
+                                )}
+                                {school.avgGPA != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                  </div>
+                                )}
+                                {school.fit != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
+                                  </div>
+                                )}
+                                <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>
+                                  {isExpanded ? '⌄' : '⌃'}
+                                </div>
+                              </div>
                             </div>
+
+                            {isExpanded && (
+                              <div style={{ padding: '10px 22px 18px 58px' }}>
+                                <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.55, maxWidth: 760 }}>
+                                  {undergradUniversityDescription(school, profile)}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div style={{ padding: '0 22px 14px 58px', fontSize: 12.5, color: '#33405e', lineHeight: 1.55 }}>
-                            {undergradUniversityDescription(school, profile)}
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 );
