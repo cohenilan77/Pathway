@@ -956,6 +956,7 @@ export default async function handler(req, res) {
     let compressedSystemPrompt = systemPrompt;
     if (headroomStats.enabled) {
       const errors = [];
+      console.log(`[Headroom] Flags: compressSystem=${HeadroomFlags.compressSystem}, compressChat=${HeadroomFlags.compressChat}`);
       if (HeadroomFlags.compressSystem) {
         const sysResult = await compressText(systemPrompt, { label: 'chat_system_prompt' });
         console.log(`[Headroom] System prompt: ${systemPrompt.length} → ${sysResult.text.length} chars, compressed=${sysResult.compressed}, error=${sysResult.error}`);
