@@ -11,6 +11,7 @@ import {
   createAlert,
 } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
+import { logTokenUsage } from '../lib/token-usage-logger.js';
 
 const client = createAnthropicClient();
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
@@ -999,6 +1000,22 @@ export default async function handler(req, res) {
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
+
+      // Log real token usage from Anthropic API response (for dashboard compression metrics)
+      logTokenUsage({
+        userId: usageUserId,
+        conversationId: convoId,
+        feature,
+        model: CHAT_MODEL,
+        usage: response.usage,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+      }).catch((err) => console.error('Failed to log token usage:', err));
 
       recordUsage({
         userId: usageUserId,

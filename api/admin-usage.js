@@ -1,6 +1,7 @@
 import { getActor } from '../lib/admin.js';
 import { getUserById, ROLES } from '../lib/db.js';
 import { getAllUsageRecords, getAllAlerts, getUsageSettings, estimateCompressionForRecord } from '../lib/usage.js';
+import { getAllTokenUsageLogs } from '../lib/token-usage-logger.js';
 
 const FEATURE_LABELS = [
   { feature: 'narrative_strategy', label: 'Narrative Strategy' },
@@ -177,24 +178,28 @@ export default async function handler(req, res) {
       createdAt: r.createdAt,
     }));
 
-  const contextCompression = [...records]
-    .sort((a, b) => b.createdAt - a.createdAt)
+  // Use real token usage logs (from Anthropic API responses) for compression metrics.
+  // Fall back to estimated records only if no real logs exist yet.
+  const tokenUsageLogs = await getAllTokenUsageLogs();
+  const contextCompression = tokenUsageLogs
+    .sort((a, b) => b.timestamp - a.timestamp)
     .slice(0, 30)
-    .map((r) => {
-      const { compressionPct, tokensSaved, costSaved, real } = estimateCompressionForRecord(r);
-      return {
-        conversationId: r.conversationId,
-        userId: r.userId,
-        feature: r.feature,
-        inputTokens: r.inputTokens || 0,
-        compressionPct,
-        tokensSaved,
-        costSaved,
-        real,
-        createdAt: r.createdAt,
-      };
-    });
+    .map((log) => ({
+      conversationId: log.conversationId,
+      userId: log.userId,
+      feature: log.feature,
+      inputTokens: log.inputTokens || 0,
+      compressionPct: log.compressionPct,
+      tokensSaved: log.tokensSaved,
+      costSaved: log.costSaved,
+      real: log.source === 'REAL',
+      createdAt: log.timestamp,
+    }));
+
   const totalCompressionSaved = contextCompression.reduce((sum, c) => sum + c.costSaved, 0);
+  const avgCompressionPercent = contextCompression.length > 0
+    ? contextCompression.reduce((sum, c) => sum + c.compressionPct, 0) / contextCompression.length
+    : 0;
 
   res.status(200).json({
     monthlyCost,
@@ -213,11 +218,13 @@ export default async function handler(req, res) {
     costByWebSearch: byWebSearch,
     costByHeadroom: byHeadroom,
     averageEstimatedCompressionPercent,
+    avgCompressionPercentReal: avgCompressionPercent, // Real compression from Anthropic cache data
     costOverTime,
     topUsersByCost,
     recentHighCostConversations,
     contextCompression,
     totalCompressionSaved,
+    compressionDataSource: tokenUsageLogs.length > 0 ? 'real' : 'none',
     alerts,
     settings,
   });
