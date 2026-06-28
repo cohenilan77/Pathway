@@ -188,30 +188,35 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
             No messages yet. Start the conversation!
           </div>
         ) : (
-          messages.map(msg => (
-            <div key={msg.id} style={{ display: 'flex', gap: '7px' }}>
-              <Avatar user={{ id: msg.userId, name: 'Anon User' }} size={22} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#141b34' }}>Anon</span>
-                  <span style={{ fontSize: '8.5px', color: '#b2bad2' }}>{new Date(msg.createdAt).toLocaleTimeString()}</span>
-                </div>
-                <div style={{
-                  fontSize: '11px',
-                  color: '#33405e',
-                  lineHeight: 1.55,
-                  background: '#faf7f2',
-                  borderRadius: '3px 10px 10px 10px',
-                  padding: '6px 9px',
-                  border: '1px solid #f1eadd',
-                  display: 'inline-block',
-                  maxWidth: '100%',
-                }}>
-                  {msg.text}
+          messages.map(msg => {
+            const user = MOCK_USERS.find(u => u.id === msg.userId);
+            const displayName = user ? user.name.split(' ')[0] : 'Anon';
+            const displayUser = user || { id: msg.userId, name: displayName };
+            return (
+              <div key={msg.id} style={{ display: 'flex', gap: '7px' }}>
+                <Avatar user={displayUser} size={22} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#141b34' }}>{displayName}</span>
+                    <span style={{ fontSize: '8.5px', color: '#b2bad2' }}>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                  </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#33405e',
+                    lineHeight: 1.55,
+                    background: '#faf7f2',
+                    borderRadius: '3px 10px 10px 10px',
+                    padding: '6px 9px',
+                    border: '1px solid #f1eadd',
+                    display: 'inline-block',
+                    maxWidth: '100%',
+                  }}>
+                    {msg.text}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
@@ -402,11 +407,23 @@ export default function Community(props) {
     setGroups(generatedGroups);
     if (generatedGroups.length > 0 && !selectedGroupId) {
       setSelectedGroupId(generatedGroups[0].id);
-      // Auto-populate members for first group
-      const firstGroup = generatedGroups[0];
-      setMembers(firstGroup.eligibleUsers || []);
     }
-  }, [profile?.category, programs, selectedGroupId]);
+  }, [profile?.category, programs]);
+
+  // Update members when selected group changes
+  useEffect(() => {
+    if (selectedGroup && selectedGroup.eligibleUsers) {
+      setMembers(selectedGroup.eligibleUsers);
+      // Load mock messages for this group
+      setMessages([
+        { id: 1, userId: 'u1', text: 'Welcome to ' + selectedGroup.name + '! Great to connect with everyone here.', createdAt: Date.now() - 300000 },
+        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
+      ]);
+    } else {
+      setMembers([]);
+      setMessages([]);
+    }
+  }, [selectedGroup?.id]);
 
   const handleJoinGroup = async (groupId) => {
     // User is automatically member of program groups, so just show success
@@ -420,22 +437,16 @@ export default function Community(props) {
   const handleSendMessage = async (groupId, text) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/community-group-messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ groupId, text }),
-      });
+      // For now, use mock data - in production, this would call an API
+      const newMessage = {
+        id: Date.now(),
+        userId: authUser?.id || 'current-user',
+        text: text,
+        createdAt: Date.now(),
+      };
 
-      if (res.ok) {
-        const data = await res.json();
-        setMessages([...messages, data.message]);
-        showToast('Message sent!', 'success');
-      } else {
-        showToast('Failed to send message', 'error');
-      }
+      setMessages([...messages, newMessage]);
+      showToast('Message sent!', 'success');
     } catch (error) {
       showToast(`Error: ${error.message}`, 'error');
     } finally {
