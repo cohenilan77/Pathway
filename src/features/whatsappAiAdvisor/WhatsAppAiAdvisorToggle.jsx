@@ -4,6 +4,7 @@ function disabledReason(candidate) {
   if (!candidate?.whatsappNumber) return 'Candidate has no WhatsApp number';
   if (candidate.whatsappOptIn !== true) return 'Candidate has not opted in to WhatsApp';
   if (candidate.whatsappOptOut === true) return 'Candidate opted out of WhatsApp';
+  if (candidate.whatsappAiAdvisorTemplateConfigured === false) return 'WhatsApp advisor kickoff template is not configured';
   return '';
 }
 
