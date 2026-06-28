@@ -50,7 +50,7 @@ function Avatar({ user, size = 32 }) {
   );
 }
 
-function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGroup, loading }) {
+function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGroup, loading }) {
   return (
     <div style={{
       width: 180,
@@ -118,7 +118,56 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
         </>
       )}
 
-      {groups.length === 0 && (
+      {personalChats.length > 0 && (
+        <>
+          <div style={{
+            fontSize: '10px',
+            fontWeight: 800,
+            letterSpacing: '.6px',
+            color: '#5b46e0',
+            textTransform: 'uppercase',
+            padding: '12px 13px 6px',
+            marginTop: '8px',
+            borderTop: '1px solid #f1eadd',
+          }}>
+            💬 Personal Chats
+          </div>
+          {personalChats.map(chat => (
+            <button
+              key={chat.id}
+              onClick={() => onSelectGroup(chat.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                padding: '8px 11px 8px 13px',
+                cursor: 'pointer',
+                borderLeft: selectedGroupId === chat.id ? '3px solid #5b46e0' : '3px solid transparent',
+                background: selectedGroupId === chat.id ? 'rgba(91,70,224,.08)' : 'transparent',
+                width: '100%',
+                textAlign: 'left',
+                border: 'none',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <span style={{
+                fontSize: '12px',
+                fontWeight: selectedGroupId === chat.id ? 800 : 600,
+                color: selectedGroupId === chat.id ? '#5b46e0' : '#33405e',
+                flex: 1,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                {chat.name}
+              </span>
+            </button>
+          ))}
+        </>
+      )}
+
+      {groups.length === 0 && personalChats.length === 0 && (
         <div style={{ padding: '30px 14px', textAlign: 'center', fontSize: '13px', color: '#9098b5', lineHeight: 1.6 }}>
           <div style={{ fontSize: 24, marginBottom: '10px' }}>📚</div>
           Select programs in Settings to see communities.
@@ -433,12 +482,13 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
 export default function Community(props) {
   const { authToken, authUser, profile, showToast, setCandTab, send, programs = [] } = props;
   const [groups, setGroups] = useState([]);
+  const [personalChats, setPersonalChats] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const selectedGroup = groups.find(g => g.id === selectedGroupId);
+  const selectedGroup = groups.find(g => g.id === selectedGroupId) || personalChats.find(c => c.id === selectedGroupId);
 
   // Fetch real community members from API
   useEffect(() => {
@@ -559,7 +609,28 @@ export default function Community(props) {
   };
 
   const handleOpenDM = (memberId) => {
-    showToast('Direct messaging coming soon', 'info');
+    const memberData = members.find(m => m.id === memberId);
+    if (!memberData) return;
+
+    const chatId = `dm-${[authUser?.id, memberId].sort().join('-')}`;
+    const existingChat = personalChats.find(c => c.id === chatId);
+
+    if (existingChat) {
+      setSelectedGroupId(chatId);
+    } else {
+      const newChat = {
+        id: chatId,
+        name: memberData.name || 'Direct Message',
+        type: 'personal',
+        memberId: memberId,
+      };
+      setPersonalChats([...personalChats, newChat]);
+      setSelectedGroupId(chatId);
+      setMessages([
+        { id: 1, userId: 'system', text: `You started a chat with ${memberData.name}`, createdAt: Date.now() }
+      ]);
+    }
+    showToast(`Chat with ${memberData.name} opened!`, 'success');
   };
 
   const category = profile?.category;
@@ -637,9 +708,9 @@ export default function Community(props) {
     }}>
       <CommunityLeftPanel
         groups={groups}
+        personalChats={personalChats}
         selectedGroupId={selectedGroupId}
         onSelectGroup={setSelectedGroupId}
-        onJoinGroup={handleJoinGroup}
         loading={loading}
       />
       <CommunityFeed
