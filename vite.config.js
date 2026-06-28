@@ -463,10 +463,12 @@ export default defineConfig(({ mode }) => {
                   model: 'claude-haiku-4-5-20251001',
                   max_tokens: 3500,
                   system: buildSystemPrompt(resolveConfig(aiConfig)),
-                  messages: messages.map(m => ({
-                    role: m.role === 'ai' ? 'assistant' : 'user',
-                    content: m.text,
-                  })),
+                  messages: messages
+                    .filter((message) => message?.role !== 'system' && message?.text)
+                    .map((message) => ({
+                      role: message.role === 'ai' ? 'assistant' : 'user',
+                      content: message.text,
+                    })),
                 });
 
                 const raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';
