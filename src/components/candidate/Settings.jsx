@@ -316,7 +316,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* WhatsApp Messaging */}
-        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} disabled={false} />}
+        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} onSave={saveUserDetails} disabled={false} />}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (
