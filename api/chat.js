@@ -376,7 +376,7 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '') {
+export function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
     : '';
@@ -904,6 +904,15 @@ export default async function handler(req, res) {
   }
 
   const userId = await resolveUserId(req);
+  if (userId) {
+    const channelUser = await getUserById(userId).catch(() => null);
+    if (channelUser?.whatsappAiAdvisorSessionActive) {
+      return res.status(200).json({
+        raw: 'Your AI Advisor is currently running on WhatsApp. Continue there, or ask your consultant to pause WhatsApp to use the website Advisor again.',
+        channelRedirect: 'whatsapp',
+      });
+    }
+  }
   const feature = inferFeature(messages);
   const usageUserId = userId || 'anonymous';
   const convoId = conversationId || (userId ? `user:${userId}` : 'anonymous');
