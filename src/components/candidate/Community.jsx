@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // Real community members - fetched from database (placeholder for now)
 const COMMUNITY_MEMBERS = [
@@ -490,6 +490,7 @@ export default function Community(props) {
   const [messages, setMessages] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const pollRef = useRef(null);
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId) || personalChats.find(c => c.id === selectedGroupId);
 
@@ -573,11 +574,15 @@ export default function Community(props) {
     }
   }, [profile?.category, programs, members.length, selectedGroupId]);
 
-  // Fetch messages when selected group changes
+  // Fetch messages when selected group changes, and poll for new ones
   useEffect(() => {
-    if (selectedGroupId) {
-      fetchMessages(selectedGroupId);
-    }
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (!selectedGroupId) return;
+
+    fetchMessages(selectedGroupId);
+    pollRef.current = setInterval(() => fetchMessages(selectedGroupId), 3000);
+
+    return () => clearInterval(pollRef.current);
   }, [selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
