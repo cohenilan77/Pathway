@@ -1,81 +1,65 @@
-import { getUserById, postWhatsAppMessage, setCandidatePhoneIndex, setCandidateBSUIDIndex } from '../../lib/db.js';
+import { getUserById, setCandidatePhoneIndex, setCandidateBSUIDIndex } from '../../lib/db.js';
 import { getStore } from '../../lib/store.js';
 import { resolveCandidate } from '../../lib/whatsapp/resolveCandidate.js';
-import { advisorTurn } from '../../lib/whatsapp/advisorTurn.js';
 import { sendViaWhatsApp } from '../../lib/whatsapp/outbound.js';
-import { postMessage } from '../../lib/whatsapp/postMessage.js';
+import { handleInbound } from '../../lib/whatsappAiAdvisor/service.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { From, To, Body, ExternalUserId } = req.body;
+  const { From, Body, ExternalUserId, MessageSid } = req.body || {};
+  if (!From || !Body) return res.status(400).json({ error: 'Missing required fields' });
 
   try {
-    if (!From || !Body) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // --- RESOLVE CANDIDATE ---
     const phoneOrBsuid = ExternalUserId || From.replace('whatsapp:', '');
     let candidateId;
-
     try {
       candidateId = await resolveCandidate(phoneOrBsuid);
-    } catch (err) {
-      console.error(`Candidate resolution failed: ${err.message}`);
+    } catch (error) {
+      console.error(`Candidate resolution failed: ${error.message}`);
       return res.status(404).json({ error: 'Candidate not found' });
     }
 
     const candidate = await getUserById(candidateId);
     const phone = From.replace('whatsapp:', '');
+    const store = getStore();
 
-    // --- HANDLE OPT-OUT (STOP) ---
     if (Body.trim().toUpperCase() === 'STOP') {
-      const store = getStore();
-      const updated = { ...candidate, whatsappOptOut: true };
-      await store.set(`user:${candidateId}`, updated);
+      await store.set(`user:${candidateId}`, {
+        ...candidate,
+        whatsappOptOut: true,
+        whatsappAiAdvisorSessionActive: false,
+        whatsappAiAdvisorSessionPausedAt: Date.now(),
+        whatsappLastInboundAt: Date.now(),
+      });
       await sendViaWhatsApp(phone, 'You have been unsubscribed from Pathway messages.');
       return res.status(200).json({ status: 'opted_out' });
     }
 
-    // --- LOG INBOUND MESSAGE ---
-    await postWhatsAppMessage(candidateId, 'candidate', Body, 'whatsapp');
-
-    // --- UPDATE BSUID IF NEW ---
-    if (ExternalUserId && !candidate.bsuid) {
-      const store = getStore();
+    let indexedCandidate = candidate;
+    if (ExternalUserId && !indexedCandidate.bsuid) {
       await setCandidateBSUIDIndex(candidateId, ExternalUserId);
-      await store.set(`user:${candidateId}`, { ...candidate, bsuid: ExternalUserId });
+      indexedCandidate = { ...indexedCandidate, bsuid: ExternalUserId };
     }
-
-    // --- ENSURE PHONE INDEX ---
-    if (!candidate.whatsappNumber && phone) {
-      const store = getStore();
+    if (!indexedCandidate.whatsappNumber && phone) {
       await setCandidatePhoneIndex(candidateId, phone);
-      await store.set(`user:${candidateId}`, { ...candidate, whatsappNumber: phone });
+      indexedCandidate = { ...indexedCandidate, whatsappNumber: phone };
+    }
+    if (indexedCandidate !== candidate) {
+      await store.set(`user:${candidateId}`, indexedCandidate);
     }
 
-    // --- GET AI REPLY ---
-    let reply;
-    try {
-      const result = await advisorTurn(candidateId, Body);
-      reply = result.reply;
-    } catch (err) {
-      console.error(`AI advisor error: ${err.message}`);
-      reply = 'Thanks for your message! Our team will get back to you soon.';
-    }
-
-    // --- SEND REPLY ---
-    await sendViaWhatsApp(phone, reply);
-
-    // --- LOG AI REPLY ---
-    await postMessage(candidateId, 'ai', reply, 'whatsapp');
-
-    return res.status(200).json({ status: 'success', reply });
-  } catch (err) {
-    console.error(`Inbound webhook error: ${err.message}`);
-    return res.status(500).json({ error: err.message });
+    const result = await handleInbound(indexedCandidate, {
+      text: Body,
+      sourceMessageId: MessageSid || null,
+      from: phone,
+    });
+    return res.status(200).json({
+      status: result.duplicate ? 'duplicate' : result.replied ? 'replied' : 'saved',
+      reply: result.reply || null,
+    });
+  } catch (error) {
+    console.error(`Inbound webhook error: ${error.message}`);
+    return res.status(500).json({ error: error.message });
   }
 }
