@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
 
+// Mock users for community (in real version, fetch from API)
+const MOCK_USERS = [
+  { id: 'u1', name: 'John Smith', residency: 'USA', programs: ['MBA', 'MS Finance'] },
+  { id: 'u2', name: 'Sarah Chen', residency: 'Taiwan', programs: ['MBA', 'MS CS'] },
+  { id: 'u3', name: 'Alex Rodriguez', residency: 'Spain', programs: ['MS CS', 'MS AI'] },
+  { id: 'u4', name: 'Maria Garcia', residency: 'Mexico', programs: ['MBA'] },
+  { id: 'u5', name: 'James Brown', residency: 'UK', programs: ['MS Finance', 'MBA'] },
+  { id: 'u6', name: 'Li Wei', residency: 'China', programs: ['MS CS', 'MS AI'] },
+];
+
 function getInitials(firstName, lastName) {
   return `${(firstName || '').charAt(0).toUpperCase()}.${(lastName || '').charAt(0).toUpperCase()}`;
 }
@@ -45,9 +55,6 @@ function Avatar({ user, size = 32 }) {
 }
 
 function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGroup, loading }) {
-  const joinedGroups = groups.filter(g => g.isMember);
-  const availableGroups = groups.filter(g => !g.isMember);
-
   return (
     <div style={{
       width: 160,
@@ -57,7 +64,7 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
       flexShrink: 0,
       padding: '7px 0',
     }}>
-      {joinedGroups.length > 0 && (
+      {groups.length > 0 && (
         <>
           <div style={{
             fontSize: '8.5px',
@@ -66,8 +73,8 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
             color: '#9098b5',
             textTransform: 'uppercase',
             padding: '9px 11px 3px',
-          }}>My groups</div>
-          {joinedGroups.map(group => (
+          }}>Programs</div>
+          {groups.map(group => (
             <button
               key={group.id}
               onClick={() => onSelectGroup(group.id)}
@@ -94,7 +101,7 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}>
-                # {group.name}
+                {group.name}
               </span>
               <span style={{
                 background: '#5b46e0',
@@ -112,60 +119,9 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
         </>
       )}
 
-      {availableGroups.length > 0 && (
-        <>
-          <div style={{
-            fontSize: '8.5px',
-            fontWeight: 800,
-            letterSpacing: '.6px',
-            color: '#9098b5',
-            textTransform: 'uppercase',
-            padding: '9px 11px 3px',
-            marginTop: 8,
-          }}>Available</div>
-          {availableGroups.map(group => (
-            <div
-              key={group.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5px',
-                padding: '5px 9px 5px 11px',
-                borderLeft: '2px solid transparent',
-                background: 'transparent',
-                fontSize: '10px',
-                color: '#838bab',
-              }}
-            >
-              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                # {group.name}
-              </span>
-              <button
-                onClick={() => onJoinGroup(group.id)}
-                disabled={loading}
-                style={{
-                  background: '#5b46e0',
-                  color: '#faf7f2',
-                  border: 'none',
-                  borderRadius: '4px',
-                  padding: '2px 6px',
-                  fontSize: '8px',
-                  fontWeight: 700,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.6 : 1,
-                  flexShrink: 0,
-                }}
-              >
-                Join
-              </button>
-            </div>
-          ))}
-        </>
-      )}
-
       {groups.length === 0 && (
         <div style={{ padding: '20px 12px', textAlign: 'center', fontSize: '12px', color: '#9098b5' }}>
-          No groups available. Select schools and programs to see groups.
+          Select programs in Settings to see communities.
         </div>
       )}
     </div>
@@ -398,7 +354,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
 }
 
 export default function Community(props) {
-  const { authToken, authUser, profile, showToast, setCandTab, send, programs = [], chosenSchools = [] } = props;
+  const { authToken, authUser, profile, showToast, setCandTab, send, programs = [] } = props;
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -407,79 +363,57 @@ export default function Community(props) {
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
-  // Generate groups ONLY from user's personally chosen schools + programs
+  // Generate groups ONLY from user's selected programs
   useEffect(() => {
     const category = profile?.category;
 
-    // Must have category and at least one school selected
-    if (!category || !chosenSchools || chosenSchools.length === 0) {
+    // Must have category
+    if (!category) {
+      setGroups([]);
+      return;
+    }
+
+    // Must have programs
+    if (!programs || programs.length === 0) {
       setGroups([]);
       return;
     }
 
     const generatedGroups = [];
 
-    // Create one group per chosen school
-    // If user has programs selected, create school+program groups
-    // If no programs, create school-only groups
+    // Create ONE group per program user selected
+    programs.forEach(program => {
+      const programName = typeof program === 'string' ? program : (program.name || program.program || String(program));
 
-    chosenSchools.forEach(school => {
-      if (programs && programs.length > 0) {
-        // Create groups for each program
-        programs.forEach(program => {
-          const programName = typeof program === 'string' ? program : (program.name || program.program);
-          generatedGroups.push({
-            id: `${school.toLowerCase()}-${programName.toLowerCase()}`,
-            name: `${school} ${programName}`,
-            school,
-            program: programName,
-            category,
-            memberCount: 10 + Math.floor(Math.random() * 20),
-            isMember: false,
-          });
-        });
-      } else {
-        // No programs - just create school group
-        generatedGroups.push({
-          id: `${school.toLowerCase()}`,
-          name: `${school} Community`,
-          school,
-          program: null,
-          category,
-          memberCount: 15 + Math.floor(Math.random() * 25),
-          isMember: false,
-        });
-      }
+      // Find other users in this program
+      const usersInProgram = MOCK_USERS.filter(u => u.programs.includes(programName));
+
+      generatedGroups.push({
+        id: programName.toLowerCase().replace(/\s+/g, '-'),
+        name: programName,
+        program: programName,
+        category,
+        memberCount: usersInProgram.length + 1, // +1 for current user
+        isMember: true, // User is automatically in groups for their programs
+        eligibleUsers: usersInProgram,
+      });
     });
 
     setGroups(generatedGroups);
     if (generatedGroups.length > 0 && !selectedGroupId) {
       setSelectedGroupId(generatedGroups[0].id);
+      // Auto-populate members for first group
+      const firstGroup = generatedGroups[0];
+      setMembers(firstGroup.eligibleUsers || []);
     }
-  }, [profile?.category, chosenSchools, programs, selectedGroupId]);
+  }, [profile?.category, programs, selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/community-group-join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
-        },
-        body: JSON.stringify({ groupId }),
-      });
-
-      if (res.ok) {
-        setGroups(groups.map(g => (g.id === groupId ? { ...g, isMember: true } : g)));
-        showToast('Joined group!', 'success');
-      } else {
-        showToast('Failed to join group', 'error');
-      }
-    } catch (error) {
-      showToast(`Error: ${error.message}`, 'error');
-    } finally {
-      setLoading(false);
+    // User is automatically member of program groups, so just show success
+    const group = groups.find(g => g.id === groupId);
+    if (group) {
+      setMembers(group.eligibleUsers || []);
+      showToast('You are now part of this community!', 'success');
     }
   };
 
