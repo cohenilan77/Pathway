@@ -3,6 +3,7 @@ import Dashboard from './Dashboard.jsx';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
+import Community from './Community.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
@@ -36,6 +37,10 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></svg>,
   },
   {
+    key: 'community', label: 'Community',
+    icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="3" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.85" /></svg>,
+  },
+  {
     key: 'settings', label: 'Settings',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>,
   },
@@ -48,6 +53,7 @@ const CHAT_NAV_ITEM = {
 
 const ICON_BY_KEY = Object.fromEntries(NAV_ITEMS.map(item => [item.key, item.icon]));
 ICON_BY_KEY.chat = CHAT_NAV_ITEM.icon;
+ICON_BY_KEY.community = ICON_BY_KEY.community;
 ICON_BY_KEY.studentProfile = ICON_BY_KEY.advisor;
 ICON_BY_KEY.roadmap = ICON_BY_KEY.analysis;
 ICON_BY_KEY.activities = ICON_BY_KEY.documents;
@@ -895,7 +901,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
   const navItems = navFromConfig(trackConfig, hasChatAccess);
@@ -1033,6 +1039,7 @@ export default function CandidatePortal(props) {
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+        {candTab === 'community' && <Community {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>

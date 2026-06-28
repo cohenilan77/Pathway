@@ -1,0 +1,570 @@
+import React, { useState, useEffect } from 'react';
+
+function getInitials(firstName, lastName) {
+  return `${(firstName || '').charAt(0).toUpperCase()}.${(lastName || '').charAt(0).toUpperCase()}`;
+}
+
+function getMemberDisplay(user, residency = 'Country not provided') {
+  if (!user) return '';
+  const names = (user.name || '').split(' ');
+  const first = names[0] || '';
+  const last = names[names.length - 1] || '';
+  const initials = getInitials(first, last);
+  return `${initials} · ${residency || 'Country not provided'}`;
+}
+
+function Avatar({ user, size = 32 }) {
+  if (!user) return null;
+  const names = (user.name || '').split(' ');
+  const first = names[0] || '';
+  const last = names[names.length - 1] || '';
+  const initials = getInitials(first, last);
+  const colors = ['#94b3fb', '#b899fb', '#fbd2a2', '#fcbfcf', '#b8f0de', '#ffd6b2', '#f7c1c1'];
+  const hash = (user.id || '').charCodeAt(0) || 0;
+  const color = colors[hash % colors.length];
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: Math.round(size / 3),
+        background: `linear-gradient(140deg, ${color}, ${colors[(hash + 1) % colors.length]})`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: Math.round(size * 0.35),
+        fontWeight: 800,
+        color: '#faf7f2',
+        flexShrink: 0,
+      }}
+    >
+      {initials}
+    </div>
+  );
+}
+
+function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGroup, loading }) {
+  const joinedGroups = groups.filter(g => g.isMember);
+  const availableGroups = groups.filter(g => !g.isMember);
+
+  return (
+    <div style={{
+      width: 160,
+      background: '#faf7f2',
+      borderRight: '1px solid #f1eadd',
+      overflowY: 'auto',
+      flexShrink: 0,
+      padding: '7px 0',
+    }}>
+      {joinedGroups.length > 0 && (
+        <>
+          <div style={{
+            fontSize: '8.5px',
+            fontWeight: 800,
+            letterSpacing: '.6px',
+            color: '#9098b5',
+            textTransform: 'uppercase',
+            padding: '9px 11px 3px',
+          }}>My groups</div>
+          {joinedGroups.map(group => (
+            <button
+              key={group.id}
+              onClick={() => onSelectGroup(group.id)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 9px 5px 11px',
+                cursor: 'pointer',
+                borderLeft: selectedGroupId === group.id ? '2px solid #5b46e0' : '2px solid transparent',
+                background: selectedGroupId === group.id ? 'rgba(91,70,224,.06)' : 'transparent',
+                width: '100%',
+                textAlign: 'left',
+                border: 'none',
+                fontFamily: 'inherit',
+              }}
+            >
+              <span style={{
+                fontSize: '10.5px',
+                fontWeight: selectedGroupId === group.id ? 800 : 600,
+                color: selectedGroupId === group.id ? '#5b46e0' : '#33405e',
+                flex: 1,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>
+                # {group.name}
+              </span>
+              <span style={{
+                background: '#5b46e0',
+                color: '#faf7f2',
+                fontSize: '8px',
+                fontWeight: 800,
+                borderRadius: '999px',
+                padding: '1.5px 4.5px',
+                flexShrink: 0,
+              }}>
+                {group.memberCount}
+              </span>
+            </button>
+          ))}
+        </>
+      )}
+
+      {availableGroups.length > 0 && (
+        <>
+          <div style={{
+            fontSize: '8.5px',
+            fontWeight: 800,
+            letterSpacing: '.6px',
+            color: '#9098b5',
+            textTransform: 'uppercase',
+            padding: '9px 11px 3px',
+            marginTop: 8,
+          }}>Available</div>
+          {availableGroups.map(group => (
+            <div
+              key={group.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                padding: '5px 9px 5px 11px',
+                borderLeft: '2px solid transparent',
+                background: 'transparent',
+                fontSize: '10px',
+                color: '#838bab',
+              }}
+            >
+              <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                # {group.name}
+              </span>
+              <button
+                onClick={() => onJoinGroup(group.id)}
+                disabled={loading}
+                style={{
+                  background: '#5b46e0',
+                  color: '#faf7f2',
+                  border: 'none',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '8px',
+                  fontWeight: 700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                Join
+              </button>
+            </div>
+          ))}
+        </>
+      )}
+
+      {groups.length === 0 && (
+        <div style={{ padding: '20px 12px', textAlign: 'center', fontSize: '12px', color: '#9098b5' }}>
+          No groups available. Select schools and programs to see groups.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommunityFeed({ groupId, group, messages, onSendMessage, loading, currentUser }) {
+  const [messageText, setMessageText] = useState('');
+
+  const handleSend = async () => {
+    if (!messageText.trim()) return;
+    await onSendMessage(groupId, messageText);
+    setMessageText('');
+  };
+
+  if (!group) {
+    return (
+      <div style={{
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#eef1fc',
+        flexDirection: 'column',
+        gap: '10px',
+      }}>
+        <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Select a group</div>
+        <div style={{ fontSize: '12px', color: '#9098b5' }}>Choose a group to start chatting</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#eef1fc' }}>
+      <div style={{
+        background: '#faf7f2',
+        borderBottom: '1px solid #f1eadd',
+        padding: '8px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+      }}>
+        <div>
+          <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#141b34' }}>
+            # {group.name}
+          </div>
+          <div style={{ fontSize: '9.5px', color: '#9098b5', fontWeight: 600, marginTop: '2px' }}>
+            {group.memberCount} members
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        padding: '10px 11px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '11px',
+      }}>
+        {messages.length === 0 ? (
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9098b5', fontSize: '12px' }}>
+            No messages yet. Start the conversation!
+          </div>
+        ) : (
+          messages.map(msg => (
+            <div key={msg.id} style={{ display: 'flex', gap: '7px' }}>
+              <Avatar user={{ id: msg.userId, name: 'Anon User' }} size={22} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#141b34' }}>Anon</span>
+                  <span style={{ fontSize: '8.5px', color: '#b2bad2' }}>{new Date(msg.createdAt).toLocaleTimeString()}</span>
+                </div>
+                <div style={{
+                  fontSize: '11px',
+                  color: '#33405e',
+                  lineHeight: 1.55,
+                  background: '#faf7f2',
+                  borderRadius: '3px 10px 10px 10px',
+                  padding: '6px 9px',
+                  border: '1px solid #f1eadd',
+                  display: 'inline-block',
+                  maxWidth: '100%',
+                }}>
+                  {msg.text}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{
+        background: '#faf7f2',
+        borderTop: '1px solid #f1eadd',
+        padding: '8px 10px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        flexShrink: 0,
+      }}>
+        <input
+          type="text"
+          value={messageText}
+          onChange={(e) => setMessageText(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+          placeholder={`Message # ${group.name}...`}
+          style={{
+            flex: 1,
+            background: '#f6f1e8',
+            border: '1px solid #f1eadd',
+            borderRadius: '10px',
+            padding: '6px 10px',
+            fontSize: '11px',
+            color: '#141b34',
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !messageText.trim()}
+          style={{
+            background: '#5b46e0',
+            border: 'none',
+            borderRadius: '8px',
+            width: '27px',
+            height: '27px',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#faf7f2',
+            opacity: loading || !messageText.trim() ? 0.6 : 1,
+            flexShrink: 0,
+          }}
+        >
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
+  if (!group) {
+    return (
+      <div style={{
+        width: 160,
+        background: '#faf7f2',
+        borderLeft: '1px solid #f1eadd',
+        overflowY: 'auto',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        color: '#9098b5',
+      }}>
+        Select a group
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      width: 160,
+      background: '#faf7f2',
+      borderLeft: '1px solid #f1eadd',
+      overflowY: 'auto',
+      flexShrink: 0,
+    }}>
+      <div style={{ padding: '8px 8px 5px', borderBottom: '1px solid #f1eadd' }}>
+        <div style={{
+          fontSize: '8.5px',
+          fontWeight: 800,
+          letterSpacing: '.6px',
+          color: '#9098b5',
+          textTransform: 'uppercase',
+        }}>
+          Members — {group.memberCount}
+        </div>
+      </div>
+
+      {members.length === 0 ? (
+        <div style={{ padding: '20px 12px', textAlign: 'center', fontSize: '12px', color: '#9098b5' }}>
+          No members yet
+        </div>
+      ) : (
+        members.map(member => (
+          <div key={member.id} style={{
+            margin: '6px 6px 0',
+            background: '#f6f1e8',
+            border: '1px solid #f1eadd',
+            borderRadius: '11px',
+            padding: '8px',
+          }}>
+            <Avatar user={member} size={22} />
+            <div style={{ marginTop: '5px', fontSize: '9px', color: '#9098b5', fontWeight: 700 }}>
+              {getMemberDisplay(member, member.residency)}
+            </div>
+            <button
+              onClick={() => onOpenDM(member.id)}
+              disabled={loading}
+              style={{
+                marginTop: '6px',
+                width: '100%',
+                background: '#5b46e0',
+                color: '#faf7f2',
+                border: 'none',
+                borderRadius: '7px',
+                padding: '5px',
+                fontSize: '9.5px',
+                fontWeight: 800,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                fontFamily: 'inherit',
+              }}
+            >
+              Message →
+            </button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+export default function Community({ authToken, authUser, profile, showToast, setCandTab, send }) {
+  const [groups, setGroups] = useState([]);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const selectedGroup = groups.find(g => g.id === selectedGroupId);
+
+  useEffect(() => {
+    const loadGroups = async () => {
+      if (!authToken) return;
+      setLoading(true);
+      try {
+        const res = await fetch('/api/community-groups', {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setGroups(data.groups || []);
+          if (data.groups.length > 0 && !selectedGroupId) {
+            setSelectedGroupId(data.groups[0].id);
+          }
+        } else {
+          showToast('Failed to load groups', 'error');
+        }
+      } catch (error) {
+        showToast(`Error: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGroups();
+  }, [authToken]);
+
+  const handleJoinGroup = async (groupId) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/community-group-join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ groupId }),
+      });
+
+      if (res.ok) {
+        setGroups(groups.map(g => (g.id === groupId ? { ...g, isMember: true } : g)));
+        showToast('Joined group!', 'success');
+      } else {
+        showToast('Failed to join group', 'error');
+      }
+    } catch (error) {
+      showToast(`Error: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendMessage = async (groupId, text) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/community-group-messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ groupId, text }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setMessages([...messages, data.message]);
+        showToast('Message sent!', 'success');
+      } else {
+        showToast('Failed to send message', 'error');
+      }
+    } catch (error) {
+      showToast(`Error: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenDM = (memberId) => {
+    showToast('Direct messaging coming soon', 'info');
+  };
+
+  const category = profile?.category;
+  const canAccessCommunity = category && ['Undergraduate', 'Graduate', 'Postgraduate / Doctoral', 'Personal Development'].includes(category);
+
+  if (!canAccessCommunity) {
+    return (
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto',
+        padding: '24px 28px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '10px',
+      }}>
+        <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Community not available</div>
+        <div style={{ fontSize: '12px', color: '#9098b5', maxWidth: 400, textAlign: 'center' }}>
+          {category ? 'Please complete your profile to access the community.' : 'This feature is not available for your user type.'}
+        </div>
+      </div>
+    );
+  }
+
+  if (category === 'Undergraduate') {
+    const grade = profile?.grade;
+    if (!grade || !['11th', '12th'].includes(grade)) {
+      return (
+        <div style={{
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          padding: '24px 28px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          gap: '10px',
+        }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Community available for grades 11–12</div>
+          <div style={{ fontSize: '12px', color: '#9098b5', maxWidth: 400, textAlign: 'center' }}>
+            Community is available to high school students in 11th or 12th grade only.
+          </div>
+        </div>
+      );
+    }
+  }
+
+  return (
+    <div style={{
+      flex: 1,
+      minHeight: 0,
+      display: 'flex',
+      background: '#eef1fc',
+    }}>
+      <CommunityLeftPanel
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        onSelectGroup={setSelectedGroupId}
+        onJoinGroup={handleJoinGroup}
+        loading={loading}
+      />
+      <CommunityFeed
+        groupId={selectedGroupId}
+        group={selectedGroup}
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        loading={loading}
+        currentUser={authUser}
+      />
+      <CommunityMembers
+        groupId={selectedGroupId}
+        group={selectedGroup}
+        members={members}
+        onOpenDM={handleOpenDM}
+        loading={loading}
+      />
+    </div>
+  );
+}
