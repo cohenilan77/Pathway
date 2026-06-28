@@ -14,42 +14,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const actorData = await getUserData(actor.uid);
-    const actorCategory = actorData?.profile?.category || '';
-    const actorGrade = actorData?.profile?.grade || '';
-
-    console.log(`[Community] User ${actor.uid} - Category: ${actorCategory}, Grade: ${actorGrade}`);
-
-    // Get all candidates
+    // Get all candidates and return them - no filtering
     const ids = await getAllUserIds();
-    console.log(`[Community] Total user IDs: ${ids.length}`);
 
     const members = await Promise.all(
       ids.map(async (id) => {
-        if (id === actor.uid) return null;
+        if (id === actor.uid) return null; // Exclude self only
 
         const user = await getUserById(id);
         if (!user || user.role !== ROLES.candidate) return null;
 
         const data = await getUserData(id);
-        const category = data?.profile?.category || '';
-        const grade = data?.profile?.grade || '';
-        const programs = data?.programs || [];
-
-        // Log filtering decisions
-        if (category !== actorCategory) {
-          console.log(`[Community] ${id} excluded: category ${category} != ${actorCategory}`);
-          return null;
-        }
-        if (actorCategory === 'Undergraduate' && grade !== actorGrade) {
-          console.log(`[Community] ${id} excluded: grade ${grade} != ${actorGrade}`);
-          return null;
-        }
-
-        console.log(`[Community] ${id} included - ${user.email}`);
 
         // Extract name from email for display
-        const name = user.displayName || user.email?.split('@')[0] || 'Member';
         const email = user.email || '';
         const [namePart] = email.split('@');
         const first = namePart?.split('.')?.[0] || '';
@@ -57,17 +34,16 @@ export default async function handler(req, res) {
 
         return {
           id: user.uid,
-          name: `${first} ${last}`.trim() || name,
+          name: `${first} ${last}`.trim() || user.displayName || 'Member',
           residency: data?.profile?.country || 'Unknown',
-          programs: programs,
-          category: category,
-          grade: grade,
+          programs: data?.programs || [],
+          category: data?.profile?.category || '',
+          grade: data?.profile?.grade || '',
         };
       })
     );
 
     const filtered = members.filter(Boolean);
-    console.log(`[Community] Returning ${filtered.length} members to ${actor.uid}`);
     res.status(200).json({ members: filtered });
   } catch (error) {
     console.error('Error fetching community members:', error);
