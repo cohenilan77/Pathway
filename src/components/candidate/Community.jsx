@@ -375,12 +375,16 @@ export default function Community(props) {
     // Must have category
     if (!category) {
       setGroups([]);
+      setMembers([]);
+      setMessages([]);
       return;
     }
 
     // Must have programs
     if (!programs || programs.length === 0) {
       setGroups([]);
+      setMembers([]);
+      setMessages([]);
       return;
     }
 
@@ -399,31 +403,41 @@ export default function Community(props) {
         program: programName,
         category,
         memberCount: usersInProgram.length + 1, // +1 for current user
-        isMember: true, // User is automatically in groups for their programs
+        isMember: true,
         eligibleUsers: usersInProgram,
       });
     });
 
     setGroups(generatedGroups);
-    if (generatedGroups.length > 0 && !selectedGroupId) {
-      setSelectedGroupId(generatedGroups[0].id);
-    }
-  }, [profile?.category, programs]);
 
-  // Update members when selected group changes
-  useEffect(() => {
-    if (selectedGroup && selectedGroup.eligibleUsers) {
-      setMembers(selectedGroup.eligibleUsers);
-      // Load mock messages for this group
+    // Auto-select first group and populate its data
+    if (generatedGroups.length > 0) {
+      const firstGroup = generatedGroups[0];
+      setSelectedGroupId(firstGroup.id);
+      setMembers(firstGroup.eligibleUsers || []);
       setMessages([
-        { id: 1, userId: 'u1', text: 'Welcome to ' + selectedGroup.name + '! Great to connect with everyone here.', createdAt: Date.now() - 300000 },
+        { id: 1, userId: 'u1', text: `Welcome to ${firstGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
         { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
       ]);
-    } else {
-      setMembers([]);
-      setMessages([]);
     }
-  }, [selectedGroup?.id]);
+  }, [profile?.category, programs, selectedGroupId === null]);
+
+  // Update members and messages when selected group changes
+  useEffect(() => {
+    if (selectedGroup && selectedGroup.eligibleUsers && selectedGroup.eligibleUsers.length > 0) {
+      setMembers(selectedGroup.eligibleUsers);
+      setMessages([
+        { id: 1, userId: 'u1', text: `Welcome to ${selectedGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
+        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
+      ]);
+    } else if (selectedGroup) {
+      setMembers(selectedGroup.eligibleUsers || []);
+      setMessages([
+        { id: 1, userId: 'u1', text: `Welcome to ${selectedGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
+        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
+      ]);
+    }
+  }, [selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
     // User is automatically member of program groups, so just show success
