@@ -10,6 +10,7 @@ import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { getTrackConfig } from '../../trackConfig.js';
+import { estimatePracticeScore } from '../../lib/testScoring.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -429,123 +430,197 @@ function UndergradCard({ title, children, action }) {
   );
 }
 
-function TestingSimulationCard({ title, testType, duration, questions }) {
-  const [started, setStarted] = React.useState(false);
-  const [timeLeft, setTimeLeft] = React.useState(600); // 10 minutes in seconds
+const primaryButtonStyle = {
+  background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 11,
+  padding: '10px 15px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+};
+
+const secondaryButtonStyle = {
+  background: '#fff', color: '#5b46e0', border: '1px solid #e7dcc7', borderRadius: 11,
+  padding: '9px 13px', fontSize: 12.5, fontWeight: 750, cursor: 'pointer', fontFamily: 'inherit',
+};
+
+function TestingSimulationCard({ title, testType, authToken, sessionId }) {
+  const [phase, setPhase] = React.useState('idle');
+  const [simulation, setSimulation] = React.useState(null);
+  const [timeLeft, setTimeLeft] = React.useState(0);
   const [currentQuestion, setCurrentQuestion] = React.useState(0);
-  const [score, setScore] = React.useState(null);
   const [answers, setAnswers] = React.useState({});
+  const [flagged, setFlagged] = React.useState({});
+  const [result, setResult] = React.useState(null);
+  const [error, setError] = React.useState('');
+  const answersRef = React.useRef(answers);
+  const deadlineRef = React.useRef(null);
+  answersRef.current = answers;
+
+  const questions = simulation?.questions || [];
+  const answeredCount = Object.keys(answers).length;
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+  const finishTest = React.useCallback((finalAnswers = answersRef.current) => {
+    if (!questions.length) return;
+    setResult(estimatePracticeScore(testType, questions, finalAnswers));
+    setPhase('results');
+  }, [questions, testType]);
 
   React.useEffect(() => {
-    if (!started || score !== null) return;
-    const interval = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          finishTest();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [started, score]);
+    if (phase !== 'active') return undefined;
+    const interval = window.setInterval(() => {
+      const remaining = Math.max(0, Math.ceil(((deadlineRef.current || Date.now()) - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        window.clearInterval(interval);
+        finishTest(answersRef.current);
+      }
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [phase, finishTest]);
 
-  const getTestQuestions = () => {
-    if (testType === 'sat') {
-      return [
-        { q: 'Which of the following is a prime number?', opts: ['4', '6', '7', '8'], correct: 2 },
-        { q: 'What is 15% of 200?', opts: ['20', '25', '30', '35'], correct: 2 },
-        { q: 'If x + 5 = 12, what is x?', opts: ['5', '7', '9', '12'], correct: 1 },
-        { q: 'What is the square root of 144?', opts: ['10', '11', '12', '13'], correct: 2 },
-        { q: 'Which word best completes: "The _____ discovery changed everything"?', opts: ['ordinary', 'groundbreaking', 'small', 'quiet'], correct: 1 },
-        { q: 'What is 7 × 8?', opts: ['54', '56', '58', '60'], correct: 1 },
-        { q: 'If a triangle has angles of 60° and 70°, what is the third angle?', opts: ['40°', '50°', '60°', '70°'], correct: 1 },
-        { q: 'Choose the correctly spelled word:', opts: ['occassion', 'occasion', 'ocassion', 'ocasion'], correct: 1 },
-        { q: 'What is 25% of 80?', opts: ['15', '18', '20', '25'], correct: 2 },
-        { q: '"Ephemeral" means:', opts: ['lasting forever', 'short-lived', 'colorful', 'mysterious'], correct: 1 },
-      ];
-    } else {
-      return [
-        { q: 'Which statement is most supported by the passage?', opts: ['A', 'B', 'C', 'D'], correct: 0 },
-        { q: 'The author\'s primary purpose is to:', opts: ['A', 'B', 'C', 'D'], correct: 2 },
-        { q: 'Based on the passage, what can be inferred?', opts: ['A', 'B', 'C', 'D'], correct: 1 },
-        { q: 'Which statement would the author likely agree with?', opts: ['A', 'B', 'C', 'D'], correct: 3 },
-        { q: 'The tone of the passage is best described as:', opts: ['A', 'B', 'C', 'D'], correct: 1 },
-        { q: 'Which logical fallacy is present?', opts: ['A', 'B', 'C', 'D'], correct: 0 },
-        { q: 'The argument relies on which assumption?', opts: ['A', 'B', 'C', 'D'], correct: 2 },
-        { q: 'What does "X" refer to in context?', opts: ['A', 'B', 'C', 'D'], correct: 1 },
-        { q: 'Which statement best summarizes the passage?', opts: ['A', 'B', 'C', 'D'], correct: 2 },
-        { q: 'The passage suggests that:', opts: ['A', 'B', 'C', 'D'], correct: 0 },
-      ];
+  const startSimulation = async () => {
+    setPhase('loading');
+    setError('');
+    setSimulation(null);
+    setAnswers({});
+    setFlagged({});
+    setResult(null);
+    setCurrentQuestion(0);
+    try {
+      const response = await fetch('/api/test-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+        body: JSON.stringify({ testType, conversationId: sessionId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.simulation) throw new Error(data.error || 'Could not generate the simulation.');
+      setSimulation(data.simulation);
+      setTimeLeft(data.simulation.durationSeconds);
+      deadlineRef.current = Date.now() + data.simulation.durationSeconds * 1000;
+      setPhase('active');
+    } catch (generationError) {
+      setError(generationError.message || 'Could not generate the simulation.');
+      setPhase('error');
     }
   };
 
-  const testQuestions = getTestQuestions().slice(0, questions);
-  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
-
-  const handleAnswer = (questionIdx, answerIdx) => {
-    setAnswers(prev => ({ ...prev, [questionIdx]: answerIdx }));
+  const submitTest = () => {
+    const unanswered = questions.length - answeredCount;
+    if (unanswered > 0 && !window.confirm(`${unanswered} question${unanswered === 1 ? '' : 's'} unanswered. Submit anyway?`)) return;
+    finishTest(answersRef.current);
   };
 
-  const finishTest = () => {
-    const correctCount = testQuestions.reduce((acc, q, idx) =>
-      acc + (answers[idx] === q.correct ? 1 : 0), 0);
-    const percentage = Math.round((correctCount / testQuestions.length) * 100);
-    setScore(percentage);
-    setStarted(false);
-  };
-
-  const resetTest = () => {
-    setStarted(false);
-    setTimeLeft(600);
-    setCurrentQuestion(0);
-    setScore(null);
-    setAnswers({});
-  };
-
-  return (
-    <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
-      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 12.5, color: '#6b7392', marginBottom: 16 }}>{duration} · {questions} questions</div>
-
-      {!started && score === null ? (
-        <button onClick={() => setStarted(true)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%' }}>
-          Start {title} →
+  if (phase === 'idle' || phase === 'loading' || phase === 'error') {
+    return (
+      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{title}</div>
+        <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginBottom: 18 }}>
+          20 original questions · {testType === 'sat' ? '28' : '20'} minutes · new AI-generated session every time
+        </div>
+        {error && <div style={{ background: '#fff1f6', color: '#c2416c', border: '1px solid #fbd3e2', borderRadius: 12, padding: 12, fontSize: 13, marginBottom: 14 }}>{error}</div>}
+        <button onClick={startSimulation} disabled={phase === 'loading'} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 800, cursor: phase === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%', opacity: phase === 'loading' ? 0.65 : 1 }}>
+          {phase === 'loading' ? 'Generating a fresh test…' : `${phase === 'error' ? 'Try Again' : `Start ${title}`} →`}
         </button>
-      ) : score !== null ? (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, fontWeight: 800, color: '#5b46e0', marginBottom: 8 }}>{score}%</div>
-          <div style={{ fontSize: 14, color: '#6b7392', marginBottom: 16 }}>
-            You answered {Math.round(score / 100 * testQuestions.length)} out of {testQuestions.length} correctly
+      </div>
+    );
+  }
+
+  if (phase === 'results' && result) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+          <div className="pw-test-result-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,.8fr) 1.5fr', gap: 28, alignItems: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px' }}>ESTIMATED {testType.toUpperCase()} SCORE</div>
+              <div style={{ fontSize: 54, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{result.estimatedScore}</div>
+              <div style={{ fontSize: 12, color: '#9098b5' }}>Scale {result.scale}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{result.correctCount} of {questions.length} correct · {result.percentage}%</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {Object.entries(result.sectionScores).map(([section, sectionScore]) => (
+                  <span key={section} style={{ background: '#f0edff', color: '#5b46e0', borderRadius: 9, padding: '6px 9px', fontSize: 12, fontWeight: 800 }}>{section}: {sectionScore}</span>
+                ))}
+              </div>
+              <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 14 }}>{simulation.scoringNote}</div>
+              <button onClick={startSimulation} style={{ ...primaryButtonStyle, padding: '10px 16px', fontSize: 13 }}>Generate a New Test</button>
+            </div>
           </div>
-          <button onClick={resetTest} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%' }}>
-            Retake Test
-          </button>
         </div>
-      ) : (
-        <div style={{ background: '#f6f1e8', borderRadius: 15, padding: 16 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Question {currentQuestion + 1} of {testQuestions.length}</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: timeLeft < 60 ? '#e0457a' : '#5b46e0' }}>{formatTime(timeLeft)}</div>
+
+        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', padding: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 16 }}>Answer review</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {questions.map((question, index) => {
+              const selected = answers[index];
+              const correct = selected === question.correctIndex;
+              return (
+                <div key={question.id} style={{ border: `1px solid ${correct ? '#b7ead8' : '#f2c6d5'}`, background: correct ? '#f2fcf8' : '#fff7fa', borderRadius: 14, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: correct ? '#168c68' : '#c2416c', marginBottom: 6 }}>QUESTION {index + 1} · {correct ? 'CORRECT' : 'REVIEW'}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{question.prompt}</div>
+                  <div style={{ fontSize: 12.5, color: '#33405e', marginBottom: 4 }}>Your answer: {selected == null ? 'Unanswered' : `${String.fromCharCode(65 + selected)}. ${question.options[selected]}`}</div>
+                  {!correct && <div style={{ fontSize: 12.5, color: '#168c68', marginBottom: 4 }}>Correct answer: {String.fromCharCode(65 + question.correctIndex)}. {question.options[question.correctIndex]}</div>}
+                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5 }}>{question.explanation}</div>
+                </div>
+              );
+            })}
           </div>
-          <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#e7dcc7', marginBottom: 16 }}>
-            <div style={{ width: `${((currentQuestion + 1) / testQuestions.length) * 100}%`, height: '100%', borderRadius: 3, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width 0.3s ease' }} />
+        </div>
+      </div>
+    );
+  }
+
+  const question = questions[currentQuestion];
+  return (
+    <div className="pw-test-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 220px', gap: 18, alignItems: 'start' }}>
+      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0' }}>{question.section} · {question.domain}</div>
+            <div style={{ fontSize: 11, color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{question.difficulty} · Question {currentQuestion + 1} of {questions.length}</div>
           </div>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: '#141b34', marginBottom: 14 }}>{testQuestions[currentQuestion].q}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {testQuestions[currentQuestion].opts.map((opt, idx) => (
-              <button key={idx} onClick={() => { handleAnswer(currentQuestion, idx); if (currentQuestion < testQuestions.length - 1) setCurrentQuestion(c => c + 1); else finishTest(); }} style={{ background: answers[currentQuestion] === idx ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#faf7f2', color: answers[currentQuestion] === idx ? '#faf7f2' : '#141b34', border: `1.5px solid ${answers[currentQuestion] === idx ? '#b899fb' : '#f1eadd'}`, borderRadius: 12, padding: '12px 14px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                {String.fromCharCode(65 + idx)}. {opt}
+          <div style={{ fontSize: 20, fontWeight: 900, color: timeLeft < 120 ? '#e0457a' : '#5b46e0' }}>{formatTime(timeLeft)}</div>
+        </div>
+        <div style={{ width: '100%', height: 7, borderRadius: 4, background: '#e7dcc7', marginBottom: 20 }}>
+          <div style={{ width: `${(answeredCount / questions.length) * 100}%`, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .25s ease' }} />
+        </div>
+        {question.stimulus && <div style={{ background: '#f6f1e8', borderRadius: 14, padding: 16, fontSize: 13.5, color: '#33405e', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{question.stimulus}</div>}
+        <div style={{ fontSize: 16, fontWeight: 750, color: '#141b34', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {question.options.map((option, index) => {
+            const selected = answers[currentQuestion] === index;
+            return (
+              <button key={`${question.id}-${index}`} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#eeeaff' : '#fff', color: '#141b34', border: `1.5px solid ${selected ? '#8b72ef' : '#e7dcc7'}`, borderRadius: 12, padding: '13px 14px', fontSize: 13.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', gap: 10 }}>
+                <span style={{ color: selected ? '#5b46e0' : '#9098b5', fontWeight: 900 }}>{String.fromCharCode(65 + index)}.</span>
+                <span>{option}</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-      )}
+        <div className="pw-test-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+          <button onClick={() => setCurrentQuestion((value) => Math.max(0, value - 1))} disabled={currentQuestion === 0} style={{ ...secondaryButtonStyle, opacity: currentQuestion === 0 ? 0.45 : 1 }}>← Previous</button>
+          <button onClick={() => setFlagged((previous) => ({ ...previous, [currentQuestion]: !previous[currentQuestion] }))} style={{ ...secondaryButtonStyle, color: flagged[currentQuestion] ? '#c56a12' : '#5b46e0' }}>{flagged[currentQuestion] ? '★ Flagged' : '☆ Flag for review'}</button>
+          {currentQuestion < questions.length - 1
+            ? <button onClick={() => setCurrentQuestion((value) => Math.min(questions.length - 1, value + 1))} style={primaryButtonStyle}>Next →</button>
+            : <button onClick={submitTest} style={primaryButtonStyle}>Submit Test</button>}
+        </div>
+      </div>
+
+      <div style={{ background: '#faf7f2', borderRadius: 18, border: '1px solid #f1eadd', padding: 16, position: 'sticky', top: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{answeredCount} / {questions.length} answered</div>
+        <div style={{ fontSize: 11, color: '#9098b5', marginBottom: 12 }}>{Object.values(flagged).filter(Boolean).length} flagged for review</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6, marginBottom: 14 }}>
+          {questions.map((item, index) => {
+            const active = index === currentQuestion;
+            const answered = answers[index] != null;
+            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#5b46e0' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eeeaff' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
+          })}
+        </div>
+        <button onClick={submitTest} style={{ ...primaryButtonStyle, width: '100%', padding: '10px 12px' }}>Submit Test</button>
+      </div>
     </div>
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
   const [selectedSchools, setSelectedSchools] = React.useState([]);
   const [expandedSchools, setExpandedSchools] = React.useState({});
@@ -749,23 +824,23 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
           </div>
 
           {!selectedTest ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
+            <div className="pw-test-picker" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
               <button onClick={() => setSelectedTest('sat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>SAT Simulation</div>
-                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>10 minutes · 25 questions</div>
-                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Test your math, reading, and writing skills with a realistic SAT practice test.</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>28 minutes · 20 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Digital SAT-style Reading and Writing plus Math, with a fresh question set and estimated 400–1600 score.</div>
               </button>
-              <button onClick={() => setSelectedTest('lsat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>LSAT Simulation</div>
-                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>10 minutes · 20 questions</div>
-                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Test your logical reasoning and reading comprehension with a realistic LSAT practice test.</div>
+              <button onClick={() => setSelectedTest('act')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>ACT Simulation</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>20 minutes · 20 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Enhanced ACT-style English, Math, and Reading, with a fresh question set and estimated 1–36 composite.</div>
               </button>
             </div>
           ) : (
             <div style={{ marginBottom: 24 }}>
               <button onClick={() => setSelectedTest(null)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 0', marginBottom: 16 }}>← Back to choose test</button>
-              {selectedTest === 'sat' && <TestingSimulationCard title="SAT Simulation" testType="sat" duration="10 minutes" questions={25} />}
-              {selectedTest === 'lsat' && <TestingSimulationCard title="LSAT Simulation" testType="lsat" duration="10 minutes" questions={20} />}
+              {selectedTest === 'sat' && <TestingSimulationCard title="SAT Simulation" testType="sat" authToken={authToken} sessionId={sessionId} />}
+              {selectedTest === 'act' && <TestingSimulationCard title="ACT Simulation" testType="act" authToken={authToken} sessionId={sessionId} />}
             </div>
           )}
 

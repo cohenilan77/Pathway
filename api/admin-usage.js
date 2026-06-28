@@ -21,6 +21,7 @@ const FEATURE_LABELS = [
   { feature: 'help_guide', label: 'Help Guide' },
   { feature: 'document_parsing', label: 'Document Parsing' },
   { feature: 'translation', label: 'Translation' },
+  { feature: 'test_simulation', label: 'Test Simulation' },
 ];
 
 function dateKey(ts) {
