@@ -45,6 +45,11 @@ const satChunkPayload = {
   })),
 };
 assert.equal(validateSimulationChunk(satChunkPayload, 'sat', satChunk).length, 5);
+const normalizedSatChunk = validateSimulationChunk({
+  questions: satChunkPayload.questions.map((item) => ({ ...item, section: 'Reading & Writing', difficulty: 'hard' })),
+}, 'sat', satChunk);
+assert.deepEqual(normalizedSatChunk.map((item) => item.section), Array(5).fill('Reading and Writing'));
+assert.deepEqual(normalizedSatChunk.map((item) => item.difficulty), ['easy', 'easy', 'medium', 'medium', 'hard']);
 
 const actPayload = {
   questions: [

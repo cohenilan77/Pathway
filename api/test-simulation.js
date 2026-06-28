@@ -129,7 +129,16 @@ export function validateSimulationChunk(payload, testType, chunk) {
   if (!payload || !Array.isArray(payload.questions) || payload.questions.length !== CHUNK_QUESTION_COUNT) {
     throw new Error(`Chunk must contain exactly ${CHUNK_QUESTION_COUNT} questions.`);
   }
-  const questions = payload.questions.map((question, index) => normalizeQuestion(question, index, testType));
+  // Section and difficulty are blueprint rules, not creative model output. Assign
+  // them by position so harmless wording/categorization differences from the
+  // model cannot invalidate an otherwise usable set of questions.
+  const sectionPlan = Object.entries(chunk.sections).flatMap(([section, count]) => Array(count).fill(section));
+  const difficultyPlan = Object.entries(chunk.difficulties).flatMap(([difficulty, count]) => Array(count).fill(difficulty));
+  const questions = payload.questions.map((question, index) => normalizeQuestion({
+    ...question,
+    section: sectionPlan[index],
+    difficulty: difficultyPlan[index],
+  }, index, testType));
   const sectionCounts = questions.reduce((counts, question) => {
     counts[question.section] = (counts[question.section] || 0) + 1;
     return counts;
