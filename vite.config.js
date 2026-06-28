@@ -14,6 +14,7 @@ import adminUsageHandler from './api/admin-usage.js';
 import adminUsageSettingsHandler from './api/admin-usage-settings.js';
 import adminUsageResetHandler from './api/admin-usage-reset.js';
 import summarizeHandler from './api/summarize.js';
+import testSimulationHandler from './api/test-simulation.js';
 import parseFileHandler from './api/parse-file.js';
 import downloadFileHandler from './api/download-file.js';
 import oauthStartHandler from './api/oauth-start.js';
@@ -407,6 +408,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/admin-usage-reset', withApiAdapter(adminUsageResetHandler));
           server.middlewares.use('/api/admin-usage', withApiAdapter(adminUsageHandler));
           server.middlewares.use('/api/summarize', withApiAdapter(summarizeHandler));
+          server.middlewares.use('/api/test-simulation', withApiAdapter(testSimulationHandler));
           server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
           server.middlewares.use('/api/change-password', withApiAdapter(changePasswordHandler));
           server.middlewares.use('/api/chat/messages', withApiAdapter(chatMessagesHandler));
