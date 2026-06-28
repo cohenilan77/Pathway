@@ -426,6 +426,29 @@ export default function Community(props) {
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
+  // Fetch real community members from API
+  useEffect(() => {
+    const fetchMembers = async () => {
+      try {
+        const res = await fetch('/api/community-members', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMembers(data.members || []);
+        }
+      } catch (error) {
+        console.error('Error fetching community members:', error);
+      }
+    };
+
+    if (authToken) {
+      fetchMembers();
+    }
+  }, [authToken]);
+
   // Generate groups ONLY from user's selected programs
   useEffect(() => {
     const category = profile?.category;
@@ -476,10 +499,9 @@ export default function Community(props) {
     }
   }, [profile?.category, programs]);
 
-  // Update members and messages when selected group changes
+  // Update messages when selected group changes
   useEffect(() => {
     if (selectedGroup) {
-      setMembers(selectedGroup.eligibleUsers || []);
       setMessages([
         { id: 1, userId: 'system', text: `Welcome to ${selectedGroup.name}! 👋 Connect with other members in this program by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
       ]);
