@@ -733,11 +733,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     patchSelected({ override: next, scores: scores ? { ...scores, overall: next } : scores });
   };
 
-  const sendConsultantNote = () => {
-    if (!msgInput.trim()) return;
-    patchSelected({ chat: [...chat, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }] });
-    showToast('Note sent to candidate session.');
-    setMsgInput('');
+  const sendConsultantNote = async () => {
+    const text = msgInput.trim();
+    if (!text || !selectedUserId || liveChatSending) return;
+    setLiveChatSending(true);
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ candidateId: selectedUserId, text }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not send note to candidate.');
+      setMsgInput('');
+      fetchLiveChatMessages();
+      fetchUsers();
+      showToast('Note delivered to the candidate in Live Chat.');
+    } catch (error) {
+      showToast(error.message || 'Could not send note to candidate.');
+    } finally {
+      setLiveChatSending(false);
+    }
   };
 
   const downloadOriginalFile = async (file) => {
@@ -1590,8 +1606,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 14, padding: '6px 6px 6px 14px', marginBottom: 0 }}>
                   <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} placeholder="Send a note to candidate's session..." rows="3"
                     style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#141b34', padding: '8px 0' }} />
-                  <button onClick={sendConsultantNote}
-                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
+                  <button onClick={sendConsultantNote} disabled={liveChatSending || !msgInput.trim()}
+                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0, opacity: liveChatSending || !msgInput.trim() ? 0.55 : 1, cursor: liveChatSending || !msgInput.trim() ? 'not-allowed' : 'pointer' }}>
                     <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" /></svg>
                   </button>
                 </div>
