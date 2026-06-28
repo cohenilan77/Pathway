@@ -7,12 +7,6 @@ export default async function handler(req, res) {
     return;
   }
 
-  const actor = await getActor(req);
-  if (!actor || actor.role !== ROLES.candidate) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-
   try {
     // Get all candidates - just return user info, no filtering
     const ids = await getAllUserIds();
