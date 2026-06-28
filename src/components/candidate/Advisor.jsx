@@ -220,34 +220,43 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
-                {chat.map((m, i) => (
-                  m.role === 'ai' ? (
-                    (() => {
-                      const parsed = parseOptions(m.text);
-                      return (
-                        <React.Fragment key={i}>
-                          <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                            {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                {chat.map((m, i) => {
+                  const channel = m.channel || 'web';
+                  if (m.role === 'system') {
+                    return (
+                      <div key={i} style={{ alignSelf: 'center', background: '#fff8ea', border: '1px solid #f5e3b8', borderRadius: 999, padding: '7px 13px', fontSize: 11.5, color: '#a16207', textAlign: 'center' }}>
+                        [System] {m.text}
+                      </div>
+                    );
+                  }
+                  if (m.role === 'ai') {
+                    const parsed = parseOptions(m.text);
+                    return (
+                      <React.Fragment key={i}>
+                        <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, color: '#9098b5', marginBottom: 6 }}>[AI Advisor] [{channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]</div>
+                          {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                        </div>
+                        {parsed && (
+                          <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
+                            {parsed.options.map(opt => (
+                              <button key={opt} onClick={() => send(opt)} disabled={busy}
+                                style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                {opt}
+                              </button>
+                            ))}
                           </div>
-                          {parsed && (
-                            <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
-                              {parsed.options.map(opt => (
-                                <button key={opt} onClick={() => send(opt)} disabled={busy}
-                                  style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </React.Fragment>
-                      );
-                    })()
-                  ) : (
+                        )}
+                      </React.Fragment>
+                    );
+                  }
+                  return (
                     <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.75, marginBottom: 6 }}>[Candidate] [{channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]</div>
                       {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
                     </div>
-                  )
-                ))}
+                  );
+                })}
 
                 {busy && (
                   <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '17px 20px' }}>

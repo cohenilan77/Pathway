@@ -73,7 +73,21 @@ export default async function handler(req, res) {
     const { data } = req.body || {};
     const translated = await translateNonChatFields(data || {}, userId);
     if (translated?.programs) translated.programs = normalizeProgramList(translated.programs);
-    await setUserData(userId, translated);
+
+    // A web tab saves the whole session. Preserve WhatsApp/system turns that may have
+    // arrived after that tab loaded so one channel cannot erase the other.
+    const current = (await getUserData(userId)) || {};
+    const incomingChat = Array.isArray(translated.chat) ? translated.chat : [];
+    const signature = (message) => message?.sourceMessageId
+      || [message?.role, message?.channel, message?.timestamp, message?.text].join('|');
+    const incomingSignatures = new Set(incomingChat.map(signature));
+    const remoteOnly = (Array.isArray(current.chat) ? current.chat : [])
+      .filter((message) => ['whatsapp', 'system'].includes(message?.channel))
+      .filter((message) => !incomingSignatures.has(signature(message)));
+    await setUserData(userId, {
+      ...translated,
+      chat: [...incomingChat, ...remoteOnly],
+    });
     await touchActivity(userId);
     res.status(200).json({ ok: true });
     return;

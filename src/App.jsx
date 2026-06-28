@@ -31,7 +31,7 @@ const WELCOME_MESSAGE = {
 };
 
 function buildInitialChat(language) {
-  return [{ role: 'ai', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
+  return [{ role: 'ai', channel: 'web', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
 }
 
 const INITIAL_CHAT = buildInitialChat('English');
@@ -442,6 +442,7 @@ export default function App() {
           // Student has universities but hasn't discussed testing yet - add nudge
           const nudgeMsg = {
             role: 'ai',
+            channel: 'web',
             text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
           };
           if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
@@ -629,7 +630,7 @@ export default function App() {
     }
 
     if (plan === 'free' && scores) {
-      setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
+      setChat(prev => [...prev, { role: 'user', channel: 'web', text: raw_t }, { role: 'ai', channel: 'web', text: PLAN_UPGRADE_MESSAGE }]);
       setInput('');
       return;
     }
@@ -639,7 +640,7 @@ export default function App() {
       ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
       : raw_t;
 
-    const userMsg = { role: 'user', text: t };
+    const userMsg = { role: 'user', channel: 'web', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
     const baseChat = t.startsWith('Here is my CV')
       ? chat.filter(m => !(m.role === 'user' && m.text.startsWith('Here is my CV')))
@@ -727,12 +728,12 @@ export default function App() {
           setStepIdx(prev => Math.max(prev, nextStep));
         }
 
-        setChat(prev => [...prev, { role: 'ai', text: displayText }]);
+        setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
       } else {
-        setChat(prev => [...prev, { role: 'ai', text: data.error || 'Connection issue. Please try again.' }]);
+        setChat(prev => [...prev, { role: 'ai', channel: 'web', text: data.error || 'Connection issue. Please try again.' }]);
       }
     } catch {
-      setChat(prev => [...prev, { role: 'ai', text: 'Connection issue. Please try again in a moment.' }]);
+      setChat(prev => [...prev, { role: 'ai', channel: 'web', text: 'Connection issue. Please try again in a moment.' }]);
     } finally {
       setBusy(false);
     }

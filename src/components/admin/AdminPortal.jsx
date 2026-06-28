@@ -5,6 +5,7 @@ import { chatT, chatDir, formatChatDate } from '../../lib/chatI18n.js';
 import { LANGUAGES } from '../../constants.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
+import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -732,11 +733,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     patchSelected({ override: next, scores: scores ? { ...scores, overall: next } : scores });
   };
 
-  const sendConsultantNote = () => {
-    if (!msgInput.trim()) return;
-    patchSelected({ chat: [...chat, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }] });
-    showToast('Note sent to candidate session.');
-    setMsgInput('');
+  const sendConsultantNote = async () => {
+    const text = msgInput.trim();
+    if (!text || !selectedUserId || liveChatSending) return;
+    setLiveChatSending(true);
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ candidateId: selectedUserId, text }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not send note to candidate.');
+      setMsgInput('');
+      fetchLiveChatMessages();
+      fetchUsers();
+      showToast('Note delivered to the candidate in Live Chat.');
+    } catch (error) {
+      showToast(error.message || 'Could not send note to candidate.');
+    } finally {
+      setLiveChatSending(false);
+    }
   };
 
   const downloadOriginalFile = async (file) => {
@@ -1534,6 +1551,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                 </div>
 
+                <WhatsAppAiAdvisorToggle
+                  candidate={selUser}
+                  headers={adminHeaders}
+                  notify={showToast}
+                  onChanged={(candidate) => {
+                    setSelectedData((previous) => previous ? { ...previous, user: candidate } : previous);
+                    fetchUsers();
+                  }}
+                />
+
                 {/* Candidate documents */}
                 <div style={{ marginBottom: 22 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 10 }}>CANDIDATE DOCUMENTS</div>
@@ -1579,8 +1606,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 14, padding: '6px 6px 6px 14px', marginBottom: 0 }}>
                   <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} placeholder="Send a note to candidate's session..." rows="3"
                     style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#141b34', padding: '8px 0' }} />
-                  <button onClick={sendConsultantNote}
-                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
+                  <button onClick={sendConsultantNote} disabled={liveChatSending || !msgInput.trim()}
+                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0, opacity: liveChatSending || !msgInput.trim() ? 0.55 : 1, cursor: liveChatSending || !msgInput.trim() ? 'not-allowed' : 'pointer' }}>
                     <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" /></svg>
                   </button>
                 </div>
@@ -1791,23 +1818,39 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: 18,
                   }}
                 >
-                  {chat.map((m, i) => (
-                    <div key={i} style={{
-                      borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
-                      padding: '12px 16px', maxWidth: '88%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                      background: m.role === 'ai' ? '#f1eadd' : 'linear-gradient(135deg,#94b3fb,#b899fb)',
-                      flexShrink: 0,
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: m.role === 'ai' ? '#9098b5' : 'rgba(255,255,255,.75)', marginBottom: 4 }}>
-                        {m.role === 'ai' ? 'AI ADVISOR' : candidateName.toUpperCase()}
+                  {chat.map((m, i) => {
+                    const channel = m.channel || 'web';
+                    const isSystem = m.role === 'system';
+                    const isCandidate = m.role === 'user';
+                    const label = isSystem
+                      ? '[System]'
+                      : isCandidate
+                        ? `[Candidate] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`
+                        : `[AI Advisor] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`;
+                    return (
+                      <div key={i} style={{
+                        borderRadius: isSystem ? 999 : isCandidate ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
+                        padding: isSystem ? '8px 14px' : '12px 16px',
+                        maxWidth: isSystem ? '92%' : '88%',
+                        alignSelf: isSystem ? 'center' : isCandidate ? 'flex-end' : 'flex-start',
+                        background: isSystem ? '#fff8ea' : isCandidate ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#f1eadd',
+                        color: isSystem ? '#a16207' : isCandidate ? '#faf7f2' : '#33405e',
+                        flexShrink: 0,
+                      }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.4px', opacity: 0.72, marginBottom: isSystem ? 0 : 5 }}>
+                          {label}
+                        </div>
+                        {!isSystem && (
+                          <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                            {isCandidate && m.text.startsWith('Here is my CV')
+                              ? '📄 [CV submitted for analysis]'
+                              : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
+                          </div>
+                        )}
+                        {isSystem && <span style={{ fontSize: 12 }}>{m.text}</span>}
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.55, color: m.role === 'ai' ? '#33405e' : '#faf7f2', whiteSpace: 'pre-wrap' }}>
-                        {m.role === 'user' && m.text.startsWith('Here is my CV')
-                          ? '📄 [CV submitted for analysis]'
-                          : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div ref={chatLogEndRef} />
                 </div>
               )}
@@ -1845,7 +1888,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       </div>
                     )}
                     {liveChatMessages.map((m) => (
-                      m.senderRole === 'consultant' ? (
+                      ['consultant', 'admin'].includes(m.senderRole) ? (
                         <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
                           {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
