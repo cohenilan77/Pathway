@@ -444,17 +444,24 @@ export default function Community(props) {
   useEffect(() => {
     const fetchMembers = async () => {
       try {
+        console.log('[Community] Fetching members with token:', !!authToken);
         const res = await fetch('/api/community-members', {
           headers: {
             Authorization: `Bearer ${authToken}`,
           },
         });
+        console.log('[Community] API response status:', res.status);
         if (res.ok) {
           const data = await res.json();
+          console.log('[Community] Received members:', data.members?.length || 0);
           setMembers(data.members || []);
+        } else {
+          console.error('[Community] API error:', res.status, res.statusText);
+          const error = await res.json();
+          console.error('[Community] Error details:', error);
         }
       } catch (error) {
-        console.error('Error fetching community members:', error);
+        console.error('[Community] Fetch error:', error);
       }
     };
 

@@ -18,11 +18,15 @@ export default async function handler(req, res) {
     const actorCategory = actorData?.profile?.category || '';
     const actorGrade = actorData?.profile?.grade || '';
 
+    console.log(`[Community] User ${actor.uid} - Category: ${actorCategory}, Grade: ${actorGrade}`);
+
     // Get all candidates
     const ids = await getAllUserIds();
+    console.log(`[Community] Total user IDs: ${ids.length}`);
+
     const members = await Promise.all(
       ids.map(async (id) => {
-        if (id === actor.uid) return null; // Exclude self
+        if (id === actor.uid) return null;
 
         const user = await getUserById(id);
         if (!user || user.role !== ROLES.candidate) return null;
@@ -32,12 +36,17 @@ export default async function handler(req, res) {
         const grade = data?.profile?.grade || '';
         const programs = data?.programs || [];
 
-        // Filter ONLY by:
-        // 1. Same category (REQUIRED)
-        // 2. For undergrads, same grade (if undergrad)
-        // Don't filter by programs - show all in cohort
-        if (category !== actorCategory) return null;
-        if (actorCategory === 'Undergraduate' && grade !== actorGrade) return null;
+        // Log filtering decisions
+        if (category !== actorCategory) {
+          console.log(`[Community] ${id} excluded: category ${category} != ${actorCategory}`);
+          return null;
+        }
+        if (actorCategory === 'Undergraduate' && grade !== actorGrade) {
+          console.log(`[Community] ${id} excluded: grade ${grade} != ${actorGrade}`);
+          return null;
+        }
+
+        console.log(`[Community] ${id} included - ${user.email}`);
 
         // Extract name from email for display
         const name = user.displayName || user.email?.split('@')[0] || 'Member';
@@ -57,7 +66,9 @@ export default async function handler(req, res) {
       })
     );
 
-    res.status(200).json({ members: members.filter(Boolean) });
+    const filtered = members.filter(Boolean);
+    console.log(`[Community] Returning ${filtered.length} members to ${actor.uid}`);
+    res.status(200).json({ members: filtered });
   } catch (error) {
     console.error('Error fetching community members:', error);
     res.status(500).json({ error: error.message });
