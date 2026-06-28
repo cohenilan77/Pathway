@@ -394,17 +394,14 @@ export default function Community(props) {
     programs.forEach(program => {
       const programName = typeof program === 'string' ? program : (program.name || program.program || String(program));
 
-      // Find other users in this program
-      const usersInProgram = MOCK_USERS.filter(u => u.programs.includes(programName));
-
       generatedGroups.push({
         id: programName.toLowerCase().replace(/\s+/g, '-'),
         name: programName,
         program: programName,
         category,
-        memberCount: usersInProgram.length + 1, // +1 for current user
+        memberCount: MOCK_USERS.length + 1, // +1 for current user
         isMember: true,
-        eligibleUsers: usersInProgram,
+        eligibleUsers: MOCK_USERS, // Show all mock users in every group
       });
     });
 
@@ -414,30 +411,24 @@ export default function Community(props) {
     if (generatedGroups.length > 0) {
       const firstGroup = generatedGroups[0];
       setSelectedGroupId(firstGroup.id);
-      setMembers(firstGroup.eligibleUsers || []);
+      setMembers(MOCK_USERS);
       setMessages([
         { id: 1, userId: 'u1', text: `Welcome to ${firstGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
         { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
       ]);
     }
-  }, [profile?.category, programs, selectedGroupId === null]);
+  }, [profile?.category, programs]);
 
   // Update members and messages when selected group changes
   useEffect(() => {
-    if (selectedGroup && selectedGroup.eligibleUsers && selectedGroup.eligibleUsers.length > 0) {
-      setMembers(selectedGroup.eligibleUsers);
-      setMessages([
-        { id: 1, userId: 'u1', text: `Welcome to ${selectedGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
-        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
-      ]);
-    } else if (selectedGroup) {
-      setMembers(selectedGroup.eligibleUsers || []);
+    if (selectedGroup) {
+      setMembers(MOCK_USERS);
       setMessages([
         { id: 1, userId: 'u1', text: `Welcome to ${selectedGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
         { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
       ]);
     }
-  }, [selectedGroupId]);
+  }, [selectedGroupId, selectedGroup?.id]);
 
   const handleJoinGroup = async (groupId) => {
     // User is automatically member of program groups, so just show success
