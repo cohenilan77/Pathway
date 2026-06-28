@@ -10,13 +10,13 @@ function getInitials(firstName, lastName) {
   return `${(firstName || '').charAt(0).toUpperCase()}.${(lastName || '').charAt(0).toUpperCase()}`;
 }
 
-function getMemberDisplay(user, residency = 'Country not provided') {
+function getMemberDisplay(user, residency = '') {
   if (!user) return '';
   const names = (user.name || '').split(' ');
   const first = names[0] || '';
   const last = names[names.length - 1] || '';
   const initials = getInitials(first, last);
-  return `${initials} · ${residency || 'Country not provided'}`;
+  return `${initials}${residency ? ' · ' + residency : ''}`;
 }
 
 function Avatar({ user, size = 32 }) {
@@ -53,23 +53,25 @@ function Avatar({ user, size = 32 }) {
 function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGroup, loading }) {
   return (
     <div style={{
-      width: 160,
+      width: 180,
       background: '#faf7f2',
       borderRight: '1px solid #f1eadd',
       overflowY: 'auto',
       flexShrink: 0,
-      padding: '7px 0',
+      padding: '8px 0',
     }}>
       {groups.length > 0 && (
         <>
           <div style={{
-            fontSize: '8.5px',
+            fontSize: '10px',
             fontWeight: 800,
             letterSpacing: '.6px',
-            color: '#9098b5',
+            color: '#5b46e0',
             textTransform: 'uppercase',
-            padding: '9px 11px 3px',
-          }}>Programs</div>
+            padding: '12px 13px 6px',
+          }}>
+            📚 Programs
+          </div>
           {groups.map(group => (
             <button
               key={group.id}
@@ -77,19 +79,20 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
-                padding: '5px 9px 5px 11px',
+                gap: '7px',
+                padding: '8px 11px 8px 13px',
                 cursor: 'pointer',
-                borderLeft: selectedGroupId === group.id ? '2px solid #5b46e0' : '2px solid transparent',
-                background: selectedGroupId === group.id ? 'rgba(91,70,224,.06)' : 'transparent',
+                borderLeft: selectedGroupId === group.id ? '3px solid #5b46e0' : '3px solid transparent',
+                background: selectedGroupId === group.id ? 'rgba(91,70,224,.08)' : 'transparent',
                 width: '100%',
                 textAlign: 'left',
                 border: 'none',
                 fontFamily: 'inherit',
+                transition: 'all 0.15s ease',
               }}
             >
               <span style={{
-                fontSize: '10.5px',
+                fontSize: '12px',
                 fontWeight: selectedGroupId === group.id ? 800 : 600,
                 color: selectedGroupId === group.id ? '#5b46e0' : '#33405e',
                 flex: 1,
@@ -100,12 +103,12 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
                 {group.name}
               </span>
               <span style={{
-                background: '#5b46e0',
-                color: '#faf7f2',
-                fontSize: '8px',
-                fontWeight: 800,
+                background: selectedGroupId === group.id ? '#5b46e0' : '#e8ddd1',
+                color: selectedGroupId === group.id ? '#faf7f2' : '#33405e',
+                fontSize: '9px',
+                fontWeight: 700,
                 borderRadius: '999px',
-                padding: '1.5px 4.5px',
+                padding: '2px 6px',
                 flexShrink: 0,
               }}>
                 {group.memberCount}
@@ -116,7 +119,8 @@ function CommunityLeftPanel({ groups, selectedGroupId, onSelectGroup, onJoinGrou
       )}
 
       {groups.length === 0 && (
-        <div style={{ padding: '20px 12px', textAlign: 'center', fontSize: '12px', color: '#9098b5' }}>
+        <div style={{ padding: '30px 14px', textAlign: 'center', fontSize: '13px', color: '#9098b5', lineHeight: 1.6 }}>
+          <div style={{ fontSize: 24, marginBottom: '10px' }}>📚</div>
           Select programs in Settings to see communities.
         </div>
       )}
@@ -169,20 +173,20 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f6f1e8' }}>
       <div style={{
-        background: '#faf7f2',
+        background: 'linear-gradient(135deg, #faf7f2 0%, #f6f1e8 100%)',
         borderBottom: '1px solid #f1eadd',
-        padding: '12px 16px',
+        padding: '14px 18px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
       }}>
         <div>
-          <div style={{ fontSize: '12px', fontWeight: 800, color: '#141b34' }}>
-            {group.name}
+          <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>
+            📚 {group.name}
           </div>
-          <div style={{ fontSize: '10px', color: '#9098b5', fontWeight: 600, marginTop: '2px' }}>
-            {group.memberCount} members in cohort
+          <div style={{ fontSize: '11px', color: '#9098b5', fontWeight: 600, marginTop: '3px' }}>
+            {group.memberCount} members in your cohort
           </div>
         </div>
       </div>
@@ -250,10 +254,10 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
       <div style={{
         background: '#faf7f2',
         borderTop: '1px solid #f1eadd',
-        padding: '8px 10px',
+        padding: '10px 12px',
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '8px',
         flexShrink: 0,
       }}>
         <input
@@ -261,40 +265,44 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
           value={messageText}
           onChange={(e) => setMessageText(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-          placeholder={`Message # ${group.name}...`}
+          placeholder={`Message ${group.name}...`}
           style={{
             flex: 1,
             background: '#f6f1e8',
             border: '1px solid #f1eadd',
             borderRadius: '10px',
-            padding: '6px 10px',
-            fontSize: '11px',
+            padding: '9px 12px',
+            fontSize: '12px',
             color: '#141b34',
             fontFamily: 'inherit',
             outline: 'none',
+            transition: 'all 0.2s ease',
           }}
         />
         <button
           onClick={handleSend}
           disabled={loading || !messageText.trim()}
+          title="Send message"
           style={{
             background: '#5b46e0',
             border: 'none',
             borderRadius: '8px',
-            width: '27px',
-            height: '27px',
-            cursor: loading ? 'not-allowed' : 'pointer',
+            width: '32px',
+            height: '32px',
+            cursor: loading || !messageText.trim() ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: '#faf7f2',
             opacity: loading || !messageText.trim() ? 0.6 : 1,
             flexShrink: 0,
+            fontSize: '16px',
+            transition: 'all 0.2s ease',
           }}
+          onMouseEnter={(e) => !loading && messageText.trim() && (e.target.style.background = '#4a38c4')}
+          onMouseLeave={(e) => (e.target.style.background = '#5b46e0')}
         >
-          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7Z" />
-          </svg>
+          ✈️
         </button>
       </div>
     </div>
@@ -305,7 +313,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
   if (!group) {
     return (
       <div style={{
-        width: 200,
+        width: 220,
         background: '#faf7f2',
         borderLeft: '1px solid #f1eadd',
         overflowY: 'auto',
@@ -313,19 +321,20 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '12px',
+        fontSize: '14px',
         color: '#9098b5',
-        padding: '20px',
+        padding: '24px',
         textAlign: 'center',
+        lineHeight: 1.6,
       }}>
-        Select a group to see members
+        Select a program to see members
       </div>
     );
   }
 
   return (
     <div style={{
-      width: 200,
+      width: 220,
       background: '#faf7f2',
       borderLeft: '1px solid #f1eadd',
       overflowY: 'auto',
@@ -334,55 +343,60 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
       flexDirection: 'column',
     }}>
       <div style={{
-        padding: '12px 12px',
+        padding: '14px 14px',
         borderBottom: '1px solid #f1eadd',
         background: '#f6f1e8',
       }}>
         <div style={{
-          fontSize: '9px',
+          fontSize: '10px',
           fontWeight: 800,
-          letterSpacing: '.5px',
+          letterSpacing: '.6px',
           color: '#5b46e0',
           textTransform: 'uppercase',
         }}>
-          Cohort Members
+          👥 Cohort Members
         </div>
         <div style={{
-          fontSize: '11px',
-          fontWeight: 600,
+          fontSize: '13px',
+          fontWeight: 700,
           color: '#141b34',
-          marginTop: '3px',
+          marginTop: '4px',
         }}>
-          {group.memberCount} in group
+          {members.length} connected
         </div>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
         {members.length === 0 ? (
           <div style={{
-            padding: '20px 8px',
+            padding: '30px 12px',
             textAlign: 'center',
-            fontSize: '12px',
+            fontSize: '13px',
             color: '#9098b5',
-            lineHeight: 1.6,
+            lineHeight: 1.7,
           }}>
-            <div style={{ marginBottom: '8px' }}>Connect with real members in your cohort</div>
-            <div style={{ fontSize: '11px' }}>Members from your program will appear here</div>
+            <div style={{ fontSize: 28, marginBottom: '12px' }}>🤝</div>
+            <div style={{ fontWeight: 600, marginBottom: '6px' }}>No members yet</div>
+            <div style={{ fontSize: '12px', marginTop: '8px' }}>Members from your program will appear here</div>
           </div>
         ) : (
           members.map(member => (
             <div key={member.id} style={{
-              marginBottom: '8px',
+              marginBottom: '10px',
               background: '#fff',
               border: '1px solid #f1eadd',
-              borderRadius: '8px',
-              padding: '8px',
+              borderRadius: '10px',
+              padding: '10px',
+              transition: 'all 0.2s ease',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
-                <Avatar user={member} size={24} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                <Avatar user={member} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '9px', fontWeight: 700, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {getMemberDisplay(member, member.residency)}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#9098b5', marginTop: '2px' }}>
+                    {member.name}
                   </div>
                 </div>
               </div>
@@ -394,9 +408,9 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
                   background: '#5b46e0',
                   color: '#faf7f2',
                   border: 'none',
-                  borderRadius: '6px',
-                  padding: '6px 8px',
-                  fontSize: '8.5px',
+                  borderRadius: '7px',
+                  padding: '8px 10px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   cursor: loading ? 'not-allowed' : 'pointer',
                   opacity: loading ? 0.6 : 1,
@@ -406,7 +420,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
                 onMouseEnter={(e) => !loading && (e.target.style.background = '#4a38c4')}
                 onMouseLeave={(e) => !loading && (e.target.style.background = '#5b46e0')}
               >
-                Study partner →
+                💬 Study partner
               </button>
             </div>
           ))
