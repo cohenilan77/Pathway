@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
-// Mock users for community (in real version, fetch from API)
-const MOCK_USERS = [
-  { id: 'u1', name: 'John Smith', residency: 'USA', programs: ['MBA', 'MS Finance'] },
-  { id: 'u2', name: 'Sarah Chen', residency: 'Taiwan', programs: ['MBA', 'MS CS'] },
-  { id: 'u3', name: 'Alex Rodriguez', residency: 'Spain', programs: ['MS CS', 'MS AI'] },
-  { id: 'u4', name: 'Maria Garcia', residency: 'Mexico', programs: ['MBA'] },
-  { id: 'u5', name: 'James Brown', residency: 'UK', programs: ['MS Finance', 'MBA'] },
-  { id: 'u6', name: 'Li Wei', residency: 'China', programs: ['MS CS', 'MS AI'] },
+// Real community members - fetched from database (placeholder for now)
+const COMMUNITY_MEMBERS = [
+  // Members will be loaded from real user data
+  // For now, showing only real connections from your cohort
 ];
 
 function getInitials(firstName, lastName) {
@@ -144,33 +140,49 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#eef1fc',
+        background: '#f6f1e8',
         flexDirection: 'column',
-        gap: '10px',
+        gap: '15px',
       }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Select a group</div>
-        <div style={{ fontSize: '12px', color: '#9098b5' }}>Choose a group to start chatting</div>
+        <div style={{
+          width: 60,
+          height: 60,
+          borderRadius: '50%',
+          background: 'linear-gradient(140deg, #94b3fb, #b899fb)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 28,
+          fontWeight: 800,
+          color: '#faf7f2',
+        }}>
+          👥
+        </div>
+        <div>
+          <div style={{ fontSize: '15px', fontWeight: 800, color: '#141b34', textAlign: 'center' }}>Select a program</div>
+          <div style={{ fontSize: '12px', color: '#9098b5', textAlign: 'center', marginTop: 4 }}>Choose a program from the left to connect</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#eef1fc' }}>
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f6f1e8' }}>
       <div style={{
         background: '#faf7f2',
         borderBottom: '1px solid #f1eadd',
-        padding: '8px 12px',
+        padding: '12px 16px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         flexShrink: 0,
       }}>
         <div>
-          <div style={{ fontSize: '11.5px', fontWeight: 800, color: '#141b34' }}>
-            # {group.name}
+          <div style={{ fontSize: '12px', fontWeight: 800, color: '#141b34' }}>
+            {group.name}
           </div>
-          <div style={{ fontSize: '9.5px', color: '#9098b5', fontWeight: 600, marginTop: '2px' }}>
-            {group.memberCount} members
+          <div style={{ fontSize: '10px', color: '#9098b5', fontWeight: 600, marginTop: '2px' }}>
+            {group.memberCount} members in cohort
           </div>
         </div>
       </div>
@@ -189,15 +201,30 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
           </div>
         ) : (
           messages.map(msg => {
-            const user = MOCK_USERS.find(u => u.id === msg.userId);
-            const displayName = user ? user.name.split(' ')[0] : 'Anon';
-            const displayUser = user || { id: msg.userId, name: displayName };
+            const isSystemMessage = msg.userId === 'system';
+            if (isSystemMessage) {
+              return (
+                <div key={msg.id} style={{
+                  padding: '8px 11px',
+                  background: '#f0ebdf',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  color: '#5b46e0',
+                  fontWeight: 600,
+                  lineHeight: 1.5,
+                  textAlign: 'center',
+                  margin: '4px 0',
+                }}>
+                  {msg.text}
+                </div>
+              );
+            }
             return (
               <div key={msg.id} style={{ display: 'flex', gap: '7px' }}>
-                <Avatar user={displayUser} size={22} />
+                <Avatar user={{ id: msg.userId, name: 'Member' }} size={22} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '2px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#141b34' }}>{displayName}</span>
+                    <span style={{ fontSize: '9.5px', fontWeight: 800, color: '#141b34' }}>Member</span>
                     <span style={{ fontSize: '8.5px', color: '#b2bad2' }}>{new Date(msg.createdAt).toLocaleTimeString()}</span>
                   </div>
                   <div style={{
@@ -278,7 +305,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
   if (!group) {
     return (
       <div style={{
-        width: 160,
+        width: 200,
         background: '#faf7f2',
         borderLeft: '1px solid #f1eadd',
         overflowY: 'auto',
@@ -288,72 +315,103 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
         justifyContent: 'center',
         fontSize: '12px',
         color: '#9098b5',
+        padding: '20px',
+        textAlign: 'center',
       }}>
-        Select a group
+        Select a group to see members
       </div>
     );
   }
 
   return (
     <div style={{
-      width: 160,
+      width: 200,
       background: '#faf7f2',
       borderLeft: '1px solid #f1eadd',
       overflowY: 'auto',
       flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
     }}>
-      <div style={{ padding: '8px 8px 5px', borderBottom: '1px solid #f1eadd' }}>
+      <div style={{
+        padding: '12px 12px',
+        borderBottom: '1px solid #f1eadd',
+        background: '#f6f1e8',
+      }}>
         <div style={{
-          fontSize: '8.5px',
+          fontSize: '9px',
           fontWeight: 800,
-          letterSpacing: '.6px',
-          color: '#9098b5',
+          letterSpacing: '.5px',
+          color: '#5b46e0',
           textTransform: 'uppercase',
         }}>
-          Members — {group.memberCount}
+          Cohort Members
+        </div>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 600,
+          color: '#141b34',
+          marginTop: '3px',
+        }}>
+          {group.memberCount} in group
         </div>
       </div>
 
-      {members.length === 0 ? (
-        <div style={{ padding: '20px 12px', textAlign: 'center', fontSize: '12px', color: '#9098b5' }}>
-          No members yet
-        </div>
-      ) : (
-        members.map(member => (
-          <div key={member.id} style={{
-            margin: '6px 6px 0',
-            background: '#f6f1e8',
-            border: '1px solid #f1eadd',
-            borderRadius: '11px',
-            padding: '8px',
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px' }}>
+        {members.length === 0 ? (
+          <div style={{
+            padding: '20px 8px',
+            textAlign: 'center',
+            fontSize: '12px',
+            color: '#9098b5',
+            lineHeight: 1.6,
           }}>
-            <Avatar user={member} size={22} />
-            <div style={{ marginTop: '5px', fontSize: '9px', color: '#9098b5', fontWeight: 700 }}>
-              {getMemberDisplay(member, member.residency)}
-            </div>
-            <button
-              onClick={() => onOpenDM(member.id)}
-              disabled={loading}
-              style={{
-                marginTop: '6px',
-                width: '100%',
-                background: '#5b46e0',
-                color: '#faf7f2',
-                border: 'none',
-                borderRadius: '7px',
-                padding: '5px',
-                fontSize: '9.5px',
-                fontWeight: 800,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-                fontFamily: 'inherit',
-              }}
-            >
-              Message →
-            </button>
+            <div style={{ marginBottom: '8px' }}>Connect with real members in your cohort</div>
+            <div style={{ fontSize: '11px' }}>Members from your program will appear here</div>
           </div>
-        ))
-      )}
+        ) : (
+          members.map(member => (
+            <div key={member.id} style={{
+              marginBottom: '8px',
+              background: '#fff',
+              border: '1px solid #f1eadd',
+              borderRadius: '8px',
+              padding: '8px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '5px' }}>
+                <Avatar user={member} size={24} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '9px', fontWeight: 700, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {getMemberDisplay(member, member.residency)}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => onOpenDM(member.id)}
+                disabled={loading}
+                style={{
+                  width: '100%',
+                  background: '#5b46e0',
+                  color: '#faf7f2',
+                  border: 'none',
+                  borderRadius: '6px',
+                  padding: '6px 8px',
+                  fontSize: '8.5px',
+                  fontWeight: 700,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  opacity: loading ? 0.6 : 1,
+                  fontFamily: 'inherit',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => !loading && (e.target.style.background = '#4a38c4')}
+                onMouseLeave={(e) => !loading && (e.target.style.background = '#5b46e0')}
+              >
+                Study partner →
+              </button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
@@ -399,9 +457,9 @@ export default function Community(props) {
         name: programName,
         program: programName,
         category,
-        memberCount: MOCK_USERS.length + 1, // +1 for current user
+        memberCount: 1, // Just current user until real members load
         isMember: true,
-        eligibleUsers: MOCK_USERS, // Show all mock users in every group
+        eligibleUsers: [], // Real members will be fetched from API
       });
     });
 
@@ -411,10 +469,9 @@ export default function Community(props) {
     if (generatedGroups.length > 0) {
       const firstGroup = generatedGroups[0];
       setSelectedGroupId(firstGroup.id);
-      setMembers(MOCK_USERS);
+      setMembers([]);
       setMessages([
-        { id: 1, userId: 'u1', text: `Welcome to ${firstGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
-        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
+        { id: 1, userId: 'system', text: `Welcome to ${firstGroup.name}! 👋 Connect with other members in this program by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
       ]);
     }
   }, [profile?.category, programs]);
@@ -422,10 +479,9 @@ export default function Community(props) {
   // Update members and messages when selected group changes
   useEffect(() => {
     if (selectedGroup) {
-      setMembers(MOCK_USERS);
+      setMembers(selectedGroup.eligibleUsers || []);
       setMessages([
-        { id: 1, userId: 'u1', text: `Welcome to ${selectedGroup.name}! Great to connect with everyone here.`, createdAt: Date.now() - 300000 },
-        { id: 2, userId: 'u3', text: 'Hi all! Looking forward to collaborating with this group.', createdAt: Date.now() - 120000 },
+        { id: 1, userId: 'system', text: `Welcome to ${selectedGroup.name}! 👋 Connect with other members in this program by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
       ]);
     }
   }, [selectedGroupId, selectedGroup?.id]);
