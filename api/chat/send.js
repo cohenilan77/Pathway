@@ -51,6 +51,13 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
+
+  const { candidateId, text } = req.body || {};
+  if (!candidateId || !String(text || '').trim()) {
+    res.status(400).json({ error: 'candidateId and text are required.' });
+    return;
+  }
+
   const context = await authorizeCandidateChat(req, candidateId);
   if (!context.actor) {
     res.status(context.status).json({ error: context.error });
