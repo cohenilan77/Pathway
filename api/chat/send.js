@@ -24,15 +24,7 @@ async function notifyConsultantOfFirstMessage(candidate, text) {
   if (!consultant?.email) return;
 
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    console.log('[Live Chat alert - RESEND_API_KEY not set]', {
-      candidate: candidate.name,
-      candidateId: candidate.id,
-      consultant: consultant.email,
-      text,
-    });
-    return;
-  }
+  if (!apiKey) return;
 
   try {
     const resend = new Resend(apiKey);
