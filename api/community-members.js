@@ -1,6 +1,19 @@
-import { getAllUserIds, getUserById, ROLES } from '../lib/db.js';
+import { getUserIdByToken, getAllUserIds, getUserById, ROLES } from '../lib/db.js';
+
+function toInitials(name = '') {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '';
+  const last = parts[parts.length - 1]?.[0] ?? '';
+  return first && last ? `${first.toUpperCase()}. ${last.toUpperCase()}.` : '?. ?.';
+}
 
 export default async function handler(req, res) {
+  const match = (req.headers.authorization || '').match(/^Bearer (.+)$/i);
+  if (!match) return res.status(401).json({ error: 'Unauthorized' });
+
+  const requestingUserId = await getUserIdByToken(match[1]);
+  if (!requestingUserId) return res.status(401).json({ error: 'Invalid session' });
+
   try {
     const ids = await getAllUserIds();
     const members = [];
@@ -11,15 +24,13 @@ export default async function handler(req, res) {
 
       members.push({
         id: user.uid || user.id,
-        name: user.name || 'Member',
-        email: user.email || '',
+        display: `${toInitials(user.name)} · ${user.residency || 'Unknown'}`,
         residency: user.residency || 'Unknown',
       });
     }
 
     res.json({ members });
   } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
   }
 }

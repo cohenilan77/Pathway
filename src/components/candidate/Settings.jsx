@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import WhatsAppOptIn from './WhatsAppOptIn';
 
 const PLAN_DETAILS = [
   {
@@ -313,6 +314,9 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
             <Toggle on={notifDigest} onToggle={() => setNotifDigest(v => !v)} />
           </div>
         </div>
+
+        {/* WhatsApp Messaging */}
+        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} disabled={false} />}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (

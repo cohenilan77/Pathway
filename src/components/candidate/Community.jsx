@@ -445,10 +445,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
                 <Avatar user={member} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {getMemberDisplay(member, member.residency)}
-                  </div>
-                  <div style={{ fontSize: '10px', color: '#9098b5', marginTop: '2px' }}>
-                    {member.name}
+                    {member.display}
                   </div>
                 </div>
               </div>
