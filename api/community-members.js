@@ -34,14 +34,17 @@ export default async function handler(req, res) {
         const programs = data?.programs || [];
 
         // Filter members by:
-        // 1. Same category
-        // 2. For undergrads, same grade
-        // 3. Have at least one program in common
+        // 1. Same category (REQUIRED)
+        // 2. For undergrads, same grade (if undergrad)
         if (category !== actorCategory) return null;
         if (actorCategory === 'Undergraduate' && grade !== actorGrade) return null;
 
-        const hasCommonProgram = programs.some(p => actorPrograms.includes(p));
-        if (actorPrograms.length > 0 && !hasCommonProgram) return null;
+        // If user has programs, only show members with shared programs
+        // If user has no programs, show all in same category
+        if (actorPrograms.length > 0) {
+          const hasCommonProgram = programs.some(p => actorPrograms.includes(p));
+          if (!hasCommonProgram) return null;
+        }
 
         // Extract name from email for display
         const name = user.displayName || user.email?.split('@')[0] || 'Member';

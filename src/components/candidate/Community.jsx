@@ -463,52 +463,52 @@ export default function Community(props) {
     }
   }, [authToken]);
 
-  // Generate groups ONLY from user's selected programs
+  // Generate groups from user's selected programs, or show "All Members" if none selected
   useEffect(() => {
     const category = profile?.category;
 
     // Must have category
     if (!category) {
       setGroups([]);
-      setMembers([]);
-      setMessages([]);
-      return;
-    }
-
-    // Must have programs
-    if (!programs || programs.length === 0) {
-      setGroups([]);
-      setMembers([]);
-      setMessages([]);
       return;
     }
 
     const generatedGroups = [];
 
-    // Create ONE group per program user selected
-    programs.forEach(program => {
-      const programName = typeof program === 'string' ? program : (program.name || program.program || String(program));
+    // If user has programs, create groups for each
+    if (programs && programs.length > 0) {
+      programs.forEach(program => {
+        const programName = typeof program === 'string' ? program : (program.name || program.program || String(program));
 
-      generatedGroups.push({
-        id: programName.toLowerCase().replace(/\s+/g, '-'),
-        name: programName,
-        program: programName,
-        category,
-        memberCount: 1, // Just current user until real members load
-        isMember: true,
-        eligibleUsers: [], // Real members will be fetched from API
+        generatedGroups.push({
+          id: programName.toLowerCase().replace(/\s+/g, '-'),
+          name: programName,
+          program: programName,
+          category,
+          memberCount: 1,
+          isMember: true,
+        });
       });
-    });
+    } else {
+      // No programs selected - show general cohort group
+      generatedGroups.push({
+        id: 'cohort',
+        name: `${category} Cohort`,
+        program: null,
+        category,
+        memberCount: 1,
+        isMember: true,
+      });
+    }
 
     setGroups(generatedGroups);
 
-    // Auto-select first group and populate its data
+    // Auto-select first group
     if (generatedGroups.length > 0) {
       const firstGroup = generatedGroups[0];
       setSelectedGroupId(firstGroup.id);
-      setMembers([]);
       setMessages([
-        { id: 1, userId: 'system', text: `Welcome to ${firstGroup.name}! 👋 Connect with other members in this program by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
+        { id: 1, userId: 'system', text: `Welcome to ${firstGroup.name}! 👋 Connect with other members by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
       ]);
     }
   }, [profile?.category, programs]);
