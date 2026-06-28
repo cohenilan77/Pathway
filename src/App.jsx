@@ -618,6 +618,11 @@ export default function App() {
     return data.user;
   }, [auth?.token, setAuth]);
 
+  const updateAuthUser = useCallback((patch) => {
+    if (!auth?.token || !patch) return;
+    setAuth({ token: auth.token, user: { ...(auth.user || {}), ...patch } });
+  }, [auth, setAuth]);
+
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
@@ -921,7 +926,7 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
-    requiresOAuthDetails, saveUserDetails,
+    requiresOAuthDetails, saveUserDetails, updateAuthUser,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
