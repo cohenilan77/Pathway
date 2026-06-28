@@ -73,7 +73,22 @@ export default function WhatsAppOptIn({ user, onSave, disabled = false }) {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('session_token');
+      const authData = localStorage.getItem('pathway_auth');
+      let token = '';
+      if (authData) {
+        try {
+          const parsed = JSON.parse(authData);
+          token = parsed.token || '';
+        } catch (err) {
+          console.error('Failed to parse auth:', err);
+        }
+      }
+
+      if (!token) {
+        setError('Session expired. Please log in again.');
+        return;
+      }
+
       const response = await fetch('/api/candidate/whatsapp-settings', {
         method: 'POST',
         headers: {
