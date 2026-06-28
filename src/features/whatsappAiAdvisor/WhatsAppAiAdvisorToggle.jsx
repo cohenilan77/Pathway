@@ -4,11 +4,11 @@ function candidateWhatsAppNumber(candidate) {
   return String(candidate?.whatsappNumber || candidate?.phone || '').trim();
 }
 
-function activationDisabledReason(candidate, phone, consentConfirmed) {
-  if (!String(phone || '').trim()) return 'Enter the candidate WhatsApp number below';
-  if (!consentConfirmed) return 'Confirm the candidate agreed to receive WhatsApp messages';
-  if (candidate?.whatsappOptOut === true) return 'Candidate opted out of WhatsApp';
-  if (candidate?.whatsappAiAdvisorTemplateConfigured === false) return 'WhatsApp advisor kickoff template is not configured';
+function disabledReason(candidate) {
+  if (!candidateWhatsAppNumber(candidate)) return 'Candidate has no saved WhatsApp number';
+  if (candidate.whatsappOptIn !== true) return 'Candidate has not opted in to WhatsApp';
+  if (candidate.whatsappOptOut === true) return 'Candidate opted out of WhatsApp';
+  if (candidate.whatsappAiAdvisorTemplateConfigured === false) return 'WhatsApp advisor kickoff template is not configured';
   return '';
 }
 
@@ -18,22 +18,47 @@ function formatDate(value) {
 
 export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged, notify }) {
   const [busy, setBusy] = useState(false);
-  const [phone, setPhone] = useState(() => candidateWhatsAppNumber(candidate));
-  const [consentConfirmed, setConsentConfirmed] = useState(() => candidate?.whatsappOptIn === true);
+  const [refreshing, setRefreshing] = useState(false);
+  const reason = useMemo(() => disabledReason(candidate), [candidate]);
   const active = !!candidate?.whatsappAiAdvisorSessionActive;
-  const reason = useMemo(
-    () => activationDisabledReason(candidate, phone, consentConfirmed),
-    [candidate, phone, consentConfirmed]
-  );
-  const blocked = busy || (!active && !!reason);
+  const blocked = busy || refreshing || (!active && !!reason);
+
+  const refreshCandidate = async ({ quiet = false } = {}) => {
+    if (!candidate?.id || refreshing) return;
+    setRefreshing(true);
+    try {
+      const response = await fetch(
+        `/api/admin-session?userId=${encodeURIComponent(candidate.id)}`,
+        { headers }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.user) throw new Error(data.error || 'Could not refresh candidate settings.');
+      onChanged?.(data.user);
+      if (!quiet) notify?.('Candidate WhatsApp settings refreshed.');
+    } catch (error) {
+      if (!quiet) notify?.(error.message || 'Could not refresh candidate settings.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    setPhone(candidateWhatsAppNumber(candidate));
-    setConsentConfirmed(candidate?.whatsappOptIn === true);
-  }, [candidate?.id, candidate?.whatsappNumber, candidate?.phone, candidate?.whatsappOptIn]);
+    let cancelled = false;
+    if (!candidate?.id) return undefined;
+    setRefreshing(true);
+    fetch(`/api/admin-session?userId=${encodeURIComponent(candidate.id)}`, { headers })
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.user) throw new Error(data.error || 'Could not refresh candidate settings.');
+        if (!cancelled) onChanged?.(data.user);
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setRefreshing(false); });
+    return () => { cancelled = true; };
+  }, [candidate?.id]);
 
   const setActive = async (nextActive) => {
-    if (!candidate?.id || busy || (nextActive && reason)) return;
+    if (!candidate?.id || busy || refreshing || (nextActive && reason)) return;
     setBusy(true);
     try {
       const response = await fetch(
@@ -41,12 +66,7 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...headers },
-          body: JSON.stringify({
-            active: nextActive,
-            candidateId: candidate.id,
-            whatsappNumber: phone.trim(),
-            whatsappOptIn: consentConfirmed,
-          }),
+          body: JSON.stringify({ active: nextActive, candidateId: candidate.id }),
         }
       );
       const data = await response.json().catch(() => ({}));
@@ -112,58 +132,30 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
             fontSize: 9,
             fontWeight: 900,
           }}>
-            {busy ? '…' : active ? 'ON' : 'OFF'}
+            {busy || refreshing ? '…' : active ? 'ON' : 'OFF'}
           </span>
         </button>
       </div>
-
-      {!active && (
-        <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: '#f6f1e8' }}>
-          <label htmlFor={`whatsapp-number-${candidate?.id || 'candidate'}`} style={{ display: 'block', fontSize: 11.5, fontWeight: 800, color: '#33405e', marginBottom: 6 }}>
-            Candidate WhatsApp number
-          </label>
-          <input
-            id={`whatsapp-number-${candidate?.id || 'candidate'}`}
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
-            placeholder="+972501234567"
-            inputMode="tel"
-            autoComplete="tel"
-            disabled={busy}
-            style={{
-              boxSizing: 'border-box',
-              width: '100%',
-              border: '1.5px solid #d8dfeb',
-              borderRadius: 10,
-              padding: '10px 12px',
-              fontSize: 13,
-              fontFamily: 'inherit',
-              background: '#fff',
-              color: '#141b34',
-              outline: 'none',
-            }}
-          />
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 10, fontSize: 11.5, lineHeight: 1.4, color: '#4d5775', cursor: busy ? 'default' : 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={consentConfirmed}
-              onChange={(event) => setConsentConfirmed(event.target.checked)}
-              disabled={busy}
-              style={{ marginTop: 2 }}
-            />
-            <span>Candidate explicitly agreed to receive Pathway WhatsApp messages.</span>
-          </label>
+      {reason && !active && (
+        <div style={{ marginTop: 9, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <span style={{ fontSize: 11.5, color: '#e0457a' }}>{reason}</span>
+          <button
+            type="button"
+            onClick={() => refreshCandidate()}
+            disabled={refreshing}
+            style={{ border: '1px solid #d8dfeb', borderRadius: 8, padding: '5px 8px', background: '#fff', color: '#5b46e0', fontSize: 10.5, fontWeight: 800, cursor: refreshing ? 'wait' : 'pointer' }}
+          >
+            {refreshing ? 'Refreshing…' : 'Refresh settings'}
+          </button>
         </div>
       )}
-
-      {reason && !active && <div style={{ marginTop: 9, fontSize: 11.5, color: '#e0457a' }}>{reason}</div>}
       <div style={{ marginTop: 9, fontSize: 11.5, color: '#6b7392' }}>
         {active
           ? 'Candidate replies are handled by the AI Advisor on WhatsApp. Switch OFF to stop WhatsApp AI replies.'
-          : 'Enter the number with country code, confirm consent, then switch ON to send the approved kickoff template.'}
+          : 'Switch ON to send the approved kickoff template and begin after the candidate replies.'}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 12, fontSize: 11.5, color: '#6b7392' }}>
-        <span>WhatsApp: {candidateWhatsAppNumber(candidate) || phone || '—'}</span>
+        <span>WhatsApp: {candidateWhatsAppNumber(candidate) || '—'}</span>
         <span>Last inbound: {formatDate(candidate?.whatsappLastInboundAt)}</span>
         <span>Last template: {formatDate(candidate?.whatsappAiAdvisorLastTemplateSentAt)}</span>
         <span>Started at: {formatDate(candidate?.whatsappAiAdvisorSessionStartedAt)}</span>
