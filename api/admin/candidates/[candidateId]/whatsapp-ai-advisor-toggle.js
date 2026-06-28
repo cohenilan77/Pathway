@@ -1,5 +1,11 @@
+import { isValidPhoneNumber, parsePhoneNumber } from 'libphonenumber-js';
 import { canAccessCandidate, getActor } from '../../../../lib/admin.js';
-import { getUserById, publicUser } from '../../../../lib/db.js';
+import {
+  getUserById,
+  publicUser,
+  setCandidatePhoneIndex,
+  updateUserDetails,
+} from '../../../../lib/db.js';
 import { pause, start } from '../../../../lib/whatsappAiAdvisor/service.js';
 
 function candidateIdFromRequest(req) {
@@ -7,6 +13,15 @@ function candidateIdFromRequest(req) {
   const pathname = new URL(req.url, 'http://pathway.local').pathname;
   const match = pathname.match(/\/api\/admin\/candidates\/([^/]+)\/whatsapp-ai-advisor-toggle\/?$/);
   return match ? decodeURIComponent(match[1]) : '';
+}
+
+function normalizeWhatsAppNumber(value) {
+  const raw = String(value || '').trim();
+  if (!raw) throw new Error('Enter the candidate WhatsApp number.');
+  if (!raw.startsWith('+') || !isValidPhoneNumber(raw)) {
+    throw new Error('Enter a valid WhatsApp number with country code, for example +972501234567.');
+  }
+  return parsePhoneNumber(raw).number;
 }
 
 export default async function handler(req, res) {
@@ -22,6 +37,23 @@ export default async function handler(req, res) {
   if (typeof req.body?.active !== 'boolean') return res.status(400).json({ error: 'active must be true or false.' });
 
   try {
+    if (req.body.active) {
+      const whatsappNumber = normalizeWhatsAppNumber(
+        req.body.whatsappNumber || candidate.whatsappNumber || candidate.phone
+      );
+      const consentConfirmed = candidate.whatsappOptIn === true || req.body.whatsappOptIn === true;
+      if (!consentConfirmed) {
+        throw new Error('Confirm that the candidate agreed to receive WhatsApp messages.');
+      }
+
+      await updateUserDetails(candidateId, {
+        whatsappNumber,
+        whatsappOptIn: true,
+        whatsappOptInTimestamp: candidate.whatsappOptInTimestamp || Date.now(),
+      });
+      await setCandidatePhoneIndex(candidateId, whatsappNumber);
+    }
+
     const updated = req.body.active
       ? await start(candidateId, actor)
       : await pause(candidateId, actor);
