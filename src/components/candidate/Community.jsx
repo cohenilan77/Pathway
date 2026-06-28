@@ -181,9 +181,12 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, loading, curre
   const [messageText, setMessageText] = useState('');
 
   const handleSend = async () => {
-    if (!messageText.trim()) return;
-    await onSendMessage(groupId, messageText);
+    const text = messageText.trim();
+    if (!text) return;
+
+    console.log('[SEND] Sending message to', groupId, ':', text);
     setMessageText('');
+    await onSendMessage(groupId, text);
   };
 
   if (!group) {
@@ -587,30 +590,45 @@ export default function Community(props) {
   };
 
   const handleSendMessage = async (groupId, text) => {
-    setLoading(true);
+    console.log('[SEND-MSG] Start', { groupId, textLen: text.length, userId: authUser?.id });
+
     try {
+      const payload = {
+        groupId: String(groupId),
+        userId: String(authUser?.id || 'unknown'),
+        userName: authUser?.name || profile?.name || 'You',
+        text: String(text),
+      };
+
+      console.log('[SEND-MSG] Payload:', payload);
+
       const res = await fetch('/api/community-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          groupId,
-          userId: authUser?.id,
-          userName: authUser?.name || profile?.name || 'You',
-          text,
-        }),
+        body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        showToast('Message sent!', 'success');
-        // Refetch all messages to sync with other users
-        await fetchMessages(groupId);
-      } else {
-        showToast('Error sending message', 'error');
+      console.log('[SEND-MSG] Response:', res.status);
+
+      if (!res.ok) {
+        const error = await res.text();
+        console.error('[SEND-MSG] Error response:', error);
+        showToast('Failed to send', 'error');
+        return;
       }
+
+      const data = await res.json();
+      console.log('[SEND-MSG] Saved:', data.id);
+
+      // Add to local messages immediately
+      setMessages([...messages, data]);
+      showToast('✓ Message sent', 'success');
+
+      // Also refetch to ensure sync
+      await fetchMessages(groupId);
     } catch (error) {
+      console.error('[SEND-MSG] Exception:', error);
       showToast(`Error: ${error.message}`, 'error');
-    } finally {
-      setLoading(false);
     }
   };
 
