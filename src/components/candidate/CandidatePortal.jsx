@@ -63,16 +63,20 @@ ICON_BY_KEY.essays = ICON_BY_KEY.documents;
 ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
 
 function navFromConfig(config, hasChatAccess) {
-  if (Array.isArray(config?.nav) && config.nav.length) {
-    return config.nav.map(([key, label, iconKey]) => ({
+  let items = Array.isArray(config?.nav) && config.nav.length
+    ? config.nav.map(([key, label, iconKey]) => ({
       key,
       label,
       icon: ICON_BY_KEY[iconKey] || ICON_BY_KEY[key] || ICON_BY_KEY.dashboard,
-    }));
+    }))
+    : [...NAV_ITEMS];
+
+  if (hasChatAccess && !items.some(item => item.key === 'chat')) {
+    const settingsIndex = items.findIndex(item => item.key === 'settings');
+    items = [...items];
+    items.splice(settingsIndex >= 0 ? settingsIndex : items.length, 0, CHAT_NAV_ITEM);
   }
-  return hasChatAccess
-    ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
-    : NAV_ITEMS;
+  return items;
 }
 
 function navStyle(active) {
@@ -124,14 +128,6 @@ function buildCandidateAlerts({ documents = [], chat = [], tasks = [], completed
       title: 'Open application tasks',
       message: `${remainingTasks} task${remainingTasks === 1 ? '' : 's'} still need attention.`,
       priority: 'medium',
-    });
-  }
-  if (plan !== 'ai_strategy') {
-    alerts.push({
-      id: `plan-upgrade-${plan || 'free'}`,
-      title: 'Consultant chat locked',
-      message: 'Upgrade to AI + Strategy to message a human consultant.',
-      priority: 'low',
     });
   }
   return alerts;
@@ -903,7 +899,7 @@ export default function CandidatePortal(props) {
   const isUndergrad = trackConfig.key === 'undergraduate';
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
-  const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
+  const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
