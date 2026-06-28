@@ -87,6 +87,20 @@ const balancedPositionCounts = balanced.reduce((counts, item) => {
 assert.deepEqual(balancedPositionCounts, [5, 5, 5, 5]);
 assert.deepEqual(balanced.map((item) => item.options[item.correctIndex]), originalCorrectAnswers);
 
+const repeatedStemPayload = {
+  questions: satPayload.questions.map((item, index) => ({
+    ...item,
+    prompt: index < 2 ? 'Which choice best states the main idea of the text?' : item.prompt,
+  })),
+};
+assert.equal(validateSimulation(repeatedStemPayload, 'sat', TEST_BLUEPRINTS.sat).questions.length, 20);
+const duplicateQuestionPayload = {
+  questions: repeatedStemPayload.questions.map((item, index) => (index === 1
+    ? { ...item, stimulus: repeatedStemPayload.questions[0].stimulus }
+    : item)),
+};
+assert.throws(() => validateSimulation(duplicateQuestionPayload, 'sat', TEST_BLUEPRINTS.sat), /stimulus and question combination/);
+
 assert.throws(() => validateSimulation({ questions: satPayload.questions.slice(0, 19) }, 'sat', TEST_BLUEPRINTS.sat), /exactly 20/);
 
 console.log('Test simulation verification passed.');

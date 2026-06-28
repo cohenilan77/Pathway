@@ -106,8 +106,9 @@ export function validateSimulation(payload, testType, blueprint = TEST_BLUEPRINT
   if (answerPositionCounts.some((count) => count < 3 || count > 7)) {
     throw new Error('Correct answer positions must be distributed across all four choices.');
   }
-  if (new Set(questions.map((question) => question.prompt.toLowerCase())).size !== QUESTION_COUNT) {
-    throw new Error('Every question prompt must be unique.');
+  const questionFingerprints = questions.map((question) => `${question.stimulus}\n${question.prompt}`.toLowerCase().replace(/\s+/g, ' ').trim());
+  if (new Set(questionFingerprints).size !== QUESTION_COUNT) {
+    throw new Error('Every stimulus and question combination must be unique.');
   }
   if (questions.some((question) => question.section !== 'Math' && !question.stimulus)) {
     throw new Error('Every verbal question must include its original passage or editing context.');
