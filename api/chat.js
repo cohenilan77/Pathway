@@ -939,10 +939,12 @@ export default async function handler(req, res) {
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
     const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
-    let anthropicMessages = messages.map(m => ({
-      role: m.role === 'ai' ? 'assistant' : 'user',
-      content: m.text,
-    }));
+    let anthropicMessages = messages
+      .filter((message) => message?.role !== 'system' && message?.text)
+      .map((message) => ({
+        role: message.role === 'ai' ? 'assistant' : 'user',
+        content: message.text,
+      }));
 
     // Headroom is OFF by default and any failure here (proxy down, SDK missing,
     // timeout) falls back to the original system prompt/chat history untouched —
