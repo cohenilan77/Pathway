@@ -570,14 +570,12 @@ export default function Community(props) {
     }
   }, [profile?.category, programs, members.length, selectedGroupId]);
 
-  // Update messages when selected group changes
+  // Fetch messages when selected group changes
   useEffect(() => {
-    if (selectedGroup) {
-      setMessages([
-        { id: 1, userId: 'system', text: `Welcome to ${selectedGroup.name}! 👋 Connect with other members in this program by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
-      ]);
+    if (selectedGroupId) {
+      fetchMessages(selectedGroupId);
     }
-  }, [selectedGroupId, selectedGroup?.id]);
+  }, [selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
     // User is automatically member of program groups, so just show success
@@ -591,20 +589,40 @@ export default function Community(props) {
   const handleSendMessage = async (groupId, text) => {
     setLoading(true);
     try {
-      // For now, use mock data - in production, this would call an API
-      const newMessage = {
-        id: Date.now(),
-        userId: authUser?.id || 'current-user',
-        text: text,
-        createdAt: Date.now(),
-      };
+      const res = await fetch('/api/community-messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groupId,
+          userId: authUser?.id,
+          userName: authUser?.name || profile?.name || 'You',
+          text,
+        }),
+      });
 
-      setMessages([...messages, newMessage]);
-      showToast('Message sent!', 'success');
+      if (res.ok) {
+        const newMessage = await res.json();
+        setMessages([...messages, newMessage]);
+        showToast('Message sent!', 'success');
+      } else {
+        showToast('Error sending message', 'error');
+      }
     } catch (error) {
       showToast(`Error: ${error.message}`, 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMessages = async (groupId) => {
+    try {
+      const res = await fetch(`/api/community-messages?groupId=${groupId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data.messages || []);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
     }
   };
 
