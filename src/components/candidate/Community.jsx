@@ -616,13 +616,17 @@ export default function Community(props) {
 
   const fetchMessages = async (groupId) => {
     try {
+      console.log('[FETCH] Getting messages for', groupId);
       const res = await fetch(`/api/community-messages?groupId=${groupId}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('[FETCH] Got', data.messages?.length || 0, 'messages');
         setMessages(data.messages || []);
+      } else {
+        console.error('[FETCH] Error:', res.status);
       }
     } catch (error) {
-      console.error('Error fetching messages:', error);
+      console.error('[FETCH] Exception:', error);
     }
   };
 
