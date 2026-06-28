@@ -419,69 +419,80 @@ export default function Community(props) {
 
   // Generate groups based on user's selected schools and programs
   useEffect(() => {
-    const generateGroups = () => {
-      const category = profile?.category;
-      const grade = profile?.grade;
+    const category = profile?.category;
+    const grade = profile?.grade;
 
-      if (!category) {
-        setGroups([]);
-        return;
-      }
+    console.log('Generating groups:', {
+      category,
+      chosenSchools: chosenSchools?.length || 0,
+      programs: programs?.length || 0,
+    });
 
-      const generatedGroups = [];
-      // Use chosenSchools as fallback if selectedSchools is empty
-      const schoolList = (selectedSchools && selectedSchools.length > 0)
-        ? selectedSchools
-        : (chosenSchools && chosenSchools.length > 0 ? chosenSchools : []);
+    if (!category) {
+      setGroups([]);
+      return;
+    }
 
-      const programList = programs && programs.length > 0
-        ? programs.map(p => typeof p === 'string' ? p : (p.name || p.program || p))
-        : [];
+    const generatedGroups = [];
 
-      if (schoolList.length === 0) {
-        setGroups([]);
-        return;
-      }
+    // Get actual schools - chosenSchools comes from App.jsx
+    const schoolList = (chosenSchools && Array.isArray(chosenSchools) && chosenSchools.length > 0)
+      ? chosenSchools
+      : [];
 
-      // Generate groups for each school + program combo
-      schoolList.forEach((school, schoolIdx) => {
-        if (programList.length > 0) {
-          programList.forEach((program, progIdx) => {
-            const groupId = `group-${school.toLowerCase().replace(/\s+/g, '-')}-${program.toLowerCase().replace(/\s+/g, '-')}-${grade || ''}`;
-            generatedGroups.push({
-              id: groupId,
-              name: `${school.toLowerCase()}-${program.toLowerCase()}`,
-              school,
-              program,
-              category,
-              grade,
-              memberCount: Math.floor(Math.random() * 20) + 5,
-              isMember: Math.random() > 0.6,
-            });
-          });
-        } else {
-          const groupId = `group-${school.toLowerCase().replace(/\s+/g, '-')}-general-${grade || ''}`;
+    // Get actual programs
+    const programList = (programs && Array.isArray(programs) && programs.length > 0)
+      ? programs.map(p => {
+          if (typeof p === 'string') return p;
+          if (typeof p === 'object') return p.name || p.program || String(p);
+          return String(p);
+        })
+      : [];
+
+    if (schoolList.length === 0) {
+      console.log('No schools selected - showing empty state');
+      setGroups([]);
+      return;
+    }
+
+    // Generate groups for each school + program combo
+    schoolList.forEach((school) => {
+      if (programList.length > 0) {
+        programList.forEach((program) => {
+          const groupId = `${school.toLowerCase().replace(/\s+/g, '-')}-${program.toLowerCase().replace(/\s+/g, '-')}`;
           generatedGroups.push({
             id: groupId,
-            name: `${school.toLowerCase()}-general`,
+            name: `${school} - ${program}`,
             school,
-            program: null,
+            program,
             category,
             grade,
-            memberCount: Math.floor(Math.random() * 30) + 10,
-            isMember: Math.random() > 0.7,
+            memberCount: 12 + Math.floor(Math.random() * 20),
+            isMember: false,
           });
-        }
-      });
-
-      setGroups(generatedGroups);
-      if (generatedGroups.length > 0 && !selectedGroupId) {
-        setSelectedGroupId(generatedGroups[0].id);
+        });
+      } else {
+        const groupId = `${school.toLowerCase().replace(/\s+/g, '-')}-general`;
+        generatedGroups.push({
+          id: groupId,
+          name: `${school} Community`,
+          school,
+          program: null,
+          category,
+          grade,
+          memberCount: 15 + Math.floor(Math.random() * 25),
+          isMember: false,
+        });
       }
-    };
+    });
 
-    generateGroups();
-  }, [profile, selectedSchools, chosenSchools, programs, selectedGroupId]);
+    console.log('Generated groups:', generatedGroups.length, generatedGroups);
+    setGroups(generatedGroups);
+
+    if (generatedGroups.length > 0) {
+      setSelectedGroupId(generatedGroups[0].id);
+    }
+  }, [profile?.category, profile?.grade, chosenSchools, programs]);
 
   const handleJoinGroup = async (groupId) => {
     setLoading(true);
