@@ -416,15 +416,19 @@ export default function Community({ authToken, authUser, profile, showToast, set
         });
         if (res.ok) {
           const data = await res.json();
-          setGroups(data.groups || []);
-          if (data.groups.length > 0 && !selectedGroupId) {
-            setSelectedGroupId(data.groups[0].id);
+          const groupsArray = Array.isArray(data.groups) ? data.groups : [];
+          setGroups(groupsArray);
+          if (groupsArray.length > 0 && !selectedGroupId) {
+            setSelectedGroupId(groupsArray[0].id);
           }
         } else {
-          showToast('Failed to load groups', 'error');
+          const error = await res.json().catch(() => ({}));
+          console.error('API Error:', res.status, error);
+          setGroups([]);
         }
       } catch (error) {
-        showToast(`Error: ${error.message}`, 'error');
+        console.error('Fetch error:', error);
+        setGroups([]);
       } finally {
         setLoading(false);
       }
@@ -503,6 +507,7 @@ export default function Community({ authToken, authUser, profile, showToast, set
         justifyContent: 'center',
         flexDirection: 'column',
         gap: '10px',
+        background: '#f6f1e8',
       }}>
         <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Community not available</div>
         <div style={{ fontSize: '12px', color: '#9098b5', maxWidth: 400, textAlign: 'center' }}>
@@ -534,6 +539,23 @@ export default function Community({ authToken, authUser, profile, showToast, set
         </div>
       );
     }
+  }
+
+  if (loading && groups.length === 0) {
+    return (
+      <div style={{
+        flex: 1,
+        minHeight: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#f6f1e8',
+      }}>
+        <div style={{ textAlign: 'center', fontSize: '14px', color: '#9098b5' }}>
+          Loading Community...
+        </div>
+      </div>
+    );
   }
 
   return (
