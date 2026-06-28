@@ -1,13 +1,7 @@
 import { Resend } from 'resend';
-import { getUserIdByToken, getUserById, ROLES } from '../../lib/db.js';
-import { canAccessCandidate } from '../../lib/admin.js';
+import { getUserById, ROLES } from '../../lib/db.js';
 import { appendMessage, getMessages } from '../../lib/chat.js';
-
-function getToken(req) {
-  const header = req.headers.authorization || '';
-  const match = header.match(/^Bearer (.+)$/);
-  return match ? match[1] : null;
-}
+import { authorizeCandidateChat } from '../../lib/chat-auth.js';
 
 function escapeHtml(value) {
   return String(value || '')
@@ -57,30 +51,14 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  const userId = await getUserIdByToken(getToken(req));
-  const user = userId ? await getUserById(userId) : null;
-  if (!user) {
-    res.status(401).json({ error: 'Not authenticated.' });
+  const context = await authorizeCandidateChat(req, candidateId);
+  if (!context.actor) {
+    res.status(context.status).json({ error: context.error });
     return;
   }
-  const { candidateId, text } = req.body || {};
-  if (!candidateId || !String(text || '').trim()) {
-    res.status(400).json({ error: 'candidateId and text are required.' });
-    return;
-  }
+  const user = context.actor;
+  const candidate = context.candidate;
   const role = user.role || ROLES.candidate;
-  const candidate = await getUserById(candidateId);
-  if (role === ROLES.candidate) {
-    if (user.id !== candidateId) {
-      res.status(403).json({ error: 'Forbidden.' });
-      return;
-    }
-  } else {
-    if (!canAccessCandidate({ ...user, role }, candidate)) {
-      res.status(403).json({ error: 'Forbidden.' });
-      return;
-    }
-  }
   const existingMessages = await getMessages(candidateId);
   const message = await appendMessage(candidateId, { senderId: user.id, senderRole: role, text });
   const isFirstCandidateMessage = role === ROLES.candidate
