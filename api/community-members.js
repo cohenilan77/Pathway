@@ -1,4 +1,3 @@
-import { getActor } from '../lib/admin.js';
 import { getAllUserIds, getUserById, ROLES } from '../lib/db.js';
 
 export default async function handler(req, res) {
@@ -14,7 +13,6 @@ export default async function handler(req, res) {
 
     const members = await Promise.all(
       ids.map(async (id) => {
-        if (id === actor.uid) return null; // Exclude self
 
         const user = await getUserById(id);
         if (!user) {
