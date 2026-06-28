@@ -24,6 +24,7 @@ import changePasswordHandler from './api/change-password.js';
 import chatMessagesHandler from './api/chat/messages.js';
 import chatSendHandler from './api/chat/send.js';
 import chatReadHandler from './api/chat/read.js';
+import whatsappAiAdvisorToggleHandler from './api/admin/candidates/[candidateId]/whatsapp-ai-advisor-toggle.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -414,6 +415,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/chat/messages', withApiAdapter(chatMessagesHandler));
           server.middlewares.use('/api/chat/send', withApiAdapter(chatSendHandler));
           server.middlewares.use('/api/chat/read', withApiAdapter(chatReadHandler));
+          server.middlewares.use('/api/admin/candidates', withApiAdapter(whatsappAiAdvisorToggleHandler));
           server.middlewares.use('/api/oauth-start', (req, res) => {
             oauthStartHandler(req, res).catch((err) => {
               res.statusCode = 500;
