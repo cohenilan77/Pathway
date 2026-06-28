@@ -397,7 +397,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
   );
 }
 
-export default function Community({ authToken, authUser, profile, showToast, setCandTab, send }) {
+export default function Community({ authToken, authUser, profile, showToast, setCandTab, send, programs = [], selectedSchools = [] }) {
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -406,36 +406,65 @@ export default function Community({ authToken, authUser, profile, showToast, set
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
+  // Generate groups based on user's selected schools and programs
   useEffect(() => {
-    const loadGroups = async () => {
-      if (!authToken) return;
-      setLoading(true);
-      try {
-        const res = await fetch('/api/community-groups', {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const groupsArray = Array.isArray(data.groups) ? data.groups : [];
-          setGroups(groupsArray);
-          if (groupsArray.length > 0 && !selectedGroupId) {
-            setSelectedGroupId(groupsArray[0].id);
-          }
-        } else {
-          const error = await res.json().catch(() => ({}));
-          console.error('API Error:', res.status, error);
-          setGroups([]);
-        }
-      } catch (error) {
-        console.error('Fetch error:', error);
+    const generateGroups = () => {
+      const category = profile?.category;
+      const grade = profile?.grade;
+
+      if (!category) {
         setGroups([]);
-      } finally {
-        setLoading(false);
+        return;
+      }
+
+      const generatedGroups = [];
+      const schoolList = selectedSchools && selectedSchools.length > 0 ? selectedSchools : [];
+      const programList = programs && programs.length > 0 ? programs.map(p => p.name || p) : [];
+
+      if (schoolList.length === 0) {
+        setGroups([]);
+        return;
+      }
+
+      // Generate groups for each school + program combo
+      schoolList.forEach((school, schoolIdx) => {
+        if (programList.length > 0) {
+          programList.forEach((program, progIdx) => {
+            const groupId = `group-${school.toLowerCase().replace(/\s+/g, '-')}-${program.toLowerCase().replace(/\s+/g, '-')}-${grade || ''}`;
+            generatedGroups.push({
+              id: groupId,
+              name: `${school.toLowerCase()}-${program.toLowerCase()}`,
+              school,
+              program,
+              category,
+              grade,
+              memberCount: Math.floor(Math.random() * 20) + 5,
+              isMember: Math.random() > 0.6,
+            });
+          });
+        } else {
+          const groupId = `group-${school.toLowerCase().replace(/\s+/g, '-')}-general-${grade || ''}`;
+          generatedGroups.push({
+            id: groupId,
+            name: `${school.toLowerCase()}-general`,
+            school,
+            program: null,
+            category,
+            grade,
+            memberCount: Math.floor(Math.random() * 30) + 10,
+            isMember: Math.random() > 0.7,
+          });
+        }
+      });
+
+      setGroups(generatedGroups);
+      if (generatedGroups.length > 0 && !selectedGroupId) {
+        setSelectedGroupId(generatedGroups[0].id);
       }
     };
 
-    loadGroups();
-  }, [authToken]);
+    generateGroups();
+  }, [profile, selectedSchools, programs, selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
     setLoading(true);
