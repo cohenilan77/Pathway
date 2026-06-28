@@ -1,7 +1,8 @@
-import { getAllUserIds, getUserById } from '../lib/db.js';
-import { redis } from '../lib/redis.js';
+import { getStore } from '../lib/store.js';
 
 export default async function handler(req, res) {
+  const store = getStore();
+
   if (req.method === 'POST') {
     try {
       const { groupId, userId, text, userName } = req.body;
@@ -19,8 +20,8 @@ export default async function handler(req, res) {
       };
 
       const key = `messages:${groupId}`;
-      await redis.lpush(key, JSON.stringify(message));
-      await redis.expire(key, 7 * 24 * 60 * 60); // 7 days
+      await store.lpush(key, JSON.stringify(message));
+      await store.expire(key, 7 * 24 * 60 * 60);
 
       res.json(message);
     } catch (error) {
@@ -34,8 +35,8 @@ export default async function handler(req, res) {
       }
 
       const key = `messages:${groupId}`;
-      const rawMessages = await redis.lrange(key, 0, -1);
-      const messages = rawMessages.map(m => JSON.parse(m)).reverse();
+      const rawMessages = await store.lrange(key, 0, -1);
+      const messages = (rawMessages || []).map(m => JSON.parse(m)).reverse();
 
       res.json({ messages });
     } catch (error) {
