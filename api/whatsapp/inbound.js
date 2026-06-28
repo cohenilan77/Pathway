@@ -1,4 +1,5 @@
 import { getUserById, postWhatsAppMessage, setCandidatePhoneIndex, setCandidateBSUIDIndex } from '../../lib/db.js';
+import { getStore } from '../../lib/store.js';
 import { resolveCandidate } from '../../lib/whatsapp/resolveCandidate.js';
 import { advisorTurn } from '../../lib/whatsapp/advisorTurn.js';
 import { sendViaWhatsApp } from '../../lib/whatsapp/outbound.js';
@@ -32,12 +33,9 @@ export default async function handler(req, res) {
 
     // --- HANDLE OPT-OUT (STOP) ---
     if (Body.trim().toUpperCase() === 'STOP') {
-      await getUserById(candidateId);
-      // Update opt-out flag
-      const store = require('../../lib/store.js').getStore();
+      const store = getStore();
       const updated = { ...candidate, whatsappOptOut: true };
       await store.set(`user:${candidateId}`, updated);
-
       await sendViaWhatsApp(phone, 'You have been unsubscribed from Pathway messages.');
       return res.status(200).json({ status: 'opted_out' });
     }
@@ -47,18 +45,16 @@ export default async function handler(req, res) {
 
     // --- UPDATE BSUID IF NEW ---
     if (ExternalUserId && !candidate.bsuid) {
+      const store = getStore();
       await setCandidateBSUIDIndex(candidateId, ExternalUserId);
-      const store = require('../../lib/store.js').getStore();
-      const updated = { ...candidate, bsuid: ExternalUserId };
-      await store.set(`user:${candidateId}`, updated);
+      await store.set(`user:${candidateId}`, { ...candidate, bsuid: ExternalUserId });
     }
 
     // --- ENSURE PHONE INDEX ---
     if (!candidate.whatsappNumber && phone) {
+      const store = getStore();
       await setCandidatePhoneIndex(candidateId, phone);
-      const store = require('../../lib/store.js').getStore();
-      const updated = { ...candidate, whatsappNumber: phone };
-      await store.set(`user:${candidateId}`, updated);
+      await store.set(`user:${candidateId}`, { ...candidate, whatsappNumber: phone });
     }
 
     // --- GET AI REPLY ---
