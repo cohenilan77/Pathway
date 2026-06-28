@@ -492,7 +492,7 @@ export default function Community(props) {
           name: programName,
           program: programName,
           category,
-          memberCount: 1,
+          memberCount: Math.max(1, members.length),
           isMember: true,
         });
       });
@@ -503,7 +503,7 @@ export default function Community(props) {
         name: `${category} Cohort`,
         program: null,
         category,
-        memberCount: 1,
+        memberCount: Math.max(1, members.length),
         isMember: true,
       });
     }
@@ -511,14 +511,14 @@ export default function Community(props) {
     setGroups(generatedGroups);
 
     // Auto-select first group
-    if (generatedGroups.length > 0) {
+    if (generatedGroups.length > 0 && !selectedGroupId) {
       const firstGroup = generatedGroups[0];
       setSelectedGroupId(firstGroup.id);
       setMessages([
         { id: 1, userId: 'system', text: `Welcome to ${firstGroup.name}! 👋 Connect with other members by clicking "Study partner →"`, createdAt: Date.now() - 300000 },
       ]);
     }
-  }, [profile?.category, programs]);
+  }, [profile?.category, programs, members.length, selectedGroupId]);
 
   // Update messages when selected group changes
   useEffect(() => {
