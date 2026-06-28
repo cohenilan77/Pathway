@@ -398,7 +398,7 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
 }
 
 export default function Community(props) {
-  const { authToken, authUser, profile, showToast, setCandTab, send, programs = [], chosenSchools = [], selectedSchools = [] } = props;
+  const { authToken, authUser, profile, showToast, setCandTab, send, programs = [], chosenSchools = [] } = props;
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -407,92 +407,56 @@ export default function Community(props) {
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
-  // Debug: Log available data
-  React.useEffect(() => {
-    console.log('Community received:', {
-      category: profile?.category,
-      programs: programs?.length,
-      chosenSchools: chosenSchools?.length,
-      selectedSchools: selectedSchools?.length
-    });
-  }, [profile, programs, chosenSchools, selectedSchools]);
-
-  // Generate groups based on user's selected schools and programs
+  // Generate groups ONLY from user's personally chosen schools + programs
   useEffect(() => {
     const category = profile?.category;
-    const grade = profile?.grade;
 
-    console.log('Generating groups:', {
-      category,
-      chosenSchools: chosenSchools?.length || 0,
-      programs: programs?.length || 0,
-    });
-
-    if (!category) {
+    // Must have category and at least one school selected
+    if (!category || !chosenSchools || chosenSchools.length === 0) {
       setGroups([]);
       return;
     }
 
     const generatedGroups = [];
 
-    // Get actual schools - chosenSchools comes from App.jsx
-    const schoolList = (chosenSchools && Array.isArray(chosenSchools) && chosenSchools.length > 0)
-      ? chosenSchools
-      : [];
+    // Create one group per chosen school
+    // If user has programs selected, create school+program groups
+    // If no programs, create school-only groups
 
-    // Get actual programs
-    const programList = (programs && Array.isArray(programs) && programs.length > 0)
-      ? programs.map(p => {
-          if (typeof p === 'string') return p;
-          if (typeof p === 'object') return p.name || p.program || String(p);
-          return String(p);
-        })
-      : [];
-
-    if (schoolList.length === 0) {
-      console.log('No schools selected - showing empty state');
-      setGroups([]);
-      return;
-    }
-
-    // Generate groups for each school + program combo
-    schoolList.forEach((school) => {
-      if (programList.length > 0) {
-        programList.forEach((program) => {
-          const groupId = `${school.toLowerCase().replace(/\s+/g, '-')}-${program.toLowerCase().replace(/\s+/g, '-')}`;
+    chosenSchools.forEach(school => {
+      if (programs && programs.length > 0) {
+        // Create groups for each program
+        programs.forEach(program => {
+          const programName = typeof program === 'string' ? program : (program.name || program.program);
           generatedGroups.push({
-            id: groupId,
-            name: `${school} - ${program}`,
+            id: `${school.toLowerCase()}-${programName.toLowerCase()}`,
+            name: `${school} ${programName}`,
             school,
-            program,
+            program: programName,
             category,
-            grade,
-            memberCount: 12 + Math.floor(Math.random() * 20),
+            memberCount: 10 + Math.floor(Math.random() * 20),
             isMember: false,
           });
         });
       } else {
-        const groupId = `${school.toLowerCase().replace(/\s+/g, '-')}-general`;
+        // No programs - just create school group
         generatedGroups.push({
-          id: groupId,
+          id: `${school.toLowerCase()}`,
           name: `${school} Community`,
           school,
           program: null,
           category,
-          grade,
           memberCount: 15 + Math.floor(Math.random() * 25),
           isMember: false,
         });
       }
     });
 
-    console.log('Generated groups:', generatedGroups.length, generatedGroups);
     setGroups(generatedGroups);
-
-    if (generatedGroups.length > 0) {
+    if (generatedGroups.length > 0 && !selectedGroupId) {
       setSelectedGroupId(generatedGroups[0].id);
     }
-  }, [profile?.category, profile?.grade, chosenSchools, programs]);
+  }, [profile?.category, chosenSchools, programs, selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
     setLoading(true);
