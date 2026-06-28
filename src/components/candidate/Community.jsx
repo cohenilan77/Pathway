@@ -590,44 +590,30 @@ export default function Community(props) {
   };
 
   const handleSendMessage = async (groupId, text) => {
-    console.log('[SEND-MSG] Start', { groupId, textLen: text.length, userId: authUser?.id });
+    const payload = {
+      groupId: String(groupId),
+      userId: String(authUser?.id || 'unknown'),
+      userName: authUser?.name || profile?.name || 'You',
+      text: String(text),
+    };
 
     try {
-      const payload = {
-        groupId: String(groupId),
-        userId: String(authUser?.id || 'unknown'),
-        userName: authUser?.name || profile?.name || 'You',
-        text: String(text),
-      };
-
-      console.log('[SEND-MSG] Payload:', payload);
-
       const res = await fetch('/api/community-messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      console.log('[SEND-MSG] Response:', res.status);
-
       if (!res.ok) {
-        const error = await res.text();
-        console.error('[SEND-MSG] Error response:', error);
         showToast('Failed to send', 'error');
         return;
       }
 
       const data = await res.json();
-      console.log('[SEND-MSG] Saved:', data.id);
-
-      // Add to local messages immediately
+      // Just add to local state - don't refetch (causes disappearing messages)
       setMessages([...messages, data]);
-      showToast('✓ Message sent', 'success');
-
-      // Also refetch to ensure sync
-      await fetchMessages(groupId);
+      showToast('✓ Sent', 'success');
     } catch (error) {
-      console.error('[SEND-MSG] Exception:', error);
       showToast(`Error: ${error.message}`, 'error');
     }
   };
