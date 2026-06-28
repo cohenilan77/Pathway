@@ -111,7 +111,7 @@ export default function WhatsAppOptIn({ user, onSave, disabled = false }) {
       setSuccess('WhatsApp settings saved! You can now receive messages.');
 
       if (onSave) {
-        onSave(data.data);
+        await onSave(data.data);
       }
     } catch (err) {
       setError(`Error: ${err.message}`);
