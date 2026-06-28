@@ -601,9 +601,9 @@ export default function Community(props) {
       });
 
       if (res.ok) {
-        const newMessage = await res.json();
-        setMessages([...messages, newMessage]);
         showToast('Message sent!', 'success');
+        // Refetch all messages to sync with other users
+        await fetchMessages(groupId);
       } else {
         showToast('Error sending message', 'error');
       }
