@@ -397,7 +397,8 @@ function CommunityMembers({ groupId, group, members, onOpenDM, loading }) {
   );
 }
 
-export default function Community({ authToken, authUser, profile, showToast, setCandTab, send, programs = [], selectedSchools = [] }) {
+export default function Community(props) {
+  const { authToken, authUser, profile, showToast, setCandTab, send, programs = [], chosenSchools = [], selectedSchools = [] } = props;
   const [groups, setGroups] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -405,6 +406,16 @@ export default function Community({ authToken, authUser, profile, showToast, set
   const [loading, setLoading] = useState(false);
 
   const selectedGroup = groups.find(g => g.id === selectedGroupId);
+
+  // Debug: Log available data
+  React.useEffect(() => {
+    console.log('Community received:', {
+      category: profile?.category,
+      programs: programs?.length,
+      chosenSchools: chosenSchools?.length,
+      selectedSchools: selectedSchools?.length
+    });
+  }, [profile, programs, chosenSchools, selectedSchools]);
 
   // Generate groups based on user's selected schools and programs
   useEffect(() => {
@@ -418,8 +429,14 @@ export default function Community({ authToken, authUser, profile, showToast, set
       }
 
       const generatedGroups = [];
-      const schoolList = selectedSchools && selectedSchools.length > 0 ? selectedSchools : [];
-      const programList = programs && programs.length > 0 ? programs.map(p => p.name || p) : [];
+      // Use chosenSchools as fallback if selectedSchools is empty
+      const schoolList = (selectedSchools && selectedSchools.length > 0)
+        ? selectedSchools
+        : (chosenSchools && chosenSchools.length > 0 ? chosenSchools : []);
+
+      const programList = programs && programs.length > 0
+        ? programs.map(p => typeof p === 'string' ? p : (p.name || p.program || p))
+        : [];
 
       if (schoolList.length === 0) {
         setGroups([]);
@@ -464,7 +481,7 @@ export default function Community({ authToken, authUser, profile, showToast, set
     };
 
     generateGroups();
-  }, [profile, selectedSchools, programs, selectedGroupId]);
+  }, [profile, selectedSchools, chosenSchools, programs, selectedGroupId]);
 
   const handleJoinGroup = async (groupId) => {
     setLoading(true);
