@@ -1,7 +1,11 @@
 import React, { useMemo, useState } from 'react';
 
+function candidateWhatsAppNumber(candidate) {
+  return String(candidate?.whatsappNumber || candidate?.phone || '').trim();
+}
+
 function disabledReason(candidate) {
-  if (!candidate?.whatsappNumber) return 'Candidate has no WhatsApp number';
+  if (!candidateWhatsAppNumber(candidate)) return 'Candidate has no WhatsApp number';
   if (candidate.whatsappOptIn !== true) return 'Candidate has not opted in to WhatsApp';
   if (candidate.whatsappOptOut === true) return 'Candidate opted out of WhatsApp';
   if (candidate.whatsappAiAdvisorTemplateConfigured === false) return 'WhatsApp advisor kickoff template is not configured';
@@ -16,6 +20,7 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
   const [busy, setBusy] = useState(false);
   const reason = useMemo(() => disabledReason(candidate), [candidate]);
   const active = !!candidate?.whatsappAiAdvisorSessionActive;
+  const blocked = busy || (!active && !!reason);
 
   const setActive = async (nextActive) => {
     if (!candidate?.id || busy || (nextActive && reason)) return;
@@ -45,28 +50,67 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5' }}>AI WHATSAPP ADVISOR</div>
-          <div style={{ marginTop: 4, fontSize: 14, fontWeight: 800, color: active ? '#19c08a' : '#6b7392' }}>
-            {active ? 'ON' : 'OFF'}
+          <div style={{ marginTop: 4, fontSize: 13, fontWeight: 700, color: active ? '#128C7E' : '#6b7392' }}>
+            {active ? 'ON — WhatsApp AI chat allowed' : 'OFF — website chat is the default'}
           </div>
         </div>
         <button
           type="button"
-          disabled={busy || (!active && !!reason)}
+          role="switch"
+          aria-checked={active}
+          aria-label="WhatsApp AI Advisor"
+          disabled={blocked}
           onClick={() => setActive(!active)}
           style={{
-            border: 'none', borderRadius: 10, padding: '9px 12px', fontWeight: 800,
-            color: '#fff', background: active ? '#e384a5' : 'linear-gradient(135deg,#25D366,#128C7E)',
-            cursor: busy || (!active && reason) ? 'not-allowed' : 'pointer',
-            opacity: busy || (!active && reason) ? 0.55 : 1,
+            position: 'relative',
+            width: 66,
+            height: 34,
+            flexShrink: 0,
+            border: 'none',
+            borderRadius: 999,
+            padding: 3,
+            background: active ? '#25D366' : '#c8cbd5',
+            cursor: blocked ? 'not-allowed' : 'pointer',
+            opacity: blocked ? 0.55 : 1,
+            transition: 'background .2s ease',
           }}
         >
-          {busy ? 'Updating…' : active ? 'Pause AI Advisor' : 'Start AI Advisor on WhatsApp'}
+          <span style={{
+            position: 'absolute',
+            top: 3,
+            left: active ? 35 : 3,
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            background: '#fff',
+            boxShadow: '0 2px 7px rgba(0,0,0,.2)',
+            transition: 'left .2s ease',
+          }} />
+          <span style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: active ? 8 : 31,
+            display: 'flex',
+            alignItems: 'center',
+            color: '#fff',
+            fontSize: 9,
+            fontWeight: 900,
+          }}>
+            {busy ? '…' : active ? 'ON' : 'OFF'}
+          </span>
         </button>
       </div>
       {reason && !active && <div style={{ marginTop: 9, fontSize: 11.5, color: '#e0457a' }}>{reason}</div>}
+      <div style={{ marginTop: 9, fontSize: 11.5, color: '#6b7392' }}>
+        {active
+          ? 'Candidate replies are handled by the AI Advisor on WhatsApp. Switch OFF to stop WhatsApp AI replies.'
+          : 'Switch ON to send the approved kickoff template and begin after the candidate replies.'}
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 7, marginTop: 12, fontSize: 11.5, color: '#6b7392' }}>
-        <span>Last template: {formatDate(candidate?.whatsappAiAdvisorLastTemplateSentAt)}</span>
+        <span>WhatsApp: {candidateWhatsAppNumber(candidate) || '—'}</span>
         <span>Last inbound: {formatDate(candidate?.whatsappLastInboundAt)}</span>
+        <span>Last template: {formatDate(candidate?.whatsappAiAdvisorLastTemplateSentAt)}</span>
         <span>Started at: {formatDate(candidate?.whatsappAiAdvisorSessionStartedAt)}</span>
         <span>Started by: {candidate?.whatsappAiAdvisorSessionStartedBy || '—'}</span>
       </div>
