@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { estimatePracticeScore } from '../src/lib/testScoring.js';
 
 process.env.ANTHROPIC_API_KEY ||= 'test-key';
-const { TEST_BLUEPRINTS, validateSimulation } = await import('../api/test-simulation.js');
+const {
+  TEST_BLUEPRINTS,
+  TEST_CHUNKS,
+  balanceAnswerPositions,
+  validateSimulation,
+  validateSimulationChunk,
+} = await import('../api/test-simulation.js');
 
 function question(section, index) {
   return {
@@ -31,6 +37,15 @@ const satScore = estimatePracticeScore('sat', sat.questions, satAnswers);
 assert.equal(satScore.correctCount, 20);
 assert.equal(satScore.estimatedScore, 1600);
 
+const satChunk = TEST_CHUNKS.sat[0];
+const satChunkPayload = {
+  questions: Array.from({ length: 5 }, (_, index) => ({
+    ...question('Reading and Writing', index),
+    difficulty: index < 2 ? 'easy' : index < 4 ? 'medium' : 'hard',
+  })),
+};
+assert.equal(validateSimulationChunk(satChunkPayload, 'sat', satChunk).length, 5);
+
 const actPayload = {
   questions: [
     ...Array.from({ length: 7 }, (_, index) => question('English', index)),
@@ -45,6 +60,27 @@ const actAnswers = Object.fromEntries(act.questions.map((item, index) => [index,
 const actScore = estimatePracticeScore('act', act.questions, actAnswers);
 assert.equal(actScore.correctCount, 20);
 assert.equal(actScore.estimatedScore, 36);
+
+for (const testType of ['sat', 'act']) {
+  const totals = TEST_CHUNKS[testType].reduce((result, chunk) => {
+    Object.entries(chunk.sections).forEach(([section, count]) => { result.sections[section] = (result.sections[section] || 0) + count; });
+    Object.entries(chunk.difficulties).forEach(([difficulty, count]) => { result.difficulties[difficulty] = (result.difficulties[difficulty] || 0) + count; });
+    return result;
+  }, { sections: {}, difficulties: {} });
+  assert.deepEqual(totals.difficulties, { easy: 5, medium: 10, hard: 5 });
+  assert.deepEqual(totals.sections, testType === 'sat'
+    ? { 'Reading and Writing': 10, Math: 10 }
+    : { English: 7, Math: 7, Reading: 6 });
+}
+
+const originalCorrectAnswers = satPayload.questions.map((item) => item.options[item.correctIndex]);
+const balanced = balanceAnswerPositions(satPayload.questions, () => 0.42);
+const balancedPositionCounts = balanced.reduce((counts, item) => {
+  counts[item.correctIndex] += 1;
+  return counts;
+}, [0, 0, 0, 0]);
+assert.deepEqual(balancedPositionCounts, [5, 5, 5, 5]);
+assert.deepEqual(balanced.map((item) => item.options[item.correctIndex]), originalCorrectAnswers);
 
 assert.throws(() => validateSimulation({ questions: satPayload.questions.slice(0, 19) }, 'sat', TEST_BLUEPRINTS.sat), /exactly 20/);
 
