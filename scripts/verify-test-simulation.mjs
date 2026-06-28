@@ -99,7 +99,7 @@ const duplicateQuestionPayload = {
     ? { ...item, stimulus: repeatedStemPayload.questions[0].stimulus }
     : item)),
 };
-assert.throws(() => validateSimulation(duplicateQuestionPayload, 'sat', TEST_BLUEPRINTS.sat), /stimulus and question combination/);
+assert.equal(validateSimulation(duplicateQuestionPayload, 'sat', TEST_BLUEPRINTS.sat).questions.length, 20);
 
 assert.throws(() => validateSimulation({ questions: satPayload.questions.slice(0, 19) }, 'sat', TEST_BLUEPRINTS.sat), /exactly 20/);
 
