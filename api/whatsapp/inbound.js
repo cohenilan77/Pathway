@@ -25,12 +25,17 @@ export default async function handler(req, res) {
     const store = getStore();
 
     if (Body.trim().toUpperCase() === 'STOP') {
-      await store.set(`user:${candidateId}`, {
+      const optedOut = {
         ...candidate,
+        whatsappNumber: candidate.whatsappNumber || phone,
         whatsappOptOut: true,
         whatsappAiAdvisorSessionActive: false,
         whatsappAiAdvisorSessionPausedAt: Date.now(),
-        whatsappLastInboundAt: Date.now(),
+      };
+      await handleInbound(optedOut, {
+        text: Body,
+        sourceMessageId: MessageSid || null,
+        from: phone,
       });
       await sendViaWhatsApp(phone, 'You have been unsubscribed from Pathway messages.');
       return res.status(200).json({ status: 'opted_out' });
