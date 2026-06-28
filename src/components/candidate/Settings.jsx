@@ -19,7 +19,7 @@ const PLAN_DETAILS = [
   },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, setCandTab }) {
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, updateAuthUser, setCandTab }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -316,7 +316,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* WhatsApp Messaging */}
-        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} onSave={saveUserDetails} disabled={false} />}
+        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} onSave={updateAuthUser} disabled={false} />}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (
