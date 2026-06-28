@@ -73,11 +73,12 @@ export default function WhatsAppOptIn({ user, onSave, disabled = false }) {
     setLoading(true);
 
     try {
+      const token = localStorage.getItem('session_token');
       const response = await fetch('/api/candidate/whatsapp-settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-session-token': localStorage.getItem('session_token'),
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           whatsappNumber: fullNumber,

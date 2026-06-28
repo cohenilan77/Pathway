@@ -1,12 +1,18 @@
 import { getUserIdByToken, getUserById, updateUserDetails, setCandidatePhoneIndex } from '../../lib/db.js';
 import { parsePhoneNumber, isValidPhoneNumber } from 'libphonenumber-js';
 
+function getToken(req) {
+  const header = req.headers.authorization || '';
+  if (header.toLowerCase().startsWith('bearer ')) return header.slice(7).trim();
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = req.headers['x-session-token'];
+  const token = getToken(req);
   if (!token) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
