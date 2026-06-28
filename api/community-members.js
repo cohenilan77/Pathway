@@ -15,7 +15,6 @@ export default async function handler(req, res) {
 
   try {
     const actorData = await getUserData(actor.uid);
-    const actorPrograms = actorData?.programs || [];
     const actorCategory = actorData?.profile?.category || '';
     const actorGrade = actorData?.profile?.grade || '';
 
@@ -33,18 +32,12 @@ export default async function handler(req, res) {
         const grade = data?.profile?.grade || '';
         const programs = data?.programs || [];
 
-        // Filter members by:
+        // Filter ONLY by:
         // 1. Same category (REQUIRED)
         // 2. For undergrads, same grade (if undergrad)
+        // Don't filter by programs - show all in cohort
         if (category !== actorCategory) return null;
         if (actorCategory === 'Undergraduate' && grade !== actorGrade) return null;
-
-        // If user has programs, only show members with shared programs
-        // If user has no programs, show all in same category
-        if (actorPrograms.length > 0) {
-          const hasCommonProgram = programs.some(p => actorPrograms.includes(p));
-          if (!hasCommonProgram) return null;
-        }
 
         // Extract name from email for display
         const name = user.displayName || user.email?.split('@')[0] || 'Member';
