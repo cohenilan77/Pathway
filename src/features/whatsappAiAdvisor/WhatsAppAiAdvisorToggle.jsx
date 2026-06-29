@@ -62,7 +62,7 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
     setBusy(true);
     try {
       const response = await fetch(
-        `/api/admin/candidates/${encodeURIComponent(candidate.id)}/whatsapp-ai-advisor-toggle`,
+        '/api/whatsapp-ai-advisor-toggle',
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...headers },
@@ -70,7 +70,7 @@ export default function WhatsAppAiAdvisorToggle({ candidate, headers, onChanged,
         }
       );
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Could not update WhatsApp AI Advisor.');
+      if (!response.ok) throw new Error(data.error || `Could not update WhatsApp AI Advisor (HTTP ${response.status}).`);
       onChanged?.(data.candidate);
       notify?.(data.message);
     } catch (error) {
