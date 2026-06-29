@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
+import { visibleCandidateChat } from '../../lib/candidateChat.js';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
@@ -106,11 +107,12 @@ function ScrollButton({ position, onClick, label, direction = 'up' }) {
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const visibleChat = visibleCandidateChat(chat, authUser?.whatsappOptIn === true);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -220,15 +222,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
-                {chat.map((m, i) => {
+                {visibleChat.map((m, i) => {
                   const channel = m.channel || 'web';
-                  if (m.role === 'system') {
-                    return (
-                      <div key={i} style={{ alignSelf: 'center', background: '#fff8ea', border: '1px solid #f5e3b8', borderRadius: 999, padding: '7px 13px', fontSize: 11.5, color: '#a16207', textAlign: 'center' }}>
-                        [System] {m.text}
-                      </div>
-                    );
-                  }
                   if (m.role === 'ai') {
                     const parsed = parseOptions(m.text);
                     return (

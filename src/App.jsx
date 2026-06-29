@@ -674,6 +674,7 @@ export default function App() {
         body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
       const raw = data.raw || data.reply || '';
 
       if (raw) {
@@ -742,14 +743,16 @@ export default function App() {
 
         setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
       } else {
-        setChat(prev => [...prev, { role: 'ai', channel: 'web', text: data.error || 'Connection issue. Please try again.' }]);
+        setChat(baseChat);
+        showToast('The Advisor is temporarily unavailable. Please try again.');
       }
     } catch {
-      setChat(prev => [...prev, { role: 'ai', channel: 'web', text: 'Connection issue. Please try again in a moment.' }]);
+      setChat(baseChat);
+      showToast('The Advisor is temporarily unavailable. Please try again.');
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
