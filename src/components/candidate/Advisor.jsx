@@ -112,7 +112,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
-  const visibleChat = visibleCandidateChat(chat, authUser?.whatsappOptIn === true);
+  const visibleChat = visibleCandidateChat(chat, {
+    whatsapp: authUser?.whatsappOptIn === true,
+    telegram: authUser?.telegramOptIn === true,
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -223,7 +226,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
                 {visibleChat.map((m, i) => {
-                  const channel = m.channel || 'web';
                   if (m.role === 'ai') {
                     const parsed = parseOptions(m.text);
                     return (
@@ -246,7 +248,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                   }
                   return (
                     <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
-                      <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.75, marginBottom: 6 }}>[Candidate] [{channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]</div>
                       {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
                     </div>
                   );

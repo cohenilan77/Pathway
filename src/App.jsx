@@ -462,6 +462,19 @@ export default function App() {
     if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
   }, [screen, requiresOAuthDetails]);
 
+  // Keep server-side online state accurate. If the tab closes without a formal
+  // logout, the two-minute activity window expires and offline routing resumes.
+  useEffect(() => {
+    if (screen !== 'candidate' || !auth?.token) return undefined;
+    const heartbeat = () => fetch('/api/activity', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${auth.token}` },
+    }).catch(() => {});
+    heartbeat();
+    const interval = setInterval(heartbeat, 60_000);
+    return () => clearInterval(interval);
+  }, [screen, auth?.token]);
+
   // Persist the candidate's session to their account, debounced
   useEffect(() => {
     if (!auth?.token || chat.length <= 1) return;
