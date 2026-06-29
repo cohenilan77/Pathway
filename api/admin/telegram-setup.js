@@ -1,4 +1,4 @@
-import { authorizeAdminRequest } from '../../lib/chat-auth.js';
+import { getActor } from '../../lib/admin.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -10,9 +10,9 @@ export default async function handler(req, res) {
 
   try {
     // Require admin authentication
-    const context = await authorizeAdminRequest(req);
-    if (!context.actor) {
-      return res.status(context.status).json({ error: context.error });
+    const actor = await getActor(req);
+    if (!actor) {
+      return res.status(401).json({ error: 'Not authenticated. Use X-Admin-Secret or Bearer token.' });
     }
 
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
