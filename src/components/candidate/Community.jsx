@@ -678,10 +678,16 @@ export default function Community(props) {
         gap: '10px',
         background: '#f6f1e8',
       }}>
-        <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Community not available</div>
-        <div style={{ fontSize: '12px', color: '#9098b5', maxWidth: 400, textAlign: 'center' }}>
-          {category ? 'Please complete your profile to access the community.' : 'This feature is not available for your user type.'}
+        <div style={{ fontSize: '14px', fontWeight: 800, color: '#141b34' }}>Community not available yet</div>
+        <div style={{ fontSize: '12px', color: '#9098b5', maxWidth: 400, textAlign: 'center', marginBottom: 12 }}>
+          Set your journey type in Settings to unlock Community.
         </div>
+        <button
+          onClick={() => setCandTab && setCandTab('settings')}
+          style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Go to Settings →
+        </button>
       </div>
     );
   }

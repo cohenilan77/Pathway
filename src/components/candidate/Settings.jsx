@@ -19,7 +19,14 @@ const PLAN_DETAILS = [
   },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, updateAuthUser, setCandTab }) {
+const CATEGORIES = [
+  { key: 'Undergraduate', label: 'Undergraduate', desc: 'Bachelor\'s degree programs' },
+  { key: 'Graduate', label: 'Graduate', desc: 'MBA, MSc, MA, LLM, MD and other master\'s programs' },
+  { key: 'Postgraduate / Doctoral', label: 'Postgraduate / Doctoral', desc: 'PhD, DBA, postdoc, and research programs' },
+  { key: 'Personal Development', label: 'Personal Development', desc: 'Career change, professional upskilling, or non-degree path' },
+];
+
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, updateAuthUser, setCandTab, setProfile }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -31,6 +38,13 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
   const [savingDetails, setSavingDetails] = useState(false);
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [savingPassword, setSavingPassword] = useState(false);
+
+  const handleSetCategory = (cat) => {
+    if (setProfile) {
+      setProfile(prev => ({ ...(prev || {}), category: cat }));
+      showToast(`Journey set to ${cat}.`);
+    }
+  };
 
   const [details, setDetails] = useState(() => {
     const stored = (() => {
@@ -196,6 +210,39 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
                   }}>
                     {active ? 'Current Plan' : 'Select'}
                   </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Journey / Category */}
+        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
+          {requiresOAuthDetails && <LockOverlay />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Your Journey</h3>
+            {!profile?.category && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#9285e4', background: '#ede9fb', padding: '3px 9px', borderRadius: 8 }}>Unlocks Community</span>
+            )}
+          </div>
+          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Select your application type. This unlocks Community and tailors your advisor.</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
+            {CATEGORIES.map(c => {
+              const active = profile?.category === c.key;
+              return (
+                <div
+                  key={c.key}
+                  onClick={() => handleSetCategory(c.key)}
+                  style={{
+                    border: active ? '2px solid #9285e4' : '1.5px solid #f1eadd',
+                    background: active ? '#ede9fb' : '#f6f1e8',
+                    borderRadius: 14, padding: '16px 16px',
+                    cursor: 'pointer',
+                    transition: 'border .15s, background .15s',
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#5a3fbf' : '#141b34', marginBottom: 5 }}>{c.label}</div>
+                  <div style={{ fontSize: 12, color: '#9098b5', lineHeight: 1.45 }}>{c.desc}</div>
                 </div>
               );
             })}
