@@ -61,6 +61,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'disabled' });
     }
 
+    // Simple rule: If candidate is logged in, skip Telegram entirely
+    // They should use the web app. Only enable Telegram when they log out.
+    if (await getCandidateLoginStatus(candidateId)) {
+      console.log('[telegram/inbound] route skipped', { candidateId, route: 'candidate_online' });
+      return res.status(200).json({ status: 'candidate_online' });
+    }
+
     let indexedCandidate = candidate;
     if (!indexedCandidate.telegramUserId) {
       await setCandidateTelegramIdIndex(candidateId, telegramUserId);
@@ -74,7 +81,6 @@ export default async function handler(req, res) {
       from: telegramUserId,
     };
 
-    // MAGIC TEXT COMMANDS - Always process these, even if candidate is online
     // Magic text: /help or ? → Show help
     if (isHelpTrigger(inboundText)) {
       await sendViaTelegram(telegramUserId, TELEGRAM_HELP_TEXT);
@@ -121,12 +127,6 @@ export default async function handler(req, res) {
       await sendViaTelegram(telegramUserId, '✓ Message sent to your consultant via Live Chat.');
       console.log('[telegram/inbound] route complete', { candidateId, route: 'live_chat_trigger' });
       return res.status(200).json({ status: 'live_chat_routed', ...result });
-    }
-
-    // Skip regular messages if candidate is online (they should use web app)
-    if (await getCandidateLoginStatus(candidateId)) {
-      console.log('[telegram/inbound] route skipped', { candidateId, route: 'candidate_online' });
-      return res.status(200).json({ status: 'candidate_online' });
     }
 
     // Continue live chat if recently active
