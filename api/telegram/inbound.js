@@ -1,11 +1,12 @@
 import { getUserById, setCandidateTelegramIdIndex, getCandidateLoginStatus } from '../../lib/db.js';
 import { getStore } from '../../lib/store.js';
 import { resolveCandidate } from '../../lib/telegram/resolveCandidate.js';
-import { sendViaTelegram } from '../../lib/telegram/outbound.js';
-import { handleInbound as handleAiAdvisor } from '../../lib/telegram/advisorService.js';
+import { sendViaTelegram, registerWebhook } from '../../lib/telegram/outbound.js';
+import { start as startAiAdvisor, handleInbound as handleAiAdvisor } from '../../lib/telegram/advisorService.js';
 import { handleHumanChatInbound } from '../../lib/telegram/humanChat.js';
 
 const HUMAN_CHAT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const AI_ADVISOR_TRIGGERS = ['!advisor', '/advisor', '!ai', '/start', 'advisor', 'ai'];
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -37,7 +38,7 @@ export default async function handler(req, res) {
     const candidate = await getUserById(candidateId);
     const store = getStore();
 
-    // ====== KEY LOGIC: CHECK IF CANDIDATE IS LOGGED INTO WEB APP ======
+    // ====== CHECK IF CANDIDATE IS LOGGED INTO WEB APP ======
     const isLoggedIn = await getCandidateLoginStatus(candidateId);
 
     if (isLoggedIn) {
@@ -86,6 +87,27 @@ export default async function handler(req, res) {
       from: telegramUserId,
     };
 
+    // ====== CHECK FOR AI ADVISOR TRIGGER WORDS ======
+    const lowerText = inboundText.toLowerCase();
+    const hasAiTrigger = AI_ADVISOR_TRIGGERS.some(trigger => lowerText === trigger || lowerText.includes(trigger));
+
+    if (hasAiTrigger && !indexedCandidate.telegramAiAdvisorSessionActive) {
+      console.log(`[telegram/inbound] Trigger word detected, starting AI Advisor for ${candidateId}`);
+      try {
+        // Start AI Advisor session
+        const startResult = await startAiAdvisor(candidateId, { id: candidateId, role: 'candidate' });
+        await sendViaTelegram(
+          telegramUserId,
+          '🤖 AI Advisor is now active! Ask me anything about your application, programs, or strategy.'
+        );
+        return res.status(200).json({ status: 'ai_advisor_started', message: 'AI Advisor session started' });
+      } catch (err) {
+        console.error(`Failed to start AI Advisor: ${err.message}`);
+        await sendViaTelegram(telegramUserId, `Sorry, couldn't start AI Advisor: ${err.message}`);
+        return res.status(200).json({ status: 'ai_advisor_start_failed', error: err.message });
+      }
+    }
+
     // ====== ROUTING LOGIC ======
     // Priority 1: Is AI Advisor active?
     if (indexedCandidate.telegramAiAdvisorSessionActive) {
@@ -107,11 +129,15 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'live_chat_routed', ...result });
     }
 
-    // Neither active - queue message for 24 hours
-    console.log(`[telegram/inbound] Neither AI nor Live Chat active, queuing for ${candidateId}`);
+    // Neither active - suggest AI Advisor
+    console.log(`[telegram/inbound] Neither AI nor Live Chat active, suggesting AI Advisor for ${candidateId}`);
+    await sendViaTelegram(
+      telegramUserId,
+      'Neither AI Advisor nor Live Chat is currently active.\n\nReply with /advisor to start a conversation with your AI Advisor!'
+    );
     return res.status(200).json({
       status: 'queued',
-      message: 'Neither AI Advisor nor Live Chat is currently active. Message will be delivered when they activate.'
+      message: 'Neither AI Advisor nor Live Chat is currently active. User was prompted to use /advisor.'
     });
 
   } catch (error) {

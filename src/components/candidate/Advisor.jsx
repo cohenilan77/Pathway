@@ -229,7 +229,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                     return (
                       <React.Fragment key={i}>
                         <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                          <div style={{ fontSize: 10, fontWeight: 800, color: '#9098b5', marginBottom: 6 }}>[AI Advisor] [{channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]</div>
                           {renderFormattedText(parsed ? parsed.mainText : m.text)}
                         </div>
                         {parsed && (

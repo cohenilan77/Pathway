@@ -1840,9 +1840,6 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                         color: isSystem ? '#a16207' : isCandidate ? '#faf7f2' : '#33405e',
                         flexShrink: 0,
                       }}>
-                        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.4px', opacity: 0.72, marginBottom: isSystem ? 0 : 5 }}>
-                          {label}
-                        </div>
                         {!isSystem && (
                           <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
                             {isCandidate && m.text.startsWith('Here is my CV')
