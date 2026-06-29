@@ -576,12 +576,19 @@ export default function App() {
   }, []);
 
   const signOut = useCallback(() => {
+    if (auth?.token) {
+      fetch('/api/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${auth.token}` },
+        keepalive: true,
+      }).catch(() => {});
+    }
     setAuth(null);
     sessionStorage.removeItem('pathway_admin_secret');
     setAdminSecret('');
     setAuthError('');
     setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0);
-  }, [setAuth]);
+  }, [auth?.token, setAuth]);
 
   const resetSession = useCallback(() => {
     const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');

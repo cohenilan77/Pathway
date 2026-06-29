@@ -3,28 +3,38 @@ import { getStore } from '../../lib/store.js';
 import { resolveCandidate } from '../../lib/whatsapp/resolveCandidate.js';
 import { sendViaWhatsApp } from '../../lib/whatsapp/outbound.js';
 import { handleInbound } from '../../lib/whatsappAiAdvisor/service.js';
+import { normalizeWhatsAppNumber } from '../../lib/whatsapp/phone.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { From, Body, ExternalUserId, MessageSid } = req.body || {};
-  if (!From || !Body) return res.status(400).json({ error: 'Missing required fields' });
+  const { From, Body, ButtonText, ButtonPayload, ExternalUserId, MessageSid } = req.body || {};
+  const inboundText = String(Body || ButtonText || ButtonPayload || '').trim();
+  if (!From || !inboundText) return res.status(400).json({ error: 'Missing required fields' });
 
   try {
-    const phoneOrBsuid = ExternalUserId || From.replace('whatsapp:', '');
+    const phone = normalizeWhatsAppNumber(From);
     let candidateId;
     try {
-      candidateId = await resolveCandidate(phoneOrBsuid);
+      candidateId = await resolveCandidate(ExternalUserId || phone);
     } catch (error) {
-      console.error(`Candidate resolution failed: ${error.message}`);
-      return res.status(404).json({ error: 'Candidate not found' });
+      if (ExternalUserId) {
+        try {
+          candidateId = await resolveCandidate(phone);
+        } catch {
+          console.error(`Candidate resolution failed: ${error.message}`);
+          return res.status(404).json({ error: 'Candidate not found' });
+        }
+      } else {
+        console.error(`Candidate resolution failed: ${error.message}`);
+        return res.status(404).json({ error: 'Candidate not found' });
+      }
     }
 
     const candidate = await getUserById(candidateId);
-    const phone = From.replace('whatsapp:', '');
     const store = getStore();
 
-    if (Body.trim().toUpperCase() === 'STOP') {
+    if (inboundText.toUpperCase() === 'STOP') {
       const optedOut = {
         ...candidate,
         whatsappNumber: candidate.whatsappNumber || phone,
@@ -33,7 +43,7 @@ export default async function handler(req, res) {
         whatsappAiAdvisorSessionPausedAt: Date.now(),
       };
       await handleInbound(optedOut, {
-        text: Body,
+        text: inboundText,
         sourceMessageId: MessageSid || null,
         from: phone,
       });
@@ -46,16 +56,18 @@ export default async function handler(req, res) {
       await setCandidateBSUIDIndex(candidateId, ExternalUserId);
       indexedCandidate = { ...indexedCandidate, bsuid: ExternalUserId };
     }
-    if (!indexedCandidate.whatsappNumber && phone) {
+    if (phone) {
       await setCandidatePhoneIndex(candidateId, phone);
-      indexedCandidate = { ...indexedCandidate, whatsappNumber: phone };
+      if (!indexedCandidate.whatsappNumber) {
+        indexedCandidate = { ...indexedCandidate, whatsappNumber: phone };
+      }
     }
     if (indexedCandidate !== candidate) {
       await store.set(`user:${candidateId}`, indexedCandidate);
     }
 
     const result = await handleInbound(indexedCandidate, {
-      text: Body,
+      text: inboundText,
       sourceMessageId: MessageSid || null,
       from: phone,
     });

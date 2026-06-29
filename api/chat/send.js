@@ -75,5 +75,9 @@ export default async function handler(req, res) {
       console.error('Live Chat alert failed:', err.message);
     });
   }
-  res.status(200).json({ ok: true, message });
+  res.status(200).json({
+    ok: true,
+    message,
+    deliveryWarning: message.whatsappDelivery?.error || null,
+  });
 }
