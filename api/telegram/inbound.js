@@ -9,6 +9,8 @@ import {
   isAdvisorTrigger,
   isLiveChatTrigger,
   liveChatTriggerMessage,
+  isHelpTrigger,
+  TELEGRAM_HELP_TEXT,
 } from '../../lib/telegram/routing.js';
 
 export default async function handler(req, res) {
@@ -77,46 +79,62 @@ export default async function handler(req, res) {
       from: telegramUserId,
     };
 
+    // Magic text: /help or ? → Show help
+    if (isHelpTrigger(inboundText)) {
+      await sendViaTelegram(telegramUserId, TELEGRAM_HELP_TEXT);
+      return res.status(200).json({ status: 'help_sent' });
+    }
+
+    // Magic text: /advisor or !advisor → Switch to AI Advisor
     if (isAdvisorTrigger(inboundText)) {
       indexedCandidate = {
         ...indexedCandidate,
         telegramHumanChatActive: false,
         telegramHumanChatPending: false,
+        telegramHumanChatLastStaffAt: null,
         telegramAiAdvisorSessionActive: true,
       };
       await store.set(`user:${candidateId}`, indexedCandidate);
+      const advisorText = advisorTriggerMessage(inboundText);
+      await sendViaTelegram(telegramUserId, '✓ Switched to AI Advisor. Type your question now!');
       const result = await handleAiAdvisor(indexedCandidate, {
         ...inboundMessage,
-        text: advisorTriggerMessage(inboundText),
+        text: advisorText,
       });
       console.log('[telegram/inbound] route complete', { candidateId, route: 'ai_advisor_trigger', replied: !!result?.replied });
       return res.status(200).json({ status: 'ai_advisor_routed', ...result });
     }
 
+    // Magic text: /livechat → Switch to Live Chat with Consultant/Admin
     if (isLiveChatTrigger(inboundText)) {
       indexedCandidate = {
         ...indexedCandidate,
         telegramHumanChatActive: true,
+        telegramHumanChatPending: false,
         telegramHumanChatLastStaffAt: Date.now(),
+        telegramAiAdvisorSessionActive: false,
       };
       await store.set(`user:${candidateId}`, indexedCandidate);
       const liveChatText = liveChatTriggerMessage(inboundText);
       if (!liveChatText) {
-        await sendViaTelegram(telegramUserId, 'Send /livechat followed by your message for your consultant.');
+        const helpText = '📱 **Live Chat Mode**: Send /livechat followed by your message.\n\nExample: /livechat Can you review my essay?\n\n💡 Or use /advisor to talk to AI instead.';
+        await sendViaTelegram(telegramUserId, helpText);
         return res.status(200).json({ status: 'live_chat_help' });
       }
       const result = await handleHumanChatInbound(indexedCandidate, { ...inboundMessage, text: liveChatText });
-      await sendViaTelegram(telegramUserId, 'Your message was added to Pathway Live Chat.');
+      await sendViaTelegram(telegramUserId, '✓ Message sent to your consultant via Live Chat.');
       console.log('[telegram/inbound] route complete', { candidateId, route: 'live_chat_trigger' });
       return res.status(200).json({ status: 'live_chat_routed', ...result });
     }
 
+    // Continue live chat if recently active
     if (shouldHandleHumanChatInbound(indexedCandidate)) {
       const result = await handleHumanChatInbound(indexedCandidate, inboundMessage);
       console.log('[telegram/inbound] route complete', { candidateId, route: 'live_chat_reply' });
       return res.status(200).json({ status: 'live_chat_routed', ...result });
     }
 
+    // Default to AI Advisor if no active session
     if (!indexedCandidate.telegramAiAdvisorSessionActive) {
       indexedCandidate = { ...indexedCandidate, telegramAiAdvisorSessionActive: true };
       await store.set(`user:${candidateId}`, indexedCandidate);
