@@ -11,6 +11,7 @@
 import http from 'http';
 import { readFileSync, existsSync } from 'fs';
 import Anthropic from '@anthropic-ai/sdk';
+import telegramInboundHandler from './api/telegram/inbound.js';
 
 // Load .env file manually (no dotenv dependency needed)
 if (existsSync('.env')) {
@@ -65,6 +66,18 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'OPTIONS') {
     res.writeHead(200); res.end(); return;
+  }
+
+  // Route Telegram webhook
+  if (req.url === '/api/telegram/inbound' && req.method === 'POST') {
+    try {
+      await telegramInboundHandler(req, res);
+      return;
+    } catch (err) {
+      console.error('Telegram handler error:', err.message);
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Telegram handler error' })); return;
+    }
   }
 
   if (req.url !== '/api/chat') {
