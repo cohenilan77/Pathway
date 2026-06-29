@@ -3,6 +3,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
+import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
   recordUsage,
   getUsageSettings,
@@ -906,7 +907,7 @@ export default async function handler(req, res) {
   const userId = await resolveUserId(req);
   if (userId) {
     const channelUser = await getUserById(userId).catch(() => null);
-    if (channelUser?.whatsappAiAdvisorSessionActive) {
+    if (canContinueWhatsAppAiAdvisor(channelUser)) {
       return res.status(200).json({
         raw: 'Your AI Advisor is currently running on WhatsApp. Continue there, or ask your consultant to pause WhatsApp to use the website Advisor again.',
         channelRedirect: 'whatsapp',

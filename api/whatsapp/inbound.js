@@ -55,6 +55,13 @@ export default async function handler(req, res) {
       return res.status(200).json({ status: 'opted_out' });
     }
 
+    // WhatsApp is opt-in only. A stale phone index or previous session must never
+    // reactivate either AI Advisor or human Live Chat without the candidate's
+    // explicit Settings consent.
+    if (candidate.whatsappOptIn !== true || candidate.whatsappOptOut === true) {
+      return res.status(200).json({ status: 'disabled' });
+    }
+
     let indexedCandidate = candidate;
     if (ExternalUserId && !indexedCandidate.bsuid) {
       await setCandidateBSUIDIndex(candidateId, ExternalUserId);
