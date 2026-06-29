@@ -16,8 +16,8 @@ import { estimatePracticeScore } from '../../lib/testScoring.js';
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
 const PLAN_ACCESS = {
-  free: new Set(['dashboard', 'advisor', 'settings']),
-  ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
+  free: new Set(['dashboard', 'advisor', 'telegram', 'settings']),
+  ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'telegram', 'settings',
     'studentProfile', 'roadmap', 'activities', 'universities', 'testing', 'essays', 'applications']),
   ai_strategy: null, // null = all tabs
 };
@@ -58,8 +58,14 @@ const CHAT_NAV_ITEM = {
   icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
 };
 
+const TELEGRAM_NAV_ITEM = {
+  key: 'telegram', label: 'Telegram',
+  icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13" /><path d="m22 2-7 20-4-9-9-4Z" /></svg>,
+};
+
 const ICON_BY_KEY = Object.fromEntries(NAV_ITEMS.map(item => [item.key, item.icon]));
 ICON_BY_KEY.chat = CHAT_NAV_ITEM.icon;
+ICON_BY_KEY.telegram = TELEGRAM_NAV_ITEM.icon;
 ICON_BY_KEY.community = ICON_BY_KEY.community;
 ICON_BY_KEY.studentProfile = ICON_BY_KEY.advisor;
 ICON_BY_KEY.roadmap = ICON_BY_KEY.analysis;
@@ -82,6 +88,11 @@ function navFromConfig(config, hasChatAccess) {
     const settingsIndex = items.findIndex(item => item.key === 'settings');
     items = [...items];
     items.splice(settingsIndex >= 0 ? settingsIndex : items.length, 0, CHAT_NAV_ITEM);
+  }
+  if (!items.some(item => item.key === 'telegram')) {
+    const settingsIndex = items.findIndex(item => item.key === 'settings');
+    items = [...items];
+    items.splice(settingsIndex >= 0 ? settingsIndex : items.length, 0, TELEGRAM_NAV_ITEM);
   }
   return items;
 }
@@ -890,7 +901,7 @@ export default function CandidatePortal(props) {
   const isPlanLocked = (key) => planAccess !== null && !planAccess.has(key);
 
   const handleNavClick = (key) => {
-    if (requiresOAuthDetails && key !== 'settings') {
+    if (requiresOAuthDetails && !['settings', 'telegram'].includes(key)) {
       setCandTab('settings');
       setMenuOpen(false);
       showToast('Please confirm your details before continuing.');
@@ -915,7 +926,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', telegram: 'Telegram', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
@@ -966,7 +977,7 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
             const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
-            const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
+            const locked = (requiresOAuthDetails && !['settings', 'telegram'].includes(item.key)) || isPlanLocked(item.key);
             return (
               <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
@@ -1059,6 +1070,7 @@ export default function CandidatePortal(props) {
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'community' && <Community {...props} />}
+        {candTab === 'telegram' && <Settings {...props} focusSection="telegram" />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>

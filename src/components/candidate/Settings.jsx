@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import WhatsAppOptIn from './WhatsAppOptIn';
 import TelegramOptIn from './TelegramOptIn';
 
 const PLAN_DETAILS = [
@@ -27,7 +26,7 @@ const CATEGORIES = [
   { key: 'Personal Development', label: 'Personal Development', desc: 'Career change, professional upskilling, or non-degree path' },
 ];
 
-export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, updateAuthUser, setCandTab, setProfile }) {
+export default function Settings({ profile, plan, setPlan, setShowContactModal, resetSession, signOut, showToast, authUser, authToken, requiresOAuthDetails, saveUserDetails, updateAuthUser, setCandTab, setProfile, focusSection = 'all' }) {
   const [notifStrategist, setNotifStrategist] = useState(true);
   const [notifDigest, setNotifDigest] = useState(false);
   const [form, setForm] = useState({
@@ -161,6 +160,20 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
   const LockOverlay = () => (
     <div style={{ position: 'absolute', inset: 0, borderRadius: 20, background: 'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,.18) 6px, rgba(255,255,255,.18) 7px)', zIndex: 1 }} />
   );
+
+  if (focusSection === 'telegram') {
+    return (
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+        <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 34px 64px' }}>
+          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Telegram</h1>
+          <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 24px', fontWeight: 500 }}>
+            Connect Telegram so the AI Advisor and your consultant can reach you after you log out.
+          </p>
+          <TelegramOptIn user={authUser} onSave={updateAuthUser} disabled={false} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
@@ -363,11 +376,8 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           </div>
         </div>
 
-        {/* WhatsApp Messaging */}
-        {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} onSave={updateAuthUser} disabled={false} />}
-
         {/* Telegram Messaging */}
-        {!requiresOAuthDetails && <TelegramOptIn user={authUser} onSave={updateAuthUser} disabled={false} />}
+        <TelegramOptIn user={authUser} onSave={updateAuthUser} disabled={false} />
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (
