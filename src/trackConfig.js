@@ -17,6 +17,7 @@ export const TRACK_CONFIG = {
       ['essays', 'Essays', 'documents'],
       ['applications', 'Applications', 'documentDepository'],
       ['community', 'Community', 'community'],
+      ['settings', 'Settings', 'settings'],
     ],
     kpis: [
       ['academic', 'Academic', 'Grades, subject strength, and academic consistency.'],
