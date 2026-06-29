@@ -21,6 +21,7 @@ import oauthStartHandler from './api/oauth-start.js';
 import oauthCallbackHandler from './api/oauth-callback.js';
 import userDetailsHandler from './api/user-details.js';
 import changePasswordHandler from './api/change-password.js';
+import logoutHandler from './api/logout.js';
 import chatMessagesHandler from './api/chat/messages.js';
 import chatSendHandler from './api/chat/send.js';
 import chatReadHandler from './api/chat/read.js';
@@ -412,6 +413,7 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/test-simulation', withApiAdapter(testSimulationHandler));
           server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
           server.middlewares.use('/api/change-password', withApiAdapter(changePasswordHandler));
+          server.middlewares.use('/api/logout', withApiAdapter(logoutHandler));
           server.middlewares.use('/api/chat/messages', withApiAdapter(chatMessagesHandler));
           server.middlewares.use('/api/chat/send', withApiAdapter(chatSendHandler));
           server.middlewares.use('/api/chat/read', withApiAdapter(chatReadHandler));
