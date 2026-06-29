@@ -15,6 +15,13 @@ import { estimatePracticeScore } from '../../lib/testScoring.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
+const PLAN_ACCESS = {
+  free: new Set(['dashboard', 'advisor', 'settings']),
+  ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
+    'studentProfile', 'roadmap', 'activities', 'universities', 'testing', 'essays', 'applications']),
+  ai_strategy: null, // null = all tabs
+};
+
 const NAV_ITEMS = [
   {
     key: 'dashboard', label: 'Dashboard',
@@ -878,11 +885,22 @@ export default function CandidatePortal(props) {
   const handleHelp = () => { setShowHelp(true); setMenuOpen(false); };
   const handleUpgrade = () => { setCandTab('settings'); setMenuOpen(false); };
   const handleSignOut = () => { setMenuOpen(false); signOut(); };
+  const currentPlan = authUser?.plan || plan || 'free';
+  const planAccess = PLAN_ACCESS[currentPlan] ?? null;
+  const isPlanLocked = (key) => planAccess !== null && !planAccess.has(key);
+
   const handleNavClick = (key) => {
     if (requiresOAuthDetails && key !== 'settings') {
       setCandTab('settings');
       setMenuOpen(false);
       showToast('Please confirm your details before continuing.');
+      return;
+    }
+    if (isPlanLocked(key)) {
+      setCandTab('settings');
+      setMenuOpen(false);
+      const needed = key === 'chat' ? 'AI + Strategy' : 'AI';
+      showToast(`Upgrade to ${needed} to unlock this feature.`);
       return;
     }
     setCandTab(key);
@@ -948,13 +966,18 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
             const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
-            const locked = requiresOAuthDetails && item.key !== 'settings';
+            const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
-              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
+              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
-                <span style={{ minWidth: 0 }}>
+                <span style={{ minWidth: 0, flex: 1 }}>
                   <span>{item.label}</span>
                 </span>
+                {isPlanLocked(item.key) && (
+                  <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', opacity: 0.6, flexShrink: 0 }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                )}
                 <span style={navDotStyle(active)} />
               </button>
             );
