@@ -78,6 +78,7 @@ export default async function handler(req, res) {
   res.status(200).json({
     ok: true,
     message,
-    deliveryWarning: message.whatsappDelivery?.error || null,
+    deliveryWarning: message.telegramDelivery?.error || null,
+    deliveryChannel: message.telegramDelivery?.attempted ? 'telegram' : 'portal',
   });
 }

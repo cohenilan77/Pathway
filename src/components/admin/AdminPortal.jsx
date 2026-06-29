@@ -541,7 +541,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || chatT(chatLanguage, 'failedToSendMessage'));
-      if (d.deliveryWarning) showToast(`Saved in Live Chat, but WhatsApp delivery failed: ${d.deliveryWarning}`);
+      if (d.deliveryWarning) showToast(`Saved in Live Chat, but ${d.deliveryChannel || 'external'} delivery failed: ${d.deliveryWarning}`);
       fetchLiveChatMessages();
     } catch (e) {
       showToast(e.message || chatT(chatLanguage, 'failedToSendMessage'));
@@ -750,7 +750,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       fetchLiveChatMessages();
       fetchUsers();
       showToast(data.deliveryWarning
-        ? `Saved in Live Chat, but WhatsApp delivery failed: ${data.deliveryWarning}`
+        ? `Saved in Live Chat, but ${data.deliveryChannel || 'external'} delivery failed: ${data.deliveryWarning}`
         : 'Note delivered to the candidate in Live Chat.');
     } catch (error) {
       showToast(error.message || 'Could not send note to candidate.');

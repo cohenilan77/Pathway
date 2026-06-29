@@ -13,12 +13,20 @@ test('candidate Advisor hides internal audit messages', () => {
   assert.deepEqual(visible.map((message) => message.text), ['Hello', 'Hi']);
 });
 
-test('candidate Advisor only shows WhatsApp history after explicit opt-in', () => {
+test('candidate Advisor only shows external channel history after explicit opt-in', () => {
   const messages = [
     { role: 'user', channel: 'whatsapp', text: 'From WhatsApp' },
+    { role: 'ai', channel: 'telegram', text: 'From Telegram' },
     { role: 'ai', channel: 'web', text: 'From web' },
   ];
 
-  assert.deepEqual(visibleCandidateChat(messages, false).map((message) => message.text), ['From web']);
-  assert.deepEqual(visibleCandidateChat(messages, true).map((message) => message.text), ['From WhatsApp', 'From web']);
+  assert.deepEqual(visibleCandidateChat(messages).map((message) => message.text), ['From web']);
+  assert.deepEqual(
+    visibleCandidateChat(messages, { whatsapp: true }).map((message) => message.text),
+    ['From WhatsApp', 'From web']
+  );
+  assert.deepEqual(
+    visibleCandidateChat(messages, { telegram: true }).map((message) => message.text),
+    ['From Telegram', 'From web']
+  );
 });

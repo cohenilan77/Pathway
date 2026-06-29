@@ -1,5 +1,5 @@
-import { registerWebhook } from '../../lib/telegram/outbound.js';
-import { getUserIdByToken } from '../../lib/db.js';
+import { getWebhookInfo, registerWebhook } from '../../lib/telegram/outbound.js';
+import { getUserById, getUserIdByToken, ROLES } from '../../lib/db.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -16,6 +16,8 @@ export default async function handler(req, res) {
 
   const userId = await getUserIdByToken(sessionToken);
   if (!userId) return res.status(401).json({ error: 'Invalid session' });
+  const user = await getUserById(userId);
+  if (!user || user.role !== ROLES.admin) return res.status(403).json({ error: 'Admin access required' });
 
   const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
   if (!webhookUrl) {
@@ -23,5 +25,11 @@ export default async function handler(req, res) {
   }
 
   const result = await registerWebhook(webhookUrl);
-  return res.status(result.success ? 200 : 500).json(result);
+  if (!result.success) return res.status(500).json(result);
+  const verification = await getWebhookInfo();
+  if (!verification.success) return res.status(502).json(verification);
+  if (verification.info?.url !== webhookUrl) {
+    return res.status(502).json({ error: 'Telegram webhook verification returned a different URL.', webhook: verification.info });
+  }
+  return res.status(200).json({ success: true, webhook: verification.info });
 }

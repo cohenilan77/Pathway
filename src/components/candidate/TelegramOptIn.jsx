@@ -8,34 +8,22 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (user?.telegramUserId) {
-      setTelegramId(user.telegramUserId);
-      setOptIn(true);
-    }
+    setTelegramId(String(user?.telegramUserId || ''));
+    setOptIn(user?.telegramOptIn === true);
   }, [user]);
 
-  const handleSave = async (e) => {
-    e.preventDefault();
+  const saveSettings = async (nextOptIn) => {
     setError('');
     setSuccess('');
 
-    if (!optIn) {
-      if (onSave) {
-        onSave({ telegramUserId: '', telegramOptIn: false });
-      }
-      setSuccess('Telegram messaging disabled');
-      return;
-    }
-
-    if (!telegramId.trim()) {
+    if (nextOptIn && !telegramId.trim()) {
       setError('Please enter your Telegram User ID');
-      return;
+      return false;
     }
 
-    // Validate: must be numeric
-    if (!/^\d+$/.test(telegramId.trim())) {
+    if (nextOptIn && !/^\d+$/.test(telegramId.trim())) {
       setError('Telegram User ID must be a number (e.g., 987654321)');
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -54,7 +42,7 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
 
       if (!token) {
         setError('Session expired. Please log in again.');
-        return;
+        return false;
       }
 
       const response = await fetch('/api/candidate/telegram-settings', {
@@ -65,32 +53,42 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
         },
         body: JSON.stringify({
           telegramUserId: telegramId.trim(),
-          telegramOptIn: true,
+          telegramOptIn: nextOptIn,
         }),
       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.message || data.error || 'Failed to save settings');
-        return;
-      }
-
-      const data = await response.json();
-      setSuccess('Telegram settings saved! You can now receive messages.');
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || data.error || 'Failed to save settings');
+      setOptIn(nextOptIn);
+      setSuccess(nextOptIn
+        ? 'Telegram connected. You can now chat while logged out.'
+        : 'Telegram messaging disabled.');
 
       if (onSave) {
         await onSave(data.data);
       }
+      return true;
     } catch (err) {
-      setError(`Error: ${err.message}`);
+      setError(err.message || 'Could not update Telegram settings.');
+      return false;
     } finally {
       setLoading(false);
     }
   };
 
-  const handleOptInChange = (e) => {
-    setOptIn(e.target.checked);
+  const handleSave = async (e) => {
+    e.preventDefault();
+    await saveSettings(true);
+  };
+
+  const handleOptInChange = async (e) => {
+    const checked = e.target.checked;
     setError('');
+    if (checked) {
+      setOptIn(true);
+      return;
+    }
+    await saveSettings(false);
   };
 
   return (
@@ -130,12 +128,9 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
               style={styles.input}
             />
             <p style={styles.helpText}>
-              Open Telegram, search for <strong>@userinfobot</strong>, send <strong>/start</strong>, and copy your ID
+              First open the Pathway bot and tap <strong>Start</strong>. Then use <strong>@userinfobot</strong> to copy your numeric ID.
             </p>
           </div>
-
-          {error && <p style={styles.error}>{error}</p>}
-          {success && <p style={styles.success}>{success}</p>}
 
           {user?.telegramOptInTimestamp && (
             <p style={styles.timestamp}>
@@ -152,6 +147,8 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
           </button>
         </form>
       )}
+      {error && <p style={styles.error}>{error}</p>}
+      {success && <p style={styles.success}>{success}</p>}
     </div>
   );
 }
