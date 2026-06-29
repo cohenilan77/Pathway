@@ -1,7 +1,7 @@
 import { getUserById, setCandidateTelegramIdIndex, getCandidateLoginStatus } from '../../lib/db.js';
 import { getStore } from '../../lib/store.js';
 import { resolveCandidate } from '../../lib/telegram/resolveCandidate.js';
-import { sendViaTelegram, registerWebhook } from '../../lib/telegram/outbound.js';
+import { sendViaTelegram } from '../../lib/telegram/outbound.js';
 import { handleInbound as handleAiAdvisor } from '../../lib/telegram/advisorService.js';
 import { handleHumanChatInbound } from '../../lib/telegram/humanChat.js';
 
@@ -19,13 +19,6 @@ export default async function handler(req, res) {
   // Ignore non-text messages
   if (!telegramUserId || !inboundText) {
     return res.status(200).json({ ok: true });
-  }
-
-  // Register webhook on first message (idempotent)
-  const webhookUrl = process.env.TELEGRAM_WEBHOOK_URL;
-  if (webhookUrl && !process.env.TELEGRAM_WEBHOOK_REGISTERED) {
-    await registerWebhook(webhookUrl);
-    process.env.TELEGRAM_WEBHOOK_REGISTERED = 'true';
   }
 
   try {
