@@ -25,6 +25,16 @@ TELEGRAM_WEBHOOK_URL=https://yourapp.vercel.app/api/telegram/inbound
 
 ### 3. Register Webhook
 
+**Option A: Via Admin Dashboard (Recommended)**
+
+1. Deploy the app to Vercel
+2. Log in as Admin
+3. Go to **Admin → Telegram Setup**
+4. Click **"Register Webhook"**
+5. Should see: ✅ "Telegram webhook registered successfully"
+
+**Option B: Manual curl command**
+
 After deploying, run:
 
 ```bash
@@ -69,6 +79,68 @@ Trigger words to start the AI Advisor on Telegram:
 Example: candidate types `/advisor` → AI Advisor activates and responds
 
 Type `/stop` or wait for consultant to pause it.
+
+## Admin Setup & Testing
+
+### Test Telegram Connection
+
+**Endpoint:** `POST /api/admin/telegram-test`
+
+Tests if the bot token is valid and returns bot info + webhook status.
+
+```bash
+curl -X POST https://yourapp.vercel.app/api/admin/telegram-test \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{}'
+```
+
+Response:
+```json
+{
+  "ok": true,
+  "message": "Telegram bot is working",
+  "botInfo": {
+    "id": 7123456789,
+    "isBot": true,
+    "firstName": "PathwayBot",
+    "username": "pathway_admissions_bot"
+  },
+  "webhookInfo": {
+    "url": "https://yourapp.vercel.app/api/telegram/inbound",
+    "pendingUpdateCount": 0
+  }
+}
+```
+
+### Register Webhook via API
+
+**Endpoint:** `POST /api/admin/telegram-setup`
+
+Registers the webhook URL with Telegram automatically (no curl needed).
+
+```bash
+curl -X POST https://yourapp.vercel.app/api/admin/telegram-setup \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -d '{}'
+```
+
+Response:
+```json
+{
+  "ok": true,
+  "message": "Telegram webhook registered successfully",
+  "webhookUrl": "https://yourapp.vercel.app/api/telegram/inbound",
+  "webhookInfo": {
+    "url": "https://yourapp.vercel.app/api/telegram/inbound",
+    "pendingUpdateCount": 0,
+    "maxConnections": 40
+  }
+}
+```
+
+---
 
 ## Admin/Consultant Guide
 
