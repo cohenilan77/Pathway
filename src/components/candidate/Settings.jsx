@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import WhatsAppOptIn from './WhatsAppOptIn';
+import TelegramOptIn from './TelegramOptIn';
 
 const PLAN_DETAILS = [
   {
@@ -364,6 +365,9 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
 
         {/* WhatsApp Messaging */}
         {!requiresOAuthDetails && <WhatsAppOptIn user={authUser} onSave={updateAuthUser} disabled={false} />}
+
+        {/* Telegram Messaging */}
+        {!requiresOAuthDetails && <TelegramOptIn user={authUser} onSave={updateAuthUser} disabled={false} />}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (
