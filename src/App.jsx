@@ -457,7 +457,9 @@ export default function App() {
   }, [auth?.token, setAuth]);
 
   // First-time candidates must confirm details only on their first login
-  const requiresOAuthDetails = !auth?.user?.firstLoginSetupComplete;
+  // For OAuth users: force Settings if they don't have firstLoginSetupComplete (false means not yet confirmed)
+  // For password users and existing users: no forced Settings
+  const requiresOAuthDetails = auth?.user?.oauthProvider && auth?.user?.firstLoginSetupComplete === false;
 
   useEffect(() => {
     if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
