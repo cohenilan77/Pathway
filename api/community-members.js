@@ -1,10 +1,11 @@
 import { getUserIdByToken, getAllUserIds, getUserById, ROLES } from '../lib/db.js';
 
-function toInitials(name = '') {
-  const parts = name.trim().split(/\s+/);
-  const first = parts[0]?.[0] ?? '';
-  const last = parts[parts.length - 1]?.[0] ?? '';
-  return first && last ? `${first.toUpperCase()}. ${last.toUpperCase()}.` : '?. ?.';
+function getInitials(name = '') {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  const first = parts[0][0].toUpperCase();
+  const last = parts.length > 1 ? parts[parts.length - 1][0].toUpperCase() : '';
+  return `${first}${last}`;
 }
 
 export default async function handler(req, res) {
@@ -19,13 +20,17 @@ export default async function handler(req, res) {
     const members = [];
 
     for (const id of ids) {
+      if (String(id) === String(requestingUserId)) continue;
       const user = await getUserById(id);
       if (!user || user.role !== ROLES.candidate) continue;
 
+      const memberId = user.uid || user.id || id;
+      if (String(memberId) === String(requestingUserId)) continue;
+
       members.push({
-        id: user.uid || user.id,
-        display: `${toInitials(user.name)} · ${user.residency || 'Unknown'}`,
-        residency: user.residency || 'Unknown',
+        id: memberId,
+        initials: getInitials(user.name),
+        residency: user.residency || '',
       });
     }
 
