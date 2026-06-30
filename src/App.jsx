@@ -6,7 +6,6 @@ import LegalPage from './components/LegalPage.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
-import FirstLoginSetup from './components/candidate/FirstLoginSetup.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
@@ -323,8 +322,6 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
-  const [journey, setJourney] = useState(null);
-  const [journeySetupComplete, setJourneySetupComplete] = useState(null); // null = loading, false = setup needed, true = complete
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
 
@@ -395,24 +392,13 @@ export default function App() {
       try {
         const res = await fetch('/api/session', { headers: { Authorization: `Bearer ${auth.token}` } });
         if (!res.ok) throw new Error('unauthorized');
-        const { data, user, journey: journeyData, assignmentStats } = await res.json();
+        const { data, user } = await res.json();
         if (cancelled) return;
         if (user) {
           setAuth({ token: auth.token, user });
           setPlanState(user.plan || 'free');
           localStorage.setItem('pathway_plan', user.plan || 'free');
         }
-
-        // Load journey data and check if setup is complete
-        if (journeyData) {
-          setJourney(journeyData);
-          setJourneySetupComplete(true);
-        } else if (user?.role === 'candidate') {
-          // Candidate exists but needs journey setup
-          // (OAuth details confirmation is handled separately by requiresOAuthDetails)
-          setJourneySetupComplete(false);
-        }
-
         if (user?.role === 'admin' || user?.role === 'consultant') {
           setScreen('admin');
           return;
@@ -470,7 +456,9 @@ export default function App() {
     return () => { cancelled = true; };
   }, [auth?.token, setAuth]);
 
-  const requiresOAuthDetails = !!auth?.user?.oauthProvider && !auth.user.oauthDetailsConfirmed;
+  // First-time candidates must confirm details: either OAuth users not confirmed, or users missing required fields
+  const requiresOAuthDetails = !auth?.user?.name || !auth?.user?.residency || !Number.isFinite(Number(auth?.user?.age)) ||
+    (!!auth?.user?.oauthProvider && !auth.user.oauthDetailsConfirmed);
 
   useEffect(() => {
     if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
@@ -1047,25 +1035,7 @@ export default function App() {
       {screen === 'landing' && <Landing {...sharedProps} />}
       {screen === 'terms' && <LegalPage {...sharedProps} type="terms" />}
       {screen === 'privacy' && <LegalPage {...sharedProps} type="privacy" />}
-      {screen === 'candidate' && !requiresOAuthDetails && journeySetupComplete === false && (
-        <FirstLoginSetup
-          user={auth?.user}
-          onComplete={(journeyData) => {
-            setJourney(journeyData);
-            setJourneySetupComplete(true);
-          }}
-        />
-      )}
-      {screen === 'candidate' && journeySetupComplete === true && <CandidatePortal {...sharedProps} journey={journey} />}
-      {screen === 'candidate' && journeySetupComplete === null && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f5f0e8' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 18, fontWeight: 600, color: '#141b34', marginBottom: 12 }}>Loading...</div>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #f1eadd', borderTopColor: '#5b46e0', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          </div>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      )}
+      {screen === 'candidate' && <CandidatePortal {...sharedProps} />}
       {screen === 'admin' && <AdminPortal {...sharedProps} />}
     </div>
   );
