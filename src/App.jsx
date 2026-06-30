@@ -324,7 +324,7 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
   const [journey, setJourney] = useState(null);
-  const [journeySetupComplete, setJourneySetupComplete] = useState(true);
+  const [journeySetupComplete, setJourneySetupComplete] = useState(null); // null = loading, false = setup needed, true = complete
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
 
@@ -1046,7 +1046,7 @@ export default function App() {
       {screen === 'landing' && <Landing {...sharedProps} />}
       {screen === 'terms' && <LegalPage {...sharedProps} type="terms" />}
       {screen === 'privacy' && <LegalPage {...sharedProps} type="privacy" />}
-      {screen === 'candidate' && !journeySetupComplete && (
+      {screen === 'candidate' && journeySetupComplete === false && (
         <FirstLoginSetup
           user={auth?.user}
           onComplete={(journeyData) => {
@@ -1055,7 +1055,16 @@ export default function App() {
           }}
         />
       )}
-      {screen === 'candidate' && journeySetupComplete && <CandidatePortal {...sharedProps} journey={journey} />}
+      {screen === 'candidate' && journeySetupComplete === true && <CandidatePortal {...sharedProps} journey={journey} />}
+      {screen === 'candidate' && journeySetupComplete === null && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#f5f0e8' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 18, fontWeight: 600, color: '#141b34', marginBottom: 12 }}>Loading your journey...</div>
+            <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid #f1eadd', borderTopColor: '#5b46e0', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          </div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      )}
       {screen === 'admin' && <AdminPortal {...sharedProps} />}
     </div>
   );
