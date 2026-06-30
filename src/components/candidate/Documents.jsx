@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
+import GMATSimulation from './GMATSimulation.jsx';
 
 const docNavStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13,
@@ -47,6 +48,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
     { key: 'editor', label: 'Essay Editor', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg> },
     { key: 'documents', label: 'My CV', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg> },
     { key: 'interview', label: 'Mock Interview', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg> },
+    { key: 'gmat', label: 'GMAT', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 8h8M8 12h3M14 12h2M8 16h2M13 16h3" /></svg> },
     { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
   ];
 
@@ -368,6 +370,8 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               )}
             </div>
           )}
+
+          {docTab === 'gmat' && <GMATSimulation />}
 
           {docTab === 'insights' && (
             <div style={{ width: '100%', maxWidth: 580 }}>
