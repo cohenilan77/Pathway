@@ -1,6 +1,8 @@
 import { getUserIdByToken, getUserData, setUserData, getUserById, publicUser, touchActivity } from '../lib/db.js';
 import { toEnglish } from '../lib/translate.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
+import { getCandidateClock } from '../lib/candidate-clock.js';
+import { getUserAssignments } from '../lib/assignments.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -55,8 +57,38 @@ export default async function handler(req, res) {
     }
     const data = await getUserData(userId);
     if (data?.programs) data.programs = normalizeProgramList(data.programs);
+
+    // Load journey information
+    const clock = await getCandidateClock(userId);
+    let journey = null;
+    let assignments = [];
+
+    if (clock) {
+      assignments = await getUserAssignments(userId);
+      journey = {
+        type: clock.journeyType,
+        stage: clock.stage,
+        stageNumber: clock.stageNumber,
+        currentStageStartedAt: clock.currentStageStartedAt,
+        daysInStage: Math.floor((Date.now() - clock.currentStageStartedAt) / (24 * 60 * 60 * 1000)),
+        nextBestAction: clock.currentNextBestAction,
+        lastWeeklyCheckInAt: clock.lastWeeklyCheckInAt,
+        lastMonthlyReviewAt: clock.lastMonthlyReviewAt,
+      };
+    }
+
     await touchActivity(userId);
-    res.status(200).json({ user: publicUser(user), data });
+    res.status(200).json({
+      user: publicUser(user),
+      data,
+      journey,
+      assignmentStats: {
+        total: assignments.length,
+        overdue: assignments.filter(a => a.status === 'overdue').length,
+        inProgress: assignments.filter(a => a.status === 'in-progress').length,
+        completed: assignments.filter(a => a.status === 'completed').length,
+      },
+    });
     return;
   }
 
