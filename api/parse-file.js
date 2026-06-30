@@ -3,6 +3,7 @@ import mammoth from 'mammoth';
 import { put } from '@vercel/blob';
 import { getUserIdByToken } from '../lib/db.js';
 import { recordUsage } from '../lib/usage.js';
+import { safeError } from '../lib/api-error.js';
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -104,7 +105,7 @@ export default async function handler(req, res) {
     }).catch((e) => console.error('Failed to record usage:', e));
     return res.status(200).json({ text: response.content[0]?.text || '', file });
   } catch (err) {
-    console.error('parse-file error:', err.message);
-    return res.status(500).json({ error: 'Failed to extract text', details: err.message });
+    console.error('parse-file error:', err);
+    return res.status(500).json({ error: safeError(err, 'Failed to extract text.') });
   }
 }

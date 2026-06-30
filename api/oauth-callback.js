@@ -1,4 +1,5 @@
 import { findOrCreateOAuthUser, createSessionToken, recordLogin } from '../lib/db.js';
+import { safeError } from '../lib/api-error.js';
 
 const PROVIDERS = {
   google: {
@@ -107,6 +108,7 @@ export default async function handler(req, res) {
     res.writeHead(302, { Location: `${origin}/?oauth_token=${encodeURIComponent(sessionToken)}` });
     res.end();
   } catch (err) {
-    fail(err.message || 'Sign-in failed.');
+    console.error('OAuth callback error:', err);
+    fail(safeError(err, 'Sign-in failed.'));
   }
 }

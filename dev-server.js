@@ -104,9 +104,9 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ reply }));
   } catch (err) {
-    console.error('Anthropic error:', err.message);
+    console.error('Chat error:', err);
     res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Failed to reach Anthropic API', details: err.message }));
+    res.end(JSON.stringify({ error: 'Failed to get response from AI' }));
   }
 });
 

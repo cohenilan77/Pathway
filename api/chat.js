@@ -3,6 +3,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
+import { safeError } from '../lib/api-error.js';
 import {
   recordUsage,
   getUsageSettings,
@@ -1009,7 +1010,7 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({ raw });
   } catch (error) {
-    console.error('Anthropic API error:', error);
-    return res.status(500).json({ error: 'Failed to get response from AI', details: error.message });
+    console.error('Chat API error:', error);
+    return res.status(500).json({ error: 'Failed to get response from AI' });
   }
 }

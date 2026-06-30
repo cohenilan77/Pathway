@@ -1,6 +1,7 @@
 import { getActor } from '../lib/admin.js';
 import { ROLES } from '../lib/db.js';
 import { getLiveKpiDatabase, refreshLiveKpiDatabase } from '../lib/admissions-kpi.js';
+import { safeError } from '../lib/api-error.js';
 
 export default async function handler(req, res) {
   const actor = await getActor(req);
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
         counts: live.counts,
       });
     } catch (error) {
-      res.status(500).json({ error: error.message || 'Failed to refresh KPI database.' });
+      res.status(500).json({ error: safeError(error, 'Failed to refresh KPI database.') });
     }
     return;
   }
