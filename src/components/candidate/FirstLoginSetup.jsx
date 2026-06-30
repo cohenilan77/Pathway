@@ -188,7 +188,17 @@ export default function FirstLoginSetup({ onComplete, user }) {
         return;
       }
 
-      onComplete(result.journey);
+      // Reload session to get updated journey data
+      const sessionRes = await fetch('/api/session', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (sessionRes.ok) {
+        const { journey: journeyData } = await sessionRes.json();
+        onComplete(journeyData || result.journey);
+      } else {
+        onComplete(result.journey);
+      }
     } catch (err) {
       setError(err.message || 'Failed to complete setup');
     } finally {

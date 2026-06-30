@@ -6,6 +6,7 @@ import LegalPage from './components/LegalPage.jsx';
 import CandidatePortal from './components/candidate/CandidatePortal.jsx';
 import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
+import FirstLoginSetup from './components/candidate/FirstLoginSetup.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
@@ -322,6 +323,8 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
+  const [journey, setJourney] = useState(null);
+  const [journeySetupComplete, setJourneySetupComplete] = useState(true);
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
 
@@ -392,13 +395,23 @@ export default function App() {
       try {
         const res = await fetch('/api/session', { headers: { Authorization: `Bearer ${auth.token}` } });
         if (!res.ok) throw new Error('unauthorized');
-        const { data, user } = await res.json();
+        const { data, user, journey: journeyData, assignmentStats } = await res.json();
         if (cancelled) return;
         if (user) {
           setAuth({ token: auth.token, user });
           setPlanState(user.plan || 'free');
           localStorage.setItem('pathway_plan', user.plan || 'free');
         }
+
+        // Load journey data and check if setup is complete
+        if (journeyData) {
+          setJourney(journeyData);
+          setJourneySetupComplete(true);
+        } else if (user?.role === 'candidate') {
+          // New candidate - setup required
+          setJourneySetupComplete(false);
+        }
+
         if (user?.role === 'admin' || user?.role === 'consultant') {
           setScreen('admin');
           return;
@@ -1033,7 +1046,16 @@ export default function App() {
       {screen === 'landing' && <Landing {...sharedProps} />}
       {screen === 'terms' && <LegalPage {...sharedProps} type="terms" />}
       {screen === 'privacy' && <LegalPage {...sharedProps} type="privacy" />}
-      {screen === 'candidate' && <CandidatePortal {...sharedProps} />}
+      {screen === 'candidate' && !journeySetupComplete && (
+        <FirstLoginSetup
+          user={auth?.user}
+          onComplete={(journeyData) => {
+            setJourney(journeyData);
+            setJourneySetupComplete(true);
+          }}
+        />
+      )}
+      {screen === 'candidate' && journeySetupComplete && <CandidatePortal {...sharedProps} journey={journey} />}
       {screen === 'admin' && <AdminPortal {...sharedProps} />}
     </div>
   );
