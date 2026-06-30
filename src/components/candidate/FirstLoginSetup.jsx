@@ -116,6 +116,11 @@ export default function FirstLoginSetup({ onComplete, user }) {
           setError('Contact email is required');
           return false;
         }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.contactEmail)) {
+          setError('Please enter a valid email address');
+          return false;
+        }
         if (!formData.contactEmailConfirm.trim()) {
           setError('Email confirmation is required');
           return false;
