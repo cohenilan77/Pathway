@@ -456,9 +456,8 @@ export default function App() {
     return () => { cancelled = true; };
   }, [auth?.token, setAuth]);
 
-  // First-time candidates must confirm details: either OAuth users not confirmed, or users missing required fields
-  const requiresOAuthDetails = !auth?.user?.name || !auth?.user?.residency || !Number.isFinite(Number(auth?.user?.age)) ||
-    (!!auth?.user?.oauthProvider && !auth.user.oauthDetailsConfirmed);
+  // First-time candidates must confirm details only on their first login
+  const requiresOAuthDetails = !auth?.user?.firstLoginSetupComplete;
 
   useEffect(() => {
     if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
