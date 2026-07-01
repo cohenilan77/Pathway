@@ -79,7 +79,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
 
-  // Idle re-engagement: fire once after 60s of no chat activity
+  // Idle re-engagement: fire once after 60s of no chat activity.
+  // Only restart the timer when the last visible message is from the user —
+  // resetting on AI messages would create an infinite loop where each idle
+  // response triggers another idle 60s later.
   useEffect(() => {
     if (busy) {
       clearTimeout(idleTimerRef.current);
@@ -87,6 +90,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
       return;
     }
     if (visibleChat.length === 0) return;
+    const lastMsg = visibleChat[visibleChat.length - 1];
+    if (lastMsg?.role !== 'user') return;
     idleFiredRef.current = false;
     clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {

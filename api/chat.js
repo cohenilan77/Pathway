@@ -918,6 +918,13 @@ export default async function handler(req, res) {
       console.log(`[Headroom] Original: ${originalChars} chars, Optimized: ${optimizedChars} chars, Saved: ${pct}%`);
     }
 
+    // Anthropic requires the last message to be role:'user'. If all real messages
+    // were filtered out (e.g. chat consists only of AI replies and the only user
+    // message was the __idle_checkin__ sentinel), skip the API call entirely.
+    if (anthropicMessages.length === 0 || anthropicMessages[anthropicMessages.length - 1].role !== 'user') {
+      return res.status(200).json({ raw: '' });
+    }
+
     const advisor = new AdvisorAgent();
     let raw = await advisor.chat(anthropicMessages, {
       systemPrompt: compressedSystemPrompt,
