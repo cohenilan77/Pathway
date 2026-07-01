@@ -217,17 +217,21 @@ function sanitizeVisibleText(text) {
 }
 
 function parseBlocks(raw) {
-  const extract = (tag) => {
+  const extract = (tag, kind = 'auto') => {
     const m = raw.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
     if (!m) return null;
     let body = m[1].trim();
     // Strip markdown code fences the model sometimes wraps blocks in (```json ... ```)
     body = body.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
     try { return JSON.parse(body); } catch { /* fall through */ }
-    // Last resort: grab the outermost {...} or [...] in case of stray leading/trailing text
+    // Last resort: grab the outermost {...} or [...] in case of stray leading/trailing text.
+    // For blocks that are always arrays (e.g. PROGRAMS), never fall back to the greedy
+    // {...} match — on a malformed multi-school array it would just grab the FIRST
+    // school object, silently collapsing the whole list down to one entry with no
+    // details. Better to return null (no update) than a truncated single item.
     const arrMatch = body.match(/\[[\s\S]*\]/);
     const objMatch = body.match(/\{[\s\S]*\}/);
-    const candidate = arrMatch?.[0] || objMatch?.[0];
+    const candidate = kind === 'array' ? arrMatch?.[0] : kind === 'object' ? objMatch?.[0] : (arrMatch?.[0] || objMatch?.[0]);
     if (candidate) {
       try { return JSON.parse(candidate); } catch { return null; }
     }
@@ -236,16 +240,16 @@ function parseBlocks(raw) {
   const clean = sanitizeVisibleText(raw);
   return {
     clean,
-    profile: extract('PROFILE'),
-    scores: extract('SCORES'),
-    strengths: extract('STRENGTHS'),
-    weaknesses: extract('WEAKNESSES'),
-    programs: normalizeProgramList(extract('PROGRAMS')),
-    chosenSchools: extract('CHOSEN_SCHOOLS'),
-    insights: extract('INSIGHTS'),
-    essay: extract('ESSAY'),
-    interviewResult: extract('INTERVIEW_RESULT'),
-    tasks: extract('TASKS'),
+    profile: extract('PROFILE', 'object'),
+    scores: extract('SCORES', 'object'),
+    strengths: extract('STRENGTHS', 'array'),
+    weaknesses: extract('WEAKNESSES', 'array'),
+    programs: normalizeProgramList(extract('PROGRAMS', 'array')),
+    chosenSchools: extract('CHOSEN_SCHOOLS', 'array'),
+    insights: extract('INSIGHTS', 'array'),
+    essay: extract('ESSAY', 'object'),
+    interviewResult: extract('INTERVIEW_RESULT', 'object'),
+    tasks: extract('TASKS', 'array'),
   };
 }
 
