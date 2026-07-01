@@ -38,14 +38,22 @@ const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
 
 // Stage context for AI engagement
-function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime, weaknesses) {
   const category = profile?.category;
   const isUndergrad = category === 'Undergraduate';
   const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
   const currentStep = steps[Math.min(stepIdx, steps.length - 1)] || 'Profile';
 
-  // Calculate days in current stage (rough estimate based on chat history)
   const daysInStage = lastChatTime ? Math.floor((Date.now() - lastChatTime) / (1000 * 60 * 60 * 24)) : 0;
+
+  // Find the weakest scoring dimension for adaptive guidance
+  const scoreWeights = getTrackConfig(profile).scoreWeights || {};
+  const lowestScoreKey = scores
+    ? Object.entries(scoreWeights)
+        .map(([k]) => ({ key: k, val: scores[k] ?? 100 }))
+        .filter(({ val }) => typeof val === 'number')
+        .sort((a, b) => a.val - b.val)[0]?.key || null
+    : null;
 
   return {
     stepIdx,
@@ -53,6 +61,8 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     totalSteps: steps.length,
     isUndergrad,
     grade: profile?.grade,
+    intendedMajor: profile?.intendedMajor || profile?.major || profile?.subjects || '',
+    destination: profile?.destination || profile?.countries || '',
     daysInStage,
 
     // Completion tracking
@@ -60,13 +70,19 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     hasScores: !!scores?.overall,
     hasActivities: Array.isArray(strengths) && strengths.length > 0,
     hasUniversities: Array.isArray(programs) && programs.length > 0,
-    hasTestingScore: !!scores?.testScore,
+    hasTestingScore: !!scores?.testScore && scores.testScore > 0,
     hasEssays: Object.keys(essays || {}).length > 0,
     hasTasks: Array.isArray(tasks) && tasks.length > 0,
 
+    // Actual content for adaptive questioning
+    topTask: Array.isArray(tasks) && tasks.length > 0 ? tasks[0] : null,
+    topWeakness: Array.isArray(weaknesses) && weaknesses.length > 0 ? weaknesses[0] : null,
+    lowestScoreKey,
+    overallScore: scores?.overall ?? null,
+
     // Stage-specific insights
     nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
-    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3, // Nudge if stuck 60+ days or at universities
+    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3,
   };
 }
 
@@ -96,37 +112,56 @@ function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
 
 // Build AI system context based on student stage for better guidance
 function buildAISystemContext(stage) {
-  const { stageName, nextStageName, isUndergrad, daysInStage, shouldNudgeToNextStage, hasUniversities, hasTestingScore } = stage;
+  const { isUndergrad, daysInStage, shouldNudgeToNextStage } = stage;
 
   let systemContext = `You are an admissions advisor guiding a student through their journey.
 
-CURRENT STAGE: "${stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
-STUDENT PROGRESS: ${stage.daysInStage} days in current stage
+CURRENT STAGE: "${stage.stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
 TRACK: ${isUndergrad ? 'Undergraduate' : 'Graduate/Professional'}
+DATA: Profile ${stage.hasProfile ? '✓' : '✗'} · Scores ${stage.hasScores ? '✓' : '✗'} · Activities ${stage.hasActivities ? '✓' : '✗'} · Universities ${stage.hasUniversities ? '✓' : '✗'} · Testing ${stage.hasTestingScore ? '✓' : '✗'} · Essays ${stage.hasEssays ? '✓' : '✗'}`;
 
-DATA COLLECTED:
-- Profile: ${stage.hasProfile ? '✓' : '✗'}
-- Scores: ${stage.hasScores ? '✓' : '✗'}
-- Activities: ${stage.hasActivities ? '✓' : '✗'}
-- Universities: ${stage.hasUniversities ? '✓' : '✗'}
-- Testing: ${stage.hasTestingScore ? '✓' : '✗'}
-- Essays: ${stage.hasEssays ? '✓' : '✗'}`;
-
-  // Add stage-specific guidance
   if (isUndergrad) {
     systemContext += `
 
-UNDERGRADUATE RESPONSE RULES (override everything else):
-• Max 1-2 sentences per reply. No long explanations.
-• Never use hyphens or dashes anywhere in your text.
-• End every message with → Option1 | Option2 | Option3 | Other (always include at least 3 options).
-• Adapt questions to what the student already shared. Reference their specific grade, subjects, or interests.
-• Never echo or confirm what they just said. Ask the next thing immediately.`;
+MANDATORY RESPONSE RULES (no exceptions):
+1. Max 1-2 sentences. No paragraphs.
+2. No hyphens or dashes anywhere.
+3. Every message ends with → Option1 | Option2 | Option3 | Other
+4. Never echo or confirm what the student said. Move forward.`;
 
-    if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
+    // Derive the most important next question from actual student data
+    const gradeStr = stage.grade ? `Grade ${stage.grade}` : 'this student';
+    const majorStr = stage.intendedMajor ? `(interested in ${stage.intendedMajor})` : '';
+
+    if (stage.hasProfile && stage.hasScores && stage.hasUniversities) {
+      // Post-snapshot: derive next question from top task / lowest score
+      if (!stage.hasTestingScore) {
+        systemContext += `
+
+NEXT FOCUS: Testing gap. ${gradeStr} ${majorStr} has no SAT/ACT score yet. Ask specifically about their testing plan and target score for their reach schools. Options should include SAT/ACT timelines, not generic choices.`;
+      } else if (stage.topWeakness) {
+        systemContext += `
+
+NEXT FOCUS: Address this specific weakness: "${stage.topWeakness}". Ask ONE concrete question to help close this gap. Options must be actionable steps related to that exact weakness, not generic choices.`;
+      } else if (stage.topTask) {
+        systemContext += `
+
+NEXT FOCUS: Help with this specific task: "${stage.topTask}". Ask ONE concrete question about it. Options must be specific to that task.`;
+      } else if (shouldNudgeToNextStage) {
+        systemContext += `
+
+NEXT FOCUS: Student has been at the university stage for ${daysInStage} days. Ask about SAT/ACT planning with specific timeline options.`;
+      }
+    } else if (stage.hasProfile && !stage.hasScores) {
       systemContext += `
 
-Student has been in university stage ${daysInStage} days. Ask about SAT/ACT testing as the next step. Keep it to one short question with options.`;
+NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? 'testing plans' : 'goals and university preferences'}.`;
+    }
+
+    if (stage.grade) {
+      systemContext += `
+
+STUDENT GRADE: ${stage.grade}${stage.intendedMajor ? ` · Interested in: ${stage.intendedMajor}` : ''}${stage.destination ? ` · Destination: ${stage.destination}` : ''}`;
     }
   }
 
@@ -450,7 +485,7 @@ export default function App() {
 
         // Detect if student is stuck and needs nudge
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
 
         if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
           // Student has universities but hasn't discussed testing yet - add nudge
@@ -693,7 +728,7 @@ export default function App() {
     setBusy(true);
 
     try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/chat', {
         method: 'POST',
