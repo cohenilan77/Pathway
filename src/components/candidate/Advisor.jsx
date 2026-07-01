@@ -65,8 +65,22 @@ const AiAvatar = () => (
 const JOURNEY_STAGES = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
 const STAGE_LABELS = { profile: 'Profile', analysis: 'Analysis', portfolio: 'Portfolio', narrative: 'Narrative', cv: 'CV', essays: 'Essays', interview: 'Interview' };
 
-function isGradPhD(category) {
-  return !!category && category !== 'Undergraduate' && category !== 'Personal Development';
+function isGradPhD(profile, chat = []) {
+  const profileTrack = [profile?.category, profile?.degree, profile?.program]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  if (/undergraduate|bachelor/.test(profileTrack)) return false;
+  if (/personal development/.test(profileTrack)) return false;
+  if (/graduate|postgraduate|post graduate|master|mba|phd|doctoral|doctorate/.test(profileTrack)) return true;
+
+  const trackChoice = chat
+    .filter(message => message?.role === 'user')
+    .map(message => String(message?.text || '').trim().toLowerCase())
+    .find(text => /^(graduate|postgraduate\s*\/\s*doctoral|postgraduate|doctoral|phd)$/.test(text));
+
+  return !!trackChoice;
 }
 
 function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, essays, interviews }) {
@@ -391,7 +405,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
           </div>
 
           {/* right rail: journey buttons (ADAPTIVE_GRAD + grad/PhD) or tasks */}
-          {adaptiveGradEnabled && isGradPhD(profile?.category) ? (
+          {adaptiveGradEnabled && isGradPhD(profile, chat) ? (
             <JourneyRail journeyStage={journeyStage} send={send} busy={busy} scores={scores} programs={programs} />
           ) : (
             <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
