@@ -252,7 +252,8 @@ function safeVisibleReply(raw, parsed, currentProfile) {
     if (isUndergrad) {
       return clean || 'Your university matches are ready — check the University List tab to see your Reach, Target, and Likely schools.';
     }
-    return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
+    // Prefer the AI's actual text (which should now include a follow-up question)
+    return clean || 'Your analysis is live in the Analysis tab — head there to see your scores and school matches.';
   }
   if (clean) return clean;
   if (parsed.programs) {
@@ -847,6 +848,33 @@ export default function App() {
     }
   }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
+  // Sends a silent idle check-in to the AI without showing a user message in chat.
+  // Only the AI response appears.
+  const sendIdleCheckin = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
+      const systemContext = buildAISystemContext(stage);
+      const idleMessages = [...chat, { role: 'user', channel: 'system', text: '__idle_checkin__' }];
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
+        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+      const raw = data.raw || data.reply || '';
+      if (raw) {
+        const parsed = parseBlocks(raw);
+        const displayText = safeVisibleReply(raw, parsed, profile);
+        if (displayText) setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
+      }
+    } catch { /* silent — idle checkin failure must never break the UI */ } finally {
+      setBusy(false);
+    }
+  }, [busy, chat, profile, scores, programs, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
+
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
     setCvText(cvDraft);
@@ -1031,7 +1059,7 @@ export default function App() {
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
-    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
+    go, signOut, send, sendIdleCheckin, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };

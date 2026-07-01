@@ -62,10 +62,12 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
+  const idleTimerRef = useRef(null);
+  const idleFiredRef = useRef(false);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
 
   const visibleChat = visibleCandidateChat(chat, {
@@ -76,6 +78,26 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
+
+  // Idle re-engagement: fire once after 60s of no chat activity
+  useEffect(() => {
+    if (busy) {
+      clearTimeout(idleTimerRef.current);
+      idleFiredRef.current = false;
+      return;
+    }
+    if (visibleChat.length === 0) return;
+    idleFiredRef.current = false;
+    clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      if (!idleFiredRef.current && !busy && typeof sendIdleCheckin === 'function') {
+        idleFiredRef.current = true;
+        sendIdleCheckin();
+      }
+    }, 60000);
+    return () => clearTimeout(idleTimerRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleChat.length, busy]);
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }

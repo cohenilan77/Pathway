@@ -380,7 +380,7 @@ ${config.testScores}
 Cover prerequisites, portfolio/project/research/writing evidence, work experience, industry/target role, target study destination, volunteering, honors/awards/recognition and major achievements, career gaps, uniqueness, diversity, goal clarity, recommender strength (per RECOMMENDER COLLECTION above), why now, and the exception screening question — batched across at most two consolidated messages, never one field per message, never skipping a mandatory field, never re-asking something already answered.
 
 PROFILE CONFIRMATION (required before Step 3):
-For CV/resume/background-dump flow, skip the visible profile-confirmation question once mandatory data is complete. Emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then say exactly: "Your analysis is ready. Tap below to view your profile, scores, and school matches."
+For CV/resume/background-dump flow, skip the visible profile-confirmation question once mandatory data is complete. Emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then in the SAME message immediately continue with the Step 3 question — do NOT wait for the candidate to respond first. Your visible message must be one sentence confirming analysis is live, then the Step 3 question with chips: "Your analysis is live in the Analysis tab — scores, school matches, and strengths are all there. Do you already have specific schools in mind, would you like me to recommend a tailored portfolio, or would you rather explore step by step? → I have schools in mind | Recommend my portfolio | Let's explore together"
 For fully guided non-CV flow only, once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then ask: "Is this accurate? Anything to correct before I match you to programs?"
 
 WHEN EXTRACTING FACTS (from CV, background dump, or guided answers — combine ALL sources shared so far, including any separate background-dump text), explicitly identify and weigh:
@@ -582,6 +582,7 @@ ${config.ranking}
 ==DATA BLOCKS==
 Emit these structured blocks when you have enough data. The system parses and hides them. Your visible reply must contain ONLY conversational text.
 CRITICAL FORMAT RULE: every block must contain ONLY raw, strictly valid JSON between its opening and closing tag — never wrap it in markdown code fences (no triple-backtick fences of any kind), never add commentary inside the tag, never use trailing commas, and always escape any literal double-quote characters inside string values (e.g. write \" not "). A block that fails to parse as JSON will silently fail to update the UI, so correctness here is mandatory.
+ADMIT RATE RULE: every school object in a PROGRAMS block must include admitRate (the real published acceptance rate as a number, e.g. 4 for 4%) and admitRateSource (e.g. "Official 2024" or "Not available"). ONLY include a number for admitRate if you are certain it is the actual published rate — never guess from prestige or ranking. If you are not certain, set admitRate to null and admitRateSource to "Not available". Known accurate rates (as of 2024): Harvard 3.6, MIT 4.0, Stanford 3.7, Yale 4.6, Princeton 4.6, Columbia 3.9, Brown 5.1, Dartmouth 5.8, Cornell 8.7, Penn 7.7, Duke 6.9, Vanderbilt 6.6, Northwestern 6.8, Caltech 3.9, Rice 8.5, Notre Dame 12.2, Georgetown 12.5, UCLA 8.6, UC Berkeley 11.3, USC 11.5, NYU 12.2, Boston University 18, Northeastern 7. For all other schools, set admitRate to null and admitRateSource to "Not available".
 FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup such as <function_calls>, <invoke>, <invoke>, "tool_use", "tool_code", or any other pseudo-code/tool-call wrapper anywhere in your visible text — the only real tool available to you (web_search, per the DATA SOURCING ORDER above) is invoked automatically by the platform itself, never by you writing XML/JSON syntax for it. The ONLY tags you ever write yourself are the exact ones listed below (PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, PROGRAMS, CHOSEN_SCHOOLS, INSIGHTS, ESSAY, INTERVIEW_RESULT). Any other bracketed/angle-bracket markup in a reply is a failure.
 NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in their tab. If the candidate reports the tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text to one sentence: for Undergraduate students say "Here's your list again — it's live in your University List tab now." For all other tracks say "Here's your portfolio again — it's live in the Analysis tab now." Schools only ever reach the candidate through the rendered tab, never through chat text.
 
@@ -851,9 +852,17 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
+
+    // Detect idle check-in: frontend sends __idle_checkin__ as a silent system trigger.
+    // Strip it from chat history and instead inject a contextual re-engagement instruction.
+    const isIdleCheckin = messages.filter(m => m.role === 'user').pop()?.text === '__idle_checkin__';
+    const idleContext = isIdleCheckin
+      ? `\n\nIDLE RE-ENGAGEMENT (priority override): The user has been inactive for 60 seconds. Generate a brief, warm, contextual check-in (1-2 sentences MAX). Reference something specific and useful from their profile or top task — never say "still there?", never ask a generic question. End with → 2-3 specific chips tied to their current state. Do not echo previous questions.`
+      : '';
+
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + idleContext;
     let anthropicMessages = messages
-      .filter((message) => message?.role !== 'system' && message?.text)
+      .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
         role: message.role === 'ai' ? 'assistant' : 'user',
         content: message.text,
