@@ -67,7 +67,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
   const idleTimerRef = useRef(null);
-  const idleFiredRef = useRef(false);
+  const idleCountRef = useRef(0);
+  const MAX_IDLE_FIRES = 2;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
 
   const visibleChat = visibleCandidateChat(chat, {
@@ -79,24 +80,25 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chat, busy]);
 
-  // Idle re-engagement: fire once after 60s of no chat activity.
-  // Only restart the timer when the last visible message is from the user —
-  // resetting on AI messages would create an infinite loop where each idle
-  // response triggers another idle 60s later.
+  // Idle re-engagement: nudge up to MAX_IDLE_FIRES times per idle period.
+  // Count resets when the user sends a new message. Each AI idle reply can
+  // trigger one more nudge, but only up to the cap — no infinite loop.
   useEffect(() => {
     if (busy) {
       clearTimeout(idleTimerRef.current);
-      idleFiredRef.current = false;
       return;
     }
     if (visibleChat.length === 0) return;
     const lastMsg = visibleChat[visibleChat.length - 1];
-    if (lastMsg?.role !== 'user') return;
-    idleFiredRef.current = false;
+    if (lastMsg?.role === 'user') {
+      idleCountRef.current = 0;
+    } else if (idleCountRef.current >= MAX_IDLE_FIRES) {
+      return;
+    }
     clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(() => {
-      if (!idleFiredRef.current && !busy && typeof sendIdleCheckin === 'function') {
-        idleFiredRef.current = true;
+      if (!busy && typeof sendIdleCheckin === 'function' && idleCountRef.current < MAX_IDLE_FIRES) {
+        idleCountRef.current += 1;
         sendIdleCheckin();
       }
     }, 60000);
