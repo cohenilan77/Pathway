@@ -48,6 +48,7 @@ export default async function handler(req, res) {
 
   const origin = getOrigin(req);
   const redirectUri = `${origin}/api/oauth-callback`;
+  console.log('[oauth-start] redirectUri:', redirectUri, '| OAUTH_REDIRECT_ORIGIN:', process.env.OAUTH_REDIRECT_ORIGIN || '(not set)', '| host:', req.headers.host);
   const state = crypto.randomBytes(16).toString('hex');
 
   res.setHeader('Set-Cookie', `pw_oauth_state=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`);
