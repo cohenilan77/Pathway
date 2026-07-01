@@ -154,9 +154,6 @@ export default function AgentsTab({ showToast }) {
                   <button onClick={togglePause} style={{ background: '#faf7f2', color: '#33405e', border: '1px solid #f1eadd', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 14px', fontSize: 13 }}>
                     {agent.status === 'active' ? 'Pause' : 'Resume'}
                   </button>
-                  <button onClick={deleteAgent} style={{ background: '#fff1f6', color: '#e0457a', border: '1px solid #fbd3e2', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 14px', fontSize: 13 }}>
-                    Delete
-                  </button>
                 </>
               )}
             </div>
