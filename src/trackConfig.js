@@ -47,7 +47,7 @@ export const TRACK_CONFIG = {
     recommendationEngine: 'reach-target-likely-portfolio',
     consultantWorkflow: ['weeklyCoaching', 'monthlyReview', 'semesterReview', 'summerPlanning', 'annualReview'],
     roadmap: ['Weekly Coaching', 'Monthly Review', 'Semester Review', 'Summer Planning', 'Annual Review'],
-    onboarding: ['grade', 'curriculum', 'transcript', 'subjects', 'intendedMajor', 'countries', 'activities', 'strongestActivity', 'leadership', 'awardsProjects', 'tests', 'universityStyle'],
+    onboarding: ['grade', 'curriculum', 'transcript', 'subjects', 'intendedMajor', 'pathwayType', 'countries', 'activities', 'strongestActivity', 'leadership', 'awardsProjects', 'tests', 'universityStyle'],
   },
   MBA: {
     key: 'mba',

@@ -37,8 +37,38 @@ function buildInitialChat(language) {
 const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
 
+// Lowest-scoring KPI key drives the NEXT FOCUS directive below (excludes the rolled-up "overall" field).
+function findLowestScoreKey(scores) {
+  if (!scores || typeof scores !== 'object') return null;
+  let lowestKey = null;
+  let lowestValue = Infinity;
+  for (const [key, value] of Object.entries(scores)) {
+    if (key === 'overall' || typeof value !== 'number') continue;
+    if (value < lowestValue) {
+      lowestValue = value;
+      lowestKey = key;
+    }
+  }
+  return lowestKey;
+}
+
+function undergradGradeNum(profile) {
+  const grade = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/)?.[0];
+  return grade ? Number(grade) : null;
+}
+
+// "Application-ready" stop condition: once true, the advisor should shift from profile-building
+// questions to application strategy instead of continuing to probe for missing profile data.
+function isApplicationReady(profile, scores, strengths, essays) {
+  const hasTestSignal = !!scores?.testScore || /test.?optional/i.test(String(profile?.tests || ''));
+  const hasActivities = Array.isArray(strengths) && strengths.length >= 3;
+  const hasLeadership = !!profile?.leadership && !/^none$/i.test(String(profile.leadership));
+  const hasEssayDraft = Object.keys(essays || {}).length > 0;
+  return hasTestSignal && hasActivities && hasLeadership && hasEssayDraft;
+}
+
 // Stage context for AI engagement
-function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime, weaknesses) {
   const category = profile?.category;
   const isUndergrad = category === 'Undergraduate';
   const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
@@ -53,6 +83,8 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     totalSteps: steps.length,
     isUndergrad,
     grade: profile?.grade,
+    gradeNumber: undergradGradeNum(profile),
+    pathwayType: profile?.pathwayType || null,
     daysInStage,
 
     // Completion tracking
@@ -63,6 +95,12 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     hasTestingScore: !!scores?.testScore,
     hasEssays: Object.keys(essays || {}).length > 0,
     hasTasks: Array.isArray(tasks) && tasks.length > 0,
+
+    // Data-driven NEXT FOCUS inputs (MainAgent-style orchestration context)
+    topWeakness: Array.isArray(weaknesses) && weaknesses.length ? weaknesses[0] : null,
+    topTask: Array.isArray(tasks) && tasks.length ? tasks[0] : null,
+    lowestScoreKey: findLowestScoreKey(scores),
+    applicationReady: isUndergrad ? isApplicationReady(profile, scores, strengths, essays) : false,
 
     // Stage-specific insights
     nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
@@ -111,6 +149,18 @@ DATA COLLECTED:
 - Universities: ${stage.hasUniversities ? '✓' : '✗'}
 - Testing: ${stage.hasTestingScore ? '✓' : '✗'}
 - Essays: ${stage.hasEssays ? '✓' : '✗'}`;
+
+  if (isUndergrad) {
+    systemContext += `
+- Grade: ${stage.grade || 'unknown'}
+- Pathway type: ${stage.pathwayType || 'not yet determined'}
+
+NEXT FOCUS SIGNAL (use this to derive your one concrete question this turn, per the NEXT FOCUS DIRECTIVE):
+- Application-ready (stop asking profile questions, shift to application strategy): ${stage.applicationReady ? 'YES' : 'no'}
+- Top weakness on file: ${stage.topWeakness || 'none yet'}
+- Top task on file: ${stage.topTask || 'none yet'}
+- Lowest-scoring area: ${stage.lowestScoreKey || 'unknown'}`;
+  }
 
   // Add stage-specific guidance
   if (isUndergrad) {
@@ -436,7 +486,7 @@ export default function App() {
 
         // Detect if student is stuck and needs nudge
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
 
         if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
           // Student has universities but hasn't discussed testing yet - add nudge
@@ -679,7 +729,7 @@ export default function App() {
     setBusy(true);
 
     try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/chat', {
         method: 'POST',

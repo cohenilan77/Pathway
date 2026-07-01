@@ -715,11 +715,37 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       {type === 'universities' && (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>University List</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.5px' }}>University List</h1>
+              {programs?.length > 0 && grade && (
+                <span style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: early ? '#c56a12' : '#15935f', background: early ? '#fff7ed' : '#ecfdf5', border: `1px solid ${early ? '#fed7aa' : '#bbf7d0'}`, borderRadius: 999, padding: '4px 10px' }}>
+                  {early ? 'PRELIMINARY MATCHES' : 'REFINED MATCHES'}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
-              {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
+              {programs?.length
+                ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.${early ? ' This list will sharpen as your profile grows.' : ''}`
+                : "Building your first matches from what we know so far — this fills in as soon as your advisor has your grade and curriculum."}
             </p>
           </div>
+
+          {(strengths?.length > 0 || weaknesses?.length > 0) && (
+            <div style={{ display: 'grid', gridTemplateColumns: strengths?.length && weaknesses?.length ? '1fr 1fr' : '1fr', gap: 18, marginBottom: 20 }}>
+              {strengths?.length > 0 && (
+                <UndergradCard title="Strengths">
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#15935f', marginBottom: 10, letterSpacing: '.4px' }}>PROFILE STRENGTHS</div>
+                  {list(strengths, 'Strengths will appear here as your profile fills in.')}
+                </UndergradCard>
+              )}
+              {weaknesses?.length > 0 && (
+                <UndergradCard title="Opportunities">
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#c56a12', marginBottom: 10, letterSpacing: '.4px' }}>OPPORTUNITIES & GAPS</div>
+                  {list(weaknesses, 'Gaps will appear here as your profile fills in.')}
+                </UndergradCard>
+              )}
+            </div>
+          )}
 
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -819,7 +845,10 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             </div>
           ) : (
             <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
-              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
+              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Tell your advisor your grade and curriculum and your first preliminary matches will appear here right away.</div>
+              <button onClick={() => setCandTab('studentProfile')} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                Continue with Advisor
+              </button>
             </div>
           )}
         </div>
