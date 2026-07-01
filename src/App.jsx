@@ -177,20 +177,30 @@ function parseBlocks(raw) {
   };
 }
 
-function safeVisibleReply(raw, parsed) {
+function safeVisibleReply(raw, parsed, currentProfile) {
   const clean = sanitizeVisibleText(parsed.clean || '');
+  const category = parsed.profile?.category || currentProfile?.category;
+  const isUndergrad = category === 'Undergraduate';
   if (parsed.profile && parsed.scores && parsed.programs) {
-    if (parsed.profile?.category === 'Undergraduate') {
-      return clean || "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.";
+    if (isUndergrad) {
+      return clean || 'Your university matches are ready — check the University List tab to see your Reach, Target, and Likely schools.';
     }
     return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
   }
   if (clean) return clean;
-  if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
+  if (parsed.programs) {
+    return isUndergrad
+      ? 'Your university matches are live in the University List tab.'
+      : 'Your portfolio is live in the Analysis tab.';
+  }
   if (parsed.chosenSchools) return 'Your target schools are saved.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
-  if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
+  if (parsed.scores || parsed.profile) {
+    return isUndergrad
+      ? 'Your profile is updated in the Advisor.'
+      : 'Your profile analysis is live in the Analysis tab.';
+  }
   return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
 }
 
@@ -749,7 +759,7 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        const displayText = safeVisibleReply(raw, parsed);
+        const displayText = safeVisibleReply(raw, parsed, profile);
 
         // Auto-advance stepper based on stage-aware triggers
         const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
