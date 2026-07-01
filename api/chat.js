@@ -1,4 +1,3 @@
-import { createAnthropicClient } from '../lib/anthropic-client.js';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
@@ -14,118 +13,9 @@ import {
 } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { logTokenUsage } from '../lib/token-usage-logger.js';
+import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 
-const client = createAnthropicClient();
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
-const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
-const MAX_OUTPUT_TOKENS = 16000;
-const FALLBACK_OUTPUT_TOKENS = 8192;
-
-// Lets the model look up real data for schools/programs outside the KPI database (see
-// DATA SOURCING ORDER in the system prompt). Search tool-use/tool-result blocks count
-// against max_tokens just like visible text, so useWebSearch can be turned off (e.g. on
-// a final retry) to guarantee the full budget goes to the actual reply instead of search
-// transcripts. Also falls back to a plain completion if the tool isn't enabled on this
-// API key at all, instead of failing the whole chat turn.
-async function createChatCompletion({ system, messages, useWebSearch = true, maxTokens = MAX_OUTPUT_TOKENS }) {
-  const params = { model: CHAT_MODEL, max_tokens: maxTokens, system, messages };
-  if (useWebSearch) params.tools = [WEB_SEARCH_TOOL];
-  try {
-    return await client.messages.create(params);
-  } catch (err) {
-    if (/max_tokens|maximum output/i.test(err?.message || '') && maxTokens !== FALLBACK_OUTPUT_TOKENS) {
-      console.error(`max_tokens=${maxTokens} rejected, retrying with ${FALLBACK_OUTPUT_TOKENS}:`, err.message);
-      return createChatCompletion({ system, messages, useWebSearch, maxTokens: FALLBACK_OUTPUT_TOKENS });
-    }
-    if (useWebSearch && /web_search/i.test(err?.message || '')) {
-      console.error('web_search tool unavailable, retrying without it:', err.message);
-      return createChatCompletion({ system, messages, useWebSearch: false, maxTokens });
-    }
-    throw err;
-  }
-}
-
-// Web search responses interleave tool-use/tool-result blocks with text blocks, so the
-// final reply is the concatenation of every text block, not just content[0].
-function extractText(response) {
-  const text = (response.content || [])
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text)
-    .join('\n')
-    .trim();
-  return text || 'I was unable to generate a response. Please try again.';
-}
-
-function normalizeProgramsInRaw(raw) {
-  if (typeof raw !== 'string' || !raw.includes('<PROGRAMS>')) return raw;
-  return raw.replace(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/g, (match, body) => {
-    let cleanBody = String(body || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
-    try {
-      const parsed = JSON.parse(cleanBody);
-      const normalized = normalizeProgramList(parsed);
-      if (!Array.isArray(normalized)) return match;
-      return `<PROGRAMS>${JSON.stringify(normalized)}</PROGRAMS>`;
-    } catch {
-      return match;
-    }
-  });
-}
-
-function parseProgramsFromRaw(raw) {
-  if (typeof raw !== 'string' || !raw.includes('<PROGRAMS>')) return [];
-  const programs = [];
-  const matches = raw.matchAll(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/g);
-  for (const match of matches) {
-    const cleanBody = String(match[1] || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
-    try {
-      const parsed = JSON.parse(cleanBody);
-      const normalized = normalizeProgramList(parsed);
-      if (Array.isArray(normalized)) programs.push(...normalized);
-    } catch {
-      // Invalid JSON is handled by the existing missing-block retry path.
-    }
-  }
-  return programs;
-}
-
-function programTier(program) {
-  const tier = String(program?.tier || '').toLowerCase();
-  if (['safe', 'possible', 'stretch', 'locked'].includes(tier)) return tier;
-  const fit = Number(program?.fit);
-  if (Number.isFinite(fit)) {
-    if (fit >= 80) return 'safe';
-    if (fit >= 50) return 'possible';
-    return 'stretch';
-  }
-  return 'possible';
-}
-
-function needsPortfolioMixRetry(raw) {
-  const programs = parseProgramsFromRaw(raw);
-  if (programs.length < 10) return false;
-
-  const unlocked = programs.filter((program) => programTier(program) !== 'locked');
-  if (unlocked.length < 8) return false;
-
-  const counts = unlocked.reduce((acc, program) => {
-    const tier = programTier(program);
-    acc[tier] = (acc[tier] || 0) + 1;
-    return acc;
-  }, {});
-  const activeTiers = Object.entries(counts).filter(([, count]) => count > 0);
-  const largestShare = Math.max(...Object.values(counts)) / unlocked.length;
-
-  const allStrong = activeTiers.length === 1 && counts.safe === unlocked.length;
-  if (allStrong) {
-    const averageFit = unlocked.reduce((sum, program) => sum + (Number(program?.fit) || 0), 0) / unlocked.length;
-    const ultraCount = unlocked.filter((program) => /ultra/i.test(String(program?.selectivityLabel || ''))).length;
-    // A rare all-green portfolio is acceptable only when the fit values themselves
-    // support an exceptional candidate and the list includes genuinely selective options.
-    return !(averageFit >= 86 && ultraCount >= 2);
-  }
-
-  return activeTiers.length <= 1 || largestShare >= 0.85;
-}
 
 export const AI_CONFIG_SECTIONS = [
   {
@@ -996,112 +886,49 @@ export default async function handler(req, res) {
       console.log(`[Headroom] Original: ${originalChars} chars, Optimized: ${optimizedChars} chars, Saved: ${pct}%`);
     }
 
-    // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
-    // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
-    // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
-    // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
-    // instead of blindly resending the same input, since an identical retry tends to fail the same way.
-    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn claimed that analysis, a portfolio/list, or a shortlist was ready but did not include the required structured blocks in that same response. If analysis is ready, put complete <PROFILE>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, <TASKS>, and <PROGRAMS> blocks FIRST, before any visible sentence. If only a portfolio/list/shortlist is ready, put the complete <PROGRAMS> block first. Keep each object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
-    const PORTFOLIO_MIX_NOTE = '\n\nCORRECTION NEEDED: your previous <PROGRAMS> block created a same-color or heavily clustered portfolio. Rebuild the PROGRAMS block as a strategic admissions portfolio, not a top-fit ranking: at least 10 schools, usually a visible spread of Strong Fit/safe, Competitive/possible, and realistic Reach/stretch for normal candidates. Do not add impossible elite schools just to create red rows. Keep fit bucket separate from selectivity label, preserve the existing scoring/fit rules, and make each programInfo paragraph specific, complete, and cut cleanly at a sentence boundary.';
-    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate at least 10 programs, normally 10-14 if needed to fit the token budget, using a dynamic portfolio mix rather than fixed bucket quotas. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
-    let raw;
-    let retryReason = '';
-    for (let attempt = 0; attempt < 4; attempt++) {
-      // Web search tool-use/tool-result content counts against max_tokens like any other
-      // output, so a school requiring a search can get truncated mid-<PROGRAMS> block before
-      // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
-      // token budget goes to the reply itself — the model still has the parallel-program
-      // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
-      // The system prompt is identical across every retry attempt in this loop (only the
-      // appended retry note changes), so it's marked as an Anthropic prompt-cache breakpoint:
-      // attempt 0 pays full price to write the cache, attempts 1-3 read it back at a steep
-      // discount instead of reprocessing the same multi-thousand-token prompt from scratch.
-      const retryNote = attempt === 0
-        ? ''
-        : `${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`;
-      const system = [
-        { type: 'text', text: compressedSystemPrompt, cache_control: { type: 'ephemeral' } },
-        ...(retryNote ? [{ type: 'text', text: retryNote }] : []),
-      ];
-      const response = await createChatCompletion({
-        system,
-        messages: anthropicMessages,
-        useWebSearch: attempt < 2,
-      });
-
-      // Log real token usage from Anthropic API response (for dashboard compression metrics)
-      logTokenUsage({
-        userId: usageUserId,
-        conversationId: convoId,
-        feature,
-        model: CHAT_MODEL,
-        usage: response.usage,
-        endpoint: 'chat',
-        attempt,
-        useWebSearch: attempt < 2,
-        stopReason: response.stop_reason,
-        headroomEnabled: headroomStats.enabled,
-        headroomMode: headroomStats.mode,
-        headroomError: headroomStats.error,
-        originalInputChars: headroomStats.originalInputChars,
-        optimizedInputChars: headroomStats.optimizedInputChars,
-      }).catch((err) => console.error('Failed to log token usage:', err));
-
-      recordUsage({
-        userId: usageUserId,
-        conversationId: convoId,
-        feature,
-        model: CHAT_MODEL,
-        inputTokens: response.usage?.input_tokens,
-        outputTokens: response.usage?.output_tokens,
-        endpoint: 'chat',
-        attempt,
-        useWebSearch: attempt < 2,
-        stopReason: response.stop_reason,
-        headroomEnabled: headroomStats.enabled,
-        headroomMode: headroomStats.mode,
-        headroomError: headroomStats.error,
-        originalInputChars: headroomStats.originalInputChars,
-        optimizedInputChars: headroomStats.optimizedInputChars,
-        estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
-        cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
-        cacheReadInputTokens: response.usage?.cache_read_input_tokens,
-        webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
-      }).catch((err) => console.error('Failed to record usage:', err));
-
-      raw = extractText(response);
-
-      const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
-      const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
-      const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
-      const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
-        && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
-        && hasProgramsBlock;
-      const hasRequiredBlocks = (!claimsPortfolioLive || hasProgramsBlock) && (!claimsAnalysisReady || hasAnalysisBlocks);
-      const badPortfolioMix = hasRequiredBlocks && hasProgramsBlock && needsPortfolioMixRetry(raw);
-      if (hasRequiredBlocks && !badPortfolioMix) break;
-      retryReason = badPortfolioMix ? 'portfolio_mix' : 'missing_blocks';
-      if (response.stop_reason === 'max_tokens') {
-        console.error(`Chat response hit max_tokens on attempt ${attempt} without completing its <PROGRAMS> block (feature: ${feature})`);
-      } else if (badPortfolioMix) {
-        console.error(`Chat response produced a clustered same-color <PROGRAMS> portfolio on attempt ${attempt} (feature: ${feature}); retrying.`);
-      }
-    }
-
-    raw = normalizeProgramsInRaw(raw);
-
-    const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
-    const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
-    const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
-    const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
-      && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
-      && hasProgramsBlock;
-    if (claimsPortfolioLive && !hasProgramsBlock) {
-      raw = "Sorry, that portfolio didn't generate correctly on my end — no need to repeat yourself, just say \"try again\" and I'll regenerate it from what you already told me.";
-    }
-    if (claimsAnalysisReady && !hasAnalysisBlocks) {
-      raw = "I still need the missing profile details before I can generate accurate scores and school matches.";
-    }
+    const advisor = new AdvisorAgent();
+    let raw = await advisor.chat(anthropicMessages, {
+      systemPrompt: compressedSystemPrompt,
+      onAttempt: (response, attempt, { useWebSearch }) => {
+        logTokenUsage({
+          userId: usageUserId,
+          conversationId: convoId,
+          feature,
+          model: CHAT_MODEL,
+          usage: response.usage,
+          endpoint: 'chat',
+          attempt,
+          useWebSearch,
+          stopReason: response.stop_reason,
+          headroomEnabled: headroomStats.enabled,
+          headroomMode: headroomStats.mode,
+          headroomError: headroomStats.error,
+          originalInputChars: headroomStats.originalInputChars,
+          optimizedInputChars: headroomStats.optimizedInputChars,
+        }).catch((err) => console.error('Failed to log token usage:', err));
+        recordUsage({
+          userId: usageUserId,
+          conversationId: convoId,
+          feature,
+          model: CHAT_MODEL,
+          inputTokens: response.usage?.input_tokens,
+          outputTokens: response.usage?.output_tokens,
+          endpoint: 'chat',
+          attempt,
+          useWebSearch,
+          stopReason: response.stop_reason,
+          headroomEnabled: headroomStats.enabled,
+          headroomMode: headroomStats.mode,
+          headroomError: headroomStats.error,
+          originalInputChars: headroomStats.originalInputChars,
+          optimizedInputChars: headroomStats.optimizedInputChars,
+          estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
+          cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
+          cacheReadInputTokens: response.usage?.cache_read_input_tokens,
+          webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
+        }).catch((err) => console.error('Failed to record usage:', err));
+      },
+    });
 
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
