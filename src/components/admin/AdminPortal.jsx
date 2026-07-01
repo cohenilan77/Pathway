@@ -1901,6 +1901,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
                           {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
                         </div>
+                      ) : m.senderRole === 'ai' ? (
+                        <div key={m.id} style={{ alignSelf: 'flex-start', background: '#eef2ff', border: '1px solid #d8deff', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.7px', color: '#7c6ef7', marginBottom: 6, textTransform: 'uppercase' }}>AI Advisor</div>
+                          <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                          {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
+                        </div>
                       ) : (
                         <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>

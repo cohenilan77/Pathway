@@ -15,6 +15,7 @@ import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionP
 import { logTokenUsage } from '../lib/token-usage-logger.js';
 import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
+import { appendMessage } from '../lib/chat.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -959,6 +960,27 @@ export default async function handler(req, res) {
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
     }
+
+    // Persist candidate message + AI reply to Redis so admin/consultant live session sees them.
+    // Skip anonymous users and silent idle check-ins (those should not appear in the chat log).
+    if (userId && !isIdleCheckin) {
+      const lastUserMsg = messages.filter(m => m.role === 'user' && m.text && m.text !== '__idle_checkin__').pop();
+      const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT';
+      const visibleReply = raw
+        .replace(new RegExp(`<(${DATA_BLOCK_TAGS}|thinking|analysis|reasoning|scratchpad|internal|hidden)>[\\s\\S]*?<\\/\\1>`, 'gi'), '')
+        .replace(/```(?:json)?[\s\S]*?```/gi, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+      const saves = [];
+      if (lastUserMsg?.text) {
+        saves.push(appendMessage(userId, { senderId: userId, senderRole: 'candidate', text: lastUserMsg.text }));
+      }
+      if (visibleReply) {
+        saves.push(appendMessage(userId, { senderId: 'ai', senderRole: 'ai', text: visibleReply }));
+      }
+      await Promise.allSettled(saves);
+    }
+
     return res.status(200).json({ raw });
   } catch (error) {
     console.error('Anthropic API error:', error);

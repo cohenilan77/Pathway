@@ -132,7 +132,7 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
                   {chatT(language, 'emptyChatState')}
                 </div>
               )}
-              {messages.filter(m => m.senderRole !== 'system').map((m) => (
+              {messages.filter(m => m.senderRole !== 'system' && m.senderRole !== 'ai').map((m) => (
                 m.senderRole === 'candidate' ? (
                   <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
                     <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
