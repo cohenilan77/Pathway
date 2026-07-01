@@ -1,5 +1,7 @@
 import { getUserIdByToken, getUserById, ROLES } from '../../lib/db.js';
 import { MainAgent } from '../../lib/agents/MainAgent.js';
+import { JourneyAdvisor } from '../../lib/agents/journey/advisor.js';
+import { getJourneyState } from '../../lib/agents/journey/state.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -45,6 +47,13 @@ export default async function handler(req, res) {
     : (requestedCandidateId || userId);
 
   try {
+    // When ADAPTIVE_GRAD is on and the target is a grad/PhD candidate,
+    // expose the journey state for staff queries.
+    if (process.env.ADAPTIVE_GRAD === 'true' && extra?.getJourneyState) {
+      const journeyState = await getJourneyState(candidateId);
+      return res.status(200).json({ ok: true, journeyState });
+    }
+
     const agent = new MainAgent();
     const response = await agent.handle(candidateId, message || '', {
       conversationHistory,

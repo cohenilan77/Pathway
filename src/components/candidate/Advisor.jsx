@@ -62,7 +62,66 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
+const ADAPTIVE_GRAD = import.meta.env.VITE_ADAPTIVE_GRAD === 'true';
+
+const JOURNEY_STAGES = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
+const STAGE_LABELS = { profile: 'Profile', analysis: 'Analysis', portfolio: 'Portfolio', narrative: 'Narrative', cv: 'CV', essays: 'Essays', interview: 'Interview' };
+
+function isGradPhD(category) {
+  return !!category && category !== 'Undergraduate' && category !== 'Personal Development';
+}
+
+function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, essays, interviews }) {
+  const stageOrder = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
+  const currentIdx = stageOrder.indexOf(journeyStage || 'profile');
+
+  const handleNext = () => {
+    send('I would like to move to the next step.');
+  };
+
+  const handleStage = (stage) => {
+    const labels = { profile: 'profile', analysis: 'analysis and scores', portfolio: 'portfolio', narrative: 'narrative strategy', cv: 'CV improvement', essays: 'essays', interview: 'mock interview' };
+    send(`Let's work on my ${labels[stage] || stage}.`);
+  };
+
+  const isDone = (stage) => {
+    const idx = stageOrder.indexOf(stage);
+    return idx < currentIdx;
+  };
+  const isCurrent = (stage) => stage === (journeyStage || 'profile');
+  const isUnlocked = (stage) => stageOrder.indexOf(stage) <= currentIdx;
+
+  return (
+    <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '18px 16px', overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <button onClick={handleNext} disabled={busy}
+        style={{ width: '100%', background: busy ? '#e7dcc7' : 'linear-gradient(135deg,#5b46e0,#b899fb)', color: busy ? '#9098b5' : '#fff', border: 'none', borderRadius: 12, padding: '11px 0', fontSize: 13.5, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 18px rgba(91,70,224,.32)', marginBottom: 8 }}>
+        Next Step
+      </button>
+      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 2 }}>JOURNEY</div>
+      {JOURNEY_STAGES.map((stage) => {
+        const done = isDone(stage);
+        const current = isCurrent(stage);
+        const unlocked = isUnlocked(stage);
+        return (
+          <button key={stage} onClick={() => unlocked && handleStage(stage)} disabled={busy || !unlocked}
+            style={{
+              width: '100%', textAlign: 'left', border: 'none', borderRadius: 11, padding: '10px 13px', fontSize: 13, fontWeight: current ? 800 : 600, cursor: !unlocked || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 9, transition: 'all .15s',
+              background: current ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : done ? '#eafff6' : unlocked ? '#faf7f2' : '#f0ece6',
+              color: current ? '#fff' : done ? '#16875c' : unlocked ? '#33405e' : '#c0c8e0',
+              border: current ? 'none' : done ? '1px solid #b7ecd4' : '1px solid #e7dcc7',
+            }}>
+            <span style={{ width: 20, height: 20, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0, background: current ? 'rgba(255,255,255,.25)' : done ? '#3fdca9' : 'transparent', color: current ? '#fff' : done ? '#fff' : '#c0c8e0' }}>
+              {done ? '✓' : !unlocked ? '🔒' : null}
+            </span>
+            {STAGE_LABELS[stage]}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -333,72 +392,76 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             )}
           </div>
 
-          {/* tasks rail */}
-          <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#141b34', margin: 0 }}>Your tasks</h3>
-              {taskList.length > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#eee8ff', padding: '3px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
+          {/* right rail: journey buttons (ADAPTIVE_GRAD + grad/PhD) or tasks */}
+          {ADAPTIVE_GRAD && isGradPhD(profile?.category) ? (
+            <JourneyRail journeyStage={journeyStage} send={send} busy={busy} scores={scores} programs={programs} />
+          ) : (
+            <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 800, color: '#141b34', margin: 0 }}>Your tasks</h3>
+                {taskList.length > 0 && (
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#eee8ff', padding: '3px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
+                )}
+              </div>
+              <p style={{ fontSize: 12, color: '#9098b5', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
+              {taskList.length === 0 ? (
+                <div style={{ background: '#faf7f2', border: '1.5px dashed #e7dcc7', borderRadius: 14, padding: '20px 16px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
+                  <div style={{ fontSize: 12.5, color: '#aeb6cf', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {doneCount > 0 && taskList.length > 0 && (
+                    <div style={{ height: 4, borderRadius: 2, background: '#e7dcc7', marginBottom: 4, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#3fdca9,#94b3fb)', borderRadius: 2, transition: 'width .4s ease' }} />
+                    </div>
+                  )}
+                  {taskList.map((text) => {
+                    const done = !!completedTasks?.[text];
+                    return (
+                      <div key={text} onClick={() => toggleTask(text)}
+                        style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 13, cursor: 'pointer', border: `1px solid ${done ? '#b7ecd4' : '#f1eadd'}`, background: done ? '#f0faf6' : '#faf7f2', transition: 'all .15s' }}>
+                        <span style={{
+                          width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          ...(done ? { background: '#3fdca9', boxShadow: '0 3px 8px rgba(25,192,138,.28)' } : { background: '#faf7f2', border: '1.5px solid #d8cdb4' }),
+                        }}>
+                          {done && (
+                            <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3bf' : '#33405e', textDecoration: done ? 'line-through' : 'none' }}>
+                          {text}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {isUndergrad && programs?.length > 0 && (
+                <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#e9f9f1,#d5f5e5)', border: '1px solid #b7ecd4', borderRadius: 14, padding: '14px 14px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#16875c', marginBottom: 6 }}>UNIVERSITY LIST</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 10 }}>{programs.length} universities matched</div>
+                  <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: 'linear-gradient(135deg,#3fdca9,#5bbfa0)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Open University List →
+                  </button>
+                </div>
+              )}
+
+              {!isUndergrad && scores && (
+                <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0ebff,#e8e1ff)', border: '1px solid #d4c4f8', borderRadius: 14, padding: '14px 14px' }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>PROFILE SCORE</div>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#5b46e0', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontSize: 14, fontWeight: 600, color: '#9098b5' }}>/100</span></div>
+                  <button onClick={() => setCandTab('analysis')} style={{ marginTop: 10, width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    View Full Analysis →
+                  </button>
+                </div>
               )}
             </div>
-            <p style={{ fontSize: 12, color: '#9098b5', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
-            {taskList.length === 0 ? (
-              <div style={{ background: '#faf7f2', border: '1.5px dashed #e7dcc7', borderRadius: 14, padding: '20px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 12.5, color: '#aeb6cf', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {doneCount > 0 && taskList.length > 0 && (
-                  <div style={{ height: 4, borderRadius: 2, background: '#e7dcc7', marginBottom: 4, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#3fdca9,#94b3fb)', borderRadius: 2, transition: 'width .4s ease' }} />
-                  </div>
-                )}
-                {taskList.map((text) => {
-                  const done = !!completedTasks?.[text];
-                  return (
-                    <div key={text} onClick={() => toggleTask(text)}
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 13, cursor: 'pointer', border: `1px solid ${done ? '#b7ecd4' : '#f1eadd'}`, background: done ? '#f0faf6' : '#faf7f2', transition: 'all .15s' }}>
-                      <span style={{
-                        width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        ...(done ? { background: '#3fdca9', boxShadow: '0 3px 8px rgba(25,192,138,.28)' } : { background: '#faf7f2', border: '1.5px solid #d8cdb4' }),
-                      }}>
-                        {done && (
-                          <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                            <path d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </span>
-                      <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3bf' : '#33405e', textDecoration: done ? 'line-through' : 'none' }}>
-                        {text}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {isUndergrad && programs?.length > 0 && (
-              <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#e9f9f1,#d5f5e5)', border: '1px solid #b7ecd4', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#16875c', marginBottom: 6 }}>UNIVERSITY LIST</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 10 }}>{programs.length} universities matched</div>
-                <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: 'linear-gradient(135deg,#3fdca9,#5bbfa0)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Open University List →
-                </button>
-              </div>
-            )}
-
-            {!isUndergrad && scores && (
-              <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0ebff,#e8e1ff)', border: '1px solid #d4c4f8', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>PROFILE SCORE</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#5b46e0', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontSize: 14, fontWeight: 600, color: '#9098b5' }}>/100</span></div>
-                <button onClick={() => setCandTab('analysis')} style={{ marginTop: 10, width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  View Full Analysis →
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>

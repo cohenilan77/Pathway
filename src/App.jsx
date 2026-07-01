@@ -393,6 +393,7 @@ export default function App() {
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
+  const [journeyStage, setJourneyStage] = useState(null);
   const [cvFileDraft, setCvFileDraft] = useState(null);
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
@@ -839,6 +840,16 @@ export default function App() {
           setStepIdx(prev => Math.max(prev, nextStep));
         }
 
+        // ADAPTIVE_GRAD: handle open_screen and journey stage signals
+        if (data.openScreen) setCandTab(data.openScreen);
+        if (data.journeyStage) setJourneyStage(data.journeyStage);
+        if (data.pendingTasks?.length) {
+          setTasks(prev => {
+            const merged = [...new Set([...(prev || []), ...data.pendingTasks])];
+            return merged;
+          });
+        }
+
         setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
       } else {
         setChat(baseChat);
@@ -1063,6 +1074,7 @@ export default function App() {
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
+    journeyStage,
     go, signOut, send, sendIdleCheckin, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
