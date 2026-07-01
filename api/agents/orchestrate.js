@@ -18,6 +18,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method === 'GET') {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     return res.status(200).json({ enabled: isAdaptiveGradEnabled() });
   }
 

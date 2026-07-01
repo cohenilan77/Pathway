@@ -13,7 +13,7 @@ test('adaptive graduate rail removes Advisor tasks and leaves Dashboard tasks', 
   assert.match(app, /setAdaptiveGradEnabled\(data\?\.enabled === true\)/);
   assert.match(app, /\/api\/agents\/orchestrate/);
   assert.match(advisor, /JourneyRail/);
-  assert.match(advisor, /adaptiveGradEnabled && isGradPhD\(profile, chat\)/);
+  assert.match(advisor, /adaptiveGradEnabled && isAdaptiveTrack\(currentTrack, profile, chat\)/);
   assert.match(advisor, /postgraduate\|post graduate\|master\|mba\|phd\|doctoral\|doctorate/);
   assert.match(advisor, /Move me to the next step\./);
   assert.match(advisor, /Profile/);

@@ -144,7 +144,8 @@ test('UI keeps tasks in Dashboard, gates Advisor rail, and uses explicit intents
   const dashboard = fs.readFileSync(path.join(root, 'src/components/candidate/Dashboard.jsx'), 'utf8');
   const app = fs.readFileSync(path.join(root, 'src/App.jsx'), 'utf8');
   const portal = fs.readFileSync(path.join(root, 'src/components/candidate/CandidatePortal.jsx'), 'utf8');
-  assert.match(advisor, /adaptiveGradEnabled && isGradPhD\(profile, chat\)/);
+  assert.match(advisor, /adaptiveGradEnabled && isAdaptiveTrack\(currentTrack, profile, chat\)/);
+  assert.match(advisor, /currentTrack === 'Undergraduate' \|\| currentTrack === 'Personal Development'/);
   assert.match(advisor, /Move me to the next step\./);
   assert.match(advisor, /Take me to \$\{STAGE_LABELS\[stage\]\}\./);
   assert.match(advisor, /advisorDirective\?\.modal === 'upgradePivot'/);

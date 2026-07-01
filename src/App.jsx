@@ -473,7 +473,7 @@ export default function App() {
   // (on initial load with a remembered token, and right after login/register).
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/agents/orchestrate')
+    fetch('/api/agents/orchestrate', { cache: 'no-store' })
       .then((res) => res.ok ? res.json() : { enabled: false })
       .then((data) => { if (!cancelled) setAdaptiveGradEnabled(data?.enabled === true); })
       .catch(() => { if (!cancelled) setAdaptiveGradEnabled(false); });

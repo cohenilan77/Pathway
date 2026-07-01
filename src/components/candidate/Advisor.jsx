@@ -83,6 +83,12 @@ function isGradPhD(profile, chat = []) {
   return !!trackChoice;
 }
 
+function isAdaptiveTrack(currentTrack, profile, chat) {
+  if (currentTrack === 'Undergraduate' || currentTrack === 'Personal Development') return false;
+  if (currentTrack === 'Graduate' || currentTrack === 'MBA' || currentTrack === 'Postgraduate / Doctoral') return true;
+  return isGradPhD(profile, chat);
+}
+
 function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, essays, interviews }) {
   const stageOrder = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
   const currentIdx = stageOrder.indexOf(journeyStage || 'intake');
@@ -132,7 +138,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage, adaptiveGradEnabled, advisorDirective }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage, adaptiveGradEnabled, advisorDirective, currentTrack }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -408,7 +414,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
           </div>
 
           {/* right rail: journey buttons (ADAPTIVE_GRAD + grad/PhD) or tasks */}
-          {adaptiveGradEnabled && isGradPhD(profile, chat) ? (
+          {adaptiveGradEnabled && isAdaptiveTrack(currentTrack, profile, chat) ? (
             <JourneyRail journeyStage={journeyStage} send={send} busy={busy} scores={scores} programs={programs} />
           ) : (
             <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
