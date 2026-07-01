@@ -5,6 +5,7 @@ import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
 import Community from './Community.jsx';
 import Settings from './Settings.jsx';
+import NarrativeStrategy from './NarrativeStrategy.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
@@ -926,7 +927,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', narrative: 'Narrative', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
@@ -1064,7 +1065,8 @@ export default function CandidatePortal(props) {
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
-        {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
+        {(candTab === 'analysis' || candTab === 'universities') && !isUndergrad && <Analysis {...props} />}
+        {candTab === 'narrative' && !isUndergrad && <NarrativeStrategy {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}

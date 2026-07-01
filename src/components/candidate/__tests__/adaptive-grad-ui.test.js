@@ -10,11 +10,12 @@ test('adaptive graduate rail removes Advisor tasks and leaves Dashboard tasks', 
   const dashboard = fs.readFileSync(path.join(root, 'src/components/candidate/Dashboard.jsx'), 'utf8');
   const app = fs.readFileSync(path.join(root, 'src/App.jsx'), 'utf8');
 
-  assert.match(app, /adaptiveGradEnabled: true/);
+  assert.match(app, /setAdaptiveGradEnabled\(data\?\.enabled === true\)/);
+  assert.match(app, /\/api\/agents\/orchestrate/);
   assert.match(advisor, /JourneyRail/);
   assert.match(advisor, /adaptiveGradEnabled && isGradPhD\(profile, chat\)/);
   assert.match(advisor, /postgraduate\|post graduate\|master\|mba\|phd\|doctoral\|doctorate/);
-  assert.match(advisor, /Next Step/);
+  assert.match(advisor, /Move me to the next step\./);
   assert.match(advisor, /Profile/);
   assert.match(advisor, /Analysis/);
   assert.match(advisor, /Portfolio/);

@@ -21,6 +21,10 @@ export const PLANS = {
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please upgrade in Settings to continue with AI guidance, or choose AI + Strategy to add Live Chat with your consultant.";
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
+function isLegacyCandidateCategory(profile) {
+  return profile?.category === 'Undergraduate' || profile?.category === 'Personal Development';
+}
+
 const WELCOME_MESSAGE = {
   English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you? → Undergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
   Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones — aquí para construir la narrativa que te abrirá las puertas.\n\nEmpecemos por saber en qué etapa de tu camino estás. ¿Cuál te describe mejor? → Pregrado | Posgrado | Posgrado / Doctorado | Desarrollo Personal",
@@ -394,6 +398,7 @@ export default function App() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
   const [journeyStage, setJourneyStage] = useState(null);
+  const [advisorDirective, setAdvisorDirective] = useState(null);
   const [cvFileDraft, setCvFileDraft] = useState(null);
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
@@ -401,6 +406,7 @@ export default function App() {
   const [language, setLanguageState] = useState(loadLanguage);
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
+  const [adaptiveGradEnabled, setAdaptiveGradEnabled] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -465,6 +471,31 @@ export default function App() {
 
   // Hydrate the candidate's session from the server whenever we have a token
   // (on initial load with a remembered token, and right after login/register).
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/agents/orchestrate')
+      .then((res) => res.ok ? res.json() : { enabled: false })
+      .then((data) => { if (!cancelled) setAdaptiveGradEnabled(data?.enabled === true); })
+      .catch(() => { if (!cancelled) setAdaptiveGradEnabled(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!adaptiveGradEnabled || !auth?.token) return;
+    let cancelled = false;
+    fetch('/api/agents/orchestrate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify({ extra: { getJourneyState: true } }),
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (!cancelled && data?.journeyState?.flags?.stage) setJourneyStage(data.journeyState.flags.stage);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [adaptiveGradEnabled, auth?.token]);
+
   useEffect(() => {
     if (!auth?.token) return;
     let cancelled = false;
@@ -764,15 +795,33 @@ export default function App() {
     try {
       const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
-      const res = await fetch('/api/chat', {
+      const legacyBody = { messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext };
+      const useAdaptiveEndpoint = adaptiveGradEnabled && !isLegacyCandidateCategory(profile);
+      const adaptiveBody = {
+        message: t,
+        conversationHistory: newChat.slice(0, -1),
+        extra: { profile, scores, programs: normalizeProgramList(programs) || programs },
+      };
+      let res = await fetch(useAdaptiveEndpoint ? '/api/agents/orchestrate' : '/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+        body: JSON.stringify(useAdaptiveEndpoint ? adaptiveBody : legacyBody),
       });
-      const data = await res.json();
+      let data = await res.json();
+      if (useAdaptiveEndpoint && data?.fallThrough) {
+        res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+          },
+          body: JSON.stringify(legacyBody),
+        });
+        data = await res.json();
+      }
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
       const raw = data.raw || data.reply || '';
 
@@ -841,7 +890,10 @@ export default function App() {
         }
 
         // ADAPTIVE_GRAD: handle open_screen and journey stage signals
-        if (data.openScreen) setCandTab(data.openScreen);
+        if (data.ui?.tab || data.openScreen) setCandTab(data.ui?.tab || data.openScreen);
+        if (data.ui?.modal || data.openModal) {
+          setAdvisorDirective({ modal: data.ui?.modal || data.openModal, nonce: Date.now() });
+        }
         if (data.journeyStage) setJourneyStage(data.journeyStage);
         if (data.pendingTasks?.length) {
           setTasks(prev => {
@@ -861,7 +913,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast, adaptiveGradEnabled, auth?.token]);
 
   // Sends a silent idle check-in to the AI without showing a user message in chat.
   // Only the AI response appears.
@@ -1072,7 +1124,7 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
-    adaptiveGradEnabled: true,
+    adaptiveGradEnabled, advisorDirective,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
     journeyStage,

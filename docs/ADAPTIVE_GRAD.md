@@ -1,117 +1,84 @@
-# ADAPTIVE_GRAD - AI-Driven Grad/PhD Journey Advisor
+# ADAPTIVE_GRAD
 
-## What it is
+## Scope and flag
 
-An AI-driven, stage-based advisory flow for Graduate and PhD candidates. Instead of a fixed script it uses Claude with tools to move each candidate through a personalized journey: intake, profile, analysis, portfolio, narrative, CV, essays, and interview prep.
+The adaptive advisor applies only when `ADAPTIVE_GRAD=true` and the category is `Graduate` or `Postgraduate / Doctoral`. The flag defaults off. Undergraduate and Personal Development continue through the existing `api/chat.js` path.
 
-Enabled automatically on the `staging` deployment. Everywhere else, the existing AdvisorAgent runs unchanged for all candidate types.
+The client reads the resolved flag from `GET /api/agents/orchestrate`. Adaptive intake and eligible turns post to `/api/agents/orchestrate`; all legacy turns post to `/api/chat`.
 
-## Feature flag
+## State
 
-`ADAPTIVE_GRAD` is enabled directly in the staging branch. No environment variable or Vercel branch metadata is required. The Graduate/PhD category gate still controls whether the adaptive advisor runs and whether its button rail is shown.
+State is stored at `journey:{candidateId}`:
 
-The staging client enables the feature directly. `Advisor.jsx` still requires the candidate category to be Graduate or PhD before rendering the adaptive button rail.
-
-## Who it applies to
-
-- Graduate and PhD candidates
-- NOT Undergraduate, NOT Personal Development
-
-## Journey stages
-
-```
-intake -> profile -> analysis -> portfolio -> narrative -> cv -> essays -> interview
-```
-
-Stages advance only forward. The AI calls `advance_stage` when a stage is complete.
-
-## Architecture
-
-```
-api/chat.js
-  |__ isGradPhD check + flag check
-      |__ JourneyAdvisor.chat()
-            |__ buildJourneySystemPrompt()   (lib/agents/journey/prompts.js)
-            |__ Claude + tool loop (up to 8 iterations)
-            |__ Tool handlers:
-                  parse_cv          -> heuristic GPA/test extraction
-                  fetch_benchmark   -> lib/agents/journey/tools/benchmarks.js
-                  score_profile     -> lib/scoring.js computeFit()
-                  check_risk        -> lib/agents/journey/tools/risk.js
-                  set_chosen_schools -> marks portfolioShown = true
-                  build_portfolio   -> benchmark + score + risk for each school
-                  show_narrative_options -> gated by portfolioShown
-                  advance_stage     -> lib/agents/journey/state.js
-                  open_screen       -> signals frontend to switch tab
-```
-
-## Persistence
-
-Journey state is stored in Redis under `journey:grad:{candidateId}` with a 90-day TTL.
-
-Default state shape:
-```json
+```js
 {
-  "stage": "intake",
-  "category": null,
-  "name": null,
-  "collected": {},
-  "chosenSchools": [],
-  "portfolio": null,
-  "narrative": null,
-  "portfolioShown": false
+  category,
+  subtype,
+  name,
+  collected: {},
+  flags: {
+    profileConfirmed,
+    scoresEmitted,
+    programsShown,
+    chosenSchools: [],
+    narrativeChoice: null,
+    stage: 'intake'
+  },
+  history: [],
+  updatedAt
 }
 ```
 
-## Hard gates
+`patchJourney` deep-merges `collected` and `flags`. Stage progression only moves forward.
 
-Candidates are "locked" from a program when:
-- GPA gap > 0.5 (candidate GPA is more than 0.5 below median)
-- Test score gap > 50 (candidate score is more than 50 below median)
+## Tools
 
-When locked, fit score is capped at 49 and tasks are generated to address the gap.
+`GradAgent` extends `BaseAgent` and runs a model-directed tool loop with:
 
-## Narrative gate
+- `read_state`, `write_state`
+- `parse_cv`, `score_profile`, `build_portfolio`
+- `set_chosen_schools`
+- `present_narrative_options`, `craft_narrative`
+- `optimize_cv`, `workshop_essay`
+- `run_mock_interview`, `predict_odds`
+- `advance_stage`, `emit_ui`
 
-The `show_narrative_options` tool is blocked until `portfolioShown` is `true`. This prevents narrative strategy from being discussed before the candidate has seen their school list.
+Benchmarks are fetched from the program database or cache first, then web search. Unverified benchmarks produce `confidence: "low"`. `applyHardGates` deterministically locks a program when GPA is more than 0.5 below the median or the test score is more than 50 below the median. Per-school risks populate `riskFlags` and create Dashboard tasks.
 
-## Risk checks
+## One ordering rule
 
-`checkRisk` generates risk flags and actionable tasks for:
-- Hard gate lock (GPA/test gap)
-- Unverified benchmark data
-- Thin profile (fewer than 2 key evidence fields)
-- Distant recommenders (senator, minister, president, CEO, etc.)
-- Career gap
+The school list must be shown before narrative. `present_narrative_options` and `craft_narrative` refuse while `flags.programsShown` is false. All other ordering is selected by the model.
 
-Tasks flow from the API response back to `src/App.jsx` via `data.pendingTasks`, which are shown on the Dashboard (not in the Advisor rail when ADAPTIVE_GRAD is on).
+## Advisor rail
 
-## UI changes (when flag is on + grad/PhD)
+The adaptive Advisor replaces its Tasks rail with:
 
-The Advisor right rail switches from "Your tasks" to a Journey Rail:
+- `Next`
+- `Profile`
+- `Analysis`
+- `Portfolio`
+- `Narrative`
+- `CV`
+- `Essays`
+- `Interview`
 
-- **Next Step** button (purple gradient) - sends "I would like to move to the next step."
-- **Stage buttons** (Profile, Analysis, Portfolio, Narrative, CV, Essays, Interview):
-  - Locked (lock icon) until reached
-  - Highlighted + bold when current
-  - Checkmarked (green) when past
+The current stage is highlighted, earlier stages show a checkmark, and unreached stages are disabled. Tasks remain on Dashboard.
 
-Tasks are removed from the Advisor rail and remain visible on the Dashboard only.
+| Stage | Unlocked subjects |
+|---|---|
+| intake | none |
+| profile | Profile |
+| analysis | Profile, Analysis |
+| portfolio | Profile, Analysis, Portfolio |
+| narrative | Profile, Analysis, Portfolio, Narrative |
+| cv | Profile, Analysis, Portfolio, Narrative, CV |
+| essays | Profile, Analysis, Portfolio, Narrative, CV, Essays |
+| interview | Profile, Analysis, Portfolio, Narrative, CV, Essays, Interview |
 
-## Benchmark data sourcing
+`emit_ui` can open `analysis`, `universities`, or `narrative`, and can open the `upgradePivot` modal. Legacy phrase matching remains in place when the feature is off.
 
-Three-tier lookup for each school's median GPA and test score:
-
-1. Redis `program:*` keys (from existing KPI import)
-2. Redis `admitrate:{name}` cache
-3. Anthropic web search (2 uses max per conversation)
-
-When data cannot be verified, `verified: false` and a `confidenceNote` are returned. The AI is instructed to disclose low confidence to the candidate.
-
-## Testing
+## Tests
 
 ```bash
-node api/__tests__/adaptive-grad.test.js
+node --test api/__tests__/adaptive-grad.test.js src/components/candidate/__tests__/adaptive-grad-ui.test.js
 ```
-
-21 tests covering: flag routing, hard gates, risk detection, narrative gate, stage ordering, rail visibility.

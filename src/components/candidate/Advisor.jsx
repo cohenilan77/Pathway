@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 
-const OPTIONS_PATTERN = /→\s*(.+)$/;
+const OPTIONS_PATTERN = /(?:→|->)\s*(.+)$/;
 
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
@@ -85,29 +85,28 @@ function isGradPhD(profile, chat = []) {
 
 function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, essays, interviews }) {
   const stageOrder = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
-  const currentIdx = stageOrder.indexOf(journeyStage || 'profile');
+  const currentIdx = stageOrder.indexOf(journeyStage || 'intake');
 
   const handleNext = () => {
-    send('I would like to move to the next step.');
+    send('Move me to the next step.');
   };
 
   const handleStage = (stage) => {
-    const labels = { profile: 'profile', analysis: 'analysis and scores', portfolio: 'portfolio', narrative: 'narrative strategy', cv: 'CV improvement', essays: 'essays', interview: 'mock interview' };
-    send(`Let's work on my ${labels[stage] || stage}.`);
+    send(`Take me to ${STAGE_LABELS[stage]}.`);
   };
 
   const isDone = (stage) => {
     const idx = stageOrder.indexOf(stage);
     return idx < currentIdx;
   };
-  const isCurrent = (stage) => stage === (journeyStage || 'profile');
+  const isCurrent = (stage) => stage === journeyStage;
   const isUnlocked = (stage) => stageOrder.indexOf(stage) <= currentIdx;
 
   return (
     <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '18px 16px', overflowY: 'auto', minHeight: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
       <button onClick={handleNext} disabled={busy}
         style={{ width: '100%', background: busy ? '#e7dcc7' : 'linear-gradient(135deg,#5b46e0,#b899fb)', color: busy ? '#9098b5' : '#fff', border: 'none', borderRadius: 12, padding: '11px 0', fontSize: 13.5, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', boxShadow: busy ? 'none' : '0 6px 18px rgba(91,70,224,.32)', marginBottom: 8 }}>
-        Next Step
+        Next
       </button>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 2 }}>JOURNEY</div>
       {JOURNEY_STAGES.map((stage) => {
@@ -133,7 +132,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage, adaptiveGradEnabled }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage, adaptiveGradEnabled, advisorDirective }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -141,6 +140,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const idleCountRef = useRef(0);
   const MAX_IDLE_FIRES = 2;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+
+  useEffect(() => {
+    if (adaptiveGradEnabled && advisorDirective?.modal === 'upgradePivot') setShowNarrativeModal(true);
+  }, [adaptiveGradEnabled, advisorDirective]);
 
   const visibleChat = visibleCandidateChat(chat, {
     whatsapp: authUser?.whatsappOptIn === true,
@@ -201,7 +204,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];
   const lastAiText = lastAiMsg?.text || '';
-  const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
+  const showNarrativeCTA = !adaptiveGradEnabled && !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
 
