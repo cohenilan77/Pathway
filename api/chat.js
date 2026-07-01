@@ -16,8 +16,6 @@ import { logTokenUsage } from '../lib/token-usage-logger.js';
 import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
-import { JourneyAdvisor } from '../lib/agents/journey/advisor.js';
-import { isAdaptiveGradEnabled } from '../lib/adaptive-grad.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -925,41 +923,6 @@ export default async function handler(req, res) {
     // message was the __idle_checkin__ sentinel), skip the API call entirely.
     if (anthropicMessages.length === 0 || anthropicMessages[anthropicMessages.length - 1].role !== 'user') {
       return res.status(200).json({ raw: '' });
-    }
-
-    // ADAPTIVE_GRAD is automatic on the staging deployment. It still only
-    // applies to Graduate and PhD candidates.
-    const category = profile?.category || null;
-    const isGradPhD = category && category !== 'Undergraduate' && category !== 'Personal Development';
-    const adaptiveGradEnabled = isAdaptiveGradEnabled();
-
-    if (adaptiveGradEnabled && isGradPhD && userId && !isIdleCheckin) {
-      const journeyAdvisor = new JourneyAdvisor();
-      const journeyResult = await journeyAdvisor.chat(anthropicMessages, {
-        candidateId: userId,
-        profile,
-        scores,
-        kpiSummary: kpiPromptSummary,
-      });
-      let raw = journeyResult.raw;
-      if (action === 'warn') {
-        raw = `${raw}\n\nYou are approaching the AI usage limit for this period.`;
-      }
-      const visibleReply = raw.trim();
-      const saves = [];
-      const lastUserMsg = messages.filter((m) => m.role === 'user' && m.text).pop();
-      if (lastUserMsg?.text) saves.push(appendMessage(userId, { senderId: userId, senderRole: 'candidate', text: lastUserMsg.text }));
-      if (visibleReply) saves.push(appendMessage(userId, { senderId: 'ai', senderRole: 'ai', text: visibleReply }));
-      await Promise.allSettled(saves);
-      if (journeyResult.usage) {
-        recordUsage({ userId: usageUserId, conversationId: convoId, feature, model: CHAT_MODEL, inputTokens: journeyResult.usage.input_tokens, outputTokens: journeyResult.usage.output_tokens, endpoint: 'chat/journey' }).catch(() => {});
-      }
-      return res.status(200).json({
-        raw,
-        openScreen: journeyResult.openScreen || null,
-        journeyStage: journeyResult.journeyStage || null,
-        pendingTasks: journeyResult.pendingTasks || [],
-      });
     }
 
     const advisor = new AdvisorAgent();

@@ -1,7 +1,8 @@
 import { getUserIdByToken, getUserById, ROLES } from '../../lib/db.js';
 import { MainAgent } from '../../lib/agents/MainAgent.js';
-import { JourneyAdvisor } from '../../lib/agents/journey/advisor.js';
-import { getJourneyState } from '../../lib/agents/journey/state.js';
+import { GradAgent } from '../../lib/agents/journey/GradAgent.js';
+import { getJourney, patchJourney } from '../../lib/agents/journey/state.js';
+import { isAdaptiveCategory, normalizeJourneyCategory, runJourneyGate } from '../../lib/agents/journey/gate.js';
 import { isAdaptiveGradEnabled } from '../../lib/adaptive-grad.js';
 
 function getToken(req) {
@@ -60,8 +61,50 @@ export default async function handler(req, res) {
     // When ADAPTIVE_GRAD is on and the target is a grad/PhD candidate,
     // expose the journey state for staff queries.
     if (isAdaptiveGradEnabled() && extra?.getJourneyState) {
-      const journeyState = await getJourneyState(candidateId);
+      const journeyState = await getJourney(candidateId);
       return res.status(200).json({ ok: true, journeyState });
+    }
+
+    if (isAdaptiveGradEnabled()) {
+      const suppliedCategory = normalizeJourneyCategory(extra?.profile?.category || extra?.category);
+      const existingJourney = await getJourney(candidateId);
+      if (!existingJourney.category && suppliedCategory) {
+        await patchJourney(candidateId, {
+          category: suppliedCategory,
+          flags: { stage: isAdaptiveCategory(suppliedCategory) ? 'profile' : 'intake' },
+        });
+      }
+
+      const gate = await runJourneyGate(candidateId, message);
+      if (gate.action === 'ask') {
+        return res.status(200).json({ ok: true, raw: gate.text, text: gate.text, journey: gate.journey, journeyStage: 'intake' });
+      }
+      if (gate.action === 'legacy') {
+        return res.status(200).json({ ok: true, fallThrough: true, category: gate.category });
+      }
+      if (gate.action === 'adaptive') {
+        const gradAgent = new GradAgent();
+        const result = await gradAgent.chat(candidateId, message || '', {
+          conversationHistory,
+          profile: extra.profile || {},
+          scores: extra.scores || {},
+          kpiSummary: extra.kpiSummary || '',
+        });
+        return res.status(200).json({
+          ok: true,
+          agent: 'grad',
+          text: result.text,
+          raw: result.raw,
+          toolUses: result.toolUses,
+          usage: result.usage,
+          journey: result.journey,
+          journeyStage: result.journeyStage,
+          pendingTasks: result.pendingTasks,
+          ui: result.ui,
+          openScreen: result.ui?.tab || null,
+          openModal: result.ui?.modal || null,
+        });
+      }
     }
 
     const agent = new MainAgent();
