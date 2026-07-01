@@ -79,6 +79,7 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     topWeakness: Array.isArray(weaknesses) && weaknesses.length > 0 ? weaknesses[0] : null,
     lowestScoreKey,
     overallScore: scores?.overall ?? null,
+    pathwayType: profile?.pathwayType || null,
 
     // Stage-specific insights
     nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
@@ -129,39 +130,66 @@ MANDATORY RESPONSE RULES (no exceptions):
 3. Every message ends with → Option1 | Option2 | Option3 | Other
 4. Never echo or confirm what the student said. Move forward.`;
 
-    // Derive the most important next question from actual student data
     const gradeStr = stage.grade ? `Grade ${stage.grade}` : 'this student';
     const majorStr = stage.intendedMajor ? `(interested in ${stage.intendedMajor})` : '';
+    const pathwayType = stage.pathwayType;
+    const pathwayLabel = pathwayType === 'focused' ? 'focused' : pathwayType === 'exploring' ? 'still exploring' : pathwayType === 'partial' ? 'partially decided' : null;
+
+    if (stage.grade) {
+      systemContext += `
+
+STUDENT: ${gradeStr}${pathwayLabel ? ` · Pathway: ${pathwayLabel}` : ''}${stage.intendedMajor ? ` · Interested in: ${stage.intendedMajor}` : ''}${stage.destination ? ` · Destination: ${stage.destination}` : ''}`;
+    }
 
     if (stage.hasProfile && stage.hasScores && stage.hasUniversities) {
-      // Post-snapshot: derive next question from top task / lowest score
-      if (!stage.hasTestingScore) {
-        systemContext += `
+      // Post-snapshot: derive next question from pathway type + top task / lowest score
+      if (pathwayType === 'exploring' || pathwayType === null) {
+        if (!stage.hasTestingScore) {
+          systemContext += `
 
-NEXT FOCUS: Testing gap. ${gradeStr} ${majorStr} has no SAT/ACT score yet. Ask specifically about their testing plan and target score for their reach schools. Options should include SAT/ACT timelines, not generic choices.`;
-      } else if (stage.topWeakness) {
-        systemContext += `
+NEXT FOCUS: Student is still exploring their direction. Ask about a subject or activity they enjoyed most recently to help uncover their interests. Keep it discovery-focused, not pressure-filled. Options should be specific subjects, clubs, or experiences, not generic.`;
+        } else if (stage.topWeakness) {
+          systemContext += `
 
-NEXT FOCUS: Address this specific weakness: "${stage.topWeakness}". Ask ONE concrete question to help close this gap. Options must be actionable steps related to that exact weakness, not generic choices.`;
-      } else if (stage.topTask) {
-        systemContext += `
+NEXT FOCUS: Student is exploring. Address this gap: "${stage.topWeakness}". Ask ONE question to help them discover something new or deepen an interest. Options must be concrete activities or experiences.`;
+        } else if (stage.topTask) {
+          systemContext += `
 
-NEXT FOCUS: Help with this specific task: "${stage.topTask}". Ask ONE concrete question about it. Options must be specific to that task.`;
-      } else if (shouldNudgeToNextStage) {
-        systemContext += `
+NEXT FOCUS: Help exploring student with this task: "${stage.topTask}". Frame as an opportunity to discover, not a deadline. Options must be specific to that task.`;
+        }
+      } else if (pathwayType === 'focused') {
+        if (!stage.hasTestingScore) {
+          systemContext += `
 
-NEXT FOCUS: Student has been at the university stage for ${daysInStage} days. Ask about SAT/ACT planning with specific timeline options.`;
+NEXT FOCUS: Student is focused on ${stage.intendedMajor || 'their intended field'}. They have no SAT/ACT score yet. Ask about their testing plan with specific timelines tied to their target reach schools in that field. Options should be concrete test dates or preparation steps.`;
+        } else if (stage.topWeakness) {
+          systemContext += `
+
+NEXT FOCUS: Focused student. Address this specific weakness: "${stage.topWeakness}". Ask ONE concrete question to close this gap. Options must be actionable steps in their intended field, not generic.`;
+        } else if (stage.topTask) {
+          systemContext += `
+
+NEXT FOCUS: Help focused student with: "${stage.topTask}". Ask ONE specific question. Options must be field-specific actions tied to ${stage.intendedMajor || 'their focus area'}.`;
+        } else if (shouldNudgeToNextStage) {
+          systemContext += `
+
+NEXT FOCUS: Student has been here ${daysInStage} days. Ask about their next concrete step in ${stage.intendedMajor || 'their field'} with specific competition, project, or activity options.`;
+        }
+      } else if (pathwayType === 'partial') {
+        if (stage.topTask) {
+          systemContext += `
+
+NEXT FOCUS: Student is partially decided ${majorStr}. Help them commit by asking about one of their top interests: "${stage.topTask}". Options should help them choose between their two or three possible directions.`;
+        } else if (!stage.hasTestingScore) {
+          systemContext += `
+
+NEXT FOCUS: Partially-decided student. Ask about testing plans. Keep options flexible since their direction is not yet set.`;
+        }
       }
     } else if (stage.hasProfile && !stage.hasScores) {
       systemContext += `
 
 NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? 'testing plans' : 'goals and university preferences'}.`;
-    }
-
-    if (stage.grade) {
-      systemContext += `
-
-STUDENT GRADE: ${stage.grade}${stage.intendedMajor ? ` · Interested in: ${stage.intendedMajor}` : ''}${stage.destination ? ` · Destination: ${stage.destination}` : ''}`;
     }
   }
 
