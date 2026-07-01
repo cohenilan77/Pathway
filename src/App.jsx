@@ -114,15 +114,19 @@ DATA COLLECTED:
 
   // Add stage-specific guidance
   if (isUndergrad) {
+    systemContext += `
+
+UNDERGRADUATE RESPONSE RULES (override everything else):
+• Max 1-2 sentences per reply. No long explanations.
+• Never use hyphens or dashes anywhere in your text.
+• End every message with → Option1 | Option2 | Option3 | Other (always include at least 3 options).
+• Adapt questions to what the student already shared. Reference their specific grade, subjects, or interests.
+• Never echo or confirm what they just said. Ask the next thing immediately.`;
+
     if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
       systemContext += `
 
-⚠️ ENGAGEMENT ALERT: Student has been on university list for ${daysInStage} days.
-ACTION: Ask about testing (SAT/ACT). This is the natural next step.
-NUDGE QUESTIONS:
-- "Now that we have your university targets, let's talk testing..."
-- "When are you planning to take the SAT or ACT?"
-- "What's your target score for your reach schools?"`;
+Student has been in university stage ${daysInStage} days. Ask about SAT/ACT testing as the next step. Keep it to one short question with options.`;
     }
   }
 
