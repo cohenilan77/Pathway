@@ -784,12 +784,6 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
                                   </div>
                                 )}
-                                {school.avgGPA != null && (
-                                  <div style={{ textAlign: 'center' }}>
-                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
-                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
-                                  </div>
-                                )}
                                 {(() => {
                                   const ar = school.admitRate ?? school.acceptanceRate;
                                   return (
@@ -801,6 +795,12 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                     </div>
                                   );
                                 })()}
+                                {school.avgGPA != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                  </div>
+                                )}
                                 {school.fit != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 20, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
