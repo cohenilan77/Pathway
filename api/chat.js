@@ -17,6 +17,7 @@ import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
 import { JourneyAdvisor } from '../lib/agents/journey/advisor.js';
+import { isAdaptiveGradEnabled } from '../lib/adaptive-grad.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -926,12 +927,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ raw: '' });
     }
 
-    // ADAPTIVE_GRAD flag: when on AND the candidate is grad/PhD, route to the
-    // tools-based JourneyAdvisor instead of the fixed-script AdvisorAgent.
-    // Flag is OFF by default; set ADAPTIVE_GRAD=true in env to enable.
+    // ADAPTIVE_GRAD is automatic on the staging deployment. It still only
+    // applies to Graduate and PhD candidates.
     const category = profile?.category || null;
     const isGradPhD = category && category !== 'Undergraduate' && category !== 'Personal Development';
-    const adaptiveGradEnabled = process.env.ADAPTIVE_GRAD === 'true';
+    const adaptiveGradEnabled = isAdaptiveGradEnabled();
 
     if (adaptiveGradEnabled && isGradPhD && userId && !isIdleCheckin) {
       const journeyAdvisor = new JourneyAdvisor();

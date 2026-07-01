@@ -4,17 +4,13 @@
 
 An AI-driven, stage-based advisory flow for Graduate and PhD candidates. Instead of a fixed script it uses Claude with tools to move each candidate through a personalized journey: intake, profile, analysis, portfolio, narrative, CV, essays, and interview prep.
 
-Enabled via feature flag. When off, the existing AdvisorAgent runs unchanged for all candidate types.
+Enabled automatically on the `staging` deployment. Everywhere else, the existing AdvisorAgent runs unchanged for all candidate types.
 
 ## Feature flag
 
-| Variable | Where | Required value |
-|---|---|---|
-| `ADAPTIVE_GRAD` | Vercel env (server-side) | `true` |
+`ADAPTIVE_GRAD` is derived from Vercel's built-in `VERCEL_GIT_COMMIT_REF` value. It is on when the deployment branch is `staging` and off on every other branch. No manually configured environment variable is required.
 
-Default is off (`undefined` or any other value).
-
-The candidate UI reads this server flag from `/api/agents/orchestrate`, so no separate client flag is required.
+The candidate UI reads the resolved server flag from `/api/agents/orchestrate`, so no separate client flag is required.
 
 ## Who it applies to
 
