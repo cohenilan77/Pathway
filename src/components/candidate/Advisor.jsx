@@ -46,7 +46,7 @@ function NarrativeModal({ onClose, onChoose }) {
           </div>
         </div>
         <div style={{ textAlign: 'center' }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9098b5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>Not ready yet — go back to the chat</button>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9098b5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>Not ready yet, go back to the chat</button>
         </div>
       </div>
     </div>
@@ -61,8 +61,6 @@ const AiAvatar = () => (
     </svg>
   </div>
 );
-
-const ADAPTIVE_GRAD = import.meta.env.VITE_ADAPTIVE_GRAD === 'true';
 
 const JOURNEY_STAGES = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
 const STAGE_LABELS = { profile: 'Profile', analysis: 'Analysis', portfolio: 'Portfolio', narrative: 'Narrative', cv: 'CV', essays: 'Essays', interview: 'Interview' };
@@ -105,7 +103,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
         return (
           <button key={stage} onClick={() => unlocked && handleStage(stage)} disabled={busy || !unlocked}
             style={{
-              width: '100%', textAlign: 'left', border: 'none', borderRadius: 11, padding: '10px 13px', fontSize: 13, fontWeight: current ? 800 : 600, cursor: !unlocked || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 9, transition: 'all .15s',
+              width: '100%', textAlign: 'left', borderRadius: 11, padding: '10px 13px', fontSize: 13, fontWeight: current ? 800 : 600, cursor: !unlocked || busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 9, transition: 'all .15s',
               background: current ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : done ? '#eafff6' : unlocked ? '#faf7f2' : '#f0ece6',
               color: current ? '#fff' : done ? '#16875c' : unlocked ? '#33405e' : '#c0c8e0',
               border: current ? 'none' : done ? '1px solid #b7ecd4' : '1px solid #e7dcc7',
@@ -121,7 +119,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, journeyStage, adaptiveGradEnabled }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -393,7 +391,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
           </div>
 
           {/* right rail: journey buttons (ADAPTIVE_GRAD + grad/PhD) or tasks */}
-          {ADAPTIVE_GRAD && isGradPhD(profile?.category) ? (
+          {adaptiveGradEnabled && isGradPhD(profile?.category) ? (
             <JourneyRail journeyStage={journeyStage} send={send} busy={busy} scores={scores} programs={programs} />
           ) : (
             <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>

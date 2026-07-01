@@ -11,9 +11,10 @@ Enabled via feature flag. When off, the existing AdvisorAgent runs unchanged for
 | Variable | Where | Required value |
 |---|---|---|
 | `ADAPTIVE_GRAD` | Vercel env (server-side) | `true` |
-| `VITE_ADAPTIVE_GRAD` | Vercel env (client-side) | `true` |
 
 Default is off (`undefined` or any other value).
+
+The candidate UI reads this server flag from `/api/agents/orchestrate`, so no separate client flag is required.
 
 ## Who it applies to
 
