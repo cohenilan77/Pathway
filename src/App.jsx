@@ -401,7 +401,6 @@ export default function App() {
   const [language, setLanguageState] = useState(loadLanguage);
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
-  const [adaptiveGradEnabled, setAdaptiveGradEnabled] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -463,15 +462,6 @@ export default function App() {
     const rest = params.toString();
     window.history.replaceState({}, '', window.location.pathname + (rest ? `?${rest}` : ''));
   }, [setAuth]);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/agents/orchestrate')
-      .then((res) => res.ok ? res.json() : { enabled: false })
-      .then((data) => { if (!cancelled) setAdaptiveGradEnabled(data?.enabled === true); })
-      .catch(() => { if (!cancelled) setAdaptiveGradEnabled(false); });
-    return () => { cancelled = true; };
-  }, []);
 
   // Hydrate the candidate's session from the server whenever we have a token
   // (on initial load with a remembered token, and right after login/register).
@@ -1082,7 +1072,7 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
-    adaptiveGradEnabled,
+    adaptiveGradEnabled: true,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
     journeyStage,

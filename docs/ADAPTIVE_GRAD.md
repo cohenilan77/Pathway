@@ -8,9 +8,9 @@ Enabled automatically on the `staging` deployment. Everywhere else, the existing
 
 ## Feature flag
 
-`ADAPTIVE_GRAD` is derived from Vercel's built-in `VERCEL_GIT_COMMIT_REF` value. It is on when the deployment branch is `staging` and off on every other branch. No manually configured environment variable is required.
+`ADAPTIVE_GRAD` is enabled directly in the staging branch. No environment variable or Vercel branch metadata is required. The Graduate/PhD category gate still controls whether the adaptive advisor runs and whether its button rail is shown.
 
-The candidate UI reads the resolved server flag from `/api/agents/orchestrate`, so no separate client flag is required.
+The staging client enables the feature directly. `Advisor.jsx` still requires the candidate category to be Graduate or PhD before rendering the adaptive button rail.
 
 ## Who it applies to
 
