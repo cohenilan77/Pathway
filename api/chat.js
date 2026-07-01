@@ -14,6 +14,7 @@ import {
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { logTokenUsage } from '../lib/token-usage-logger.js';
 import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
+import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -281,7 +282,10 @@ export function buildSystemPrompt(config, language, kpiPromptSummary = '', verif
 1. The ==LIVE UNIVERSITY / PROGRAM KPI DATABASE== above, if the school/program appears there.
 2. If it does not appear there (a candidate named a school/program outside the database, including niche, regional, or portfolio/audition-based programs), use the web_search tool to find that program's real, current median GPA, its standardized test requirement if any and that test's median score, and its acceptance rate.
 3. Only if web_search returns nothing reliable, reason by analogy from the closest comparable/parallel program you do have real data for (same field, comparable selectivity tier, same country/region) — say so explicitly in that school's "notes" field (e.g. "Benchmarked against [comparable program] — exact published figures unavailable"). Never silently invent exact official figures.`;
-  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}${stageInstruction}
+  const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const testDatesLine = upcomingTestDatesPromptLine();
+  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.
+TODAY'S DATE: ${todayStr}. Never reference past dates as "upcoming" and never generate test date options that have already passed. ${testDatesLine}${languageInstruction}${stageInstruction}
 ${kpiInstruction}
 ${dataSourcingInstruction}
 ${verifiedScoringSection}
@@ -553,7 +557,7 @@ INITIAL SNAPSHOT — after Question 12 is answered, do NOT produce only a univer
 - <PROGRAMS> with at least 10 undergraduate universities organized by tier: stretch = Reach, possible = Target, safe = Likely. For Grade 9-10, universities are exploratory and should reflect direction, not a final application list. Use avgSAT/avgACT and avgGPA only when relevant; never avgGMAT.
 Visible text after the blocks must follow this exact two-part structure:
 Part 1 (1 sentence): Name the student's actual grade, their strongest subject or interest, and how many schools were matched with the Reach/Target/Likely breakdown. Use the student's real data. No generic phrases.
-Part 2 (1 sentence + chips): Look at TASKS[0] (the most important task you just generated). Ask ONE specific question that directly addresses that task. The chips must be concrete actions tied to that task, not generic options like "ask something else." If TASKS[0] is about competitions, offer relevant competition types. If it is about testing, offer specific test timelines. If it is about leadership, offer specific leadership opportunities. Never ask "What would you like to focus on first?" or any open-ended meta question. Always end with → Chip1 | Chip2 | Chip3 | Chip4
+Part 2 (1 sentence + chips): Look at TASKS[0] (the most important task you just generated). Ask ONE specific question that directly addresses that task. The chips must be concrete actions tied to that task, not generic options like "ask something else." If TASKS[0] is about competitions, offer relevant competition types. If it is about testing, use the upcoming SAT and ACT dates listed at the top of this prompt as chip options — never generate a past date. If it is about leadership, offer specific leadership opportunities. Never ask "What would you like to focus on first?" or any open-ended meta question. Always end with → Chip1 | Chip2 | Chip3 | Chip4
 
 LONG-TERM JOURNEY MODES:
 - Weekly coaching: ask for one short update on achievements, activities, problems, ideas, or goals; update PROFILE/TASKS when useful.

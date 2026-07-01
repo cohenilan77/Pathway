@@ -8,6 +8,7 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
+import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
@@ -161,7 +162,7 @@ NEXT FOCUS: Help exploring student with this task: "${stage.topTask}". Frame as 
         if (!stage.hasTestingScore) {
           systemContext += `
 
-NEXT FOCUS: Student is focused on ${stage.intendedMajor || 'their intended field'}. They have no SAT/ACT score yet. Ask about their testing plan with specific timelines tied to their target reach schools in that field. Options should be concrete test dates or preparation steps.`;
+NEXT FOCUS: Student is focused on ${stage.intendedMajor || 'their intended field'}. They have no SAT/ACT score yet. Ask about their testing plan. ${upcomingTestDatesPromptLine()} Use only these future dates as chip options — never a date that has already passed.`;
         } else if (stage.topWeakness) {
           systemContext += `
 
@@ -183,13 +184,13 @@ NEXT FOCUS: Student is partially decided ${majorStr}. Help them commit by asking
         } else if (!stage.hasTestingScore) {
           systemContext += `
 
-NEXT FOCUS: Partially-decided student. Ask about testing plans. Keep options flexible since their direction is not yet set.`;
+NEXT FOCUS: Partially-decided student. Ask about testing plans. ${upcomingTestDatesPromptLine()} Offer upcoming dates from both tests — use only future dates, never past ones.`;
         }
       }
     } else if (stage.hasProfile && !stage.hasScores) {
       systemContext += `
 
-NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? 'testing plans' : 'goals and university preferences'}.`;
+NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'goals and university preferences'}.`;
     }
   }
 
@@ -521,7 +522,10 @@ export default function App() {
           const nudgeMsg = {
             role: 'ai',
             channel: 'web',
-            text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
+            text: (() => {
+              const { sat, act } = getUpcomingTestDates(3);
+              return `Welcome back! You've got a solid university list — next step is locking in your test plan. When are you thinking of sitting the SAT or ACT? → ${sat[0]} | ${act[0]} | ${sat[1]} | Not sure yet`;
+            })()
           };
           if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
             setChat(prev => [...prev, nudgeMsg]);
