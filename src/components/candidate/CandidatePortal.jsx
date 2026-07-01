@@ -3,6 +3,7 @@ import Dashboard from './Dashboard.jsx';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
+import Community from './Community.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
@@ -10,8 +11,16 @@ import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { getTrackConfig } from '../../trackConfig.js';
+import { estimatePracticeScore } from '../../lib/testScoring.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
+
+const PLAN_ACCESS = {
+  free: new Set(['dashboard', 'advisor', 'settings']),
+  ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
+    'studentProfile', 'roadmap', 'activities', 'universities', 'testing', 'essays', 'applications']),
+  ai_strategy: null, // null = all tabs
+};
 
 const NAV_ITEMS = [
   {
@@ -35,6 +44,10 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" /></svg>,
   },
   {
+    key: 'community', label: 'Community',
+    icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="9" cy="7" r="3" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.85" /></svg>,
+  },
+  {
     key: 'settings', label: 'Settings',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>,
   },
@@ -47,6 +60,7 @@ const CHAT_NAV_ITEM = {
 
 const ICON_BY_KEY = Object.fromEntries(NAV_ITEMS.map(item => [item.key, item.icon]));
 ICON_BY_KEY.chat = CHAT_NAV_ITEM.icon;
+ICON_BY_KEY.community = ICON_BY_KEY.community;
 ICON_BY_KEY.studentProfile = ICON_BY_KEY.advisor;
 ICON_BY_KEY.roadmap = ICON_BY_KEY.analysis;
 ICON_BY_KEY.activities = ICON_BY_KEY.documents;
@@ -56,16 +70,20 @@ ICON_BY_KEY.essays = ICON_BY_KEY.documents;
 ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
 
 function navFromConfig(config, hasChatAccess) {
-  if (Array.isArray(config?.nav) && config.nav.length) {
-    return config.nav.map(([key, label, iconKey]) => ({
+  let items = Array.isArray(config?.nav) && config.nav.length
+    ? config.nav.map(([key, label, iconKey]) => ({
       key,
       label,
       icon: ICON_BY_KEY[iconKey] || ICON_BY_KEY[key] || ICON_BY_KEY.dashboard,
-    }));
+    }))
+    : [...NAV_ITEMS];
+
+  if (hasChatAccess && !items.some(item => item.key === 'chat')) {
+    const settingsIndex = items.findIndex(item => item.key === 'settings');
+    items = [...items];
+    items.splice(settingsIndex >= 0 ? settingsIndex : items.length, 0, CHAT_NAV_ITEM);
   }
-  return hasChatAccess
-    ? [...NAV_ITEMS.filter(item => item.key !== 'settings'), CHAT_NAV_ITEM, NAV_ITEMS.find(item => item.key === 'settings')]
-    : NAV_ITEMS;
+  return items;
 }
 
 function navStyle(active) {
@@ -117,14 +135,6 @@ function buildCandidateAlerts({ documents = [], chat = [], tasks = [], completed
       title: 'Open application tasks',
       message: `${remainingTasks} task${remainingTasks === 1 ? '' : 's'} still need attention.`,
       priority: 'medium',
-    });
-  }
-  if (plan !== 'ai_strategy') {
-    alerts.push({
-      id: `plan-upgrade-${plan || 'free'}`,
-      title: 'Consultant chat locked',
-      message: 'Upgrade to AI + Strategy to message a human consultant.',
-      priority: 'low',
     });
   }
   return alerts;
@@ -429,10 +439,227 @@ function UndergradCard({ title, children, action }) {
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send }) {
+const primaryButtonStyle = {
+  background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 11,
+  padding: '10px 15px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+};
+
+const secondaryButtonStyle = {
+  background: '#fff', color: '#5b46e0', border: '1px solid #e7dcc7', borderRadius: 11,
+  padding: '9px 13px', fontSize: 12.5, fontWeight: 750, cursor: 'pointer', fontFamily: 'inherit',
+};
+
+function TestingSimulationCard({ title, testType, authToken, sessionId }) {
+  const [phase, setPhase] = React.useState('idle');
+  const [simulation, setSimulation] = React.useState(null);
+  const [timeLeft, setTimeLeft] = React.useState(0);
+  const [currentQuestion, setCurrentQuestion] = React.useState(0);
+  const [answers, setAnswers] = React.useState({});
+  const [flagged, setFlagged] = React.useState({});
+  const [result, setResult] = React.useState(null);
+  const [error, setError] = React.useState('');
+  const answersRef = React.useRef(answers);
+  const deadlineRef = React.useRef(null);
+  answersRef.current = answers;
+
+  const questions = simulation?.questions || [];
+  const answeredCount = Object.keys(answers).length;
+  const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+
+  const finishTest = React.useCallback((finalAnswers = answersRef.current) => {
+    if (!questions.length) return;
+    setResult(estimatePracticeScore(testType, questions, finalAnswers));
+    setPhase('results');
+  }, [questions, testType]);
+
+  React.useEffect(() => {
+    if (phase !== 'active') return undefined;
+    const interval = window.setInterval(() => {
+      const remaining = Math.max(0, Math.ceil(((deadlineRef.current || Date.now()) - Date.now()) / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) {
+        window.clearInterval(interval);
+        finishTest(answersRef.current);
+      }
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [phase, finishTest]);
+
+  const startSimulation = async () => {
+    setPhase('loading');
+    setError('');
+    setSimulation(null);
+    setAnswers({});
+    setFlagged({});
+    setResult(null);
+    setCurrentQuestion(0);
+    try {
+      const response = await fetch('/api/test-simulation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
+        body: JSON.stringify({ testType, conversationId: sessionId }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.simulation) throw new Error(data.error || 'Could not generate the simulation.');
+      setSimulation(data.simulation);
+      setTimeLeft(data.simulation.durationSeconds);
+      deadlineRef.current = Date.now() + data.simulation.durationSeconds * 1000;
+      setPhase('active');
+    } catch (generationError) {
+      setError(generationError.message || 'Could not generate the simulation.');
+      setPhase('error');
+    }
+  };
+
+  const submitTest = () => {
+    const unanswered = questions.length - answeredCount;
+    if (unanswered > 0 && !window.confirm(`${unanswered} question${unanswered === 1 ? '' : 's'} unanswered. Submit anyway?`)) return;
+    finishTest(answersRef.current);
+  };
+
+  if (phase === 'idle' || phase === 'loading' || phase === 'error') {
+    return (
+      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{title}</div>
+        <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginBottom: 18 }}>
+          20 original questions · {testType === 'sat' ? '28' : '20'} minutes · new AI-generated session every time
+        </div>
+        {error && <div style={{ background: '#fff1f6', color: '#c2416c', border: '1px solid #fbd3e2', borderRadius: 12, padding: 12, fontSize: 13, marginBottom: 14 }}>{error}</div>}
+        <button onClick={startSimulation} disabled={phase === 'loading'} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 800, cursor: phase === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%', opacity: phase === 'loading' ? 0.65 : 1 }}>
+          {phase === 'loading' ? 'Generating a fresh test…' : `${phase === 'error' ? 'Try Again' : `Start ${title}`} →`}
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === 'results' && result) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+          <div className="pw-test-result-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,.8fr) 1.5fr', gap: 28, alignItems: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px' }}>ESTIMATED {testType.toUpperCase()} SCORE</div>
+              <div style={{ fontSize: 54, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{result.estimatedScore}</div>
+              <div style={{ fontSize: 12, color: '#9098b5' }}>Scale {result.scale}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{result.correctCount} of {questions.length} correct · {result.percentage}%</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                {Object.entries(result.sectionScores).map(([section, sectionScore]) => (
+                  <span key={section} style={{ background: '#f0edff', color: '#5b46e0', borderRadius: 9, padding: '6px 9px', fontSize: 12, fontWeight: 800 }}>{section}: {sectionScore}</span>
+                ))}
+              </div>
+              <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 14 }}>{simulation.scoringNote}</div>
+              <button onClick={startSimulation} style={{ ...primaryButtonStyle, padding: '10px 16px', fontSize: 13 }}>Generate a New Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', padding: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 16 }}>Answer review</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {questions.map((question, index) => {
+              const selected = answers[index];
+              const correct = selected === question.correctIndex;
+              return (
+                <div key={question.id} style={{ border: `1px solid ${correct ? '#b7ead8' : '#f2c6d5'}`, background: correct ? '#f2fcf8' : '#fff7fa', borderRadius: 14, padding: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: correct ? '#168c68' : '#c2416c', marginBottom: 6 }}>QUESTION {index + 1} · {correct ? 'CORRECT' : 'REVIEW'}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{question.prompt}</div>
+                  <div style={{ fontSize: 12.5, color: '#33405e', marginBottom: 4 }}>Your answer: {selected == null ? 'Unanswered' : `${String.fromCharCode(65 + selected)}. ${question.options[selected]}`}</div>
+                  {!correct && <div style={{ fontSize: 12.5, color: '#168c68', marginBottom: 4 }}>Correct answer: {String.fromCharCode(65 + question.correctIndex)}. {question.options[question.correctIndex]}</div>}
+                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5 }}>{question.explanation}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const question = questions[currentQuestion];
+  return (
+    <div className="pw-test-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 220px', gap: 18, alignItems: 'start' }}>
+      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0' }}>{question.section} · {question.domain}</div>
+            <div style={{ fontSize: 11, color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{question.difficulty} · Question {currentQuestion + 1} of {questions.length}</div>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: timeLeft < 120 ? '#e0457a' : '#5b46e0' }}>{formatTime(timeLeft)}</div>
+        </div>
+        <div style={{ width: '100%', height: 7, borderRadius: 4, background: '#e7dcc7', marginBottom: 20 }}>
+          <div style={{ width: `${(answeredCount / questions.length) * 100}%`, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .25s ease' }} />
+        </div>
+        {question.stimulus && <div style={{ background: '#f6f1e8', borderRadius: 14, padding: 16, fontSize: 13.5, color: '#33405e', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{question.stimulus}</div>}
+        <div style={{ fontSize: 16, fontWeight: 750, color: '#141b34', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {question.options.map((option, index) => {
+            const selected = answers[currentQuestion] === index;
+            return (
+              <button key={`${question.id}-${index}`} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#eeeaff' : '#fff', color: '#141b34', border: `1.5px solid ${selected ? '#8b72ef' : '#e7dcc7'}`, borderRadius: 12, padding: '13px 14px', fontSize: 13.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', gap: 10 }}>
+                <span style={{ color: selected ? '#5b46e0' : '#9098b5', fontWeight: 900 }}>{String.fromCharCode(65 + index)}.</span>
+                <span>{option}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="pw-test-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
+          <button onClick={() => setCurrentQuestion((value) => Math.max(0, value - 1))} disabled={currentQuestion === 0} style={{ ...secondaryButtonStyle, opacity: currentQuestion === 0 ? 0.45 : 1 }}>← Previous</button>
+          <button onClick={() => setFlagged((previous) => ({ ...previous, [currentQuestion]: !previous[currentQuestion] }))} style={{ ...secondaryButtonStyle, color: flagged[currentQuestion] ? '#c56a12' : '#5b46e0' }}>{flagged[currentQuestion] ? '★ Flagged' : '☆ Flag for review'}</button>
+          {currentQuestion < questions.length - 1
+            ? <button onClick={() => setCurrentQuestion((value) => Math.min(questions.length - 1, value + 1))} style={primaryButtonStyle}>Next →</button>
+            : <button onClick={submitTest} style={primaryButtonStyle}>Submit Test</button>}
+        </div>
+      </div>
+
+      <div style={{ background: '#faf7f2', borderRadius: 18, border: '1px solid #f1eadd', padding: 16, position: 'sticky', top: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{answeredCount} / {questions.length} answered</div>
+        <div style={{ fontSize: 11, color: '#9098b5', marginBottom: 12 }}>{Object.values(flagged).filter(Boolean).length} flagged for review</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6, marginBottom: 14 }}>
+          {questions.map((item, index) => {
+            const active = index === currentQuestion;
+            const answered = answers[index] != null;
+            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#5b46e0' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eeeaff' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
+          })}
+        </div>
+        <button onClick={submitTest} style={{ ...primaryButtonStyle, width: '100%', padding: '10px 12px' }}>Submit Test</button>
+      </div>
+    </div>
+  );
+}
+
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId }) {
+  const [selectedTest, setSelectedTest] = React.useState(null);
+  const [selectedSchools, setSelectedSchools] = React.useState([]);
+  const [expandedSchools, setExpandedSchools] = React.useState({});
   const grade = undergradGradeNumber(profile);
   const early = grade && grade <= 10;
   const buckets = splitUniversities(programs || []);
+
+  const SELECTIVITY_BADGES = {
+    'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+    Competitive: { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
+    'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
+    Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
+  };
+
+  const displaySelectivityLabel = (label) => {
+    if (/^ultra competitive$/i.test(String(label || ''))) return 'Ultra Competitive';
+    if (/^(highly competitive|competitive)$/i.test(String(label || ''))) return 'Competitive';
+    return 'Accessible';
+  };
+
+  const toggleSchool = (schoolName) => {
+    setSelectedSchools(prev =>
+      prev.includes(schoolName) ? prev.filter(s => s !== schoolName) : [...prev, schoolName]
+    );
+  };
+
+  const toggleExpanded = (schoolName) => {
+    setExpandedSchools(prev => ({ ...prev, [schoolName]: !prev[schoolName] }));
+  };
   const list = (items = [], empty) => items.length
     ? items.slice(0, 6).map((item, i) => (
       <div key={`${item}-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
@@ -486,27 +713,153 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       )}
 
       {type === 'universities' && (
-        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18, maxWidth: 1180 }}>
-          {Object.entries(buckets).map(([label, schools]) => (
-            <UndergradCard key={label} title={`${label} Universities`}>
-              {schools.length ? schools.slice(0, 8).map(school => (
-                <div key={school.name} style={{ border: '1px solid #f1eadd', borderRadius: 15, padding: 14, marginBottom: 10, background: '#fffdf8' }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{school.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, minHeight: 68 }}>{undergradUniversityDescription(school, profile)}</div>
-                  <div style={{ marginTop: 8, fontSize: 11.5, color: '#9098b5', fontWeight: 800 }}>Fit index {school.fit ?? '-'}%</div>
-                </div>
-              )) : <div style={{ fontSize: 13.5, color: '#9098b5' }}>This bucket will populate after the starting snapshot.</div>}
-            </UndergradCard>
-          ))}
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>University List</h1>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
+              {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
+            </p>
+          </div>
+
+          {programs?.length ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              {Object.entries(buckets).map(([tierLabel, schools]) => {
+                const tierColors = {
+                  Reach: { accent: '#e384a5', bg: '#fff1f6', border: '#ffd3e3' },
+                  Target: { accent: '#eaa129', bg: '#fff8ea', border: '#ffe3a8' },
+                  Likely: { accent: '#3fdca9', bg: '#eafdf6', border: '#a9eed1' },
+                };
+                const tierConfig = tierColors[tierLabel];
+                if (!schools.length) return null;
+
+                return (
+                  <div key={tierLabel} style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, borderRadius: 18, overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tierConfig.border}` }}>
+                      <span style={{ width: 9, height: 9, borderRadius: '50%', background: tierConfig.accent, flexShrink: 0 }} />
+                      <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()} SCHOOLS</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      {schools.map((school, idx) => {
+                        const isSelected = selectedSchools.includes(school.name);
+                        const isExpanded = expandedSchools[school.name];
+                        return (
+                          <div key={school.name} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tierConfig.border}` : 'none' }}>
+                            <div
+                              onClick={() => toggleExpanded(school.name)}
+                              style={{ display: 'flex', alignItems: 'center', padding: '17px 22px', gap: 16, cursor: 'pointer', background: isSelected ? 'rgba(255,255,255,.55)' : 'transparent', boxShadow: isSelected ? `inset 3px 0 0 0 ${tierConfig.accent}` : 'none', transition: 'background 0.15s ease, box-shadow 0.15s ease' }}
+                            >
+                              <div
+                                onClick={(e) => { e.stopPropagation(); toggleSchool(school.name); }}
+                                style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: isSelected ? `2px solid ${tierConfig.accent}` : '2px solid #e7dcc7', background: isSelected ? tierConfig.accent : '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', cursor: 'pointer' }}
+                              >
+                                {isSelected && (
+                                  <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                    <path d="M20 6 9 17l-5-5" />
+                                  </svg>
+                                )}
+                              </div>
+
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
+                                  <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{school.name}</div>
+                                  {school.selectivityLabel && (() => {
+                                    const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
+                                    return (
+                                      <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
+                                        {displaySelectivityLabel(school.selectivityLabel)}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                                {(school.location || school.programGroup) && (
+                                  <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>{[school.location, school.programGroup].filter(Boolean).join(' · ')}</div>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+                                {school.avgSAT != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgSAT}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
+                                  </div>
+                                )}
+                                {school.avgGPA != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                  </div>
+                                )}
+                                {school.fit != null && (
+                                  <div style={{ textAlign: 'center' }}>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
+                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
+                                  </div>
+                                )}
+                                <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>
+                                  {isExpanded ? '⌄' : '⌃'}
+                                </div>
+                              </div>
+                            </div>
+
+                            {isExpanded && (
+                              <div style={{ padding: '10px 22px 18px 58px' }}>
+                                <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.55, maxWidth: 760 }}>
+                                  {undergradUniversityDescription(school, profile)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
+              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
+            </div>
+          )}
         </div>
       )}
 
       {type === 'testing' && (
-        <UndergradCard title="Testing">
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>Testing plan</div>
-          <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>Track SAT, ACT, PSAT, AP, TOEFL, or IELTS plans here as the counselor learns more.</div>
-          {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
-        </UndergradCard>
+        <div style={{ maxWidth: 1000 }}>
+          <div style={{ marginBottom: 24 }}>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Choose a test to practice with timed simulations.</p>
+          </div>
+
+          {!selectedTest ? (
+            <div className="pw-test-picker" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
+              <button onClick={() => setSelectedTest('sat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>SAT Simulation</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>28 minutes · 20 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Digital SAT-style Reading and Writing plus Math, with a fresh question set and estimated 400–1600 score.</div>
+              </button>
+              <button onClick={() => setSelectedTest('act')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>ACT Simulation</div>
+                <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>20 minutes · 20 questions</div>
+                <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Enhanced ACT-style English, Math, and Reading, with a fresh question set and estimated 1–36 composite.</div>
+              </button>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 24 }}>
+              <button onClick={() => setSelectedTest(null)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 0', marginBottom: 16 }}>← Back to choose test</button>
+              {selectedTest === 'sat' && <TestingSimulationCard title="SAT Simulation" testType="sat" authToken={authToken} sessionId={sessionId} />}
+              {selectedTest === 'act' && <TestingSimulationCard title="ACT Simulation" testType="act" authToken={authToken} sessionId={sessionId} />}
+            </div>
+          )}
+
+          {tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)).length > 0 && (
+            <UndergradCard title="Testing Roadmap">
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>Your testing tasks</div>
+              {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
+            </UndergradCard>
+          )}
+        </div>
       )}
 
       {(type === 'essays' || type === 'applications') && !early && (
@@ -525,18 +878,29 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleHelp = () => { setShowHelp(true); setMenuOpen(false); };
   const handleUpgrade = () => { setCandTab('settings'); setMenuOpen(false); };
   const handleSignOut = () => { setMenuOpen(false); signOut(); };
+  const currentPlan = authUser?.plan || plan || 'free';
+  const planAccess = PLAN_ACCESS[currentPlan] ?? null;
+  const isPlanLocked = (key) => planAccess !== null && !planAccess.has(key);
+
   const handleNavClick = (key) => {
     if (requiresOAuthDetails && key !== 'settings') {
       setCandTab('settings');
       setMenuOpen(false);
       showToast('Please confirm your details before continuing.');
+      return;
+    }
+    if (isPlanLocked(key)) {
+      setCandTab('settings');
+      setMenuOpen(false);
+      const needed = key === 'chat' ? 'AI + Strategy' : 'AI';
+      showToast(`Upgrade to ${needed} to unlock this feature.`);
       return;
     }
     setCandTab(key);
@@ -551,9 +915,9 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Student Profile', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
-  const hasChatAccess = (authUser?.plan || plan) === 'ai_strategy';
+  const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
@@ -602,13 +966,18 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
             const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
-            const locked = requiresOAuthDetails && item.key !== 'settings';
+            const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
-              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
+              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
-                <span style={{ minWidth: 0 }}>
+                <span style={{ minWidth: 0, flex: 1 }}>
                   <span>{item.label}</span>
                 </span>
+                {isPlanLocked(item.key) && (
+                  <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', opacity: 0.6, flexShrink: 0 }}>
+                    <rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                )}
                 <span style={navDotStyle(active)} />
               </button>
             );
@@ -689,11 +1058,12 @@ export default function CandidatePortal(props) {
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+        {candTab === 'community' && <Community {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
       </div>
 
-      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
+      {showHelp && <HelpModal authToken={authToken} sessionId={sessionId} onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

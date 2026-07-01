@@ -31,11 +31,103 @@ const WELCOME_MESSAGE = {
 };
 
 function buildInitialChat(language) {
-  return [{ role: 'ai', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
+  return [{ role: 'ai', channel: 'web', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
 }
 
 const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
+
+// Stage context for AI engagement
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
+  const category = profile?.category;
+  const isUndergrad = category === 'Undergraduate';
+  const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
+  const currentStep = steps[Math.min(stepIdx, steps.length - 1)] || 'Profile';
+
+  // Calculate days in current stage (rough estimate based on chat history)
+  const daysInStage = lastChatTime ? Math.floor((Date.now() - lastChatTime) / (1000 * 60 * 60 * 24)) : 0;
+
+  return {
+    stepIdx,
+    stageName: currentStep,
+    totalSteps: steps.length,
+    isUndergrad,
+    grade: profile?.grade,
+    daysInStage,
+
+    // Completion tracking
+    hasProfile: !!profile?.category,
+    hasScores: !!scores?.overall,
+    hasActivities: Array.isArray(strengths) && strengths.length > 0,
+    hasUniversities: Array.isArray(programs) && programs.length > 0,
+    hasTestingScore: !!scores?.testScore,
+    hasEssays: Object.keys(essays || {}).length > 0,
+    hasTasks: Array.isArray(tasks) && tasks.length > 0,
+
+    // Stage-specific insights
+    nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
+    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3, // Nudge if stuck 60+ days or at universities
+  };
+}
+
+// Stage progression triggers
+function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
+  const lc = displayText.toLowerCase();
+
+  if (isUndergrad) {
+    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Roadmap
+    if (stepIdx === 1 && (lc.includes('activities') || lc.includes('roadmap'))) return 2; // Roadmap → Activities
+    if (stepIdx === 2 && (lc.includes('university') || parsed.programs)) return 3; // Activities → Universities
+    if (stepIdx === 3 && (lc.includes('sat') || lc.includes('act') || lc.includes('testing') || lc.includes('standardized') || parsed.scores?.testScore)) return 4; // Universities → Testing
+    if (stepIdx === 4 && (lc.includes('essay') || parsed.essay)) return 5; // Testing → Essays
+    if (stepIdx === 5 && (lc.includes('application') || lc.includes('submit'))) return 6; // Essays → Applications
+  } else {
+    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Recommender
+    if (stepIdx === 2 && parsed.programs) return 3; // Analysis → Programs
+    if (stepIdx === 3 && (lc.includes('narrative') || lc.includes('your story'))) return 4; // Programs → Narrative
+    if (stepIdx === 4 && (lc.includes('cv') || lc.includes('resume'))) return 5; // Narrative → CV
+    if (stepIdx === 5 && (lc.includes('essay') || parsed.essay)) return 6; // CV → Essay
+    if (stepIdx === 6 && (lc.includes('interview') || lc.includes('mock'))) return 7; // Essay → Interview
+    if (stepIdx === 7 && parsed.interviewResult) return 8; // Interview → Result
+  }
+
+  return null; // No advancement
+}
+
+// Build AI system context based on student stage for better guidance
+function buildAISystemContext(stage) {
+  const { stageName, nextStageName, isUndergrad, daysInStage, shouldNudgeToNextStage, hasUniversities, hasTestingScore } = stage;
+
+  let systemContext = `You are an admissions advisor guiding a student through their journey.
+
+CURRENT STAGE: "${stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
+STUDENT PROGRESS: ${stage.daysInStage} days in current stage
+TRACK: ${isUndergrad ? 'Undergraduate' : 'Graduate/Professional'}
+
+DATA COLLECTED:
+- Profile: ${stage.hasProfile ? '✓' : '✗'}
+- Scores: ${stage.hasScores ? '✓' : '✗'}
+- Activities: ${stage.hasActivities ? '✓' : '✗'}
+- Universities: ${stage.hasUniversities ? '✓' : '✗'}
+- Testing: ${stage.hasTestingScore ? '✓' : '✗'}
+- Essays: ${stage.hasEssays ? '✓' : '✗'}`;
+
+  // Add stage-specific guidance
+  if (isUndergrad) {
+    if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
+      systemContext += `
+
+⚠️ ENGAGEMENT ALERT: Student has been on university list for ${daysInStage} days.
+ACTION: Ask about testing (SAT/ACT). This is the natural next step.
+NUDGE QUESTIONS:
+- "Now that we have your university targets, let's talk testing..."
+- "When are you planning to take the SAT or ACT?"
+- "What's your target score for your reach schools?"`;
+    }
+  }
+
+  return systemContext;
+}
 
 function sanitizeVisibleText(text) {
   return String(text || '')
@@ -132,6 +224,11 @@ function loadLanguage() {
   } catch { return 'English'; }
 }
 
+function createSessionId() {
+  const randomPart = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+  return `session_${randomPart}`;
+}
+
 function weightedOverallScore(scores, profile) {
   const weights = getTrackConfig(profile).scoreWeights || TRACK_CONFIG.Graduate.scoreWeights;
   let total = 0;
@@ -192,6 +289,7 @@ export default function App() {
   const [narrative, setNarrative] = useState(null);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState(INITIAL_CHAT);
+  const [sessionId, setSessionId] = useState(createSessionId);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [stepIdx, setStepIdx] = useState(0);
@@ -305,27 +403,52 @@ export default function App() {
           setScreen('admin');
           return;
         }
-        setChat(data?.chat?.length ? data.chat : INITIAL_CHAT);
-        setStepIdx(data?.stepIdx || 0);
-        setProfile(data?.profile || null);
-        setScores(data?.scores || null);
-        setStrengths(data?.strengths || null);
+        const loadedChat = data?.chat?.length ? data.chat : INITIAL_CHAT;
+        const loadedStepIdx = data?.stepIdx || 0;
+        const loadedProfile = data?.profile || null;
+        const loadedScores = data?.scores || null;
+        const loadedPrograms = normalizeProgramList(data?.programs) || null;
+        const loadedStrengths = data?.strengths || null;
+        const loadedEssays = data?.essays || {};
+
+        setChat(loadedChat);
+        setSessionId(data?.sessionId || createSessionId());
+        setStepIdx(loadedStepIdx);
+        setProfile(loadedProfile);
+        setScores(loadedScores);
+        setStrengths(loadedStrengths);
         setWeaknesses(data?.weaknesses || null);
         setTasks(data?.tasks || null);
         setCompletedTasks(data?.completedTasks || {});
-        setPrograms(normalizeProgramList(data?.programs) || null);
+        setPrograms(loadedPrograms);
         setChosenSchools(data?.chosenSchools || null);
         setCvText(data?.cvText || '');
         setCvFile(data?.cvFile || null);
         setEssayText(data?.essayText || '');
         setEssaySchool(data?.essaySchool || '');
         setEssayQuestion(data?.essayQuestion || '');
-        setEssays(data?.essays || {});
+        setEssays(loadedEssays);
         setDocuments(data?.documents || []);
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
+
+        // Detect if student is stuck and needs nudge
+        const isUndergrad = loadedProfile?.category === 'Undergraduate';
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
+
+        if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
+          // Student has universities but hasn't discussed testing yet - add nudge
+          const nudgeMsg = {
+            role: 'ai',
+            channel: 'web',
+            text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
+          };
+          if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
+            setChat(prev => [...prev, nudgeMsg]);
+          }
+        }
       } catch {
         if (!cancelled) { setAuth(null); setScreen('login'); }
       }
@@ -333,11 +456,27 @@ export default function App() {
     return () => { cancelled = true; };
   }, [auth?.token, setAuth]);
 
-  const requiresOAuthDetails = !!auth?.user?.oauthProvider && !auth.user.oauthDetailsConfirmed;
+  // First-time candidates must confirm details only on their first login
+  // For OAuth users: force Settings if they don't have firstLoginSetupComplete (false means not yet confirmed)
+  // For password users and existing users: no forced Settings
+  const requiresOAuthDetails = auth?.user?.oauthProvider && auth?.user?.firstLoginSetupComplete === false;
 
   useEffect(() => {
     if (screen === 'candidate' && requiresOAuthDetails) setCandTab('settings');
   }, [screen, requiresOAuthDetails]);
+
+  // Keep server-side online state accurate. If the tab closes without a formal
+  // logout, the two-minute activity window expires and offline routing resumes.
+  useEffect(() => {
+    if (screen !== 'candidate' || !auth?.token) return undefined;
+    const heartbeat = () => fetch('/api/activity', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${auth.token}` },
+    }).catch(() => {});
+    heartbeat();
+    const interval = setInterval(heartbeat, 60_000);
+    return () => clearInterval(interval);
+  }, [screen, auth?.token]);
 
   // Persist the candidate's session to their account, debounced
   useEffect(() => {
@@ -348,12 +487,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -453,16 +592,25 @@ export default function App() {
   }, []);
 
   const signOut = useCallback(() => {
+    if (auth?.token) {
+      fetch('/api/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${auth.token}` },
+        keepalive: true,
+      }).catch(() => {});
+    }
     setAuth(null);
     sessionStorage.removeItem('pathway_admin_secret');
     setAdminSecret('');
     setAuthError('');
     setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0);
-  }, [setAuth]);
+  }, [auth?.token, setAuth]);
 
   const resetSession = useCallback(() => {
     const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
     if (!confirmed) return;
+    const nextSessionId = createSessionId();
+    setSessionId(nextSessionId);
     setChat(buildInitialChat(language));
     setStepIdx(0);
     setProfile(null); setScores(null); setStrengths(null); setWeaknesses(null);
@@ -474,7 +622,7 @@ export default function App() {
       fetch('/api/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ data: {} }),
+        body: JSON.stringify({ data: { sessionId: nextSessionId } }),
       }).catch(() => {});
     }
     showToast('Session cleared — starting fresh.');
@@ -493,6 +641,11 @@ export default function App() {
     return data.user;
   }, [auth?.token, setAuth]);
 
+  const updateAuthUser = useCallback((patch) => {
+    if (!auth?.token || !patch) return;
+    setAuth({ token: auth.token, user: { ...(auth.user || {}), ...patch } });
+  }, [auth, setAuth]);
+
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
@@ -505,7 +658,7 @@ export default function App() {
     }
 
     if (plan === 'free' && scores) {
-      setChat(prev => [...prev, { role: 'user', text: raw_t }, { role: 'ai', text: PLAN_UPGRADE_MESSAGE }]);
+      setChat(prev => [...prev, { role: 'user', channel: 'web', text: raw_t }, { role: 'ai', channel: 'web', text: PLAN_UPGRADE_MESSAGE }]);
       setInput('');
       return;
     }
@@ -515,7 +668,7 @@ export default function App() {
       ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
       : raw_t;
 
-    const userMsg = { role: 'user', text: t };
+    const userMsg = { role: 'user', channel: 'web', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
     const baseChat = t.startsWith('Here is my CV')
       ? chat.filter(m => !(m.role === 'user' && m.text.startsWith('Here is my CV')))
@@ -526,15 +679,18 @@ export default function App() {
     setBusy(true);
 
     try {
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
+      const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, profile, scores, programs: normalizeProgramList(programs) || programs }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
       const raw = data.raw || data.reply || '';
 
       if (raw) {
@@ -560,7 +716,7 @@ export default function App() {
         }
         if (parsed.programs) {
           setPrograms(parsed.programs);
-          setStepIdx(prev => Math.max(prev, isUndergrad ? 4 : 3));
+          setStepIdx(prev => Math.max(prev, isUndergrad ? 3 : 3));
         }
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
@@ -595,56 +751,24 @@ export default function App() {
         }
         const displayText = safeVisibleReply(raw, parsed);
 
-        // Auto-advance stepper based on AI response keywords
-        const lc = displayText.toLowerCase();
-        if (isUndergrad) {
-          if (lc.includes('roadmap') || lc.includes('starting point today')) {
-            setStepIdx(prev => Math.max(prev, 1));
-          }
-          if (lc.includes('activities') || lc.includes('outside school')) {
-            setStepIdx(prev => Math.max(prev, 2));
-          }
-          if (lc.includes('university list') || lc.includes('universities')) {
-            setStepIdx(prev => Math.max(prev, 3));
-          }
-          if (lc.includes('sat') || lc.includes('act') || lc.includes('testing')) {
-            setStepIdx(prev => Math.max(prev, 4));
-          }
-          if (lc.includes('essay')) {
-            setStepIdx(prev => Math.max(prev, 5));
-          }
-          if (lc.includes('application')) {
-            setStepIdx(prev => Math.max(prev, 6));
-          }
-        } else {
-          if (lc.includes('convinced you this is the right path') || lc.includes("what's the specific moment")) {
-            setStepIdx(prev => Math.max(prev, 4));
-          }
-          if (lc.includes('narrative strategy tab') || lc.includes('choose upgrade or pivot') || lc.includes('two narrative options')) {
-            setStepIdx(prev => Math.max(prev, 4));
-            setCandTab('strategy');
-          }
-          if (lc.includes('paste a cv section') || (lc.includes('action verbs') && lc.includes('quantified'))) {
-            setStepIdx(prev => Math.max(prev, 5));
-          }
-          if (lc.includes("let's craft your essays") || (lc.includes('essay prompt') && lc.includes('school'))) {
-            setStepIdx(prev => Math.max(prev, 6));
-          }
-          if (lc.includes('time for your mock interview') || lc.includes('simulate the admissions interview')) {
-            setStepIdx(prev => Math.max(prev, 7));
-          }
+        // Auto-advance stepper based on stage-aware triggers
+        const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
+        if (nextStep !== null) {
+          setStepIdx(prev => Math.max(prev, nextStep));
         }
 
-        setChat(prev => [...prev, { role: 'ai', text: displayText }]);
+        setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
       } else {
-        setChat(prev => [...prev, { role: 'ai', text: data.error || 'Connection issue. Please try again.' }]);
+        setChat(baseChat);
+        showToast('The Advisor is temporarily unavailable. Please try again.');
       }
     } catch {
-      setChat(prev => [...prev, { role: 'ai', text: 'Connection issue. Please try again in a moment.' }]);
+      setChat(baseChat);
+      showToast('The Advisor is temporarily unavailable. Please try again.');
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, saveDocument, candTab]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -699,8 +823,8 @@ export default function App() {
         try {
           const res = await fetch('/api/parse-file', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ base64, mediaType, fileName: file.name }),
+            headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
+            body: JSON.stringify({ base64, mediaType, fileName: file.name, conversationId: sessionId }),
           });
           const data = await res.json();
           if (data.text) {
@@ -722,7 +846,7 @@ export default function App() {
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
     reader.readAsText(file);
     e.target.value = '';
-  }, [showToast]);
+  }, [auth?.token, sessionId, showToast]);
 
   const rewriteEssay = useCallback(async () => {
     if (!essayText.trim()) { showToast('Paste your essay text in the editor first.'); return; }
@@ -811,7 +935,7 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
-    chat, setChat, input, setInput, busy,
+    sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
     profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, insights,
@@ -828,7 +952,7 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
-    requiresOAuthDetails, saveUserDetails,
+    requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
     go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),

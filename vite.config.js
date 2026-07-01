@@ -10,15 +10,22 @@ import adminAuthHandler from './api/admin-auth.js';
 import adminUsersHandler from './api/admin-users.js';
 import adminUserActionHandler from './api/admin-user-action.js';
 import adminSessionHandler from './api/admin-session.js';
+import adminUsageHandler from './api/admin-usage.js';
+import adminUsageSettingsHandler from './api/admin-usage-settings.js';
+import adminUsageResetHandler from './api/admin-usage-reset.js';
+import summarizeHandler from './api/summarize.js';
+import testSimulationHandler from './api/test-simulation.js';
 import parseFileHandler from './api/parse-file.js';
 import downloadFileHandler from './api/download-file.js';
 import oauthStartHandler from './api/oauth-start.js';
 import oauthCallbackHandler from './api/oauth-callback.js';
 import userDetailsHandler from './api/user-details.js';
 import changePasswordHandler from './api/change-password.js';
+import logoutHandler from './api/logout.js';
 import chatMessagesHandler from './api/chat/messages.js';
 import chatSendHandler from './api/chat/send.js';
 import chatReadHandler from './api/chat/read.js';
+import whatsappAiAdvisorToggleHandler from './api/admin/candidates/[candidateId]/whatsapp-ai-advisor-toggle.js';
 
 function withApiAdapter(handler) {
   return (req, res) => {
@@ -399,11 +406,18 @@ export default defineConfig(({ mode }) => {
           server.middlewares.use('/api/admin-users', withApiAdapter(adminUsersHandler));
           server.middlewares.use('/api/admin-user-action', withApiAdapter(adminUserActionHandler));
           server.middlewares.use('/api/admin-session', withApiAdapter(adminSessionHandler));
+          server.middlewares.use('/api/admin-usage-settings', withApiAdapter(adminUsageSettingsHandler));
+          server.middlewares.use('/api/admin-usage-reset', withApiAdapter(adminUsageResetHandler));
+          server.middlewares.use('/api/admin-usage', withApiAdapter(adminUsageHandler));
+          server.middlewares.use('/api/summarize', withApiAdapter(summarizeHandler));
+          server.middlewares.use('/api/test-simulation', withApiAdapter(testSimulationHandler));
           server.middlewares.use('/api/user-details', withApiAdapter(userDetailsHandler));
           server.middlewares.use('/api/change-password', withApiAdapter(changePasswordHandler));
+          server.middlewares.use('/api/logout', withApiAdapter(logoutHandler));
           server.middlewares.use('/api/chat/messages', withApiAdapter(chatMessagesHandler));
           server.middlewares.use('/api/chat/send', withApiAdapter(chatSendHandler));
           server.middlewares.use('/api/chat/read', withApiAdapter(chatReadHandler));
+          server.middlewares.use('/api/admin/candidates', withApiAdapter(whatsappAiAdvisorToggleHandler));
           server.middlewares.use('/api/oauth-start', (req, res) => {
             oauthStartHandler(req, res).catch((err) => {
               res.statusCode = 500;
@@ -451,10 +465,12 @@ export default defineConfig(({ mode }) => {
                   model: 'claude-haiku-4-5-20251001',
                   max_tokens: 3500,
                   system: buildSystemPrompt(resolveConfig(aiConfig)),
-                  messages: messages.map(m => ({
-                    role: m.role === 'ai' ? 'assistant' : 'user',
-                    content: m.text,
-                  })),
+                  messages: messages
+                    .filter((message) => message?.role !== 'system' && message?.text)
+                    .map((message) => ({
+                      role: message.role === 'ai' ? 'assistant' : 'user',
+                      content: message.text,
+                    })),
                 });
 
                 const raw = response.content[0]?.text || 'I was unable to generate a response. Please try again.';

@@ -1,17 +1,21 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { createAnthropicClient } from '../lib/anthropic-client.js';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
+import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
   recordUsage,
   getUsageSettings,
   getAllUsageRecords,
   costForUserToday,
   createAlert,
+  repriceUsageRecord,
 } from '../lib/usage.js';
+import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
+import { logTokenUsage } from '../lib/token-usage-logger.js';
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const client = createAnthropicClient();
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
 const MAX_OUTPUT_TOKENS = 16000;
@@ -373,9 +377,12 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '') {
+export function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
+    : '';
+  const stageInstruction = stageContext
+    ? `\n\n==STUDENT JOURNEY STAGE==\n${stageContext}\n\nUse this stage context to ask stage-appropriate questions and nudge the student toward natural progression through their journey. Each stage has specific goals and questions.`
     : '';
   const kpiInstruction = kpiPromptSummary
     ? `\n\n==LIVE UNIVERSITY / PROGRAM KPI DATABASE==\n${kpiPromptSummary}\n\nUse the LIVE UNIVERSITY / PROGRAM KPI DATABASE as the baseline for school/program matching, KPI criteria, hard gates, evidence gaps, student action items, source awareness, and fit calibration. Keep using the required <PROGRAMS>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, and <TASKS> JSON block formats below.`
@@ -384,7 +391,7 @@ function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScor
 1. The ==LIVE UNIVERSITY / PROGRAM KPI DATABASE== above, if the school/program appears there.
 2. If it does not appear there (a candidate named a school/program outside the database, including niche, regional, or portfolio/audition-based programs), use the web_search tool to find that program's real, current median GPA, its standardized test requirement if any and that test's median score, and its acceptance rate.
 3. Only if web_search returns nothing reliable, reason by analogy from the closest comparable/parallel program you do have real data for (same field, comparable selectivity tier, same country/region) — say so explicitly in that school's "notes" field (e.g. "Benchmarked against [comparable program] — exact published figures unavailable"). Never silently invent exact official figures.`;
-  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}
+  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}${stageInstruction}
 ${kpiInstruction}
 ${dataSourcingInstruction}
 ${verifiedScoringSection}
@@ -845,8 +852,9 @@ async function checkUsageLimits(userId) {
       const dayKey = now.toISOString().slice(0, 10);
       for (const r of allRecords) {
         const d = new Date(r.createdAt);
-        if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += r.totalCost || 0;
-        if (d.toISOString().slice(0, 10) === dayKey) dailyCost += r.totalCost || 0;
+        const correctedCost = repriceUsageRecord(r).totalCost;
+        if (`${d.getFullYear()}-${d.getMonth()}` === monthKey) monthlyCost += correctedCost;
+        if (d.toISOString().slice(0, 10) === dayKey) dailyCost += correctedCost;
       }
     }
 
@@ -891,12 +899,21 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, stage, systemContext } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
 
   const userId = await resolveUserId(req);
+  if (userId) {
+    const channelUser = await getUserById(userId).catch(() => null);
+    if (canContinueWhatsAppAiAdvisor(channelUser)) {
+      return res.status(200).json({
+        raw: 'Your AI Advisor is currently running on WhatsApp. Continue there, or ask your consultant to pause WhatsApp to use the website Advisor again.',
+        channelRedirect: 'whatsapp',
+      });
+    }
+  }
   const feature = inferFeature(messages);
   const usageUserId = userId || 'anonymous';
   const convoId = conversationId || (userId ? `user:${userId}` : 'anonymous');
@@ -931,11 +948,53 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection);
-    const anthropicMessages = messages.map(m => ({
-      role: m.role === 'ai' ? 'assistant' : 'user',
-      content: m.text,
-    }));
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
+    let anthropicMessages = messages
+      .filter((message) => message?.role !== 'system' && message?.text)
+      .map((message) => ({
+        role: message.role === 'ai' ? 'assistant' : 'user',
+        content: message.text,
+      }));
+
+    // Headroom is OFF by default and any failure here (proxy down, SDK missing,
+    // timeout) falls back to the original system prompt/chat history untouched —
+    // see lib/headroom.js. role mapping, web search behavior, the retry loop, and
+    // the structured blocks (PROFILE/SCORES/STRENGTHS/.../TASKS) are all built from
+    // these same strings before/after this step and are unaffected by compression.
+    const headroomEnabled = isHeadroomEnabled();
+    console.log(`[Headroom] Status: HEADROOM_ENABLED=${process.env.HEADROOM_ENABLED}, HEADROOM_MODE=${process.env.HEADROOM_MODE}, isEnabled=${headroomEnabled}`);
+    const headroomStats = {
+      enabled: headroomEnabled,
+      mode: process.env.HEADROOM_MODE || 'off',
+      error: null,
+      originalInputChars: systemPrompt.length + JSON.stringify(anthropicMessages).length,
+      optimizedInputChars: systemPrompt.length + JSON.stringify(anthropicMessages).length,
+    };
+    let compressedSystemPrompt = systemPrompt;
+    if (headroomStats.enabled) {
+      const errors = [];
+      console.log(`[Headroom] Flags: compressSystem=${HeadroomFlags.compressSystem}, compressChat=${HeadroomFlags.compressChat}`);
+      if (HeadroomFlags.compressSystem) {
+        const sysResult = await compressText(systemPrompt, { label: 'chat_system_prompt' });
+        console.log(`[Headroom] System prompt: ${systemPrompt.length} → ${sysResult.text.length} chars, compressed=${sysResult.compressed}, error=${sysResult.error}`);
+        if (sysResult.error) errors.push(sysResult.error);
+        compressedSystemPrompt = sysResult.text;
+      }
+      if (HeadroomFlags.compressChat) {
+        const chatResult = await compressMessages(anthropicMessages, { label: 'chat_history' });
+        const origSize = JSON.stringify(anthropicMessages).length;
+        const newSize = JSON.stringify(chatResult.messages).length;
+        console.log(`[Headroom] Chat history: ${origSize} → ${newSize} chars, compressed=${chatResult.compressed}, error=${chatResult.error}`);
+        if (chatResult.error) errors.push(chatResult.error);
+        anthropicMessages = chatResult.messages;
+      }
+      headroomStats.error = errors.length ? errors.join('; ') : null;
+      headroomStats.optimizedInputChars = compressedSystemPrompt.length + JSON.stringify(anthropicMessages).length;
+      const originalChars = headroomStats.originalInputChars;
+      const optimizedChars = headroomStats.optimizedInputChars;
+      const pct = originalChars > 0 ? ((originalChars - optimizedChars) / originalChars * 100).toFixed(1) : 0;
+      console.log(`[Headroom] Original: ${originalChars} chars, Optimized: ${optimizedChars} chars, Saved: ${pct}%`);
+    }
 
     // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
     // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
@@ -953,13 +1012,40 @@ export default async function handler(req, res) {
       // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
       // token budget goes to the reply itself — the model still has the parallel-program
       // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
+      // The system prompt is identical across every retry attempt in this loop (only the
+      // appended retry note changes), so it's marked as an Anthropic prompt-cache breakpoint:
+      // attempt 0 pays full price to write the cache, attempts 1-3 read it back at a steep
+      // discount instead of reprocessing the same multi-thousand-token prompt from scratch.
+      const retryNote = attempt === 0
+        ? ''
+        : `${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`;
+      const system = [
+        { type: 'text', text: compressedSystemPrompt, cache_control: { type: 'ephemeral' } },
+        ...(retryNote ? [{ type: 'text', text: retryNote }] : []),
+      ];
       const response = await createChatCompletion({
-        system: attempt === 0
-          ? systemPrompt
-          : `${systemPrompt}${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`,
+        system,
         messages: anthropicMessages,
         useWebSearch: attempt < 2,
       });
+
+      // Log real token usage from Anthropic API response (for dashboard compression metrics)
+      logTokenUsage({
+        userId: usageUserId,
+        conversationId: convoId,
+        feature,
+        model: CHAT_MODEL,
+        usage: response.usage,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
+      }).catch((err) => console.error('Failed to log token usage:', err));
 
       recordUsage({
         userId: usageUserId,
@@ -968,6 +1054,19 @@ export default async function handler(req, res) {
         model: CHAT_MODEL,
         inputTokens: response.usage?.input_tokens,
         outputTokens: response.usage?.output_tokens,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
+        estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
+        cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
+        cacheReadInputTokens: response.usage?.cache_read_input_tokens,
+        webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
       }).catch((err) => console.error('Failed to record usage:', err));
 
       raw = extractText(response);

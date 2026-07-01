@@ -144,6 +144,17 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-undergrad-page {
     padding: 14px 12px 18px !important;
   }
+  .pw-test-picker,
+  .pw-test-layout,
+  .pw-test-result-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .pw-test-actions {
+    flex-wrap: wrap !important;
+  }
+  .pw-test-actions button {
+    flex: 1 1 130px !important;
+  }
   .pw-dashboard-grid {
     grid-template-columns: 1fr !important;
     gap: 12px !important;

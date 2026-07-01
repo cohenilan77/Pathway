@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
+import { visibleCandidateChat } from '../../lib/candidateChat.js';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
@@ -106,11 +107,15 @@ function ScrollButton({ position, onClick, label, direction = 'up' }) {
   );
 }
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const visibleChat = visibleCandidateChat(chat, {
+    whatsapp: authUser?.whatsappOptIn === true,
+    telegram: authUser?.telegramOptIn === true,
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -130,6 +135,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
   const handleNarrativeChoose = (kind) => {
     setNarrative && setNarrative(kind);
+    setShowNarrativeModal(false);
     send && send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
   };
 
@@ -219,34 +225,33 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
-                {chat.map((m, i) => (
-                  m.role === 'ai' ? (
-                    (() => {
-                      const parsed = parseOptions(m.text);
-                      return (
-                        <React.Fragment key={i}>
-                          <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                            {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                {visibleChat.map((m, i) => {
+                  if (m.role === 'ai') {
+                    const parsed = parseOptions(m.text);
+                    return (
+                      <React.Fragment key={i}>
+                        <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
+                          {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                        </div>
+                        {parsed && (
+                          <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
+                            {parsed.options.map(opt => (
+                              <button key={opt} onClick={() => send(opt)} disabled={busy}
+                                style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                                {opt}
+                              </button>
+                            ))}
                           </div>
-                          {parsed && (
-                            <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
-                              {parsed.options.map(opt => (
-                                <button key={opt} onClick={() => send(opt)} disabled={busy}
-                                  style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                                  {opt}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </React.Fragment>
-                      );
-                    })()
-                  ) : (
+                        )}
+                      </React.Fragment>
+                    );
+                  }
+                  return (
                     <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
                       {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
                     </div>
-                  )
-                ))}
+                  );
+                })}
 
                 {busy && (
                   <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '17px 20px' }}>

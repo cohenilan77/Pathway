@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
+import GMATSimulation from './GMATSimulation.jsx';
 
 const docNavStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13,
@@ -47,12 +48,13 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
     { key: 'editor', label: 'Essay Editor', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg> },
     { key: 'documents', label: 'My CV', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></svg> },
     { key: 'interview', label: 'Mock Interview', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg> },
+    { key: 'gmat', label: 'GMAT', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 8h8M8 12h3M14 12h2M8 16h2M13 16h3" /></svg> },
     { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
   ];
 
   return (
     <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
-      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px 1fr 290px', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
+      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
         <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #f1eadd' }}>
@@ -369,6 +371,8 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
             </div>
           )}
 
+          {docTab === 'gmat' && <GMATSimulation />}
+
           {docTab === 'insights' && (
             <div style={{ width: '100%', maxWidth: 580 }}>
               <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 24px', letterSpacing: '-.4px' }}>AI Insights</h2>
@@ -407,66 +411,6 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
 
         </div>
 
-        {/* Right insights panel */}
-        <div className="pw-sim-tools" style={{ borderLeft: '1px solid #f1eadd', background: '#f6f1e8', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ background: '#f1eadd', padding: 20, borderBottom: '1px solid #edf0f9' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ color: '#5b46e0' }}>✦</span>
-              <span style={{ fontSize: 12.5, fontWeight: 800, letterSpacing: '.5px', color: '#141b34' }}>STRATEGIST TOOLS</span>
-            </div>
-          </div>
-          <div style={{ padding: '20px 20px', flex: 1 }}>
-            {docTab === 'editor' && essayText && (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>
-                  WORD COUNT <span style={{ color: wordCount > 1000 ? '#e384a5' : '#6b7392' }}>{wordCount} / 1000</span>
-                </div>
-                <div style={{ height: 6, background: '#f1eadd', borderRadius: 3, marginBottom: 24, overflow: 'hidden' }}>
-                  <div style={{ width: `${Math.min(essayPct, 100)}%`, height: '100%', background: wordCount > 1000 ? '#e384a5' : 'linear-gradient(90deg,#94b3fb,#b899fb)' }} />
-                </div>
-              </>
-            )}
-
-            {insights && insights.slice(0, 2).map((item, i) => (
-              <div key={i} style={{
-                background: item.type === 'strength' ? '#eafdf6' : '#fff8ea',
-                border: `1px solid ${item.type === 'strength' ? '#a9eed1' : '#ffe3a8'}`,
-                borderRadius: 14, padding: 14, marginBottom: 12,
-              }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: item.type === 'strength' ? '#3fdca9' : '#eaa129', marginBottom: 5, textTransform: 'uppercase' }}>
-                  {item.type === 'strength' ? '✓ Strength' : '→ Improve'}
-                </div>
-                <div style={{ fontSize: 12.5, lineHeight: 1.55, color: '#6b7392' }}>{item.text}</div>
-              </div>
-            ))}
-
-            {!insights && essayText && (
-              <div style={{ background: '#fff8ea', border: '1px solid #ffe3a8', borderRadius: 14, padding: 14, marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.5 }}>Click "Analyze with AI" to get specific feedback on your essay.</div>
-              </div>
-            )}
-          </div>
-          <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {essayText && (
-              <>
-                <button onClick={() => analyzeEssay()} disabled={busy}
-                  style={{ width: '100%', background: 'none', border: '1.5px solid #f1eadd', color: '#5b46e0', borderRadius: 13, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1 }}>
-                  ✦ Analyze with AI
-                </button>
-                <button onClick={() => rewriteEssay()} disabled={busy}
-                  style={{ width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: 13, fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.5 : 1, boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
-                  {busy ? 'Rewriting...' : '✦ Rewrite with AI'}
-                </button>
-              </>
-            )}
-            {!cvText && (
-              <button onClick={() => setShowCvModal(true)}
-                style={{ width: '100%', background: 'linear-gradient(135deg,#fbd2a2,#fcbfcf)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: 13, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(255,122,156,.32)' }}>
-                Upload CV →
-              </button>
-            )}
-          </div>
-        </div>
       </div>
     </div>
   );

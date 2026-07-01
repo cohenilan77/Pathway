@@ -5,6 +5,7 @@ import { chatT, chatDir, formatChatDate } from '../../lib/chatI18n.js';
 import { LANGUAGES } from '../../constants.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
+import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -56,7 +57,7 @@ const sortableHeaderStyle = {
 };
 
 const usageRowsScrollStyle = {
-  maxHeight: 204,
+  maxHeight: 272,
   overflowY: 'auto',
   overscrollBehavior: 'contain',
 };
@@ -347,6 +348,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [usageData, setUsageData] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
   const [usageError, setUsageError] = useState('');
+  const [usagePeriod, setUsagePeriod] = useState('month');
+  const [usageRefreshedAt, setUsageRefreshedAt] = useState(null);
+  const [usageResetBusy, setUsageResetBusy] = useState(false);
   const [usageSettings, setUsageSettings] = useState({
     usageLimitsEnabled: false,
     monthlyBudget: 100,
@@ -416,7 +420,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     if (!canManageUsers) return;
     setUsageLoading(true);
     setUsageError('');
-    fetch('/api/admin-usage', { headers: adminHeaders })
+    return fetch(`/api/admin-usage?period=${encodeURIComponent(usagePeriod)}`, { headers: adminHeaders })
       .then(r => r.json())
       .then(d => {
         if (d.error) {
@@ -424,11 +428,32 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           return;
         }
         setUsageData(d);
+        setUsageRefreshedAt(Date.now());
         if (d.settings) setUsageSettings(prev => ({ ...prev, ...d.settings }));
       })
       .catch(() => setUsageError('Failed to load usage data.'))
       .finally(() => setUsageLoading(false));
-  }, [adminSecret, authToken, canManageUsers]);
+  }, [adminSecret, authToken, canManageUsers, usagePeriod]);
+
+  const resetUsageData = async () => {
+    const confirmed = window.confirm('Are you sure? This will permanently delete all usage, cost, token-log, and usage-alert data. Collection will restart from now.');
+    if (!confirmed) return;
+    setUsageResetBusy(true);
+    try {
+      const res = await fetch('/api/admin-usage-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to reset usage data.');
+      await loadUsageData();
+      showToast('Usage and cost data reset. New collection has started.');
+    } catch (error) {
+      showToast(error.message || 'Failed to reset usage data.');
+    } finally {
+      setUsageResetBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (canManageUsers) loadUsageData();
@@ -516,6 +541,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error || chatT(chatLanguage, 'failedToSendMessage'));
+      if (d.deliveryWarning) showToast(`Saved in Live Chat, but ${d.deliveryChannel || 'external'} delivery failed: ${d.deliveryWarning}`);
       fetchLiveChatMessages();
     } catch (e) {
       showToast(e.message || chatT(chatLanguage, 'failedToSendMessage'));
@@ -708,11 +734,29 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     patchSelected({ override: next, scores: scores ? { ...scores, overall: next } : scores });
   };
 
-  const sendConsultantNote = () => {
-    if (!msgInput.trim()) return;
-    patchSelected({ chat: [...chat, { role: 'ai', text: `💬 Advisor note: ${msgInput.trim()}` }] });
-    showToast('Note sent to candidate session.');
-    setMsgInput('');
+  const sendConsultantNote = async () => {
+    const text = msgInput.trim();
+    if (!text || !selectedUserId || liveChatSending) return;
+    setLiveChatSending(true);
+    try {
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ candidateId: selectedUserId, text }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || 'Could not send note to candidate.');
+      setMsgInput('');
+      fetchLiveChatMessages();
+      fetchUsers();
+      showToast(data.deliveryWarning
+        ? `Saved in Live Chat, but ${data.deliveryChannel || 'external'} delivery failed: ${data.deliveryWarning}`
+        : 'Note delivered to the candidate in Live Chat.');
+    } catch (error) {
+      showToast(error.message || 'Could not send note to candidate.');
+    } finally {
+      setLiveChatSending(false);
+    }
   };
 
   const downloadOriginalFile = async (file) => {
@@ -753,8 +797,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     try {
       const res = await fetch('/api/summarize', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat }),
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ chat, conversationId: sd.sessionId, candidateId: selectedUserId }),
       });
       const data = await res.json();
       if (data.summary) setSummary(data.summary);
@@ -1510,6 +1554,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                 </div>
 
+                <WhatsAppAiAdvisorToggle
+                  candidate={selUser}
+                  headers={adminHeaders}
+                  notify={showToast}
+                  onChanged={(candidate) => {
+                    setSelectedData((previous) => previous ? { ...previous, user: candidate } : previous);
+                    fetchUsers();
+                  }}
+                />
+
                 {/* Candidate documents */}
                 <div style={{ marginBottom: 22 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 10 }}>CANDIDATE DOCUMENTS</div>
@@ -1555,8 +1609,8 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 14, padding: '6px 6px 6px 14px', marginBottom: 0 }}>
                   <textarea value={msgInput} onChange={e => setMsgInput(e.target.value)} placeholder="Send a note to candidate's session..." rows="3"
                     style={{ flex: 1, border: 'none', outline: 'none', background: 'none', resize: 'none', fontSize: 13, fontFamily: 'inherit', color: '#141b34', padding: '8px 0' }} />
-                  <button onClick={sendConsultantNote}
-                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
+                  <button onClick={sendConsultantNote} disabled={liveChatSending || !msgInput.trim()}
+                    style={{ ...btnPrimary, width: 36, height: 36, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0, opacity: liveChatSending || !msgInput.trim() ? 0.55 : 1, cursor: liveChatSending || !msgInput.trim() ? 'not-allowed' : 'pointer' }}>
                     <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z" /></svg>
                   </button>
                 </div>
@@ -1767,23 +1821,36 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: 18,
                   }}
                 >
-                  {chat.map((m, i) => (
-                    <div key={i} style={{
-                      borderRadius: m.role === 'user' ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
-                      padding: '12px 16px', maxWidth: '88%', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                      background: m.role === 'ai' ? '#f1eadd' : 'linear-gradient(135deg,#94b3fb,#b899fb)',
-                      flexShrink: 0,
-                    }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: m.role === 'ai' ? '#9098b5' : 'rgba(255,255,255,.75)', marginBottom: 4 }}>
-                        {m.role === 'ai' ? 'AI ADVISOR' : candidateName.toUpperCase()}
+                  {chat.map((m, i) => {
+                    const channel = m.channel || 'web';
+                    const isSystem = m.role === 'system';
+                    const isCandidate = m.role === 'user';
+                    const label = isSystem
+                      ? '[System]'
+                      : isCandidate
+                        ? `[Candidate] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`
+                        : `[AI Advisor] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`;
+                    return (
+                      <div key={i} style={{
+                        borderRadius: isSystem ? 999 : isCandidate ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
+                        padding: isSystem ? '8px 14px' : '12px 16px',
+                        maxWidth: isSystem ? '92%' : '88%',
+                        alignSelf: isSystem ? 'center' : isCandidate ? 'flex-end' : 'flex-start',
+                        background: isSystem ? '#fff8ea' : isCandidate ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#f1eadd',
+                        color: isSystem ? '#a16207' : isCandidate ? '#faf7f2' : '#33405e',
+                        flexShrink: 0,
+                      }}>
+                        {!isSystem && (
+                          <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                            {isCandidate && m.text.startsWith('Here is my CV')
+                              ? '📄 [CV submitted for analysis]'
+                              : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
+                          </div>
+                        )}
+                        {isSystem && <span style={{ fontSize: 12 }}>{m.text}</span>}
                       </div>
-                      <div style={{ fontSize: 13, lineHeight: 1.55, color: m.role === 'ai' ? '#33405e' : '#faf7f2', whiteSpace: 'pre-wrap' }}>
-                        {m.role === 'user' && m.text.startsWith('Here is my CV')
-                          ? '📄 [CV submitted for analysis]'
-                          : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div ref={chatLogEndRef} />
                 </div>
               )}
@@ -1821,7 +1888,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       </div>
                     )}
                     {liveChatMessages.map((m) => (
-                      m.senderRole === 'consultant' ? (
+                      ['consultant', 'admin'].includes(m.senderRole) ? (
                         <div key={m.id} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}>
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
                           {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
@@ -1861,8 +1928,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── USAGE & COST ── */}
           {adminView === 'usageCost' && canManageUsers && (
             <div style={{ maxWidth: 1100, display: 'flex', flexDirection: 'column', gap: 24 }}>
-              <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
-                Monitor token usage, costs and control system limits.
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginTop: -8, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button onClick={resetUsageData} disabled={usageResetBusy || usageLoading} style={{ ...btnDanger, padding: '8px 13px', fontSize: 12, opacity: usageResetBusy || usageLoading ? 0.55 : 1 }}>
+                    {usageResetBusy ? 'Resetting…' : 'Reset'}
+                  </button>
+                  <select value={usagePeriod} onChange={(e) => setUsagePeriod(e.target.value)} style={{ border: '1px solid #e7dcc7', borderRadius: 10, padding: '8px 10px', background: '#fff', color: '#33405e', fontFamily: 'inherit', fontWeight: 700 }}>
+                    <option value="today">Today</option>
+                    <option value="month">This month</option>
+                    <option value="all">All time</option>
+                  </select>
+                  <button onClick={loadUsageData} disabled={usageLoading} style={{ ...btnPrimary, padding: '8px 13px', fontSize: 12, opacity: usageLoading ? 0.6 : 1 }}>
+                    {usageLoading ? 'Refreshing…' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {usageError && (
@@ -1874,13 +1953,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* KPI cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
                 {[
-                  { label: 'TOTAL COST THIS MONTH', value: `$${Number(usageData?.monthlyCost || 0).toFixed(2)}`, color: '#141b34' },
+                  { label: `CORRECTED COST · ${usageData?.periodLabel || 'PERIOD'}`, value: `$${Number(usageData?.selectedCost || 0).toFixed(2)}`, color: '#141b34' },
                   { label: 'TOTAL TOKENS', value: Number(usageData?.totalTokens || 0).toLocaleString(), color: '#141b34' },
                   { label: 'INPUT TOKENS', value: Number(usageData?.inputTokens || 0).toLocaleString(), color: '#5b46e0' },
                   { label: 'OUTPUT TOKENS', value: Number(usageData?.outputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'CACHE READ TOKENS', value: Number(usageData?.cacheReadInputTokens || 0).toLocaleString(), color: '#5b46e0' },
+                  { label: 'WEB SEARCHES', value: Number(usageData?.webSearchRequests || 0).toLocaleString(), color: '#5b46e0' },
                   { label: 'USERS', value: Number(usageData?.totalUsers || 0).toLocaleString(), color: '#141b34' },
+                  { label: 'TRACKED SESSIONS', value: Number(usageData?.totalSessions || 0).toLocaleString(), color: '#141b34' },
                   { label: 'AVG COST / USER', value: `$${Number(usageData?.avgCostPerUser || 0).toFixed(2)}`, color: '#19c08a' },
-                  { label: 'AVG COST / SESSION', value: `$${Number(usageData?.avgCostPerSession || 0).toFixed(2)}`, color: '#19c08a' },
+                  { label: 'AVG / TRACKED SESSION', value: usageData?.avgCostPerSession == null ? '—' : `$${Number(usageData.avgCostPerSession).toFixed(2)}`, color: '#19c08a' },
                 ].map((kpi) => (
                   <div key={kpi.label} style={{ ...cardShell, padding: '14px 16px' }}>
                     <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>{kpi.label}</div>
@@ -1889,6 +1971,71 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 ))}
               </div>
 
+              {/* Corrected cost components */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Corrected Cost Breakdown</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>Each billing category uses its own official Haiku 4.5 rate.</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                  <span>CATEGORY</span><span>USAGE</span><span>RATE</span><span>COST</span>
+                </div>
+                {[
+                  ['Base input', usageData?.inputTokens, '$1 / MTok', usageData?.inputCost],
+                  ['5-minute cache writes', usageData?.cacheCreationInputTokens, '$1.25 / MTok', usageData?.cacheCreationCost],
+                  ['Cache reads', usageData?.cacheReadInputTokens, '$0.10 / MTok', usageData?.cacheReadCost],
+                  ['Output', usageData?.outputTokens, '$5 / MTok', usageData?.totalOutputCost],
+                  ['Web searches', usageData?.webSearchRequests, '$0.01 / search', usageData?.webSearchCost],
+                ].map(([label, units, rate, cost]) => (
+                  <div key={label} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: 0, padding: '12px 24px', borderBottom: '1px solid #f6f1e8', fontSize: 13, color: '#33405e' }}>
+                    <span style={{ fontWeight: 700, color: '#141b34' }}>{label}</span>
+                    <span>{Number(units || 0).toLocaleString()}</span>
+                    <span>{rate}</span>
+                    <span style={{ fontWeight: 700, color: '#5b46e0' }}>${Number(cost || 0).toFixed(4)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Headroom Compression Panel */}
+              <div style={{ ...cardShell, padding: '20px 24px', marginBottom: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>HEADROOM COMPRESSION</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: '#141b34' }}>Token Savings via AI Context Compression</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: usageData?.costByHeadroom?.enabled?.count > 0 ? '#22c55e' : '#d1d5db' }} />
+                    <span style={{ fontSize: 12, color: '#6b7280' }}>{usageData?.costByHeadroom?.enabled?.count > 0 ? 'Active' : 'Off'}</span>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 16 }}>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#f0fdf4' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>COMPRESSED CALLS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>{usageData?.costByHeadroom?.enabled?.count ?? 0}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#fefce8' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>UNCOMPRESSED CALLS</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#ca8a04' }}>{usageData?.costByHeadroom?.disabled?.count ?? 0}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#eff6ff' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>COST W/ COMPRESSION</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#2563eb' }}>{'$'}{Number(usageData?.costByHeadroom?.enabled?.cost || 0).toFixed(4)}</div>
+                  </div>
+                  <div style={{ ...cardShell, padding: '12px 14px', background: '#fdf4ff' }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>AVG COMPRESSION</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#9333ea' }}>{usageData?.averageEstimatedCompressionPercent > 0 ? Number(usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '—'}</div>
+                  </div>
+                </div>
+                <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: '#9098b5', marginBottom: 6 }}>COMPRESSION RATIO PROGRESS</div>
+                  <div style={{ position: 'relative', height: 8, background: '#e2e8f0', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, #22c55e, #16a34a)', width: usageData?.averageEstimatedCompressionPercent > 0 ? Math.min(100, usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '0%', transition: 'width .5s ease' }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4, fontSize: 10, color: '#94a3b8' }}>
+                    <span>0%</span><span>Avg saved: {usageData?.averageEstimatedCompressionPercent > 0 ? Number(usageData.averageEstimatedCompressionPercent).toFixed(1) + '%' : '—'}</span><span>100%</span>
+                  </div>
+                </div>
+              </div>
               {/* System cost controls */}
               <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>System Cost Controls</h3>
@@ -1909,7 +2056,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                       onChange={(e) => setUsageSettings(s => ({ ...s, dailyBudget: Number(e.target.value) }))}
                       style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
                   </label>
-                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Max Cost Per User ($)
+                  <label style={{ fontSize: 12, fontWeight: 700, color: '#6b7392' }}>Daily Max Cost Per User ($)
                     <input type="number" min="0" step="0.1" value={usageSettings.maxCostPerUser}
                       onChange={(e) => setUsageSettings(s => ({ ...s, maxCostPerUser: Number(e.target.value) }))}
                       style={{ marginTop: 6, width: '100%', boxSizing: 'border-box', border: '1px solid #f1eadd', borderRadius: 10, padding: 10, fontFamily: 'inherit' }} />
@@ -1964,6 +2111,45 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </button>
               </div>
 
+              {/* Token savings via AI context compression */}
+              <div style={{ ...cardShell, overflow: 'hidden' }}>
+                <div style={{ padding: '20px 24px 0' }}>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Token Savings via AI Context Compression</h3>
+                  <div style={{ fontSize: 12.5, color: '#9098b5', margin: '0 0 14px' }}>
+                    Context compression per conversation via Anthropic prompt caching, and the cost saved (cached tokens × discounted price). Rows marked REAL reflect actual cache reads; others are estimated from input size.
+                    {usageData?.totalCompressionSaved ? ` Total saved: $${Number(usageData.totalCompressionSaved).toFixed(2)}.` : ''}
+                  </div>
+                </div>
+                {!usageData?.contextCompression?.length ? (
+                  <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
+                ) : (
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>CONVERSATION</span><span>FEATURE</span><span>ORIGINAL TOKENS</span><span>COMPRESSED</span><span>SAVED</span><span>WHEN</span><span>SOURCE</span>
+                    </div>
+                    <div style={usageRowsScrollStyle}>
+                      {usageData.contextCompression.map((c, i) => (
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr 1fr 1fr 1.1fr 0.7fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{Number(c.inputTokens || 0).toLocaleString()}</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#5b46e0' }}>{Number(c.compressionPct || 0).toFixed(0)}%</span>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#19c08a' }}>${Number(c.costSaved || 0).toFixed(3)}</span>
+                          <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
+                          <span style={{
+                            fontSize: 10.5, fontWeight: 700, letterSpacing: '.3px', textAlign: 'center', padding: '2px 6px', borderRadius: 6,
+                            color: c.real ? '#19c08a' : '#9098b5',
+                            background: c.real ? 'rgba(25,192,138,0.12)' : 'rgba(144,152,181,0.12)',
+                          }}>
+                            {c.real ? 'REAL' : 'EST.'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
               {/* Cost over time */}
               <div style={{ ...cardShell, padding: 28 }}>
                 <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 18px' }}>Cost Over Time</h3>
@@ -1990,23 +2176,24 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* Top users by cost */}
               <div style={{ ...cardShell, overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px 0' }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Top Users by Cost</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Top Users by Attributed Cost</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>Corrected estimates use raw Anthropic counters. “Legacy” identifies usage recorded before real session IDs.</div>
                 </div>
                 {!usageData?.topUsersByCost?.length ? (
                   <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                      <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>STATUS</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>USER</span><span>SESSIONS</span><span>TOKENS</span><span>COST</span><span>AVG / SESSION</span><span>TODAY STATUS</span>
                     </div>
                     <div style={usageRowsScrollStyle}>
                       {usageData.topUsersByCost.map((u) => (
-                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr 1fr 1fr 1fr 1fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                        <div key={u.userId} style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr 1fr 1fr 0.8fr', gap: 0, padding: '14px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
                           <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{u.name}</span>
-                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.sessions || '—'}{u.legacyIdentifiers ? <span style={{ display: 'block', fontSize: 10.5, color: '#a16207' }}>+ legacy usage</span> : null}</span>
                           <span style={{ fontSize: 13, color: '#33405e' }}>{u.tokens.toLocaleString()}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${u.cost.toFixed(2)}</span>
-                          <span style={{ fontSize: 13, color: '#33405e' }}>${u.avgPerSession.toFixed(2)}</span>
+                          <span style={{ fontSize: 13, color: '#33405e' }}>{u.avgPerSession == null ? '—' : `$${u.avgPerSession.toFixed(2)}`}</span>
                           <span>
                             <span style={{
                               fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 8, letterSpacing: '.3px', textTransform: 'uppercase',
@@ -2044,21 +2231,23 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               {/* Recent high-cost conversations */}
               <div style={{ ...cardShell, overflow: 'hidden' }}>
                 <div style={{ padding: '20px 24px 0' }}>
-                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 14px' }}>Recent High-Cost Conversations</h3>
+                  <h3 style={{ fontSize: 20, fontWeight: 800, color: '#141b34', margin: '0 0 4px' }}>Highest-Cost Sessions</h3>
+                  <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 14 }}>API calls and paid retries are aggregated into one session row.</div>
                 </div>
                 {!usageData?.recentHighCostConversations?.length ? (
                   <div style={{ padding: '0 24px 24px', fontSize: 13, color: '#9098b5' }}>No usage data yet.</div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
-                      <span>CONVERSATION</span><span>USER</span><span>FEATURE</span><span>COST</span><span>WHEN</span>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .7fr .9fr 1.2fr', gap: 0, padding: '10px 24px', borderBottom: '1px solid #f1eadd', fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5' }}>
+                      <span>SESSION</span><span>USER</span><span>FEATURE</span><span>CALLS</span><span>COST</span><span>LAST ACTIVITY</span>
                     </div>
                     <div style={usageRowsScrollStyle}>
                       {usageData.recentHighCostConversations.map((c, i) => (
-                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
-                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.conversationId}</span>
-                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userId}</span>
+                        <div key={`${c.conversationId}-${i}`} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr .7fr .9fr 1.2fr', gap: 0, padding: '12px 24px', alignItems: 'center', borderBottom: '1px solid #f6f1e8' }}>
+                          <span style={{ fontSize: 12.5, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.legacy ? 'Legacy usage' : c.conversationId}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.userName || c.userId}</span>
                           <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.feature}</span>
+                          <span style={{ fontSize: 12.5, color: '#33405e' }}>{c.attempts}</span>
                           <span style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>${Number(c.cost || 0).toFixed(2)}</span>
                           <span style={{ fontSize: 12, color: '#9098b5' }}>{c.createdAt ? new Date(c.createdAt).toLocaleString() : '—'}</span>
                         </div>
@@ -2078,7 +2267,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 ) : (
                   <div style={{ ...usageRowsScrollStyle, display: 'flex', flexDirection: 'column', gap: 10, paddingRight: 4 }}>
                     {usageData.alerts.map((a) => (
-                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px' }}>
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff8ea', border: '1px solid #f5dfa6', borderRadius: 12, padding: '10px 14px', flexShrink: 0 }}>
                         <span style={{ fontSize: 13, color: '#33405e' }}>{a.message}</span>
                         <span style={{ fontSize: 11, color: '#9098b5', flexShrink: 0, marginLeft: 12 }}>{a.createdAt ? new Date(a.createdAt).toLocaleString() : '—'}</span>
                       </div>
@@ -2086,6 +2275,30 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                 )}
               </div>
+
+              {usageData && (
+                <div style={{ ...cardShell, padding: '16px 20px', background: '#f8fafc', borderColor: '#dbeafe' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#5b46e0', marginBottom: 5 }}>CORRECTED COST MODEL · {usageData.periodLabel}</div>
+                      <div style={{ fontSize: 13, color: '#33405e', lineHeight: 1.55 }}>
+                        Haiku 4.5: $1/M input · $5/M output · $1.25/M 5m cache write · $0.10/M cache read · $0.01/search.
+                        Costs are calculated from the raw Anthropic usage counters collected for each request.
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: '#9098b5' }}>LAST REFRESH</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: '#33405e' }}>{usageRefreshedAt ? new Date(usageRefreshedAt).toLocaleTimeString() : '—'}</div>
+                    </div>
+                  </div>
+                  {(usageData.legacySearchTelemetryRecords > 0 || usageData.unknownPricingRecords > 0) && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#a16207' }}>
+                      {usageData.legacySearchTelemetryRecords > 0 ? `${usageData.legacySearchTelemetryRecords} older search-enabled calls lack actual search counts; their search surcharge is unknown. ` : ''}
+                      {usageData.unknownPricingRecords > 0 ? `${usageData.unknownPricingRecords} calls use an unknown model price.` : ''}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

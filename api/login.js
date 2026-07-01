@@ -1,4 +1,4 @@
-import { ensureSuperAdminAccount, verifyCredentials, createSessionToken, publicUser, recordLogin } from '../lib/db.js';
+import { ensureSuperAdminAccount, verifyCredentials, createSessionToken, publicUser, recordLogin, markCandidateLoggedIn } from '../lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -24,6 +24,10 @@ export default async function handler(req, res) {
     }
     const token = await createSessionToken(user.id);
     await recordLogin(user.id);
+    // Track login for Telegram routing
+    if (user.role === 'candidate') {
+      await markCandidateLoggedIn(user.id);
+    }
     res.status(200).json({ token, user: publicUser(user) });
   } catch (err) {
     res.status(400).json({ error: err.message || 'Login failed.' });
