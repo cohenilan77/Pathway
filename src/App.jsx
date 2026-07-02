@@ -102,7 +102,7 @@ function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
   } else {
     if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Recommender
     if (stepIdx === 2 && parsed.programs) return 3; // Analysis → Programs
-    if (stepIdx === 3 && (lc.includes('narrative') || lc.includes('your story'))) return 4; // Programs → Narrative
+    if (stepIdx === 3 && (parsed.chosenSchools || lc.includes('narrative') || lc.includes('your story'))) return 4; // Programs → Narrative (choosing schools starts the narrative step)
     if (stepIdx === 4 && (lc.includes('cv') || lc.includes('resume'))) return 5; // Narrative → CV
     if (stepIdx === 5 && (lc.includes('essay') || parsed.essay)) return 6; // CV → Essay
     if (stepIdx === 6 && (lc.includes('interview') || lc.includes('mock'))) return 7; // Essay → Interview
@@ -262,7 +262,9 @@ function safeVisibleReply(raw, parsed, currentProfile) {
       ? 'Your university matches are live in the University List tab.'
       : 'Your portfolio is live in the Analysis tab.';
   }
-  if (parsed.chosenSchools) return 'Your target schools are saved.';
+  // Never leave the candidate at a dead end after picking schools: if the model
+  // sent no visible question with the CHOSEN_SCHOOLS block, hand them the next move.
+  if (parsed.chosenSchools) return 'Your target schools are locked in. Type "next" and we\'ll start shaping your narrative.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
   if (parsed.scores || parsed.profile) {
