@@ -5,7 +5,6 @@ import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
 import Community from './Community.jsx';
 import Settings from './Settings.jsx';
-import NarrativeStrategy from './NarrativeStrategy.jsx';
 import Chat from './Chat.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
@@ -630,9 +629,9 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId, chosenSchools, setChosenSchools }) {
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
-  const [selectedSchools, setSelectedSchools] = React.useState(chosenSchools || []);
+  const [selectedSchools, setSelectedSchools] = React.useState([]);
   const [expandedSchools, setExpandedSchools] = React.useState({});
   const grade = undergradGradeNumber(profile);
   const early = grade && grade <= 10;
@@ -660,15 +659,6 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
   const toggleExpanded = (schoolName) => {
     setExpandedSchools(prev => ({ ...prev, [schoolName]: !prev[schoolName] }));
-  };
-
-  // Selecting schools is a journey milestone: save the picks, return to the chat,
-  // and let the advisor continue with narrative → CV → essays.
-  const confirmSchoolSelection = () => {
-    if (!selectedSchools.length) return;
-    setChosenSchools && setChosenSchools(selectedSchools);
-    setCandTab('studentProfile');
-    send(`I'd like to move forward with: ${selectedSchools.join(', ')}.`);
   };
   const list = (items = [], empty) => items.length
     ? items.slice(0, 6).map((item, i) => (
@@ -794,17 +784,6 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                     <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
                                   </div>
                                 )}
-                                {(() => {
-                                  const ar = school.admitRate ?? school.acceptanceRate;
-                                  return (
-                                    <div style={{ textAlign: 'center' }}>
-                                      <div style={{ fontSize: 13, fontWeight: 700, color: ar != null ? '#33405e' : '#c0c8e0' }}>
-                                        {ar != null ? `${ar}%` : '—'}
-                                      </div>
-                                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT</div>
-                                    </div>
-                                  );
-                                })()}
                                 {school.avgGPA != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
@@ -841,29 +820,6 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
           ) : (
             <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
               <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
-            </div>
-          )}
-
-          {selectedSchools.length > 0 && <div style={{ height: 88 }} />}
-
-          {selectedSchools.length > 0 && (
-            <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 30, display: 'flex', justifyContent: 'center', animation: 'pwFade 0.2s ease' }}>
-              <div style={{ margin: '0 auto 18px', maxWidth: 620, width: 'calc(100% - 32px)', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 18, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, boxShadow: '0 16px 34px rgba(40,30,90,.32)' }}>
-                <div style={{ color: '#faf7f2', fontSize: 13.5, fontWeight: 600, minWidth: 0 }}>
-                  <span style={{ fontWeight: 800, fontSize: 17, marginRight: 8 }}>{selectedSchools.length}</span>
-                  {selectedSchools.length === 1 ? 'school selected' : 'schools selected'}
-                </div>
-                <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
-                  <button onClick={() => { setSelectedSchools([]); setChosenSchools && setChosenSchools([]); }}
-                    style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#d9cbb3', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    Clear
-                  </button>
-                  <button onClick={confirmSchoolSelection}
-                    style={{ background: '#faf7f2', border: 'none', color: '#5b46e0', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                    Back to Chat with Picks →
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </div>
@@ -959,7 +915,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', narrative: 'Narrative', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
@@ -1009,7 +965,7 @@ export default function CandidatePortal(props) {
         {/* nav */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {navItems.map(item => {
-            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor');
+            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -1097,9 +1053,8 @@ export default function CandidatePortal(props) {
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
-        {(candTab === 'analysis' || (candTab === 'universities' && !isUndergrad)) && <Analysis {...props} />}
-        {candTab === 'narrative' && !isUndergrad && <NarrativeStrategy {...props} />}
-        {candTab === 'universities' && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
+        {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
+        {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}

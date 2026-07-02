@@ -8,7 +8,6 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
-import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
@@ -20,10 +19,6 @@ export const PLANS = {
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please upgrade in Settings to continue with AI guidance, or choose AI + Strategy to add Live Chat with your consultant.";
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
-
-function isLegacyCandidateCategory(profile) {
-  return profile?.category === 'Undergraduate' || profile?.category === 'Personal Development';
-}
 
 const WELCOME_MESSAGE = {
   English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you? → Undergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
@@ -43,22 +38,14 @@ const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
 
 // Stage context for AI engagement
-function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime, weaknesses) {
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
   const category = profile?.category;
   const isUndergrad = category === 'Undergraduate';
   const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
   const currentStep = steps[Math.min(stepIdx, steps.length - 1)] || 'Profile';
 
+  // Calculate days in current stage (rough estimate based on chat history)
   const daysInStage = lastChatTime ? Math.floor((Date.now() - lastChatTime) / (1000 * 60 * 60 * 24)) : 0;
-
-  // Find the weakest scoring dimension for adaptive guidance
-  const scoreWeights = getTrackConfig(profile).scoreWeights || {};
-  const lowestScoreKey = scores
-    ? Object.entries(scoreWeights)
-        .map(([k]) => ({ key: k, val: scores[k] ?? 100 }))
-        .filter(({ val }) => typeof val === 'number')
-        .sort((a, b) => a.val - b.val)[0]?.key || null
-    : null;
 
   return {
     stepIdx,
@@ -66,8 +53,6 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     totalSteps: steps.length,
     isUndergrad,
     grade: profile?.grade,
-    intendedMajor: profile?.intendedMajor || profile?.major || profile?.subjects || '',
-    destination: profile?.destination || profile?.countries || '',
     daysInStage,
 
     // Completion tracking
@@ -75,20 +60,13 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     hasScores: !!scores?.overall,
     hasActivities: Array.isArray(strengths) && strengths.length > 0,
     hasUniversities: Array.isArray(programs) && programs.length > 0,
-    hasTestingScore: !!scores?.testScore && scores.testScore > 0,
+    hasTestingScore: !!scores?.testScore,
     hasEssays: Object.keys(essays || {}).length > 0,
     hasTasks: Array.isArray(tasks) && tasks.length > 0,
 
-    // Actual content for adaptive questioning
-    topTask: Array.isArray(tasks) && tasks.length > 0 ? tasks[0] : null,
-    topWeakness: Array.isArray(weaknesses) && weaknesses.length > 0 ? weaknesses[0] : null,
-    lowestScoreKey,
-    overallScore: scores?.overall ?? null,
-    pathwayType: profile?.pathwayType || null,
-
     // Stage-specific insights
     nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
-    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3,
+    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3, // Nudge if stuck 60+ days or at universities
   };
 }
 
@@ -118,83 +96,33 @@ function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
 
 // Build AI system context based on student stage for better guidance
 function buildAISystemContext(stage) {
-  const { isUndergrad, daysInStage, shouldNudgeToNextStage } = stage;
+  const { stageName, nextStageName, isUndergrad, daysInStage, shouldNudgeToNextStage, hasUniversities, hasTestingScore } = stage;
 
   let systemContext = `You are an admissions advisor guiding a student through their journey.
 
-CURRENT STAGE: "${stage.stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
+CURRENT STAGE: "${stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
+STUDENT PROGRESS: ${stage.daysInStage} days in current stage
 TRACK: ${isUndergrad ? 'Undergraduate' : 'Graduate/Professional'}
-DATA: Profile ${stage.hasProfile ? '✓' : '✗'} · Scores ${stage.hasScores ? '✓' : '✗'} · Activities ${stage.hasActivities ? '✓' : '✗'} · Universities ${stage.hasUniversities ? '✓' : '✗'} · Testing ${stage.hasTestingScore ? '✓' : '✗'} · Essays ${stage.hasEssays ? '✓' : '✗'}`;
 
+DATA COLLECTED:
+- Profile: ${stage.hasProfile ? '✓' : '✗'}
+- Scores: ${stage.hasScores ? '✓' : '✗'}
+- Activities: ${stage.hasActivities ? '✓' : '✗'}
+- Universities: ${stage.hasUniversities ? '✓' : '✗'}
+- Testing: ${stage.hasTestingScore ? '✓' : '✗'}
+- Essays: ${stage.hasEssays ? '✓' : '✗'}`;
+
+  // Add stage-specific guidance
   if (isUndergrad) {
-    systemContext += `
-
-MANDATORY RESPONSE RULES (no exceptions):
-1. Max 1-2 sentences. No paragraphs.
-2. No hyphens or dashes anywhere.
-3. Every message ends with → Option1 | Option2 | Option3 | Other
-4. Never echo or confirm what the student said. Move forward.`;
-
-    const gradeStr = stage.grade ? `Grade ${stage.grade}` : 'this student';
-    const majorStr = stage.intendedMajor ? `(interested in ${stage.intendedMajor})` : '';
-    const pathwayType = stage.pathwayType;
-    const pathwayLabel = pathwayType === 'focused' ? 'focused' : pathwayType === 'exploring' ? 'still exploring' : pathwayType === 'partial' ? 'partially decided' : null;
-
-    if (stage.grade) {
+    if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
       systemContext += `
 
-STUDENT: ${gradeStr}${pathwayLabel ? ` · Pathway: ${pathwayLabel}` : ''}${stage.intendedMajor ? ` · Interested in: ${stage.intendedMajor}` : ''}${stage.destination ? ` · Destination: ${stage.destination}` : ''}`;
-    }
-
-    if (stage.hasProfile && stage.hasScores && stage.hasUniversities) {
-      // Post-snapshot: derive next question from pathway type + top task / lowest score
-      if (pathwayType === 'exploring' || pathwayType === null) {
-        if (!stage.hasTestingScore) {
-          systemContext += `
-
-NEXT FOCUS: Student is still exploring their direction. Ask about a subject or activity they enjoyed most recently to help uncover their interests. Keep it discovery-focused, not pressure-filled. Options should be specific subjects, clubs, or experiences, not generic.`;
-        } else if (stage.topWeakness) {
-          systemContext += `
-
-NEXT FOCUS: Student is exploring. Address this gap: "${stage.topWeakness}". Ask ONE question to help them discover something new or deepen an interest. Options must be concrete activities or experiences.`;
-        } else if (stage.topTask) {
-          systemContext += `
-
-NEXT FOCUS: Help exploring student with this task: "${stage.topTask}". Frame as an opportunity to discover, not a deadline. Options must be specific to that task.`;
-        }
-      } else if (pathwayType === 'focused') {
-        if (!stage.hasTestingScore) {
-          systemContext += `
-
-NEXT FOCUS: Student is focused on ${stage.intendedMajor || 'their intended field'}. They have no SAT/ACT score yet. Ask about their testing plan. ${upcomingTestDatesPromptLine()} Use only these future dates as chip options — never a date that has already passed.`;
-        } else if (stage.topWeakness) {
-          systemContext += `
-
-NEXT FOCUS: Focused student. Address this specific weakness: "${stage.topWeakness}". Ask ONE concrete question to close this gap. Options must be actionable steps in their intended field, not generic.`;
-        } else if (stage.topTask) {
-          systemContext += `
-
-NEXT FOCUS: Help focused student with: "${stage.topTask}". Ask ONE specific question. Options must be field-specific actions tied to ${stage.intendedMajor || 'their focus area'}.`;
-        } else if (shouldNudgeToNextStage) {
-          systemContext += `
-
-NEXT FOCUS: Student has been here ${daysInStage} days. Ask about their next concrete step in ${stage.intendedMajor || 'their field'} with specific competition, project, or activity options.`;
-        }
-      } else if (pathwayType === 'partial') {
-        if (stage.topTask) {
-          systemContext += `
-
-NEXT FOCUS: Student is partially decided ${majorStr}. Help them commit by asking about one of their top interests: "${stage.topTask}". Options should help them choose between their two or three possible directions.`;
-        } else if (!stage.hasTestingScore) {
-          systemContext += `
-
-NEXT FOCUS: Partially-decided student. Ask about testing plans. ${upcomingTestDatesPromptLine()} Offer upcoming dates from both tests — use only future dates, never past ones.`;
-        }
-      }
-    } else if (stage.hasProfile && !stage.hasScores) {
-      systemContext += `
-
-NEXT FOCUS: Still building the profile. If no transcript/CV file has been shared yet, ask for a file upload first and extract everything from it. Then ask ONLY for the next missing KPI: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'recommenders, goals, and university preferences'}.`;
+⚠️ ENGAGEMENT ALERT: Student has been on university list for ${daysInStage} days.
+ACTION: Ask about testing (SAT/ACT). This is the natural next step.
+NUDGE QUESTIONS:
+- "Now that we have your university targets, let's talk testing..."
+- "When are you planning to take the SAT or ACT?"
+- "What's your target score for your reach schools?"`;
     }
   }
 
@@ -217,21 +145,17 @@ function sanitizeVisibleText(text) {
 }
 
 function parseBlocks(raw) {
-  const extract = (tag, kind = 'auto') => {
+  const extract = (tag) => {
     const m = raw.match(new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`));
     if (!m) return null;
     let body = m[1].trim();
     // Strip markdown code fences the model sometimes wraps blocks in (```json ... ```)
     body = body.replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
     try { return JSON.parse(body); } catch { /* fall through */ }
-    // Last resort: grab the outermost {...} or [...] in case of stray leading/trailing text.
-    // For blocks that are always arrays (e.g. PROGRAMS), never fall back to the greedy
-    // {...} match — on a malformed multi-school array it would just grab the FIRST
-    // school object, silently collapsing the whole list down to one entry with no
-    // details. Better to return null (no update) than a truncated single item.
+    // Last resort: grab the outermost {...} or [...] in case of stray leading/trailing text
     const arrMatch = body.match(/\[[\s\S]*\]/);
     const objMatch = body.match(/\{[\s\S]*\}/);
-    const candidate = kind === 'array' ? arrMatch?.[0] : kind === 'object' ? objMatch?.[0] : (arrMatch?.[0] || objMatch?.[0]);
+    const candidate = arrMatch?.[0] || objMatch?.[0];
     if (candidate) {
       try { return JSON.parse(candidate); } catch { return null; }
     }
@@ -240,44 +164,33 @@ function parseBlocks(raw) {
   const clean = sanitizeVisibleText(raw);
   return {
     clean,
-    profile: extract('PROFILE', 'object'),
-    scores: extract('SCORES', 'object'),
-    strengths: extract('STRENGTHS', 'array'),
-    weaknesses: extract('WEAKNESSES', 'array'),
-    programs: normalizeProgramList(extract('PROGRAMS', 'array')),
-    chosenSchools: extract('CHOSEN_SCHOOLS', 'array'),
-    insights: extract('INSIGHTS', 'array'),
-    essay: extract('ESSAY', 'object'),
-    interviewResult: extract('INTERVIEW_RESULT', 'object'),
-    tasks: extract('TASKS', 'array'),
+    profile: extract('PROFILE'),
+    scores: extract('SCORES'),
+    strengths: extract('STRENGTHS'),
+    weaknesses: extract('WEAKNESSES'),
+    programs: normalizeProgramList(extract('PROGRAMS')),
+    chosenSchools: extract('CHOSEN_SCHOOLS'),
+    insights: extract('INSIGHTS'),
+    essay: extract('ESSAY'),
+    interviewResult: extract('INTERVIEW_RESULT'),
+    tasks: extract('TASKS'),
   };
 }
 
-function safeVisibleReply(raw, parsed, currentProfile) {
+function safeVisibleReply(raw, parsed) {
   const clean = sanitizeVisibleText(parsed.clean || '');
-  const category = parsed.profile?.category || currentProfile?.category;
-  const isUndergrad = category === 'Undergraduate';
   if (parsed.profile && parsed.scores && parsed.programs) {
-    if (isUndergrad) {
-      return clean || 'Your profile, risk assessment, and university matches are live in the Analysis tab.';
+    if (parsed.profile?.category === 'Undergraduate') {
+      return clean || "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.";
     }
-    // Prefer the AI's actual text (which should now include a follow-up question)
-    return clean || 'Your analysis is live in the Analysis tab — head there to see your scores and school matches.';
+    return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
   }
   if (clean) return clean;
-  if (parsed.programs) {
-    return isUndergrad
-      ? 'Your updated university matches are live in the Analysis tab.'
-      : 'Your portfolio is live in the Analysis tab.';
-  }
+  if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
   if (parsed.chosenSchools) return 'Your target schools are saved.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
-  if (parsed.scores || parsed.profile) {
-    return isUndergrad
-      ? 'Your profile and risk analysis are live in the Analysis tab.'
-      : 'Your profile analysis is live in the Analysis tab.';
-  }
+  if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
   return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
 }
 
@@ -401,8 +314,6 @@ export default function App() {
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
-  const [journeyStage, setJourneyStage] = useState(null);
-  const [advisorDirective, setAdvisorDirective] = useState(null);
   const [cvFileDraft, setCvFileDraft] = useState(null);
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
@@ -410,7 +321,6 @@ export default function App() {
   const [language, setLanguageState] = useState(loadLanguage);
   const [authError, setAuthError] = useState('');
   const [authBusy, setAuthBusy] = useState(false);
-  const [adaptiveGradEnabled, setAdaptiveGradEnabled] = useState(false);
   const [adminSecret, setAdminSecret] = useState(() => sessionStorage.getItem('pathway_admin_secret') || '');
   const toastTimerRef = useRef(null);
   const saveTimerRef = useRef(null);
@@ -476,31 +386,6 @@ export default function App() {
   // Hydrate the candidate's session from the server whenever we have a token
   // (on initial load with a remembered token, and right after login/register).
   useEffect(() => {
-    let cancelled = false;
-    fetch('/api/agents/orchestrate', { cache: 'no-store' })
-      .then((res) => res.ok ? res.json() : { enabled: false })
-      .then((data) => { if (!cancelled) setAdaptiveGradEnabled(data?.enabled === true); })
-      .catch(() => { if (!cancelled) setAdaptiveGradEnabled(false); });
-    return () => { cancelled = true; };
-  }, []);
-
-  useEffect(() => {
-    if (!adaptiveGradEnabled || !auth?.token) return;
-    let cancelled = false;
-    fetch('/api/agents/orchestrate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-      body: JSON.stringify({ extra: { getJourneyState: true } }),
-    })
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (!cancelled && data?.journeyState?.flags?.stage) setJourneyStage(data.journeyState.flags.stage);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [adaptiveGradEnabled, auth?.token]);
-
-  useEffect(() => {
     if (!auth?.token) return;
     let cancelled = false;
     (async () => {
@@ -551,17 +436,14 @@ export default function App() {
 
         // Detect if student is stuck and needs nudge
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
 
         if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
           // Student has universities but hasn't discussed testing yet - add nudge
           const nudgeMsg = {
             role: 'ai',
             channel: 'web',
-            text: (() => {
-              const { sat, act } = getUpcomingTestDates(3);
-              return `Welcome back! You've got a solid university list — next step is locking in your test plan. When are you thinking of sitting the SAT or ACT? → ${sat[0]} | ${act[0]} | ${sat[1]} | Not sure yet`;
-            })()
+            text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
           };
           if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
             setChat(prev => [...prev, nudgeMsg]);
@@ -725,10 +607,8 @@ export default function App() {
   }, [auth?.token, setAuth]);
 
   const resetSession = useCallback(() => {
-    const confirmed = window.confirm('Are you sure? This will permanently delete your chat history, memory, and all files associated with it — profile, scores, school matches, uploaded documents, tasks, essays, and saved analysis.');
+    const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
     if (!confirmed) return;
-    // Kill any pending autosave so it can't re-persist the old session after the wipe.
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     const nextSessionId = createSessionId();
     setSessionId(nextSessionId);
     setChat(buildInitialChat(language));
@@ -738,27 +618,14 @@ export default function App() {
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
-    setJourneyStage(null); setAdvisorDirective(null);
-    setCvDraft(''); setCvFileDraft(null); setCvExtra('');
     if (auth?.token) {
-      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` };
-      const wipe = () => fetch('/api/session', {
-        method: 'DELETE',
-        headers,
-        body: JSON.stringify({ sessionId: nextSessionId }),
-      }).then(r => { if (!r.ok) throw new Error('wipe failed'); });
-      // Retry the wipe once; if it still fails, fall back to a blank overwrite so
-      // the server never keeps the old chat/profile even on a flaky connection.
-      wipe()
-        .catch(() => wipe())
-        .catch(() => fetch('/api/session', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ data: { sessionId: nextSessionId } }),
-        }).catch(() => {}));
+      fetch('/api/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        body: JSON.stringify({ data: { sessionId: nextSessionId } }),
+      }).catch(() => {});
     }
-    setCandTab('advisor');
-    showToast('Session deleted — chat, memory, and files cleared.');
+    showToast('Session cleared — starting fresh.');
   }, [auth?.token, showToast, language]);
 
   const saveUserDetails = useCallback(async (details) => {
@@ -812,35 +679,17 @@ export default function App() {
     setBusy(true);
 
     try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
       const systemContext = buildAISystemContext(stage);
-      const legacyBody = { messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext };
-      const useAdaptiveEndpoint = adaptiveGradEnabled && !isLegacyCandidateCategory(profile);
-      const adaptiveBody = {
-        message: t,
-        conversationHistory: newChat.slice(0, -1),
-        extra: { profile, scores, programs: normalizeProgramList(programs) || programs },
-      };
-      let res = await fetch(useAdaptiveEndpoint ? '/api/agents/orchestrate' : '/api/chat', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify(useAdaptiveEndpoint ? adaptiveBody : legacyBody),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
       });
-      let data = await res.json();
-      if (useAdaptiveEndpoint && data?.fallThrough) {
-        res = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
-          },
-          body: JSON.stringify(legacyBody),
-        });
-        data = await res.json();
-      }
+      const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
       const raw = data.raw || data.reply || '';
 
@@ -900,25 +749,12 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        const displayText = safeVisibleReply(raw, parsed, profile);
+        const displayText = safeVisibleReply(raw, parsed);
 
         // Auto-advance stepper based on stage-aware triggers
         const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
         if (nextStep !== null) {
           setStepIdx(prev => Math.max(prev, nextStep));
-        }
-
-        // ADAPTIVE_GRAD: handle open_screen and journey stage signals
-        if (data.ui?.tab || data.openScreen) setCandTab(data.ui?.tab || data.openScreen);
-        if (data.ui?.modal || data.openModal) {
-          setAdvisorDirective({ modal: data.ui?.modal || data.openModal, nonce: Date.now() });
-        }
-        if (data.journeyStage) setJourneyStage(data.journeyStage);
-        if (data.pendingTasks?.length) {
-          setTasks(prev => {
-            const merged = [...new Set([...(prev || []), ...data.pendingTasks])];
-            return merged;
-          });
         }
 
         setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
@@ -932,34 +768,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast, adaptiveGradEnabled, auth?.token]);
-
-  // Sends a silent idle check-in to the AI without showing a user message in chat.
-  // Only the AI response appears.
-  const sendIdleCheckin = useCallback(async () => {
-    if (busy) return;
-    setBusy(true);
-    try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
-      const systemContext = buildAISystemContext(stage);
-      const idleMessages = [...chat, { role: 'user', channel: 'system', text: '__idle_checkin__' }];
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
-        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
-      });
-      const data = await res.json();
-      if (!res.ok) return;
-      const raw = data.raw || data.reply || '';
-      if (raw) {
-        const parsed = parseBlocks(raw);
-        const displayText = safeVisibleReply(raw, parsed, profile);
-        if (displayText) setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
-      }
-    } catch { /* silent — idle checkin failure must never break the UI */ } finally {
-      setBusy(false);
-    }
-  }, [busy, chat, profile, scores, programs, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -1143,11 +952,9 @@ export default function App() {
     plan, setPlan,
     language, setLanguage,
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
-    adaptiveGradEnabled, advisorDirective,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
-    journeyStage,
-    go, signOut, send, sendIdleCheckin, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
+    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };

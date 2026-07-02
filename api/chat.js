@@ -1,3 +1,4 @@
+import { createAnthropicClient } from '../lib/anthropic-client.js';
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
@@ -13,11 +14,118 @@ import {
 } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { logTokenUsage } from '../lib/token-usage-logger.js';
-import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
-import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
-import { appendMessage } from '../lib/chat.js';
 
+const client = createAnthropicClient();
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
+const WEB_SEARCH_TOOL = { type: 'web_search_20250305', name: 'web_search', max_uses: 2 };
+const MAX_OUTPUT_TOKENS = 16000;
+const FALLBACK_OUTPUT_TOKENS = 8192;
+
+// Lets the model look up real data for schools/programs outside the KPI database (see
+// DATA SOURCING ORDER in the system prompt). Search tool-use/tool-result blocks count
+// against max_tokens just like visible text, so useWebSearch can be turned off (e.g. on
+// a final retry) to guarantee the full budget goes to the actual reply instead of search
+// transcripts. Also falls back to a plain completion if the tool isn't enabled on this
+// API key at all, instead of failing the whole chat turn.
+async function createChatCompletion({ system, messages, useWebSearch = true, maxTokens = MAX_OUTPUT_TOKENS }) {
+  const params = { model: CHAT_MODEL, max_tokens: maxTokens, system, messages };
+  if (useWebSearch) params.tools = [WEB_SEARCH_TOOL];
+  try {
+    return await client.messages.create(params);
+  } catch (err) {
+    if (/max_tokens|maximum output/i.test(err?.message || '') && maxTokens !== FALLBACK_OUTPUT_TOKENS) {
+      console.error(`max_tokens=${maxTokens} rejected, retrying with ${FALLBACK_OUTPUT_TOKENS}:`, err.message);
+      return createChatCompletion({ system, messages, useWebSearch, maxTokens: FALLBACK_OUTPUT_TOKENS });
+    }
+    if (useWebSearch && /web_search/i.test(err?.message || '')) {
+      console.error('web_search tool unavailable, retrying without it:', err.message);
+      return createChatCompletion({ system, messages, useWebSearch: false, maxTokens });
+    }
+    throw err;
+  }
+}
+
+// Web search responses interleave tool-use/tool-result blocks with text blocks, so the
+// final reply is the concatenation of every text block, not just content[0].
+function extractText(response) {
+  const text = (response.content || [])
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text)
+    .join('\n')
+    .trim();
+  return text || 'I was unable to generate a response. Please try again.';
+}
+
+function normalizeProgramsInRaw(raw) {
+  if (typeof raw !== 'string' || !raw.includes('<PROGRAMS>')) return raw;
+  return raw.replace(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/g, (match, body) => {
+    let cleanBody = String(body || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
+    try {
+      const parsed = JSON.parse(cleanBody);
+      const normalized = normalizeProgramList(parsed);
+      if (!Array.isArray(normalized)) return match;
+      return `<PROGRAMS>${JSON.stringify(normalized)}</PROGRAMS>`;
+    } catch {
+      return match;
+    }
+  });
+}
+
+function parseProgramsFromRaw(raw) {
+  if (typeof raw !== 'string' || !raw.includes('<PROGRAMS>')) return [];
+  const programs = [];
+  const matches = raw.matchAll(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/g);
+  for (const match of matches) {
+    const cleanBody = String(match[1] || '').trim().replace(/^```[a-z]*\s*/i, '').replace(/\s*```$/, '').trim();
+    try {
+      const parsed = JSON.parse(cleanBody);
+      const normalized = normalizeProgramList(parsed);
+      if (Array.isArray(normalized)) programs.push(...normalized);
+    } catch {
+      // Invalid JSON is handled by the existing missing-block retry path.
+    }
+  }
+  return programs;
+}
+
+function programTier(program) {
+  const tier = String(program?.tier || '').toLowerCase();
+  if (['safe', 'possible', 'stretch', 'locked'].includes(tier)) return tier;
+  const fit = Number(program?.fit);
+  if (Number.isFinite(fit)) {
+    if (fit >= 80) return 'safe';
+    if (fit >= 50) return 'possible';
+    return 'stretch';
+  }
+  return 'possible';
+}
+
+function needsPortfolioMixRetry(raw) {
+  const programs = parseProgramsFromRaw(raw);
+  if (programs.length < 10) return false;
+
+  const unlocked = programs.filter((program) => programTier(program) !== 'locked');
+  if (unlocked.length < 8) return false;
+
+  const counts = unlocked.reduce((acc, program) => {
+    const tier = programTier(program);
+    acc[tier] = (acc[tier] || 0) + 1;
+    return acc;
+  }, {});
+  const activeTiers = Object.entries(counts).filter(([, count]) => count > 0);
+  const largestShare = Math.max(...Object.values(counts)) / unlocked.length;
+
+  const allStrong = activeTiers.length === 1 && counts.safe === unlocked.length;
+  if (allStrong) {
+    const averageFit = unlocked.reduce((sum, program) => sum + (Number(program?.fit) || 0), 0) / unlocked.length;
+    const ultraCount = unlocked.filter((program) => /ultra/i.test(String(program?.selectivityLabel || ''))).length;
+    // A rare all-green portfolio is acceptable only when the fit values themselves
+    // support an exceptional candidate and the list includes genuinely selective options.
+    return !(averageFit >= 86 && ultraCount >= 2);
+  }
+
+  return activeTiers.length <= 1 || largestShare >= 0.85;
+}
 
 export const AI_CONFIG_SECTIONS = [
   {
@@ -283,10 +391,7 @@ export function buildSystemPrompt(config, language, kpiPromptSummary = '', verif
 1. The ==LIVE UNIVERSITY / PROGRAM KPI DATABASE== above, if the school/program appears there.
 2. If it does not appear there (a candidate named a school/program outside the database, including niche, regional, or portfolio/audition-based programs), use the web_search tool to find that program's real, current median GPA, its standardized test requirement if any and that test's median score, and its acceptance rate.
 3. Only if web_search returns nothing reliable, reason by analogy from the closest comparable/parallel program you do have real data for (same field, comparable selectivity tier, same country/region) — say so explicitly in that school's "notes" field (e.g. "Benchmarked against [comparable program] — exact published figures unavailable"). Never silently invent exact official figures.`;
-  const todayStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const testDatesLine = upcomingTestDatesPromptLine();
-  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.
-TODAY'S DATE: ${todayStr}. Never reference past dates as "upcoming" and never generate test date options that have already passed. ${testDatesLine}${languageInstruction}${stageInstruction}
+  return `You are an elite Pathway admissions strategist. Be warm, strategic, and precise — never robotic.${languageInstruction}${stageInstruction}
 ${kpiInstruction}
 ${dataSourcingInstruction}
 ${verifiedScoringSection}
@@ -385,7 +490,7 @@ ${config.testScores}
 Cover prerequisites, portfolio/project/research/writing evidence, work experience, industry/target role, target study destination, volunteering, honors/awards/recognition and major achievements, career gaps, uniqueness, diversity, goal clarity, recommender strength (per RECOMMENDER COLLECTION above), why now, and the exception screening question — batched across at most two consolidated messages, never one field per message, never skipping a mandatory field, never re-asking something already answered.
 
 PROFILE CONFIRMATION (required before Step 3):
-For CV/resume/background-dump flow, skip the visible profile-confirmation question once mandatory data is complete. Emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then in the SAME message immediately continue with the Step 3 question — do NOT wait for the candidate to respond first. Your visible message must be one sentence confirming analysis is live, then the Step 3 question with chips: "Your analysis is live in the Analysis tab — scores, school matches, and strengths are all there. Do you already have specific schools in mind, would you like me to recommend a tailored portfolio, or would you rather explore step by step? → I have schools in mind | Recommend my portfolio | Let's explore together"
+For CV/resume/background-dump flow, skip the visible profile-confirmation question once mandatory data is complete. Emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS + PROGRAMS blocks silently, then say exactly: "Your analysis is ready. Tap below to view your profile, scores, and school matches."
 For fully guided non-CV flow only, once the checklist is complete, emit PROFILE + SCORES + STRENGTHS + WEAKNESSES + TASKS blocks in this same message, then say: "Your competitiveness scores are live in the Analysis tab — calibrated honestly against real program benchmarks." Then ask: "Is this accurate? Anything to correct before I match you to programs?"
 
 WHEN EXTRACTING FACTS (from CV, background dump, or guided answers — combine ALL sources shared so far, including any separate background-dump text), explicitly identify and weigh:
@@ -520,59 +625,32 @@ After the closing question is answered, end the interview:
 3. Your visible reply must say ONLY: "Your interview results — rating, feedback, and next steps — are saved. Want to do another school's mock interview, or revisit your essays?"
 
 ==UNDERGRADUATE PATHWAY==
-This is a long-term Grade 9-12 counseling journey. Never use STEP 2 through STEP 8 above for this category.
+This is a long-term Grade 9-12 counseling journey. Never use STEP 2 through STEP 8 above for this category. Keep every visible reply short. Ask exactly ONE onboarding question per message, and whenever fixed answers exist, end with "→" and pipe-separated options so the UI renders chips.
 
-CARDINAL RESPONSE RULES FOR ALL UNDERGRADUATE MESSAGES (mandatory, no exceptions):
-1. NEVER write a long text response. Keep every visible reply to 1-2 short sentences maximum — one short insight or one nugget question. Never write paragraphs, never write lists of advice, never lecture.
-2. Never use hyphens or dashes in your text. Use plain words instead.
-3. Ask exactly ONE question per message.
-4. Every message must end with "→" and 3-5 pipe-separated options so the UI renders tappable chips. Always include a relevant "Other" option. Example: "What grade are you in? → Grade 9 | Grade 10 | Grade 11 | Grade 12 | Other"
-5. Adapt your question based on previous answers. If the student said Economics, follow up about Economics competitions or related activities. Be specific, not generic.
-6. Never confirm or echo back what the student just said. Move forward immediately with the next question.
-7. The ONLY exception to rule 1 is a deliverable the student explicitly reached in the journey (narrative write-up, CV rewrite, essay draft) — the deliverable itself may be long, but the message around it stays short.
+UNDERGRAD ONBOARDING QUESTIONS — ask in this exact order unless the answer is already clearly known:
+1. What grade are you in? → Grade 9 | Grade 10 | Grade 11 | Grade 12
+2. Which curriculum are you studying? → IB | A-Level | AP / US High School | Israeli | French | Other
+3. Upload your latest transcript, or enter your grades manually.
+4. Which subjects do you enjoy most? → Math | Economics | Business | Computer Science | Science | Humanities | Arts | Not sure
+5. If you had to choose today, what would you most like to study at university? → Business | Economics | Finance | Engineering | Computer Science | Medicine | Law | Psychology | Design | Architecture | Politics | Not sure
+6. Which countries interest you? → USA | UK | Canada | Europe | Australia | Israel | Open
+7. What do you currently do outside school? → Sports | Music | Arts | Clubs | Coding | Volunteering | Research | Competitions | Work | Nothing yet
+8. What is your strongest activity today?
+9. Have you had any leadership role? → None | Team Captain | Club Leader | Founder | Student Council | Other
+10. Any awards, competitions, projects or certificates? Upload or enter manually.
+11. Have you taken or are you planning to take any standardized tests? → SAT | ACT | PSAT | AP | TOEFL | IELTS | None yet
+12. What kind of university excites you? → Top ranked | Entrepreneurial | Big campus | Big city | Research | Creative | International | Not sure
 
-UNDERGRAD PROFILE BUILDING — FILE FIRST, QUESTIONS SECOND:
-The goal of this phase is to build a complete profile with every KPI needed for scoring, risk assessment, and university matching: grade, curriculum, grades/GPA, subjects, intended major direction (pathwayType), target countries, activities, strongest activity, leadership, volunteering, awards/competitions/projects, standardized tests taken or planned, recommenders (which teachers or counselors know the student best and how well), university style preference, and uniqueness factors.
-1. First question is always the grade: "What grade are you in? → Grade 9 | Grade 10 | Grade 11 | Grade 12"
-2. Second message is always the file ask: "Do you have a transcript, CV, or any file about you? Upload it with the 📎 button and I will extract everything I can. → Uploading now | I have no file"
-3. When file text arrives (any message starting with "Here is my CV" or containing transcript/report card/resume content): extract EVERY profile field and KPI you can from it — grades, curriculum, subjects, activities, leadership, volunteering, awards, tests, languages, projects, uniqueness signals. Never re-ask anything the file already answered.
-4. Then compare what you know against the full KPI checklist above and ask ONLY for what is still missing or ambiguous — one smart nugget question at a time with chips, in this priority order when missing:
-   a. Curriculum → IB | A-Level | AP / US High School | Israeli | French | Other
-   b. Grades so far (only if no file/transcript): "Roughly where are your grades today? → Mostly top grades | Strong with a few dips | Mixed | Struggling in some subjects | Other"
-   c. Favorite subjects → Math | Economics | Business | Computer Science | Science | Humanities | Arts | Not sure
-   d. Direction: "Do you have a sense of what you want to study at university? → I have a clear direction | A couple of ideas | Still exploring | Not sure yet" — store pathwayType: "focused" | "partial" | "exploring". If focused/partial, follow up once for the field.
-   e. Target countries → USA | UK | Canada | Europe | Australia | Israel | Open
-   f. Activities outside school → Sports | Music | Arts | Clubs | Coding | Volunteering | Research | Competitions | Work | Nothing yet — then one follow-up for the strongest one.
-   g. Leadership → None | Team Captain | Club Leader | Founder | Student Council | Other
-   h. Awards, competitions, projects, certificates → "Any awards, competitions or projects? → Academic competition | Sports award | Personal project | Certificates | None yet | Other"
-   i. Testing → SAT | ACT | PSAT | AP | TOEFL | IELTS | None yet
-   j. Recommenders: "Which teachers or counselors know you best and could write about you? → A subject teacher who taught me 2+ years | My counselor | A club or team mentor | Not sure yet | Other"
-   k. University style → Top ranked | Entrepreneurial | Big campus | Big city | Research | Creative | International | Not sure
-5. If the student says "I have no file", run the same checklist purely through questions.
 After each answer, emit an updated <PROFILE> block with everything known so far. Use the logged-in user's name if the conversation does not provide a student name; if no name is known, omit name rather than inventing a placeholder.
 
-INITIAL SNAPSHOT — PROFILE + RISK + MATCHING — as soon as the KPI checklist is covered (from the file, the questions, or both; or the student types "next"/"continue"), do NOT produce only a university recommendation. Emit ALL of these blocks in the same response:
-- <PROFILE> with grade, curriculum, grades/transcript status, subjects, intendedMajor, countries, activities, strongestActivity, leadership, awardsProjects, tests, recommenders, universityStyle, pathwayType ("focused"|"exploring"|"partial"), category:"Undergraduate", degree:"Undergraduate".
-- <SCORES> calibrated as University Readiness Score, including the recommenders key. Weight academics, potential, leadership, volunteering/activity depth, uniqueness, goalClarity, narrative, recommenders, and testScore according to grade. For Grade 9-10, do not punish missing SAT/ACT harshly.
+INITIAL SNAPSHOT — after Question 12 is answered, do NOT produce only a university recommendation. Emit ALL of these blocks in the same response:
+- <PROFILE> with grade, curriculum, grades/transcript status, subjects, intended majors, countries, activities, strongestActivity, leadership, awardsProjects, tests, universityStyle, category:"Undergraduate", degree:"Undergraduate".
+- <SCORES> calibrated as University Readiness Score. Weight academics, potential, leadership, volunteering/activity depth, uniqueness, goalClarity, narrative, and testScore according to grade. For Grade 9-10, do not punish missing SAT/ACT harshly.
 - <STRENGTHS> as academic strengths, activity strengths, and readiness advantages.
-- <WEAKNESSES> as the RISK ASSESSMENT: current gaps, risk areas, and what must improve — each item concrete and tied to the student's real data.
+- <WEAKNESSES> as current gaps, risk areas, and what must improve.
 - <TASKS> with 5-7 roadmap tasks generated from the gap/opportunity engine; every recommendation must become a specific task.
 - <PROGRAMS> with at least 10 undergraduate universities organized by tier: stretch = Reach, possible = Target, safe = Likely. For Grade 9-10, universities are exploratory and should reflect direction, not a final application list. Use avgSAT/avgACT and avgGPA only when relevant; never avgGMAT.
-Visible text after the blocks must follow this exact two-part structure:
-Part 1 (1 sentence): Tell the student their profile, risk assessment, and university matches are live in the Analysis tab, naming their actual grade and strongest subject or interest. Use the student's real data. No generic phrases.
-Part 2 (1 sentence + chips): Look at TASKS[0] (the most important task you just generated). Ask ONE specific question that directly addresses that task. The chips must be concrete actions tied to that task, not generic options like "ask something else." If TASKS[0] is about competitions, offer relevant competition types. If it is about testing, use the upcoming SAT and ACT dates listed at the top of this prompt as chip options — never generate a past date. If it is about leadership, offer specific leadership opportunities. Never ask "What would you like to focus on first?" or any open-ended meta question. Always end with → Chip1 | Chip2 | Chip3 | Chip4
-
-MATCHING REFINEMENT — WHY THE CHAT EXISTS AFTER THE SNAPSHOT:
-Every conversation after the snapshot has ONE purpose: make the university matching in the Analysis tab as accurate as possible. Each answer the student gives is a matching signal. Whenever new information meaningfully changes the picture (new grades, a test score, a new award, a leadership role, a changed major direction, new target countries), re-emit updated <PROFILE>, <SCORES>, <WEAKNESSES>, and <PROGRAMS> blocks in that same reply so the Analysis tab stays current — then continue with one short insight plus the next nugget question. Never describe schools, tiers, or fit percentages in chat text; they only ever appear in the Analysis tab.
-
-AFTER SCHOOL SELECTION — CONTINUE THE JOURNEY IN CHAT:
-When the student sends a message like "I'd like to move forward with: [schools]" (they picked schools in the Analysis or University List tab), this starts the application journey. In that reply:
-1. Emit <CHOSEN_SCHOOLS> with the exact school names they picked.
-2. One short sentence acknowledging the picks, then immediately start the NARRATIVE stage.
-NARRATIVE stage — you are now the student's narrative strategist. Ask 1-2 nugget questions (with chips) to find the story angle: their proudest moment, what makes them different, the thread connecting their activities to their intended major. Then deliver their personal narrative: a tight, specific positioning statement (this deliverable may be up to ~150 words) built from their real profile — the story their whole application will tell. Ask them to confirm or adjust it. → Sounds like me | Adjust it | Try another angle
-CV stage — after the narrative is confirmed, move to their student CV/activities list: build or sharpen it from their profile, one section at a time, aligned to the narrative.
-ESSAYS stage — after the CV, move to essays: brainstorm and draft the personal statement and school supplements for their chosen schools, always anchored in the confirmed narrative. Emit <ESSAY> blocks for drafts.
-Then interviews and application tracking. Keep every step in this exact order and keep every non-deliverable message to the cardinal rules above.
+Visible text after the blocks must be exactly: "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely."
 
 LONG-TERM JOURNEY MODES:
 - Weekly coaching: ask for one short update on achievements, activities, problems, ideas, or goals; update PROFILE/TASKS when useful.
@@ -601,23 +679,17 @@ ${config.ranking}
 ==DATA BLOCKS==
 Emit these structured blocks when you have enough data. The system parses and hides them. Your visible reply must contain ONLY conversational text.
 CRITICAL FORMAT RULE: every block must contain ONLY raw, strictly valid JSON between its opening and closing tag — never wrap it in markdown code fences (no triple-backtick fences of any kind), never add commentary inside the tag, never use trailing commas, and always escape any literal double-quote characters inside string values (e.g. write \" not "). A block that fails to parse as JSON will silently fail to update the UI, so correctness here is mandatory.
-ADMIT RATE RULE: every school object in a PROGRAMS block must include admitRate (the real published acceptance rate as a number, e.g. 4 for 4%) and admitRateSource (e.g. "Official 2024" or "Not available"). ONLY include a number for admitRate if you are certain it is the actual published rate — never guess from prestige or ranking. If you are not certain, set admitRate to null and admitRateSource to "Not available". Known accurate rates (as of 2024) — use these verbatim:
-UNDERGRAD: Harvard 3.6, MIT 4.0, Stanford 3.7, Yale 4.6, Princeton 4.6, Columbia 3.9, Brown 5.1, Dartmouth 5.8, Cornell 8.7, Penn 7.7, Duke 6.9, Vanderbilt 6.6, Northwestern 6.8, Caltech 3.9, Rice 8.5, Notre Dame 12.2, Georgetown 12.5, UCLA 8.6, UC Berkeley 11.3, USC 11.5, NYU 12.2, Boston University 18, Northeastern 7, Emory 11.6, Tulane 11.5, Carnegie Mellon 11, Tufts 9.6, Michigan 17.7, UVA 19, Georgia Tech 17, UT Austin 26.5, Boston College 19, Wake Forest 23; UK: Oxford 17.5, Cambridge 21, Imperial College 14.3, LSE 8, UCL 23.
-MBA: Harvard Business School (HBS) 12, Stanford GSB 7, Wharton 20, Booth 24, Kellogg 25, Columbia Business School 16, MIT Sloan 16, Haas (Berkeley) 14, Yale SOM 17, Tuck (Dartmouth) 22, Ross (Michigan) 20, Fuqua (Duke) 22, Darden (Virginia) 26, Stern (NYU) 18, Anderson (UCLA) 24, Marshall (USC) 21, Tepper (CMU) 23, LBS 22, INSEAD 25.
-LAW: Yale Law 6.9, Harvard Law 7.7, Stanford Law 4.1, Columbia Law 10.7, NYU Law 13.6, Chicago Law 14.5, Penn Law 11.1, Duke Law 17.4, Northwestern Law 16.9, Georgetown Law 16.8, UVA Law 17.9, Cornell Law 18.3, Vanderbilt Law 26.1, UCLA Law 18.8, Michigan Law 22.3.
-MEDICINE: Harvard Medical 3.3, Johns Hopkins Medicine 3.3, Stanford Medicine 2.2, Yale Medicine 3.5, Columbia Medicine 3.4, Penn Medicine 3.6, UCSF Medicine 2.7, Duke Medicine 3.0, Northwestern Feinberg 4.0.
-For all other schools, set admitRate to null and admitRateSource to "Not available".
 FORBIDDEN SYNTAX: never emit XML/HTML-style function-call or tool-use markup such as <function_calls>, <invoke>, <invoke>, "tool_use", "tool_code", or any other pseudo-code/tool-call wrapper anywhere in your visible text — the only real tool available to you (web_search, per the DATA SOURCING ORDER above) is invoked automatically by the platform itself, never by you writing XML/JSON syntax for it. The ONLY tags you ever write yourself are the exact ones listed below (PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, PROGRAMS, CHOSEN_SCHOOLS, INSIGHTS, ESSAY, INTERVIEW_RESULT). Any other bracketed/angle-bracket markup in a reply is a failure.
-NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in their tab. If the candidate reports the tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text to one sentence: "Here's your list again — it's live in your Analysis tab now." Schools only ever reach the candidate through the rendered tab, never through chat text.
+NEVER list school names, tiers, or fit percentages as plain prose in your visible reply, under any circumstance — including when recovering from a previous turn where the block may have failed to render, or when the candidate says they can't see anything in the Analysis tab. If the candidate reports the Analysis tab looks empty after you said it was live, do NOT retype the school list in chat — simply re-emit the same <PROGRAMS> block (with the same schools) in that reply, and keep your visible text limited to something like "Here's your portfolio again — it's live in the Analysis tab now." Schools only ever reach the candidate through the rendered Analysis tab, never through chat text.
 
 "First Last" below is a placeholder format example only — ALWAYS replace it with the candidate's actual name captured in Step 1 (or from their CV/background dump). Never emit "First Last", "Candidate", or any other placeholder as the name. For Undergraduate only, omit name if the student has not shared it yet. Always include "category" (one of "Undergraduate", "Graduate", "Postgraduate / Doctoral", "Personal Development"). Include "exceptionType" ("true", "partial", or "none") once the exception screening question has been asked and classified.
 <PROFILE>{"name":"First Last","category":"Graduate","degree":"MBA","gpa":"3.7","gmat":"720","experience":"5 years","industry":"Finance","destination":"USA","goals":"Move into PE","exceptionType":"none"}</PROFILE>
 
 Undergraduate PROFILE example (grade/school replace gpa/gmat/experience as relevant):
-<PROFILE>{"name":"First Last","category":"Undergraduate","degree":"Undergraduate","grade":"10th","school":"Lincoln High School","subjects":"Biology, Computer Science","interests":"Robotics, debate","activities":"Robotics club, school newspaper","strongestActivity":"Robotics club","leadership":"Robotics team captain","intendedMajor":"Computer Science","countries":"USA, UK","pathwayType":"focused","tests":"None yet","universityStyle":"Research"}</PROFILE>
+<PROFILE>{"name":"First Last","category":"Undergraduate","degree":"Undergraduate","grade":"10th","school":"Lincoln High School","interests":"Robotics, debate, biology"}</PROFILE>
 
 <SCORES>{"academic":68,"testScore":72,"professional":70,"leadership":61,"volunteering":45,"uniqueness":55,"diversity":60,"goalClarity":70,"narrative":55,"recommenders":62,"potential":74}</SCORES>
-Undergraduate SCORES example (no professional key): <SCORES>{"academic":78,"testScore":55,"activities":62,"leadership":48,"volunteering":40,"awards":35,"narrative":52,"goalClarity":60,"recommenders":55,"potential":74,"uniqueness":58}</SCORES>
+Undergraduate SCORES example (no professional key): <SCORES>{"academic":78,"testScore":55,"activities":62,"leadership":48,"volunteering":40,"awards":35,"narrative":52,"goalClarity":60,"potential":74,"uniqueness":58}</SCORES>
 MBA SCORES example: <SCORES>{"professional":76,"leadership":72,"careerProgression":70,"internationalExposure":55,"testScore":68,"academic":64,"narrative":66,"goalClarity":70,"recommenders":62}</SCORES>
 PhD SCORES example: <SCORES>{"academic":82,"research":76,"publications":58,"facultyFit":64,"potential":78,"narrative":62,"recommenders":70,"goalClarity":74}</SCORES>
 
@@ -876,17 +948,9 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
-
-    // Detect idle check-in: frontend sends __idle_checkin__ as a silent system trigger.
-    // Strip it from chat history and instead inject a contextual re-engagement instruction.
-    const isIdleCheckin = messages.filter(m => m.role === 'user').pop()?.text === '__idle_checkin__';
-    const idleContext = isIdleCheckin
-      ? `\n\nIDLE RE-ENGAGEMENT (priority override): The user has been inactive for 60 seconds. Generate a brief, warm, contextual check-in (1-2 sentences MAX). Reference something specific and useful from their profile or top task — never say "still there?", never ask a generic question. End with → 2-3 specific chips tied to their current state. Do not echo previous questions.`
-      : '';
-
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + idleContext;
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
     let anthropicMessages = messages
-      .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
+      .filter((message) => message?.role !== 'system' && message?.text)
       .map((message) => ({
         role: message.role === 'ai' ? 'assistant' : 'user',
         content: message.text,
@@ -932,81 +996,116 @@ export default async function handler(req, res) {
       console.log(`[Headroom] Original: ${originalChars} chars, Optimized: ${optimizedChars} chars, Saved: ${pct}%`);
     }
 
-    // Anthropic requires the last message to be role:'user'. If all real messages
-    // were filtered out (e.g. chat consists only of AI replies and the only user
-    // message was the __idle_checkin__ sentinel), skip the API call entirely.
-    if (anthropicMessages.length === 0 || anthropicMessages[anthropicMessages.length - 1].role !== 'user') {
-      return res.status(200).json({ raw: '' });
+    // The model occasionally confirms a portfolio is "live in the Analysis tab" without actually
+    // including the <PROGRAMS> block that turn, leaving the tab empty until the user re-asks.
+    // Retry on that mismatch — it's usually a transient generation glitch — before giving up.
+    // From the 2nd attempt onward, append a corrective note pointing out exactly what was missing
+    // instead of blindly resending the same input, since an identical retry tends to fail the same way.
+    const CORRECTIVE_NOTE = '\n\nCORRECTION NEEDED: your previous attempt at this exact turn claimed that analysis, a portfolio/list, or a shortlist was ready but did not include the required structured blocks in that same response. If analysis is ready, put complete <PROFILE>, <SCORES>, <STRENGTHS>, <WEAKNESSES>, <TASKS>, and <PROGRAMS> blocks FIRST, before any visible sentence. If only a portfolio/list/shortlist is ready, put the complete <PROGRAMS> block first. Keep each object compact but valid. If exact published data is unavailable, use the closest comparable benchmark and say so briefly in notes; do not stall, do not apologize, and do not omit the block. For LLM programs, do not force LSAT/GRE if the program does not require/report it; omit irrelevant test fields and evaluate legal academic record, professional legal/policy experience, writing, language proof, specialization fit, and recommendations. If a program requires no standardized test, use test gap score 100 and skip the test locked gate.';
+    const PORTFOLIO_MIX_NOTE = '\n\nCORRECTION NEEDED: your previous <PROGRAMS> block created a same-color or heavily clustered portfolio. Rebuild the PROGRAMS block as a strategic admissions portfolio, not a top-fit ranking: at least 10 schools, usually a visible spread of Strong Fit/safe, Competitive/possible, and realistic Reach/stretch for normal candidates. Do not add impossible elite schools just to create red rows. Keep fit bucket separate from selectivity label, preserve the existing scoring/fit rules, and make each programInfo paragraph specific, complete, and cut cleanly at a sentence boundary.';
+    const FINAL_COMPACT_NOTE = '\n\nFINAL RETRY FORMAT: Return ONLY strict structured blocks first, with no prose before them. If this is the CV analysis-ready flow, return <PROFILE>{...}</PROFILE><SCORES>{...}</SCORES><STRENGTHS>[...]</STRENGTHS><WEAKNESSES>[...]</WEAKNESSES><TASKS>[...]</TASKS><PROGRAMS>[...]</PROGRAMS> followed by exactly: Your analysis is ready. Tap below to view your profile, scores, and school matches. If this is only a portfolio/list flow, return <PROGRAMS>[...]</PROGRAMS> followed by one short confirmation sentence. Generate at least 10 programs, normally 10-14 if needed to fit the token budget, using a dynamic portfolio mix rather than fixed bucket quotas. Every program object must have name, tier, fit, location, programGroup, admissionStatus, selectivityLabel, selectivitySource, selectivityScore, evidenceGaps, riskFlags, fitDrivers, programInfo, and notes. Omit irrelevant test fields rather than inventing them.';
+    let raw;
+    let retryReason = '';
+    for (let attempt = 0; attempt < 4; attempt++) {
+      // Web search tool-use/tool-result content counts against max_tokens like any other
+      // output, so a school requiring a search can get truncated mid-<PROGRAMS> block before
+      // it ever reaches the closing tag. Drop the tool on the final attempt so the entire
+      // token budget goes to the reply itself — the model still has the parallel-program
+      // analogy fallback (DATA SOURCING ORDER step 3) to fall back on.
+      // The system prompt is identical across every retry attempt in this loop (only the
+      // appended retry note changes), so it's marked as an Anthropic prompt-cache breakpoint:
+      // attempt 0 pays full price to write the cache, attempts 1-3 read it back at a steep
+      // discount instead of reprocessing the same multi-thousand-token prompt from scratch.
+      const retryNote = attempt === 0
+        ? ''
+        : `${retryReason === 'portfolio_mix' ? PORTFOLIO_MIX_NOTE : CORRECTIVE_NOTE}${attempt >= 2 ? FINAL_COMPACT_NOTE : ''}`;
+      const system = [
+        { type: 'text', text: compressedSystemPrompt, cache_control: { type: 'ephemeral' } },
+        ...(retryNote ? [{ type: 'text', text: retryNote }] : []),
+      ];
+      const response = await createChatCompletion({
+        system,
+        messages: anthropicMessages,
+        useWebSearch: attempt < 2,
+      });
+
+      // Log real token usage from Anthropic API response (for dashboard compression metrics)
+      logTokenUsage({
+        userId: usageUserId,
+        conversationId: convoId,
+        feature,
+        model: CHAT_MODEL,
+        usage: response.usage,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
+      }).catch((err) => console.error('Failed to log token usage:', err));
+
+      recordUsage({
+        userId: usageUserId,
+        conversationId: convoId,
+        feature,
+        model: CHAT_MODEL,
+        inputTokens: response.usage?.input_tokens,
+        outputTokens: response.usage?.output_tokens,
+        endpoint: 'chat',
+        attempt,
+        useWebSearch: attempt < 2,
+        stopReason: response.stop_reason,
+        headroomEnabled: headroomStats.enabled,
+        headroomMode: headroomStats.mode,
+        headroomError: headroomStats.error,
+        originalInputChars: headroomStats.originalInputChars,
+        optimizedInputChars: headroomStats.optimizedInputChars,
+        estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
+        cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
+        cacheReadInputTokens: response.usage?.cache_read_input_tokens,
+        webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
+      }).catch((err) => console.error('Failed to record usage:', err));
+
+      raw = extractText(response);
+
+      const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
+      const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
+      const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
+      const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
+        && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
+        && hasProgramsBlock;
+      const hasRequiredBlocks = (!claimsPortfolioLive || hasProgramsBlock) && (!claimsAnalysisReady || hasAnalysisBlocks);
+      const badPortfolioMix = hasRequiredBlocks && hasProgramsBlock && needsPortfolioMixRetry(raw);
+      if (hasRequiredBlocks && !badPortfolioMix) break;
+      retryReason = badPortfolioMix ? 'portfolio_mix' : 'missing_blocks';
+      if (response.stop_reason === 'max_tokens') {
+        console.error(`Chat response hit max_tokens on attempt ${attempt} without completing its <PROGRAMS> block (feature: ${feature})`);
+      } else if (badPortfolioMix) {
+        console.error(`Chat response produced a clustered same-color <PROGRAMS> portfolio on attempt ${attempt} (feature: ${feature}); retrying.`);
+      }
     }
 
-    const advisor = new AdvisorAgent();
-    let raw = await advisor.chat(anthropicMessages, {
-      systemPrompt: compressedSystemPrompt,
-      onAttempt: (response, attempt, { useWebSearch }) => {
-        logTokenUsage({
-          userId: usageUserId,
-          conversationId: convoId,
-          feature,
-          model: CHAT_MODEL,
-          usage: response.usage,
-          endpoint: 'chat',
-          attempt,
-          useWebSearch,
-          stopReason: response.stop_reason,
-          headroomEnabled: headroomStats.enabled,
-          headroomMode: headroomStats.mode,
-          headroomError: headroomStats.error,
-          originalInputChars: headroomStats.originalInputChars,
-          optimizedInputChars: headroomStats.optimizedInputChars,
-        }).catch((err) => console.error('Failed to log token usage:', err));
-        recordUsage({
-          userId: usageUserId,
-          conversationId: convoId,
-          feature,
-          model: CHAT_MODEL,
-          inputTokens: response.usage?.input_tokens,
-          outputTokens: response.usage?.output_tokens,
-          endpoint: 'chat',
-          attempt,
-          useWebSearch,
-          stopReason: response.stop_reason,
-          headroomEnabled: headroomStats.enabled,
-          headroomMode: headroomStats.mode,
-          headroomError: headroomStats.error,
-          originalInputChars: headroomStats.originalInputChars,
-          optimizedInputChars: headroomStats.optimizedInputChars,
-          estimatedCompressionPercent: estimateCompressionPercent(headroomStats.originalInputChars, headroomStats.optimizedInputChars),
-          cacheCreationInputTokens: response.usage?.cache_creation_input_tokens,
-          cacheReadInputTokens: response.usage?.cache_read_input_tokens,
-          webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
-        }).catch((err) => console.error('Failed to record usage:', err));
-      },
-    });
+    raw = normalizeProgramsInRaw(raw);
+
+    const claimsPortfolioLive = /(portfolio|university list|shortlist) is live in the Analysis tab/i.test(raw);
+    const claimsAnalysisReady = /Your analysis is ready/i.test(raw);
+    const hasProgramsBlock = /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/.test(raw);
+    const hasAnalysisBlocks = /<PROFILE>[\s\S]*?<\/PROFILE>/.test(raw)
+      && /<SCORES>[\s\S]*?<\/SCORES>/.test(raw)
+      && hasProgramsBlock;
+    if (claimsPortfolioLive && !hasProgramsBlock) {
+      raw = "Sorry, that portfolio didn't generate correctly on my end — no need to repeat yourself, just say \"try again\" and I'll regenerate it from what you already told me.";
+    }
+    if (claimsAnalysisReady && !hasAnalysisBlocks) {
+      raw = "I still need the missing profile details before I can generate accurate scores and school matches.";
+    }
 
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
     }
-
-    // Persist candidate message + AI reply to Redis so admin/consultant live session sees them.
-    // Skip anonymous users and silent idle check-ins (those should not appear in the chat log).
-    if (userId && !isIdleCheckin) {
-      const lastUserMsg = messages.filter(m => m.role === 'user' && m.text && m.text !== '__idle_checkin__').pop();
-      const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT';
-      const visibleReply = raw
-        .replace(new RegExp(`<(${DATA_BLOCK_TAGS}|thinking|analysis|reasoning|scratchpad|internal|hidden)>[\\s\\S]*?<\\/\\1>`, 'gi'), '')
-        .replace(/```(?:json)?[\s\S]*?```/gi, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-      const saves = [];
-      if (lastUserMsg?.text) {
-        saves.push(appendMessage(userId, { senderId: userId, senderRole: 'candidate', text: lastUserMsg.text }));
-      }
-      if (visibleReply) {
-        saves.push(appendMessage(userId, { senderId: 'ai', senderRole: 'ai', text: visibleReply }));
-      }
-      await Promise.allSettled(saves);
-    }
-
     return res.status(200).json({ raw });
   } catch (error) {
     console.error('Anthropic API error:', error);

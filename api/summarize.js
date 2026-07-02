@@ -48,13 +48,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { ChatAgent } = await import('../lib/agents/sub/ChatAgent.js');
-    const agent = new ChatAgent();
-    const agentResult = await agent.execute([{
-      role: 'user',
-      content: `Summarize this admissions consulting session for the consultant in 4-5 concise bullet points. Cover: candidate background/credentials, key strengths, program interest and school targets, narrative direction if discussed, and current stage in the process. Be specific and use the actual data from the conversation.\n\nTranscript:\n${transcript}`,
-    }]);
-    const response = agentResult.raw;
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: 700,
+      messages: [{
+        role: 'user',
+        content: `Summarize this admissions consulting session for the consultant in 4-5 concise bullet points. Cover: candidate background/credentials, key strengths, program interest and school targets, narrative direction if discussed, and current stage in the process. Be specific and use the actual data from the conversation.\n\nTranscript:\n${transcript}`,
+      }],
+    });
     let userId = await resolveUserId(req);
     if (candidateId) {
       const actor = await getActor(req);

@@ -166,7 +166,7 @@ function getTestMetric(school) {
 }
 
 function getAdmitRateMetric(school) {
-  const rate = asDisplayRate(school?.admitRate ?? school?.acceptanceRate);
+  const rate = asDisplayRate(school?.acceptanceRate);
   return rate ? `${rate}%` : null;
 }
 
@@ -484,8 +484,7 @@ function buildAccordionSummary(school, profile) {
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
-  const hasPrograms = Array.isArray(programs) && programs.length > 0;
-  const hasData = !!scores || hasPrograms;
+  const hasData = !!scores;
   const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
   const [expanded, setExpanded] = useState({});
@@ -537,9 +536,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     );
   }
 
-  const scoreItems = scores ? (trackConfig.kpis || [])
+  const scoreItems = (trackConfig.kpis || [])
     .map(([key, title, desc]) => ({ key, title, desc }))
-    .filter(item => scores[item.key] != null) : [];
+    .filter(item => scores[item.key] != null);
 
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];
@@ -663,7 +662,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         </div>
 
         {/* Overall score banner */}
-        {scores?.overall != null && (
+        {scores.overall != null && (
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ position: 'relative' }}>
@@ -674,16 +673,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score breakdown */}
-        {scoreItems.length > 0 && (
-          <>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
-            <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
-              {scoreItems.map((item, i) => (
-                <ScoreBar key={item.key} score={scores[item.key]} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
-              ))}
-            </div>
-          </>
-        )}
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
+        <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
+          {scoreItems.map((item, i) => (
+            <ScoreBar key={item.key} score={scores[item.key]} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
+          ))}
+        </div>
 
         {/* Strengths / Growth areas */}
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
