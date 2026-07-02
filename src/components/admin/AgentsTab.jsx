@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
-const INITIAL_AGENTS = [
+const AGENT_DEFINITIONS = [
   { id: 'main', name: 'MainAgent', role: 'Orchestrator', status: 'active', model: 'claude-haiku-4-5', calls: 1482, tokens: '3.2M', latency: '1.4s', description: 'Routes every candidate message to the correct sub-agent based on intent classification.', behavior: 'Classifies incoming messages into one of 12 intent categories, then delegates to the matching sub-agent. Falls back to ChatAgent for ambiguous requests.', settings: { maxRetries: 3, timeoutMs: 30000, logInteractions: true } },
   { id: 'advisor', name: 'AdvisorAgent', role: 'Advisor', status: 'active', model: 'claude-haiku-4-5', calls: 6841, tokens: '18.4M', latency: '4.2s', description: 'Powers the main advisor stepper with structured profile/scores/programs blocks.', behavior: 'Runs the full 9-step admissions pipeline with a 725-line system prompt, web search, 4-attempt retry loop, and portfolio-mix validation.', settings: { maxRetries: 4, webSearch: true, cachePrompt: true, portfolioMinSchools: 10 } },
   { id: 'chat', name: 'ChatAgent', role: 'Conversation', status: 'active', model: 'claude-haiku-4-5', calls: 3204, tokens: '8.1M', latency: '1.1s', description: 'Handles general Q&A with persistent per-candidate memory across sessions.', behavior: 'Fetches candidate profile from Redis, maintains last-20-message history under agent:memory:ChatAgent:{id}, responds with contextual awareness.', settings: { memoryWindow: 20, memoryTtlDays: 7 } },
@@ -17,6 +17,17 @@ const INITIAL_AGENTS = [
   { id: 'settings-agent', name: 'SettingsAgent', role: 'Settings', status: 'active', model: 'claude-haiku-4-5', calls: 142, tokens: '0.2M', latency: '0.6s', description: 'Handles candidate profile updates and notification preference changes via natural language.', behavior: 'Parses preference-change requests (language, notification opt-in/out, target country updates) and applies them via updateCandidateProfile in Redis.', settings: { allowedFields: ['language', 'notifications', 'destination', 'goals'] } },
 ];
 
+const EMPTY_METRICS = {
+  calls: 0, inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0,
+  cacheReadInputTokens: 0, totalTokens: 0, avgLatencyMs: 0, errors: 0,
+};
+
+// Descriptions and settings are static; usage is always loaded from the server.
+const INITIAL_AGENTS = AGENT_DEFINITIONS.map((agent) => ({ ...agent, ...EMPTY_METRICS }));
+
+const formatNumber = (value) => Number(value || 0).toLocaleString();
+const formatLatency = (value) => Number(value) > 0 ? `${Math.round(Number(value)).toLocaleString()} ms` : '—';
+
 const STATUS_COLOR = { active: '#3fdca9', paused: '#eaa129', disabled: '#e384a5' };
 const STATUS_BG = { active: '#eafff6', paused: '#fff8ea', disabled: '#fff1f6' };
 
@@ -30,12 +41,58 @@ const inputStyle = {
   outline: 'none', boxSizing: 'border-box',
 };
 
-export default function AgentsTab({ showToast }) {
+export default function AgentsTab({ showToast, adminHeaders = {} }) {
   const [agents, setAgents] = useState(INITIAL_AGENTS);
   const [selected, setSelected] = useState(INITIAL_AGENTS[0].id);
   const [openSection, setOpenSection] = useState('behavior');
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+  const [usageError, setUsageError] = useState('');
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetAt, setResetAt] = useState(null);
+
+  const loadUsage = useCallback(async () => {
+    setUsageLoading(true);
+    setUsageError('');
+    try {
+      const response = await fetch('/api/admin-agent-usage', { headers: adminHeaders });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to load agent usage.');
+      const metrics = new Map((data.agents || []).map((item) => [item.agentId, item]));
+      setAgents((current) => current.map((item) => ({
+        ...item,
+        ...EMPTY_METRICS,
+        ...(metrics.get(item.id) || {}),
+      })));
+      setResetAt(data.resetAt || null);
+    } catch (err) {
+      setUsageError(err.message || 'Failed to load agent usage.');
+    } finally {
+      setUsageLoading(false);
+    }
+  }, [adminHeaders.Authorization, adminHeaders['X-Admin-Secret']]);
+
+  useEffect(() => { loadUsage(); }, [loadUsage]);
+
+  const resetCounters = async () => {
+    if (!window.confirm('Reset usage counters for all agents? This cannot be undone.')) return;
+    setResetBusy(true);
+    try {
+      const response = await fetch('/api/admin-agent-usage', { method: 'POST', headers: adminHeaders });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to reset agent counters.');
+      setAgents((current) => current.map((item) => ({ ...item, ...EMPTY_METRICS })));
+      setResetAt(data.resetAt || Date.now());
+      setUsageError('');
+      showToast?.('Agent usage counters reset.');
+    } catch (err) {
+      setUsageError(err.message || 'Failed to reset agent counters.');
+      showToast?.(err.message || 'Failed to reset agent counters.');
+    } finally {
+      setResetBusy(false);
+    }
+  };
 
   const agent = agents.find((a) => a.id === selected);
 
@@ -90,8 +147,20 @@ export default function AgentsTab({ showToast }) {
       {/* Agent list */}
       <div style={{ width: 240, flexShrink: 0, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, overflow: 'hidden' }}>
         <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid #f1eadd' }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#9098b5' }}>AGENTS</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#9098b5' }}>AGENTS</div>
+            <button
+              onClick={resetCounters}
+              disabled={resetBusy || usageLoading}
+              title="Reset all agent usage counters"
+              style={{ background: '#fff1f6', color: '#c94f79', border: '1px solid #e384a560', borderRadius: 8, padding: '4px 8px', fontSize: 10, fontWeight: 800, cursor: resetBusy || usageLoading ? 'not-allowed' : 'pointer', opacity: resetBusy || usageLoading ? .55 : 1 }}
+            >
+              {resetBusy ? 'RESETTING…' : 'RESET COUNTERS'}
+            </button>
+          </div>
           <div style={{ fontSize: 12, color: '#9098b5', marginTop: 2 }}>{agents.length} agents registered</div>
+          {resetAt && <div style={{ fontSize: 10, color: '#9098b5', marginTop: 4 }}>Since {new Date(resetAt).toLocaleString()}</div>}
+          {usageError && <div style={{ fontSize: 10, color: '#c94f79', marginTop: 5 }}>{usageError}</div>}
         </div>
         <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 220px)' }}>
           {agents.map((a) => (
@@ -162,9 +231,9 @@ export default function AgentsTab({ showToast }) {
           {/* KPI strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
             {[
-              { label: 'TOTAL CALLS', value: agent.calls.toLocaleString() },
-              { label: 'TOKENS USED', value: agent.tokens },
-              { label: 'AVG LATENCY', value: agent.latency },
+              { label: 'TOTAL CALLS', value: usageLoading ? '…' : formatNumber(agent.calls) },
+              { label: 'TOKENS USED', value: usageLoading ? '…' : formatNumber(agent.totalTokens) },
+              { label: 'AVG LATENCY', value: usageLoading ? '…' : formatLatency(agent.avgLatencyMs) },
               { label: 'MODEL', value: editing ? null : agent.model },
             ].map(({ label, value }) => (
               <div key={label} style={{ background: '#f6f1e8', border: `1px solid ${editing && label === 'MODEL' ? '#b899fb' : '#f1eadd'}`, borderRadius: 14, padding: '12px 14px' }}>
@@ -208,15 +277,15 @@ export default function AgentsTab({ showToast }) {
             </div>
           </Section>
 
-          <Section id="usage" label="Usage (last 30 days)">
+          <Section id="usage" label="Usage (since last reset)">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               {[
-                { label: 'Calls', value: agent.calls.toLocaleString() },
-                { label: 'Tokens', value: agent.tokens },
-                { label: 'Avg latency', value: agent.latency },
-                { label: 'Errors', value: '0' },
-                { label: 'Retries', value: agent.id === 'advisor' ? '184' : agent.id === 'essay' ? '42' : '0' },
-                { label: 'Cache hits', value: agent.id === 'advisor' ? '91%' : agent.id === 'chat' ? '74%' : 'N/A' },
+                { label: 'Calls', value: formatNumber(agent.calls) },
+                { label: 'Input tokens', value: formatNumber(agent.inputTokens) },
+                { label: 'Output tokens', value: formatNumber(agent.outputTokens) },
+                { label: 'Cache write/read', value: `${formatNumber(agent.cacheCreationInputTokens)} / ${formatNumber(agent.cacheReadInputTokens)}` },
+                { label: 'Avg latency', value: formatLatency(agent.avgLatencyMs) },
+                { label: 'Errors', value: formatNumber(agent.errors) },
               ].map(({ label, value }) => (
                 <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 10, padding: '10px 12px' }}>
                   <div style={{ fontSize: 10, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 4 }}>{label.toUpperCase()}</div>

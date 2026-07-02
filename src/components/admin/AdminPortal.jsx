@@ -1941,7 +1941,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── AGENTS ── */}
           {adminView === 'agents' && canManageUsers && (
-            <AgentsTab showToast={showToast} />
+            <AgentsTab showToast={showToast} adminHeaders={adminHeaders} />
           )}
 
           {/* ── USAGE & COST ── */}
