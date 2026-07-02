@@ -242,7 +242,7 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
   }
   if (!programs?.length) {
     return [
-      { label: 'Recommend programs for me', msg: 'Recommend a tailored portfolio of programs for me.' },
+      { label: 'Show my school list', msg: 'Generate my complete school list now. I cannot see any schools in Chat or Analysis.' },
       { label: 'What is missing from my profile?', msg: 'What is missing from my profile?' },
       { label: 'How competitive am I?', msg: 'Walk me through my readiness snapshot.' },
     ];
