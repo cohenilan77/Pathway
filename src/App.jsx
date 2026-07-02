@@ -811,7 +811,16 @@ export default function App() {
         }
         if (parsed.programs) {
           setPrograms(parsed.programs);
-          setStepIdx(prev => Math.max(prev, isUndergrad ? 3 : 3));
+          const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
+            || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);
+          if (!isUndergrad && regeneratedProgramList) {
+            // A fresh list invalidates earlier picks. Reopen selection so the
+            // new rows are visible and can be confirmed without typing names.
+            setChosenSchools(null);
+            setStepIdx(3);
+          } else {
+            setStepIdx(prev => Math.max(prev, 3));
+          }
         }
         if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
         if (parsed.insights) setInsights(parsed.insights);
@@ -1052,6 +1061,11 @@ export default function App() {
   const currentTrack = resolveTrack(profile || {});
   const currentConfig = getTrackConfig(profile || {});
   const currentSteps = currentConfig.steps;
+  const reopenProgramSelection = useCallback(() => {
+    setChosenSchools(null);
+    setStepIdx(3);
+    setCandTab('advisor');
+  }, []);
 
   const sharedProps = {
     screen, role, setRole,
@@ -1066,7 +1080,7 @@ export default function App() {
     sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
-    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, reopenProgramSelection, insights,
     tasks, completedTasks, setCompletedTasks,
     cvText, setCvText, cvFile, setCvFile,
     essayText, setEssayText,

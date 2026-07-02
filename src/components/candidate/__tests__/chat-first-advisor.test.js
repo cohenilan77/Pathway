@@ -59,6 +59,11 @@ test('confirmed targets remove old program artifacts so the narrative question s
   assert.ok(!chatFirst.includes('{hasPrograms && (\n              <ProgramsCard'), 'confirmed targets must not leave the program card below the latest chat reply');
 });
 
+test('saved targets can be reopened for checkbox selection without typing names', () => {
+  assert.match(chatFirst, /reopenProgramSelection/);
+  assert.match(chatFirst, />\s*Change school selection\s*</);
+});
+
 test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /function contextualChips/);
   assert.match(chatFirst, /Advisor is analyzing/);

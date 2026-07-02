@@ -42,7 +42,7 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools, reopenProgramSelection }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -123,6 +123,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
         busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
         narrative={narrative} setNarrative={setNarrative}
         chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
+        reopenProgramSelection={reopenProgramSelection}
         authUser={authUser}
       />
     );

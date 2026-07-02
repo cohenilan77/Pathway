@@ -269,7 +269,7 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
 
 export default function AdvisorChatFirst({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
-  setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, authUser,
+  setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, reopenProgramSelection, authUser,
 }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -442,6 +442,12 @@ export default function AdvisorChatFirst({
             {/* contextual suggestions under the input */}
             {chips.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
+                {chosenSchools?.length > 0 && !narrative && (
+                  <button onClick={reopenProgramSelection} disabled={busy}
+                    style={{ background: '#f0ebff', border: '1.5px solid #b899fb', borderRadius: 999, padding: '6px 13px', fontSize: 12, fontWeight: 800, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    Change school selection
+                  </button>
+                )}
                 {chips.map(({ label, msg }) => (
                   <button key={msg} onClick={() => handleChip(msg)} disabled={busy}
                     style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 999, padding: '6px 13px', fontSize: 12, fontWeight: 700, color: '#6b7392', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
