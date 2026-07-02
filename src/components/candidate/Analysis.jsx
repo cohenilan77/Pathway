@@ -502,9 +502,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   };
 
   const confirmSelection = () => {
-    if (!selected.length) return;
+    if (!selected.length || busy) return;
     setChosenSchools && setChosenSchools(selected);
-    const msg = `I'd like to move forward with: ${selected.join(', ')}.`;
+    const msg = `I'd like to move forward with: ${selected.join(' | ')}.`;
     setCandTab('advisor');
     send(msg);
   };
@@ -907,9 +907,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#d9cbb3', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear
               </button>
-              <button onClick={confirmSelection}
-                style={{ background: '#faf7f2', border: 'none', color: '#5b46e0', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                Back to Chat with Picks →
+              <button onClick={confirmSelection} disabled={busy}
+                style={{ background: '#faf7f2', border: 'none', color: '#5b46e0', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                {busy ? 'Confirming…' : 'Back to Chat with Picks →'}
               </button>
             </div>
           </div>

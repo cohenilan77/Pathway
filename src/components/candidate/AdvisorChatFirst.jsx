@@ -168,7 +168,7 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
   const confirm = () => {
     if (!selected.length || busy) return;
     setChosenSchools && setChosenSchools(selected);
-    send(`I'd like to move forward with: ${selected.join(', ')}. Take me to the next step of my journey.`);
+    send(`I'd like to move forward with: ${selected.join(' | ')}. Take me to the next step of my journey.`);
   };
 
   return (
