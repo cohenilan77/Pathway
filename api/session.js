@@ -3,6 +3,24 @@ import { toEnglish } from '../lib/translate.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getCandidateClock } from '../lib/candidate-clock.js';
 import { getUserAssignments } from '../lib/assignments.js';
+import { clearMessages } from '../lib/chat.js';
+
+// Best-effort removal of uploaded originals (CV + document files) from blob storage.
+// Failures are logged but never block the reset — the session data itself is the
+// source of truth and is wiped regardless.
+async function deleteSessionFiles(data) {
+  const files = [
+    data?.cvFile,
+    ...(Array.isArray(data?.documents) ? data.documents.map((doc) => doc?.file) : []),
+  ].filter((file) => file && (file.url || file.pathname));
+  if (!files.length || !process.env.BLOB_READ_WRITE_TOKEN) return;
+  try {
+    const { del } = await import('@vercel/blob');
+    await Promise.allSettled(files.map((file) => del(file.url || file.pathname)));
+  } catch (err) {
+    console.error('session reset: blob delete failed:', err.message);
+  }
+}
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -120,6 +138,27 @@ export default async function handler(req, res) {
       ...translated,
       chat: [...incomingChat, ...remoteOnly],
     });
+    await touchActivity(userId);
+    res.status(200).json({ ok: true });
+    return;
+  }
+
+  // Full session reset: wipe chat, profile, analysis, documents, AND the uploaded
+  // files associated with them. Triggered only after the candidate confirms
+  // "Are you sure?" on the New session / refresh button.
+  if (req.method === 'DELETE') {
+    const user = await getUserById(userId);
+    if (!user) {
+      res.status(401).json({ error: 'Not authenticated.' });
+      return;
+    }
+    const current = (await getUserData(userId)) || {};
+    await deleteSessionFiles(current);
+    const nextSessionId = typeof req.body?.sessionId === 'string' && req.body.sessionId
+      ? req.body.sessionId
+      : `session_${Date.now()}`;
+    await setUserData(userId, { sessionId: nextSessionId });
+    await clearMessages(userId).catch((err) => console.error('session reset: chat clear failed:', err.message));
     await touchActivity(userId);
     res.status(200).json({ ok: true });
     return;

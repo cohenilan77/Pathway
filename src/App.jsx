@@ -194,7 +194,7 @@ NEXT FOCUS: Partially-decided student. Ask about testing plans. ${upcomingTestDa
     } else if (stage.hasProfile && !stage.hasScores) {
       systemContext += `
 
-NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'goals and university preferences'}.`;
+NEXT FOCUS: Still building the profile. If no transcript/CV file has been shared yet, ask for a file upload first and extract everything from it. Then ask ONLY for the next missing KPI: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'recommenders, goals, and university preferences'}.`;
     }
   }
 
@@ -259,7 +259,7 @@ function safeVisibleReply(raw, parsed, currentProfile) {
   const isUndergrad = category === 'Undergraduate';
   if (parsed.profile && parsed.scores && parsed.programs) {
     if (isUndergrad) {
-      return clean || 'Your university matches are ready — check the University List tab to see your Reach, Target, and Likely schools.';
+      return clean || 'Your profile, risk assessment, and university matches are live in the Analysis tab.';
     }
     // Prefer the AI's actual text (which should now include a follow-up question)
     return clean || 'Your analysis is live in the Analysis tab — head there to see your scores and school matches.';
@@ -267,7 +267,7 @@ function safeVisibleReply(raw, parsed, currentProfile) {
   if (clean) return clean;
   if (parsed.programs) {
     return isUndergrad
-      ? 'Your university matches are live in the University List tab.'
+      ? 'Your updated university matches are live in the Analysis tab.'
       : 'Your portfolio is live in the Analysis tab.';
   }
   if (parsed.chosenSchools) return 'Your target schools are saved.';
@@ -275,7 +275,7 @@ function safeVisibleReply(raw, parsed, currentProfile) {
   if (parsed.interviewResult) return 'Your interview results are saved.';
   if (parsed.scores || parsed.profile) {
     return isUndergrad
-      ? 'Your profile is updated in the Advisor.'
+      ? 'Your profile and risk analysis are live in the Analysis tab.'
       : 'Your profile analysis is live in the Analysis tab.';
   }
   return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
@@ -725,7 +725,7 @@ export default function App() {
   }, [auth?.token, setAuth]);
 
   const resetSession = useCallback(() => {
-    const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
+    const confirmed = window.confirm('Are you sure? This will permanently delete your chat and all files associated with it — profile, scores, school matches, uploaded documents, tasks, essays, and saved analysis.');
     if (!confirmed) return;
     const nextSessionId = createSessionId();
     setSessionId(nextSessionId);
@@ -736,14 +736,17 @@ export default function App() {
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
     setInsights(null); setNarrative(null); setOverride(0);
+    setJourneyStage(null); setAdvisorDirective(null);
+    setCvDraft(''); setCvFileDraft(null); setCvExtra('');
     if (auth?.token) {
       fetch('/api/session', {
-        method: 'POST',
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
-        body: JSON.stringify({ data: { sessionId: nextSessionId } }),
+        body: JSON.stringify({ sessionId: nextSessionId }),
       }).catch(() => {});
     }
-    showToast('Session cleared — starting fresh.');
+    setCandTab('advisor');
+    showToast('Session deleted — chat and files cleared.');
   }, [auth?.token, showToast, language]);
 
   const saveUserDetails = useCallback(async (details) => {

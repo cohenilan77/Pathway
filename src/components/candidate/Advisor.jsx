@@ -339,11 +339,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 </div>
               )}
 
-              {scores && stepIdx >= 2 && (
+              {scores && (stepIdx >= 2 || isUndergrad) && (
                 <div style={{ marginLeft: 42, background: 'linear-gradient(135deg,#e9f9f1,#d1f5e6)', border: '1px solid #b7ecd4', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ fontSize: 13, color: '#119467', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
-                  <button onClick={() => setCandTab(isUndergrad ? 'universities' : 'analysis')} style={{ background: 'linear-gradient(135deg,#3fdca9,#80dbbf)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
-                    {isUndergrad ? 'University List →' : 'View Analysis →'}
+                  <button onClick={() => setCandTab('analysis')} style={{ background: 'linear-gradient(135deg,#3fdca9,#80dbbf)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                    View Analysis →
                   </button>
                 </div>
               )}
@@ -472,7 +472,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 </div>
               )}
 
-              {!isUndergrad && scores && (
+              {scores && (
                 <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0ebff,#e8e1ff)', border: '1px solid #d4c4f8', borderRadius: 14, padding: '14px 14px' }}>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>PROFILE SCORE</div>
                   <div style={{ fontSize: 28, fontWeight: 900, color: '#5b46e0', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontSize: 14, fontWeight: 600, color: '#9098b5' }}>/100</span></div>
