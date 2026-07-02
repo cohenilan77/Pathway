@@ -89,6 +89,7 @@ export default async function handler(req, res) {
           conversationHistory,
           profile: extra.profile || {},
           scores: extra.scores || {},
+          programs: extra.programs || [],
           kpiSummary: extra.kpiSummary || '',
         });
         return res.status(200).json({

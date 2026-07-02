@@ -138,6 +138,57 @@ test('unverified benchmark produces low confidence and per-school risk flags', a
   await resetJourney(id);
 });
 
+test('saved school choices are built and emitted when the model skips build_portfolio', async () => {
+  const id = uid('selected-school-recovery');
+  await resetJourney(id);
+  await patchJourney(id, {
+    category: 'Graduate',
+    subtype: 'MBA',
+    collected: { gpa: 3.9, testScore: 750 },
+    flags: { stage: 'portfolio' },
+  });
+  const agent = new GradAgent({
+    benchmarkProvider: async () => ({ medianGPA: 3.7, medianTest: 730, verified: true, source: 'official' }),
+    riskProvider: async () => ({ risks: [], tasks: [], riskFlags: [] }),
+  });
+  const responses = [
+    {
+      stop_reason: 'tool_use', usage: {}, content: [
+        { type: 'tool_use', id: '1', name: 'set_chosen_schools', input: { schools: ['Harvard Business School', 'Stanford GSB', 'Chicago Booth'] } },
+      ],
+    },
+    { stop_reason: 'end_turn', usage: {}, content: [{ type: 'text', text: 'Your choices are saved. -> Review analysis | Add targets' }] },
+  ];
+  agent.client = { messages: { create: async () => responses.shift() } };
+
+  const result = await agent.chat(id, 'HBS, Stanford, Booth only', { programs: [] });
+
+  assert.ok(result.toolUses.includes('build_portfolio'));
+  assert.equal(result.journey.flags.programsShown, true);
+  assert.equal(result.journey.collected.portfolio.length, 3);
+  assert.match(result.raw, /<PROGRAMS>[\s\S]*Harvard Business School[\s\S]*<\/PROGRAMS>/);
+  await resetJourney(id);
+});
+
+test('missing-analysis report re-emits a saved portfolio to an empty client', async () => {
+  const id = uid('empty-analysis-recovery');
+  await resetJourney(id);
+  await patchJourney(id, {
+    category: 'Graduate',
+    collected: { portfolio: [{ name: 'Chicago Booth', tier: 'possible', fit: 75 }] },
+    flags: { programsShown: true, chosenSchools: ['Chicago Booth'], stage: 'portfolio' },
+  });
+  const agent = new GradAgent();
+  agent.client = { messages: { create: async () => ({
+    stop_reason: 'end_turn', usage: {}, content: [{ type: 'text', text: 'I restored it. -> Review analysis | Continue' }],
+  }) } };
+
+  const result = await agent.chat(id, "I don't see any schools in the analysis tab", { programs: [] });
+
+  assert.match(result.raw, /<PROGRAMS>[\s\S]*Chicago Booth[\s\S]*<\/PROGRAMS>/);
+  await resetJourney(id);
+});
+
 test('UI keeps tasks in Dashboard, gates Advisor rail, and uses explicit intents', () => {
   const root = process.cwd();
   const advisor = fs.readFileSync(path.join(root, 'src/components/candidate/Advisor.jsx'), 'utf8');
