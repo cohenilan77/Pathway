@@ -862,8 +862,11 @@ export default function App() {
           // Once a task is marked done it's treated as deleted — drop it permanently
           // the next time the AI refreshes the task list, instead of letting it reappear.
           const next = parsed.tasks.filter(t => !completedTasks[t]);
+          console.log(`[App] Parsed ${parsed.tasks.length} tasks, keeping ${next.length} after filtering completed`);
           setTasks(next);
           setCompletedTasks({});
+        } else if (raw.includes('<TASKS>')) {
+          console.log(`[App] TASKS block found in response but failed to parse:`, raw.match(/<TASKS>[\s\S]*?<\/TASKS>/)?.[0]);
         }
         if (parsed.programs) {
           setPrograms(parsed.programs);
