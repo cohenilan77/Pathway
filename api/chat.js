@@ -1,6 +1,7 @@
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
+import { enforceProgramFormatInRaw } from '../lib/program-format.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
@@ -346,6 +347,15 @@ Once they pick a program, ask: "Is this a 1-year or multi-year program?" Wait fo
 Then ask: "Full-time or part-time?" Wait for their answer.
 Then go to the NAME QUESTION below. Set "category" to "Graduate" and "degree" to the program they picked plus the program length/format (e.g. "MBA — 2-year, full-time").
 
+PROGRAM FORMAT IS A HARD CONSTRAINT:
+- Treat the selected duration and attendance format as eligibility requirements, not preferences.
+- A full-time MBA list must exclude Executive MBA/EMBA, part-time, weekend, evening, online, distance, and hybrid programs.
+- A 2-year MBA list must exclude explicitly 1-year, 10-month, 12-month, and 16-month programs. A 1-year list must exclude explicitly 2-year programs.
+- A part-time MBA list must exclude full-time and Executive MBA programs unless the candidate explicitly selected Executive MBA.
+- Include studyFormat ("full-time"|"part-time"|"executive"|"online") and durationYears on every MBA object in PROGRAMS.
+- Never recommend two formats from the same school as separate matches unless the candidate explicitly asks to compare formats.
+- Format mismatch is a hard exclusion before fit scoring. Strong GPA/GMAT cannot compensate for the wrong format or duration.
+
 CATEGORY: POSTGRADUATE / DOCTORAL
 Ask: "Which path fits you best? → PhD | Postdoc | Doctoral Research | Other Advanced Research Program"
 Once they pick, go to the NAME QUESTION below. Set "category" to "Postgraduate / Doctoral" and "degree" to their selection.
@@ -405,13 +415,13 @@ This also applies if the STEP 3 question was asked and answered several messages
 Branch on how they answered the Step 3 question:
 
 BRANCH A — Candidate named specific schools/programs:
-Step 1 (required): Emit a <PROGRAMS> block containing ONLY the schools/programs they named. Preserve the exact school/program identity in the name field when possible, e.g. "NYU Tisch — MPS Interactive Telecommunications Program (ITP)". Apply the same fit-score formula, tier classification, location, and notes fields described in Branch B below, but do not include irrelevant fields such as avgGMAT for arts/creative technology programs.
+Step 1 (required): Emit a <PROGRAMS> block containing ONLY the schools/programs they named that satisfy the candidate's selected duration and attendance format. Preserve the exact school/program identity in the name field when possible, e.g. "NYU Tisch — MPS Interactive Telecommunications Program (ITP)". If a named program conflicts with the selected format, explain the mismatch and do not include it unless the candidate explicitly asks to compare formats. Apply the same fit-score formula, tier classification, location, and notes fields described in Branch B below, but do not include irrelevant fields such as avgGMAT for arts/creative technology programs.
 Step 2 (required): Emit a <CHOSEN_SCHOOLS> block listing those exact same school names.
 Step 3: Visible reply must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your fit scores. Let's build your strategy around these schools." Do NOT list school names, tiers, or details in the visible text.
 Then skip directly to STEP 5 (ask N1 next) — do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
-Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15-20, tailored to the user's specific program type and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country). Build a dynamic, progressive admissions portfolio using:
+Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15-20, tailored to the user's specific program type, selected duration/attendance format, and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country). Apply the PROGRAM FORMAT hard constraint before scoring. Build a dynamic, progressive admissions portfolio using:
 ${config.programSearch}
 
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3-5 schools excite you most? Name them and we'll tailor everything around those programs."
@@ -968,6 +978,11 @@ export default async function handler(req, res) {
         }).catch((err) => console.error('Failed to record usage:', err));
       },
     });
+
+    // Enforce the candidate's selected duration/attendance format even if the
+    // model accidentally returns an EMBA, part-time, online, or wrong-duration
+    // program in its structured block.
+    raw = enforceProgramFormatInRaw(raw, profile, messages);
 
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;
