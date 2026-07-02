@@ -1,6 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
+import { resolveTrack } from '../../trackConfig.js';
+import NarrativeModal from './AdvisorNarrativeModal.jsx';
+import AdvisorChatFirst from './AdvisorChatFirst.jsx';
+
+// Chat-first advisor is on by default for graduate tracks on this branch.
+// Set VITE_CHAT_FIRST_GRAD=false at build time to fall back to the legacy layout.
+const CHAT_FIRST_GRAD = import.meta.env?.VITE_CHAT_FIRST_GRAD !== 'false';
+
+// Graduate, MBA, and Postgraduate/Doctoral get the conversation-first layout.
+// Undergraduate and Personal Development keep the existing experience, and so
+// does everyone before they have picked a category.
+function isGradChatFirst(profile) {
+  if (!CHAT_FIRST_GRAD || !profile?.category) return false;
+  const track = resolveTrack(profile);
+  return track !== 'Undergraduate' && track !== 'Personal Development';
+}
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
@@ -17,42 +33,6 @@ function undergradGradeNumber(profile) {
   return grade ? Number(grade) : null;
 }
 
-function NarrativeModal({ onClose, onChoose }) {
-  return (
-    <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,27,52,.58)', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: '#faf7f2', borderRadius: 24, maxWidth: 640, width: '100%', padding: 32, boxShadow: '0 30px 60px rgba(20,27,52,.35)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <button onClick={onClose} title="Close" style={{ position: 'absolute', top: 20, right: 20, width: 34, height: 34, borderRadius: 10, border: 'none', background: '#f1eadd', color: '#6b7392', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 6 6 18M6 6l12 12" /></svg>
-        </button>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#5b46e0', marginBottom: 8 }}>STEP 5 · BEFORE YOU WRITE</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.4px', color: '#141b34', margin: '0 0 10px' }}>Choose your narrative</h2>
-        <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: '0 0 24px' }}>
-          Every strong application is anchored by a clear narrative posture. Pick the one that best reflects how you want to be seen by admissions committees.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 22 }}>
-          <div style={{ background: '#fff', border: '1px solid #f1eadd', borderRadius: 18, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#19c08a', background: '#e9f9f1', padding: '4px 9px', borderRadius: 7 }}>LOWER RISK</span>
-            <span style={{ fontSize: 22 }}>📈</span>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#141b34', margin: 0 }}>The Upgrade</h3>
-            <p style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, margin: 0, flex: 1 }}>Build on your current trajectory and frame your experience as a natural step up.</p>
-            <button onClick={() => onChoose('upgrade')} style={{ width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px rgba(105,91,255,.32)' }}>Choose the Upgrade</button>
-          </div>
-          <div style={{ background: '#fff', border: '1px solid #f1eadd', borderRadius: 18, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <span style={{ alignSelf: 'flex-start', fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#e0556b', background: '#fdeaf0', padding: '4px 9px', borderRadius: 7 }}>HIGHER REWARD</span>
-            <span style={{ fontSize: 22 }}>🔄</span>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#141b34', margin: 0 }}>The Pivot</h3>
-            <p style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, margin: 0, flex: 1 }}>Reframe your story around a deliberate change in direction.</p>
-            <button onClick={() => onChoose('pivot')} style={{ width: '100%', background: 'linear-gradient(135deg,#fbc094,#fba2bb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '12px 0', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 18px rgba(251,140,170,.32)' }}>Choose the Pivot</button>
-          </div>
-        </div>
-        <div style={{ textAlign: 'center' }}>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#9098b5', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' }}>Not ready yet — go back to the chat</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const AiAvatar = () => (
   <div style={{ width: 34, height: 34, borderRadius: 11, background: 'linear-gradient(140deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(105,91,255,.32)' }}>
     <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -62,7 +42,7 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -133,6 +113,20 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
+
+  // Conversation-first layout for graduate tracks. Placed after all hooks so
+  // the hook order stays stable when the category is chosen mid-session.
+  if (isGradChatFirst(profile)) {
+    return (
+      <AdvisorChatFirst
+        STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
+        busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
+        narrative={narrative} setNarrative={setNarrative} tasks={tasks} completedTasks={completedTasks}
+        setCompletedTasks={setCompletedTasks} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
+        authUser={authUser}
+      />
+    );
+  }
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
