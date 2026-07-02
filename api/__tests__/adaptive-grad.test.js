@@ -7,7 +7,7 @@ import { getJourney, patchJourney, resetJourney, advanceJourneyStage } from '../
 import { CATEGORY_QUESTION, runJourneyGate, narrativeGateCheck } from '../../lib/agents/journey/gate.js';
 import { applyHardGates } from '../../lib/agents/journey/tools/gates.js';
 import { assess_risk } from '../../lib/agents/journey/tools/risk.js';
-import { GradAgent } from '../../lib/agents/journey/GradAgent.js';
+import { GradAgent, deriveProfileScores } from '../../lib/agents/journey/GradAgent.js';
 
 const uid = (label) => `test-adaptive-${label}-${Date.now()}-${Math.random()}`;
 
@@ -187,6 +187,53 @@ test('missing-analysis report re-emits a saved portfolio to an empty client', as
 
   assert.match(result.raw, /<PROGRAMS>[\s\S]*Chicago Booth[\s\S]*<\/PROGRAMS>/);
   await resetJourney(id);
+});
+
+test('completed MBA profile always emits scores for Dashboard and Analysis', async () => {
+  const id = uid('profile-score-sync');
+  await resetJourney(id);
+  await patchJourney(id, {
+    category: 'Graduate',
+    subtype: 'MBA',
+    collected: {
+      name: 'Dandi',
+      gpa: 3.9,
+      gmat: 750,
+      experience: '2 years',
+      leadership: 'Led a national security team',
+      recommenders: ['Direct manager'],
+      hasCV: true,
+    },
+    flags: { profileConfirmed: true, stage: 'analysis' },
+  });
+  const agent = new GradAgent();
+  agent.client = { messages: { create: async () => ({
+    stop_reason: 'end_turn', usage: {}, content: [{ type: 'text', text: 'Your profile analysis is ready. -> Review analysis | Match programs' }],
+  }) } };
+
+  const result = await agent.chat(id, 'Finish my profile analysis', { profile: { degree: 'MBA' }, scores: {} });
+  const scoreBlock = result.raw.match(/<SCORES>([\s\S]*?)<\/SCORES>/);
+
+  assert.ok(scoreBlock);
+  const emitted = JSON.parse(scoreBlock[1]);
+  assert.ok(emitted.academic >= 90);
+  assert.ok(emitted.testScore >= 90);
+  assert.ok(emitted.professional > 0);
+  assert.ok(emitted.recommenders > 0);
+  await resetJourney(id);
+});
+
+test('profile score derivation covers doctoral dimensions', () => {
+  const scores = deriveProfileScores({
+    category: 'Postgraduate / Doctoral',
+    subtype: 'PhD',
+    collected: { gpa: 3.8, gre: 330, research: 'Thesis and lab research', publications: 'Conference paper', supervisor: 'Professor A' },
+  });
+  assert.ok(scores.academic > 0);
+  assert.ok(scores.research > 0);
+  assert.ok(scores.publications > 0);
+  assert.ok(scores.facultyFit > 0);
+  assert.ok(scores.recommenders > 0);
 });
 
 for (const scenario of [
