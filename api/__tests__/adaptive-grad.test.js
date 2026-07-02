@@ -250,6 +250,11 @@ test('UI keeps tasks in Dashboard, gates Advisor rail, and uses explicit intents
   assert.match(dashboard, /<CardLabel>Tasks<\/CardLabel>/);
   assert.match(app, /useAdaptiveEndpoint \? '\/api\/agents\/orchestrate' : '\/api\/chat'/);
   assert.match(app, /data\.ui\?\.tab/);
+  assert.match(app, /extra: \{ profile, scores, programs:/);
+  assert.match(advisor, /upload a file/i);
+  assert.match(advisor, /setShowCvModal\(true\)/);
+  const analysis = fs.readFileSync(path.join(root, 'src/components/candidate/Analysis.jsx'), 'utf8');
+  assert.match(analysis, /const hasData = !!scores \|\| hasPrograms/);
   assert.match(portal, /candTab === 'narrative'/);
   assert.match(portal, /<NarrativeStrategy/);
 });

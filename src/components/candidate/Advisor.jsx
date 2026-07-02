@@ -196,6 +196,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   };
 
   const handleChip = (opt) => {
+    if (/^upload a file$/i.test(opt)) {
+      setShowCvModal(true);
+      return;
+    }
     send(opt);
     inputRef.current?.focus();
   };

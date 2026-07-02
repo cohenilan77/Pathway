@@ -84,6 +84,18 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true, fallThrough: true, category: gate.category });
       }
       if (gate.action === 'adaptive') {
+        if (!existingJourney.category) {
+          const text = 'Start by uploading your CV, resume, transcript, or another background file, or paste the text here. I will analyze it first, then ask only for missing profile details, including recommender information. -> Upload a file | Paste my background | Continue without a file';
+          return res.status(200).json({
+            ok: true,
+            agent: 'grad',
+            text,
+            raw: text,
+            journey: gate.journey,
+            journeyStage: 'profile',
+            ui: {},
+          });
+        }
         const gradAgent = new GradAgent();
         const result = await gradAgent.chat(candidateId, message || '', {
           conversationHistory,
