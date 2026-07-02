@@ -53,6 +53,12 @@ test('program selection writes through shared state and advances the journey', (
   assert.match(chatFirst, /Take me to the next step of my journey\./);
 });
 
+test('confirmed targets remove old program artifacts so the narrative question stays visible', () => {
+  assert.match(chatFirst, /const showPrograms = hasPrograms && !chosenSchools\?\.length/);
+  assert.match(chatFirst, /\{showPrograms && \(/);
+  assert.ok(!chatFirst.includes('{hasPrograms && (\n              <ProgramsCard'), 'confirmed targets must not leave the program card below the latest chat reply');
+});
+
 test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /function contextualChips/);
   assert.match(chatFirst, /Advisor is analyzing/);

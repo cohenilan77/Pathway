@@ -305,8 +305,12 @@ export default function AdvisorChatFirst({
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
   const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative }) : [];
 
-  const showReadiness = !!scores && stepIdx >= 2;
   const hasPrograms = Array.isArray(programs) && programs.length > 0;
+  // Artifacts are stage-specific. Keeping the large readiness/program cards
+  // after targets are confirmed pushes the new Narrative question above them,
+  // making the UI look frozen even though the state advanced successfully.
+  const showReadiness = !!scores && stepIdx >= 2 && !hasPrograms;
+  const showPrograms = hasPrograms && !chosenSchools?.length;
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
@@ -371,7 +375,7 @@ export default function AdvisorChatFirst({
 
             {/* inline artifacts: readiness and program list */}
             {showReadiness && <ReadinessCard scores={scores} profile={profile} />}
-            {hasPrograms && (
+            {showPrograms && (
               <ProgramsCard programs={programs} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} send={send} busy={busy} />
             )}
 
