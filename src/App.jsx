@@ -747,7 +747,7 @@ export default function App() {
       return;
     }
 
-    const NEXT_KEYWORDS = /^(next|continue|move on|proceed|next step|go on)$/i;
+    const NEXT_KEYWORDS = /^(next|continue|move on|proceed|next step|go on)[.!]*$/i;
     const t = NEXT_KEYWORDS.test(raw_t)
       ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
       : raw_t;
@@ -833,7 +833,13 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        const displayText = safeVisibleReply(raw, parsed, profile);
+        let displayText = safeVisibleReply(raw, parsed, profile);
+        // Safety net: if the model confirmed chosen schools without asking a
+        // follow-up question, the flow would dead-end. Hand the candidate the
+        // next move so the journey always continues.
+        if (!isUndergrad && parsed.chosenSchools && !displayText.includes('?')) {
+          displayText += '\n\nType "next" and we\'ll start shaping your narrative.';
+        }
 
         // Auto-advance stepper based on stage-aware triggers
         const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
