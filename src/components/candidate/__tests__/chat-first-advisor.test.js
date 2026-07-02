@@ -36,16 +36,21 @@ test('chat-first shows the ambient status bar with stage position', () => {
   assert.match(chatFirst, /function StatusBar/);
 });
 
-test('chat-first renders inline artifacts: readiness, programs, checklist', () => {
+test('chat-first renders inline artifacts: readiness and programs', () => {
   assert.match(chatFirst, /function ReadinessCard/);
   assert.match(chatFirst, /function ProgramsCard/);
-  assert.match(chatFirst, /function ChecklistCard/);
   assert.match(chatFirst, /RECOMMENDED PROGRAMS/);
 });
 
-test('program selection writes through the shared chosenSchools state', () => {
+test('no task checklist inside the chat stream', () => {
+  assert.ok(!chatFirst.includes('ChecklistCard'), 'chat-first must not render a task checklist');
+  assert.ok(!chatFirst.includes('ACTION CHECKLIST'), 'chat-first must not show an action checklist card');
+});
+
+test('program selection writes through shared state and advances the journey', () => {
   assert.match(chatFirst, /setChosenSchools && setChosenSchools\(selected\)/);
   assert.match(chatFirst, /I'd like to move forward with:/);
+  assert.match(chatFirst, /Take me to the next step of my journey\./);
 });
 
 test('chat-first has contextual chips and the analyzing state', () => {

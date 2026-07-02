@@ -121,8 +121,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
       <AdvisorChatFirst
         STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
         busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
-        narrative={narrative} setNarrative={setNarrative} tasks={tasks} completedTasks={completedTasks}
-        setCompletedTasks={setCompletedTasks} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
+        narrative={narrative} setNarrative={setNarrative}
+        chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
         authUser={authUser}
       />
     );

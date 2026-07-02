@@ -163,10 +163,12 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
   const toggle = (name) => {
     setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
+  // Confirming targets also asks the advisor to move the journey forward, so
+  // the candidate lands directly on the next stage instead of a dead end.
   const confirm = () => {
     if (!selected.length || busy) return;
     setChosenSchools && setChosenSchools(selected);
-    send(`I'd like to move forward with: ${selected.join(', ')}.`);
+    send(`I'd like to move forward with: ${selected.join(', ')}. Take me to the next step of my journey.`);
   };
 
   return (
@@ -229,43 +231,6 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
   );
 }
 
-// Action checklist inline in the stream. Same tasks and completion state the
-// old right rail used, so nothing changes in persistence.
-function ChecklistCard({ tasks, completedTasks, setCompletedTasks }) {
-  const taskList = tasks || [];
-  const doneCount = taskList.filter(t => completedTasks?.[t]).length;
-  const toggleTask = (text) => setCompletedTasks(prev => ({ ...prev, [text]: !prev[text] }));
-  if (!taskList.length) return null;
-  return (
-    <CardShell label={`ACTION CHECKLIST · ${doneCount}/${taskList.length}`} labelColor="#b58522">
-      {doneCount > 0 && (
-        <div style={{ height: 4, borderRadius: 2, background: '#f1eadd', marginBottom: 10, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#3fdca9,#94b3fb)', borderRadius: 2, transition: 'width .4s ease' }} />
-        </div>
-      )}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-        {taskList.map(text => {
-          const done = !!completedTasks?.[text];
-          return (
-            <div key={text} onClick={() => toggleTask(text)}
-              style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '9px 11px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#b7ecd4' : '#f1eadd'}`, background: done ? '#f0faf6' : '#faf7f2', transition: 'all .15s' }}>
-              <span style={{
-                width: 19, height: 19, borderRadius: 6, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                ...(done ? { background: '#3fdca9', boxShadow: '0 3px 8px rgba(25,192,138,.28)' } : { background: '#fff', border: '1.5px solid #d8cdb4' }),
-              }}>
-                {done && (
-                  <svg viewBox="0 0 24 24" width="10" height="10" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
-                )}
-              </span>
-              <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.45, color: done ? '#9aa3bf' : '#33405e', textDecoration: done ? 'line-through' : 'none' }}>{text}</span>
-            </div>
-          );
-        })}
-      </div>
-    </CardShell>
-  );
-}
-
 // Stage-aware suggestions under the input. Chips only inject a user message;
 // they never navigate or mutate state directly.
 function contextualChips({ scores, programs, chosenSchools, narrative }) {
@@ -304,8 +269,7 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
 
 export default function AdvisorChatFirst({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
-  setShowCvModal, narrative, setNarrative, tasks, completedTasks, setCompletedTasks,
-  chosenSchools, setChosenSchools, authUser,
+  setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, authUser,
 }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -343,7 +307,6 @@ export default function AdvisorChatFirst({
 
   const showReadiness = !!scores && stepIdx >= 2;
   const hasPrograms = Array.isArray(programs) && programs.length > 0;
-  const hasTasks = Array.isArray(tasks) && tasks.length > 0;
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
@@ -406,12 +369,11 @@ export default function AdvisorChatFirst({
 
             {busy && <ThinkingLine />}
 
-            {/* inline artifacts: readiness, program list, checklist */}
+            {/* inline artifacts: readiness and program list */}
             {showReadiness && <ReadinessCard scores={scores} profile={profile} />}
             {hasPrograms && (
               <ProgramsCard programs={programs} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} send={send} busy={busy} />
             )}
-            {hasTasks && <ChecklistCard tasks={tasks} completedTasks={completedTasks} setCompletedTasks={setCompletedTasks} />}
 
             {showNarrativeCTA && (
               <div style={{ marginLeft: 42, maxWidth: 640, background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 16, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: 'pwFade .3s ease' }}>
