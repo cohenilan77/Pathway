@@ -1,7 +1,7 @@
 import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
-import { enforceProgramFormatInRaw } from '../lib/program-format.js';
+import { enforceProgramFormatInRaw, requestedProgramFormat } from '../lib/program-format.js';
 import { ensureSelectionContinuity } from '../lib/selection-continuity.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
@@ -941,6 +941,7 @@ export default async function handler(req, res) {
     const advisor = new AdvisorAgent();
     let raw = await advisor.chat(anthropicMessages, {
       systemPrompt: compressedSystemPrompt,
+      formatConstraint: requestedProgramFormat(profile, messages),
       onAttempt: (response, attempt, { useWebSearch }) => {
         logTokenUsage({
           userId: usageUserId,

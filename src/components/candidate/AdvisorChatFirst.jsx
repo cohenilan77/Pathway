@@ -157,7 +157,7 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
   useEffect(() => { setSelected(chosenSchools || []); }, [chosenSchools]);
 
   if (!list.length) return null;
-  const shown = open ? list : list.slice(0, 4);
+  const shown = open ? list : list.slice(0, 8);
   const hidden = list.length - shown.length;
 
   const toggle = (name) => {
@@ -207,10 +207,10 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
         {hidden > 0 && (
           <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
-            Show {hidden} more
+            Show all {list.length} programs
           </button>
         )}
-        {open && list.length > 4 && (
+        {open && list.length > 8 && (
           <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
             Show less
           </button>

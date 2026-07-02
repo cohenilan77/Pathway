@@ -35,6 +35,26 @@ test('filters mismatched programs from the PROGRAMS block before returning it to
   assert.deepEqual(programs.map((program) => program.name), ['Wharton MBA', 'Chicago Booth MBA']);
 });
 
+test('programInfo mentioning other tracks does not disqualify a matching program', () => {
+  const constraint = { family: 'mba', attendance: 'full-time', durationYears: 2 };
+  // The description mentions part-time and 1-year alternatives the school
+  // offers; the program itself is a 2-year full-time MBA and must survive.
+  const program = {
+    name: 'Kellogg MBA',
+    studyFormat: 'full-time',
+    durationYears: 2,
+    programInfo: 'Kellogg also offers a part-time Evening & Weekend MBA and an accelerated 1-year option for some candidates.',
+    notes: 'Compare against the online MBA landscape.',
+  };
+  assert.equal(programMatchesRequestedFormat(program, constraint), true);
+});
+
+test('structured studyFormat and durationYears are authoritative', () => {
+  const constraint = { family: 'mba', attendance: 'full-time', durationYears: 2 };
+  assert.equal(programMatchesRequestedFormat({ name: 'X MBA', studyFormat: 'part-time', durationYears: 2 }, constraint), false);
+  assert.equal(programMatchesRequestedFormat({ name: 'X MBA', studyFormat: 'full-time', durationYears: 1 }, constraint), false);
+});
+
 test('leaves non-MBA program blocks unchanged', () => {
   const raw = '<PROGRAMS>[{"name":"Oxford MSc"}]</PROGRAMS>';
   assert.equal(enforceProgramFormatInRaw(raw, { degree: 'MSc — full-time' }), raw);

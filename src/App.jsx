@@ -752,6 +752,13 @@ export default function App() {
       ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
       : raw_t;
 
+    // Confirming target schools is a deterministic journey step: move the
+    // stage to Narrative immediately on the action itself, without waiting
+    // for (or depending on) the model's reply.
+    if (/^i'?d like to move forward with:/i.test(t) && !isLegacyCandidateCategory(profile)) {
+      setStepIdx(prev => Math.max(prev, 4));
+    }
+
     const userMsg = { role: 'user', channel: 'web', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
     const baseChat = t.startsWith('Here is my CV')
