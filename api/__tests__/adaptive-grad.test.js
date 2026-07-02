@@ -198,7 +198,9 @@ test('UI keeps tasks in Dashboard, gates Advisor rail, and uses explicit intents
   assert.match(advisor, /adaptiveGradEnabled && isAdaptiveTrack\(currentTrack, profile, chat\)/);
   assert.match(advisor, /currentTrack === 'Undergraduate' \|\| currentTrack === 'Personal Development'/);
   assert.match(advisor, /Move me to the next step\./);
-  assert.match(advisor, /Take me to \$\{STAGE_LABELS\[stage\]\}\./);
+  assert.match(advisor, /Take me to \$\{stageLabels\[stage\]\}\./);
+  assert.match(advisor, /steps=\{STEPS\}/);
+  assert.match(advisor, /stageOrder\.map/);
   assert.match(advisor, /advisorDirective\?\.modal === 'upgradePivot'/);
   assert.match(dashboard, /<CardLabel>Tasks<\/CardLabel>/);
   assert.match(app, /useAdaptiveEndpoint \? '\/api\/agents\/orchestrate' : '\/api\/chat'/);

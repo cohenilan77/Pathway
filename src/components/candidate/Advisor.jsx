@@ -89,23 +89,28 @@ function isAdaptiveTrack(currentTrack, profile, chat) {
   return isGradPhD(profile, chat);
 }
 
-function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, essays, interviews }) {
-  const stageOrder = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
-  const currentIdx = stageOrder.indexOf(journeyStage || 'intake');
+function JourneyRail({ journeyStage, send, busy, steps = [], stepIdx = 0, adaptive = false }) {
+  const adaptiveStages = ['profile', 'analysis', 'portfolio', 'narrative', 'cv', 'essays', 'interview'];
+  const stageOrder = adaptive ? adaptiveStages : steps.map((step) => String(step).toLowerCase().replace(/[^a-z0-9]+/g, '-'));
+  const stageLabels = adaptive
+    ? { profile: 'Profile', analysis: 'Analysis', portfolio: 'Portfolio', narrative: 'Narrative', cv: 'CV', essays: 'Essays', interview: 'Interview' }
+    : Object.fromEntries(stageOrder.map((stage, index) => [stage, steps[index]]));
+  const adaptiveIdx = stageOrder.indexOf(journeyStage || 'intake');
+  const currentIdx = adaptive && adaptiveIdx >= 0 ? adaptiveIdx : Math.min(stepIdx, Math.max(stageOrder.length - 1, 0));
 
   const handleNext = () => {
     send('Move me to the next step.');
   };
 
   const handleStage = (stage) => {
-    send(`Take me to ${STAGE_LABELS[stage]}.`);
+    send(`Take me to ${stageLabels[stage]}.`);
   };
 
   const isDone = (stage) => {
     const idx = stageOrder.indexOf(stage);
     return idx < currentIdx;
   };
-  const isCurrent = (stage) => stage === journeyStage;
+  const isCurrent = (stage) => stageOrder.indexOf(stage) === currentIdx;
   const isUnlocked = (stage) => stageOrder.indexOf(stage) <= currentIdx;
 
   return (
@@ -115,7 +120,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
         Next
       </button>
       <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 2 }}>JOURNEY</div>
-      {JOURNEY_STAGES.map((stage) => {
+      {stageOrder.map((stage) => {
         const done = isDone(stage);
         const current = isCurrent(stage);
         const unlocked = isUnlocked(stage);
@@ -130,7 +135,7 @@ function JourneyRail({ journeyStage, send, busy, scores, programs, narrative, es
             <span style={{ width: 20, height: 20, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0, background: current ? 'rgba(255,255,255,.25)' : done ? '#3fdca9' : 'transparent', color: current ? '#fff' : done ? '#fff' : '#c0c8e0' }}>
               {done ? '✓' : !unlocked ? '🔒' : null}
             </span>
-            {STAGE_LABELS[stage]}
+            {stageLabels[stage]}
           </button>
         );
       })}
@@ -413,10 +418,16 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             )}
           </div>
 
-          {/* right rail: journey buttons (ADAPTIVE_GRAD + grad/PhD) or tasks */}
-          {adaptiveGradEnabled && isAdaptiveTrack(currentTrack, profile, chat) ? (
-            <JourneyRail journeyStage={journeyStage} send={send} busy={busy} scores={scores} programs={programs} />
-          ) : (
+          {/* right rail: every candidate track gets its configured journey stages */}
+          <JourneyRail
+            journeyStage={journeyStage}
+            send={send}
+            busy={busy}
+            steps={STEPS}
+            stepIdx={stepIdx}
+            adaptive={adaptiveGradEnabled && isAdaptiveTrack(currentTrack, profile, chat)}
+          />
+          {false && (
             <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <h3 style={{ fontSize: 15, fontWeight: 800, color: '#141b34', margin: 0 }}>Your tasks</h3>

@@ -57,6 +57,15 @@ export const TRACK_CONFIG = {
     scoreLabel: 'MBA Competitiveness',
     steps: DEFAULT_STEPS,
     docLabel: 'CV, essays, recommendations, interview prep',
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['analysis', 'Analysis & Programs', 'analysis'],
+      ['narrative', 'Narrative', 'analysis'],
+      ['documents', 'CV, Essays & Interview', 'documents'],
+      ['documentDepository', 'Documents', 'documentDepository'],
+      ['community', 'Community', 'community'],
+    ],
     kpis: [
       ['professional', 'Professional', 'Work impact, role scope, and employer quality.'],
       ['leadership', 'Leadership', 'People leadership, ownership, and influence.'],
@@ -85,6 +94,15 @@ export const TRACK_CONFIG = {
     scoreLabel: 'Competitiveness Score',
     steps: DEFAULT_STEPS,
     docLabel: 'CV, essays, SOP, recommendations',
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['analysis', 'Analysis & Programs', 'analysis'],
+      ['narrative', 'Narrative', 'analysis'],
+      ['documents', 'CV, SOP & Interview', 'documents'],
+      ['documentDepository', 'Documents', 'documentDepository'],
+      ['community', 'Community', 'community'],
+    ],
     kpis: [
       ['academic', 'Academic', 'GPA, prerequisites, and academic fit.'],
       ['professional', 'Professional', 'Relevant work, internships, or project experience.'],
@@ -113,6 +131,15 @@ export const TRACK_CONFIG = {
     scoreLabel: 'Research Readiness',
     steps: ['Profile', 'Academic Depth', 'Research Experience', 'Research Direction', 'Supervisor Fit', 'Proposal', 'Writing Sample', 'Recommendations', 'Interview'],
     docLabel: 'Research proposal, writing sample, CV, papers',
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['analysis', 'Research Analysis', 'analysis'],
+      ['narrative', 'Research Direction', 'analysis'],
+      ['documents', 'Proposal & Writing', 'documents'],
+      ['documentDepository', 'Documents', 'documentDepository'],
+      ['community', 'Community', 'community'],
+    ],
     kpis: [
       ['academic', 'Academic', 'Academic depth and transcript strength.'],
       ['research', 'Research', 'Research experience, methods, and agenda fit.'],
@@ -141,6 +168,14 @@ export const TRACK_CONFIG = {
     scoreLabel: 'Growth Score',
     steps: ['Profile', 'Goals', 'Strengths', 'Gaps', 'Skills Plan', 'Experience Plan', 'Personal Brand', 'Execution', 'Review'],
     docLabel: 'CV, action plan, skills plan, portfolio',
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['analysis', 'Growth Analysis', 'analysis'],
+      ['documents', 'Plans & Portfolio', 'documents'],
+      ['documentDepository', 'Documents', 'documentDepository'],
+      ['community', 'Community', 'community'],
+    ],
     kpis: [
       ['professional', 'Professional', 'Current experience and work readiness.'],
       ['leadership', 'Leadership', 'Ownership, initiative, and collaboration.'],
