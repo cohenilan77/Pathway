@@ -1,6 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
+import AdvisorStatusBar from './AdvisorStatusBar.jsx';
+import AdvisorToolStatus from './AdvisorToolStatus.jsx';
+import AdvisorContextualChips from './AdvisorContextualChips.jsx';
+import AdvisorProgramCard from './AdvisorProgramCard.jsx';
 
 const OPTIONS_PATTERN = /(?:→|->)\s*(.+)$/;
 
@@ -146,6 +150,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const idleCountRef = useRef(0);
   const MAX_IDLE_FIRES = 2;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const [statusBarExpanded, setStatusBarExpanded] = useState(false);
+  const [currentToolCall, setCurrentToolCall] = useState(null);
 
   useEffect(() => {
     if (adaptiveGradEnabled && advisorDirective?.modal === 'upgradePivot') setShowNarrativeModal(true);
@@ -214,6 +220,195 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
 
+  // Determine layout: new conversation-first for adaptive grad, or legacy layout
+  const isAdaptiveGrad = adaptiveGradEnabled && isAdaptiveTrack(currentTrack, profile, chat);
+
+  if (isAdaptiveGrad) {
+    // NEW CONVERSATION-FIRST LAYOUT FOR ADAPTIVE GRAD
+    return (
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0' }}>
+        {/* Status bar */}
+        <AdvisorStatusBar
+          journeyStage={journeyStage}
+          programs={programs}
+          onExpand={() => setStatusBarExpanded(!statusBarExpanded)}
+          isExpanded={statusBarExpanded}
+        />
+
+        {/* Chat container */}
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2' }}>
+          {/* Messages */}
+          <div
+            ref={chatScrollRef}
+            style={{
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              padding: '20px 24px 8px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            {visibleChat.map((m, i) => {
+              if (m.role === 'ai') {
+                const isLast = i === visibleChat.length - 1;
+                const parsed = parseOptions(m.text);
+                const showChipsHere = parsed && (!isLast || busy);
+                return (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', animation: 'pwFade .3s ease' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                      <AiAvatar />
+                      <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.6, color: '#33405e', maxWidth: 620, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
+                        {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                      </div>
+                    </div>
+                    {showChipsHere && (
+                      <div style={{ marginLeft: 42, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                        {parsed.options.map(opt => (
+                          <button
+                            key={opt}
+                            onClick={() => handleChip(opt)}
+                            disabled={busy}
+                            style={{
+                              background: '#fff',
+                              border: '1.5px solid #d8cdb4',
+                              borderRadius: 999,
+                              padding: '6px 14px',
+                              fontSize: 13,
+                              fontWeight: 700,
+                              color: '#5b46e0',
+                              cursor: busy ? 'not-allowed' : 'pointer',
+                              fontFamily: 'inherit',
+                              whiteSpace: 'nowrap',
+                              transition: 'all .15s',
+                            }}
+                            onMouseEnter={e => { if (!busy) { e.target.style.background = '#f0ebff'; e.target.style.borderColor = '#b899fb'; } }}
+                            onMouseLeave={e => { e.target.style.background = '#fff'; e.target.style.borderColor = '#d8cdb4'; }}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={i}
+                  style={{
+                    alignSelf: 'flex-end',
+                    background: 'linear-gradient(135deg,#7c6ef5,#b899fb)',
+                    color: '#faf7f2',
+                    borderRadius: '18px 18px 4px 18px',
+                    padding: '12px 17px',
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                    maxWidth: '76%',
+                    whiteSpace: 'pre-wrap',
+                    boxShadow: '0 8px 20px rgba(105,91,255,.26)',
+                    animation: 'pwFade .3s ease',
+                  }}
+                >
+                  {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
+                </div>
+              );
+            })}
+
+            {busy && <AdvisorToolStatus toolCall={currentToolCall} />}
+
+            {/* In-stream interactive cards */}
+            {programs && programs.length > 0 && <AdvisorProgramCard programs={programs} onProgramAction={() => {}} />}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Contextual chips area */}
+          {!busy && (
+            <div style={{ padding: '10px 24px 0', borderTop: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
+              <AdvisorContextualChips
+                journeyStage={journeyStage}
+                scores={scores}
+                programs={programs}
+                essays={profile?.essays}
+                onChipClick={handleChip}
+                disabled={busy}
+              />
+            </div>
+          )}
+
+          {/* Input */}
+          <div style={{ padding: '14px 20px 18px', flexShrink: 0, background: '#faf7f2' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
+              <button
+                onClick={() => setShowCvModal(true)}
+                title="Upload CV"
+                style={{
+                  background: '#faf7f2',
+                  border: 'none',
+                  borderRadius: 12,
+                  width: 38,
+                  height: 38,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#5b46e0',
+                  flexShrink: 0,
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
+                </svg>
+              </button>
+              <input
+                ref={inputRef}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKey}
+                disabled={busy}
+                placeholder={busy ? 'Analyzing…' : 'Ask anything or type your answer…'}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+              />
+              <button
+                onClick={() => send()}
+                disabled={busy || !input.trim()}
+                style={{
+                  background: input.trim() ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7',
+                  border: 'none',
+                  borderRadius: 13,
+                  width: 40,
+                  height: 40,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: busy || !input.trim() ? 'not-allowed' : 'pointer',
+                  color: input.trim() ? '#faf7f2' : '#9098b5',
+                  flexShrink: 0,
+                  transition: 'all .2s',
+                  boxShadow: input.trim() ? '0 6px 16px rgba(105,91,255,.32)' : 'none',
+                }}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                </svg>
+              </button>
+            </div>
+            <div style={{ marginTop: 7, paddingLeft: 4, fontSize: 11, color: '#c0c8e0', fontWeight: 500 }}>
+              Confidential · AI guidance
+            </div>
+          </div>
+
+          {showNarrativeModal && (
+            <NarrativeModal onClose={() => setShowNarrativeModal(false)} onChoose={handleNarrativeChoose} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // LEGACY LAYOUT FOR NON-ADAPTIVE CANDIDATES
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
       <div style={{ flex: 1, minHeight: 0, borderRadius: 24, border: '1px solid #ece6f8', boxShadow: '0 20px 50px rgba(60,72,130,.10)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2' }}>
