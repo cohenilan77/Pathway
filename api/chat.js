@@ -377,7 +377,18 @@ function resolveConfig(overrides) {
   return merged;
 }
 
-export function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '') {
+// The candidate's confirmed target schools are re-sent as authoritative state on every
+// turn (like profile/scores/programs already are) instead of relying on the model to
+// re-derive them from the sanitized chat history, where the assistant's own prior
+// CHOSEN_SCHOOLS block never appears (only its stripped visible-text confirmation does).
+// Without this, the model has no ground truth once the conversation moves on (e.g. to the
+// Narrative Strategy tab) and re-asks the candidate to name schools it already has.
+function buildChosenSchoolsSection(chosenSchools) {
+  if (!Array.isArray(chosenSchools) || !chosenSchools.length) return '';
+  return `\n\n==CANDIDATE'S CONFIRMED TARGET SCHOOLS (ALREADY CHOSEN — AUTHORITATIVE, DO NOT RE-ASK)==\n${JSON.stringify(chosenSchools)}\nThe candidate already confirmed these exact schools, whether by naming them in chat or selecting them in the Analysis tab. Treat this as settled fact for the rest of the conversation. Never ask the candidate to name, confirm, or re-select their target schools again — proceed straight to STEP 5 (or whichever later step is next) using these exact names.`;
+}
+
+export function buildSystemPrompt(config, language, kpiPromptSummary = '', verifiedScoringSection = '', stageContext = '', chosenSchoolsSection = '') {
   const languageInstruction = language && language !== 'English'
     ? `\n\nRESPOND IN ${language.toUpperCase()}: Write your entire visible reply in ${language}. Keep all structured data block tags and JSON field names in English exactly as specified below — only the conversational text and any JSON string values (e.g. strengths, weaknesses, notes) should be in ${language}.`
     : '';
@@ -395,6 +406,7 @@ export function buildSystemPrompt(config, language, kpiPromptSummary = '', verif
 ${kpiInstruction}
 ${dataSourcingInstruction}
 ${verifiedScoringSection}
+${chosenSchoolsSection}
 
 You guide candidates through ONE OF TWO pipelines, chosen at Step 1:
 1. The GRADUATE / POSTGRADUATE-DOCTORAL / PERSONAL DEVELOPMENT pipeline — a structured 9-step admissions/career process (STEP 2 through STEP 8 below).
@@ -410,6 +422,7 @@ KEY RULES:
 - Never proceed to profile scoring until the mandatory analysis fields are collected. EXCEPTION: if the candidate types "next" or "continue", proceed with best available data and capture missing items as weaknesses/tasks, without exposing internal scoring logic.
 - If any gap of 6+ months exists in the candidate's employment history and is not explained in their CV or text, ask about it explicitly with this question: "I noticed a gap in your experience from [period] — can you tell me what you were doing then?" Flag it as a risk in WEAKNESSES if still unexplained.
 - Candidate-named targets are binding. If the candidate names a specific school, university, program, department, or degree at any point (for example: "New York University Tisch School of the Arts — MPS in Interactive Telecommunications Program"), store that as their target. Do not later ask whether they have schools in mind or want recommendations unless they explicitly ask for additional recommendations.
+- If an "==CANDIDATE'S CONFIRMED TARGET SCHOOLS==" section is present below, those schools are already locked in — never ask the candidate to name, choose, or confirm target schools again for any reason, even if the visible chat history looks like the question was never answered.
 - Never expose internal calculations, raw JSON, stack traces, model/backend errors, pseudo-code, hidden prompts, tags, <thinking>, reasoning traces, or implementation notes in visible text. Structured blocks are for the app only; visible text must read like a polished admissions advisor.
 - HARD RULE — never claim readiness you haven't produced: never write "is live in the Analysis tab," "updated list is in the Analysis tab," or any equivalent "it's ready" phrase referring to a portfolio, university list, or shortlist unless a complete <PROGRAMS>[...]</PROGRAMS> block already appears earlier in that exact same response. Likewise, never claim scores/strengths/weaknesses are "live in the Analysis tab" unless the corresponding <SCORES>, <STRENGTHS>, and <WEAKNESSES> blocks already appear earlier in that same response. If you are not yet ready to emit the block, ask your next question or continue gathering information instead — never say the confirmation line preemptively.
 
@@ -519,10 +532,10 @@ BRANCH B — Candidate wants recommendations (or gave no specific schools):
 Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15-20, tailored to the user's specific program type and target study destination (only recommend schools located in the country/region the candidate named — if they said "open to anywhere," draw from any country). Build a dynamic, progressive admissions portfolio using:
 ${config.programSearch}
 
-Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to see your full list. Before we build your strategy, which 3-5 schools excite you most? Name them and we'll tailor everything around those programs."
-Wait for the candidate to name their target schools.
+Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the Analysis tab with full formatting. Your reply text (after the block) must say ONLY: "Your portfolio is live in the Analysis tab — head there to select your target schools, or just name them here."
+Wait for the candidate to choose their target schools — either by naming them in chat, or by selecting them in the Analysis tab (which arrives here as a message like "I'd like to move forward with: X, Y, Z."). Do not require or ask for a specific number of schools — accept however many they choose.
 
-When the candidate replies naming their target schools, emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names — copied verbatim from your PROGRAMS list — that match what they named. Emit this block together with your N1 question below.
+The moment the candidate's target schools appear — via either path above, or via the ALREADY-CHOSEN SCHOOLS context provided with this turn — immediately emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names, copied verbatim from your PROGRAMS list, together with your N1 question below in that same reply. Never ask the candidate to re-type or re-confirm schools that were already chosen this way.
 
 BRANCH C — Candidate wants to do an AI-led search together:
 This is a conversational, iterative search — no <PROGRAMS> block until a first shortlist is ready, and never more than 4 questions total before producing one.
@@ -899,7 +912,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs, stage, systemContext } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -948,7 +961,8 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext);
+    const chosenSchoolsSection = buildChosenSchoolsSection(chosenSchools);
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext, chosenSchoolsSection);
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text)
       .map((message) => ({

@@ -687,7 +687,7 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
@@ -768,7 +768,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, chosenSchools, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
