@@ -733,6 +733,7 @@ export default function App() {
   const send = useCallback(async (text) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
+    const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
 
     const selectingUndergrad = /^undergraduate$/i.test(raw_t);
     if (selectingUndergrad) {
@@ -741,7 +742,10 @@ export default function App() {
       setCandTab('studentProfile');
     }
 
-    if (plan === 'free' && scores) {
+    // Saving selected targets is a deterministic workspace action and must not
+    // be swallowed by plan gating. The server completes this handoff without
+    // an AI call, then normal plan rules apply to later AI-guidance turns.
+    if (plan === 'free' && scores && !isTargetSelection) {
       setChat(prev => [...prev, { role: 'user', channel: 'web', text: raw_t }, { role: 'ai', channel: 'web', text: PLAN_UPGRADE_MESSAGE }]);
       setInput('');
       return;
@@ -755,7 +759,7 @@ export default function App() {
     // Confirming target schools is a deterministic journey step: move the
     // stage to Narrative immediately on the action itself, without waiting
     // for (or depending on) the model's reply.
-    if (/^i'?d like to move forward with:/i.test(t) && !isLegacyCandidateCategory(profile)) {
+    if (isTargetSelection && !isLegacyCandidateCategory(profile)) {
       setStepIdx(prev => Math.max(prev, 4));
     }
 

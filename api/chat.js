@@ -2,7 +2,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { enforceProgramFormatInRaw, requestedProgramFormat } from '../lib/program-format.js';
-import { ensureSelectionContinuity } from '../lib/selection-continuity.js';
+import { ensureSelectionContinuity, selectionFromMessage } from '../lib/selection-continuity.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
@@ -938,11 +938,21 @@ export default async function handler(req, res) {
       return res.status(200).json({ raw: '' });
     }
 
-    const advisor = new AdvisorAgent();
-    let raw = await advisor.chat(anthropicMessages, {
-      systemPrompt: compressedSystemPrompt,
-      formatConstraint: requestedProgramFormat(profile, messages),
-      onAttempt: (response, attempt, { useWebSearch }) => {
+    const lastRealUserText = messages.filter(m => m.role === 'user' && m.text && m.text !== '__idle_checkin__').pop()?.text;
+    const confirmedSelection = selectionFromMessage(lastRealUserText);
+    let raw;
+
+    // Confirming target schools is state transition, not a generative task.
+    // Complete it before Anthropic so a timeout, provider error, or retry loop
+    // can never strand the candidate between Programs and Narrative.
+    if (confirmedSelection) {
+      raw = ensureSelectionContinuity('', lastRealUserText);
+    } else {
+      const advisor = new AdvisorAgent();
+      raw = await advisor.chat(anthropicMessages, {
+        systemPrompt: compressedSystemPrompt,
+        formatConstraint: requestedProgramFormat(profile, messages),
+        onAttempt: (response, attempt, { useWebSearch }) => {
         logTokenUsage({
           userId: usageUserId,
           conversationId: convoId,
@@ -980,8 +990,9 @@ export default async function handler(req, res) {
           cacheReadInputTokens: response.usage?.cache_read_input_tokens,
           webSearchRequests: response.usage?.server_tool_use?.web_search_requests,
         }).catch((err) => console.error('Failed to record usage:', err));
-      },
-    });
+        },
+      });
+    }
 
     // Enforce the candidate's selected duration/attendance format even if the
     // model accidentally returns an EMBA, part-time, online, or wrong-duration
@@ -992,7 +1003,6 @@ export default async function handler(req, res) {
     // schools ("I'd like to move forward with: ..."), guarantee the reply
     // saves those schools and asks the first narrative question, regardless
     // of what the model produced. Prevents the pick-your-schools loop.
-    const lastRealUserText = messages.filter(m => m.role === 'user' && m.text && m.text !== '__idle_checkin__').pop()?.text;
     raw = ensureSelectionContinuity(raw, lastRealUserText);
 
     if (action === 'warn') {
