@@ -223,6 +223,27 @@ test('completed MBA profile always emits scores for Dashboard and Analysis', asy
   await resetJourney(id);
 });
 
+test('submitted CV is persisted before the model and cannot trigger another upload request', async () => {
+  const id = uid('cv-receipt');
+  await resetJourney(id);
+  await patchJourney(id, { category: 'Graduate', subtype: 'MBA', flags: { stage: 'profile' } });
+  const agent = new GradAgent();
+  agent.client = { messages: { create: async () => ({
+    stop_reason: 'end_turn', usage: {}, content: [{ type: 'text', text: 'Please upload your CV or paste your background. -> Upload a file | Paste text' }],
+  }) } };
+
+  const result = await agent.chat(id, 'Here is my CV/resume:\n\nGPA 3.9, GMAT 750, 2 years of work experience.');
+  const journey = await getJourney(id);
+
+  assert.equal(journey.collected.hasCV, true);
+  assert.equal(journey.collected.gpa, 3.9);
+  assert.equal(journey.collected.gmat, 750);
+  assert.match(journey.collected.cvText, /GPA 3\.9/);
+  assert.doesNotMatch(result.raw, /upload your CV|paste your background/i);
+  assert.match(result.raw, /received and saved your file/i);
+  await resetJourney(id);
+});
+
 test('profile score derivation covers doctoral dimensions', () => {
   const scores = deriveProfileScores({
     category: 'Postgraduate / Doctoral',
