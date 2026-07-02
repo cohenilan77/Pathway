@@ -858,14 +858,16 @@ export default function App() {
         }
         if (parsed.strengths) setStrengths(parsed.strengths);
         if (parsed.weaknesses) setWeaknesses(parsed.weaknesses);
-        if (parsed.tasks) {
+        // For legacy candidates, tasks come from parsing <TASKS> block; for adaptive,
+        // they come directly in data.pendingTasks. Don't double-process for adaptive.
+        if (!data.pendingTasks && parsed.tasks) {
           // Once a task is marked done it's treated as deleted — drop it permanently
           // the next time the AI refreshes the task list, instead of letting it reappear.
           const next = parsed.tasks.filter(t => !completedTasks[t]);
           console.log(`[App] Parsed ${parsed.tasks.length} tasks, keeping ${next.length} after filtering completed`);
           setTasks(next);
           setCompletedTasks({});
-        } else if (raw.includes('<TASKS>')) {
+        } else if (!data.pendingTasks && raw.includes('<TASKS>')) {
           console.log(`[App] TASKS block found in response but failed to parse:`, raw.match(/<TASKS>[\s\S]*?<\/TASKS>/)?.[0]);
         }
         if (parsed.programs) {
@@ -918,10 +920,11 @@ export default function App() {
         }
         if (data.journeyStage) setJourneyStage(data.journeyStage);
         if (data.pendingTasks?.length) {
-          setTasks(prev => {
-            const merged = [...new Set([...(prev || []), ...data.pendingTasks])];
-            return merged;
-          });
+          // Filter out completed tasks and reset completed tracking for fresh task list
+          const next = data.pendingTasks.filter(t => !completedTasks[t]);
+          console.log(`[App] Using pendingTasks: ${data.pendingTasks.length} tasks, keeping ${next.length} after filtering completed`);
+          setTasks(next);
+          setCompletedTasks({});
         }
 
         setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
