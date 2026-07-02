@@ -151,7 +151,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const MAX_IDLE_FIRES = 2;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
   const [statusBarExpanded, setStatusBarExpanded] = useState(false);
-  const [currentToolCall, setCurrentToolCall] = useState(null);
 
   useEffect(() => {
     if (adaptiveGradEnabled && advisorDirective?.modal === 'upgradePivot') setShowNarrativeModal(true);
@@ -316,7 +315,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               );
             })}
 
-            {busy && <AdvisorToolStatus toolCall={currentToolCall} />}
+            {busy && <AdvisorToolStatus isLoading={true} />}
 
             {/* In-stream interactive cards */}
             {programs && programs.length > 0 && <AdvisorProgramCard programs={programs} onProgramAction={() => {}} />}

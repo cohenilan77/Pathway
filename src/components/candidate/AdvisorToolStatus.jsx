@@ -1,45 +1,23 @@
 import React, { useEffect, useState } from 'react';
 
-// Human-friendly descriptions of what tools are doing
-const TOOL_DESCRIPTIONS = {
-  read_state: 'Reading your journey state...',
-  write_state: 'Saving your information...',
-  parse_cv: 'Analyzing your CV...',
-  score_profile: 'Calculating fit score for {school}...',
-  build_portfolio: 'Building your school portfolio...',
-  set_chosen_schools: 'Saving your school choices...',
-  present_narrative_options: 'Preparing narrative choices...',
-  craft_narrative: 'Crafting your narrative strategy...',
-  optimize_cv: 'Optimizing your CV...',
-  workshop_essay: 'Reviewing your essay...',
-  run_mock_interview: 'Starting mock interview...',
-  predict_odds: 'Predicting your odds...',
-  advance_stage: 'Moving to next stage...',
-  emit_ui: 'Updating interface...',
-};
-
-export default function AdvisorToolStatus({ toolCall = null, schoolContext = null }) {
-  const [displayText, setDisplayText] = useState('');
+// Animated typing indicator for when AI is processing
+export default function AdvisorToolStatus({ isLoading = false }) {
   const [animationFrame, setAnimationFrame] = useState(0);
 
   useEffect(() => {
-    if (!toolCall) return;
-
-    const description = TOOL_DESCRIPTIONS[toolCall] || `Executing ${toolCall}...`;
-    const fullText = description.replace('{school}', schoolContext || 'school');
-    setDisplayText(fullText);
+    if (!isLoading) return;
 
     const timer = setInterval(() => {
       setAnimationFrame(prev => (prev + 1) % 3);
     }, 400);
 
     return () => clearInterval(timer);
-  }, [toolCall, schoolContext]);
+  }, [isLoading]);
 
-  if (!toolCall) return null;
+  if (!isLoading) return null;
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 42, marginTop: 8, marginBottom: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 42 }}>
       <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
         {[0, 1, 2].map(i => (
           <span
@@ -55,7 +33,7 @@ export default function AdvisorToolStatus({ toolCall = null, schoolContext = nul
         ))}
       </div>
       <span style={{ fontSize: 12.5, color: '#6b7392', fontWeight: 500 }}>
-        {displayText}
+        Processing your request...
       </span>
     </div>
   );
