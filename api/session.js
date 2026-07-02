@@ -4,6 +4,8 @@ import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getCandidateClock } from '../lib/candidate-clock.js';
 import { getUserAssignments } from '../lib/assignments.js';
 import { clearMessages } from '../lib/chat.js';
+import { resetJourney } from '../lib/agents/journey/state.js';
+import { getStore } from '../lib/store.js';
 
 // Best-effort removal of uploaded originals (CV + document files) from blob storage.
 // Failures are logged but never block the reset — the session data itself is the
@@ -127,6 +129,21 @@ export default async function handler(req, res) {
     // A web tab saves the whole session. Preserve WhatsApp/system turns that may have
     // arrived after that tab loaded so one channel cannot erase the other.
     const current = (await getUserData(userId)) || {};
+
+    // Stale-write guard: after a session reset (DELETE below) stores a fresh
+    // sessionId, an in-flight autosave from before the reset — or a second tab
+    // still holding the old session — must not resurrect the deleted data.
+    // Any write carrying substantive data under a different sessionId than the
+    // one on record is stale. Blank writes (sessionId only, no chat/profile/docs)
+    // are always allowed: they are wipes, not resurrections, and serve as the
+    // reset fallback when the DELETE request itself fails.
+    const incomingChatCount = Array.isArray(translated?.chat) ? translated.chat.length : 0;
+    const isBlankReset = !translated?.profile && incomingChatCount <= 1
+      && !(Array.isArray(translated?.documents) && translated.documents.length);
+    if (!isBlankReset && current.sessionId && translated?.sessionId && translated.sessionId !== current.sessionId) {
+      res.status(200).json({ ok: false, staleSession: true, sessionId: current.sessionId });
+      return;
+    }
     const incomingChat = Array.isArray(translated.chat) ? translated.chat : [];
     const signature = (message) => message?.sourceMessageId
       || [message?.role, message?.channel, message?.timestamp, message?.text].join('|');
@@ -158,7 +175,19 @@ export default async function handler(req, res) {
       ? req.body.sessionId
       : `session_${Date.now()}`;
     await setUserData(userId, { sessionId: nextSessionId });
-    await clearMessages(userId).catch((err) => console.error('session reset: chat clear failed:', err.message));
+    // Wipe every other per-candidate memory tied to the session: the live chat
+    // log, the adaptive agent's journey memory (collected facts, stage, chosen
+    // schools, history), and the candidate clock (stage/next-best-action). The
+    // clock is re-initialized when a new journey starts; all readers null-check.
+    // Same key format as lib/greeting-generator.js getDateKey() (server-local time)
+    const now = new Date();
+    const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    await Promise.allSettled([
+      clearMessages(userId),
+      resetJourney(userId),
+      getStore().del(`candidate:clock:${userId}`),
+      getStore().del(`greeting:${userId}:${dateKey}`),
+    ]);
     await touchActivity(userId);
     res.status(200).json({ ok: true });
     return;

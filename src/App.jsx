@@ -725,8 +725,10 @@ export default function App() {
   }, [auth?.token, setAuth]);
 
   const resetSession = useCallback(() => {
-    const confirmed = window.confirm('Are you sure? This will permanently delete your chat and all files associated with it — profile, scores, school matches, uploaded documents, tasks, essays, and saved analysis.');
+    const confirmed = window.confirm('Are you sure? This will permanently delete your chat history, memory, and all files associated with it — profile, scores, school matches, uploaded documents, tasks, essays, and saved analysis.');
     if (!confirmed) return;
+    // Kill any pending autosave so it can't re-persist the old session after the wipe.
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     const nextSessionId = createSessionId();
     setSessionId(nextSessionId);
     setChat(buildInitialChat(language));
@@ -739,14 +741,24 @@ export default function App() {
     setJourneyStage(null); setAdvisorDirective(null);
     setCvDraft(''); setCvFileDraft(null); setCvExtra('');
     if (auth?.token) {
-      fetch('/api/session', {
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` };
+      const wipe = () => fetch('/api/session', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+        headers,
         body: JSON.stringify({ sessionId: nextSessionId }),
-      }).catch(() => {});
+      }).then(r => { if (!r.ok) throw new Error('wipe failed'); });
+      // Retry the wipe once; if it still fails, fall back to a blank overwrite so
+      // the server never keeps the old chat/profile even on a flaky connection.
+      wipe()
+        .catch(() => wipe())
+        .catch(() => fetch('/api/session', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ data: { sessionId: nextSessionId } }),
+        }).catch(() => {}));
     }
     setCandTab('advisor');
-    showToast('Session deleted — chat and files cleared.');
+    showToast('Session deleted — chat, memory, and files cleared.');
   }, [auth?.token, showToast, language]);
 
   const saveUserDetails = useCallback(async (details) => {
