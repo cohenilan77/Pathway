@@ -39,3 +39,11 @@ test('leaves non-MBA program blocks unchanged', () => {
   const raw = '<PROGRAMS>[{"name":"Oxford MSc"}]</PROGRAMS>';
   assert.equal(enforceProgramFormatInRaw(raw, { degree: 'MSc — full-time' }), raw);
 });
+
+for (const category of ['Undergraduate', 'Graduate', 'Postgraduate / Doctoral', 'Personal Development']) {
+  test(`initial ${category} selection is safe before a profile exists`, () => {
+    const messages = [{ role: 'user', text: category }];
+    assert.equal(requestedProgramFormat(null, messages), null);
+    assert.equal(enforceProgramFormatInRaw('Next question', null, messages), 'Next question');
+  });
+}
