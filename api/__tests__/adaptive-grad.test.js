@@ -189,6 +189,51 @@ test('missing-analysis report re-emits a saved portfolio to an empty client', as
   await resetJourney(id);
 });
 
+for (const scenario of [
+  {
+    label: 'MBA',
+    category: 'Graduate',
+    subtype: 'MBA',
+    schools: ['Harvard Business School', 'Chicago Booth'],
+    collected: { gpa: 3.9, testScore: 750 },
+    benchmark: { medianGPA: 3.7, medianTest: 730, verified: true, source: 'official' },
+  },
+  {
+    label: 'PhD',
+    category: 'Postgraduate / Doctoral',
+    subtype: 'PhD',
+    schools: ['MIT EECS PhD', 'Stanford Computer Science PhD'],
+    collected: { gpa: 3.9, testScore: 330 },
+    benchmark: { medianGPA: 3.8, medianTest: 325, verified: true, source: 'official' },
+  },
+]) {
+  test(`${scenario.label} matching produces a non-empty banded portfolio`, async () => {
+    const id = uid(`portfolio-${scenario.label.toLowerCase()}`);
+    await resetJourney(id);
+    await patchJourney(id, {
+      category: scenario.category,
+      subtype: scenario.subtype,
+      collected: scenario.collected,
+      flags: { stage: 'analysis' },
+    });
+    const agent = new GradAgent({
+      benchmarkProvider: async () => scenario.benchmark,
+      riskProvider: async () => ({ risks: [], tasks: [], riskFlags: [] }),
+    });
+    agent.runtime = { candidateId: id, profile: {}, scores: {}, programs: [], ui: {}, toolCalls: [] };
+
+    const result = await agent.handleToolUse({
+      name: 'build_portfolio',
+      input: { schools: scenario.schools, programType: scenario.subtype },
+    });
+
+    assert.equal(result.programs.length, scenario.schools.length);
+    assert.ok(result.programs.every((program) => program.name && program.tier && Number.isFinite(program.fit)));
+    assert.equal((await getJourney(id)).flags.programsShown, true);
+    await resetJourney(id);
+  });
+}
+
 test('UI keeps tasks in Dashboard, gates Advisor rail, and uses explicit intents', () => {
   const root = process.cwd();
   const advisor = fs.readFileSync(path.join(root, 'src/components/candidate/Advisor.jsx'), 'utf8');
