@@ -166,7 +166,7 @@ function getTestMetric(school) {
 }
 
 function getAdmitRateMetric(school) {
-  const rate = asDisplayRate(school?.acceptanceRate);
+  const rate = asDisplayRate(school?.admitRate ?? school?.acceptanceRate);
   return rate ? `${rate}%` : null;
 }
 

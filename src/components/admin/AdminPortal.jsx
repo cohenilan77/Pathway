@@ -6,6 +6,7 @@ import { LANGUAGES } from '../../constants.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
 import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
+import AgentsTab from './AgentsTab.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -917,6 +918,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </button>
           )}
           {canManageUsers && (
+            <button onClick={() => setAdminView('agents')} style={sideStyle(adminView === 'agents')}>
+              <NavIcon><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" /></NavIcon>
+              Agents
+            </button>
+          )}
+          {canManageUsers && (
             <button onClick={() => setAdminView('usageCost')} style={sideStyle(adminView === 'usageCost')}>
               <NavIcon><path d="M3 3v18h18" /><rect x="7" y="11" width="3" height="6" rx="1" /><rect x="12" y="7" width="3" height="10" rx="1" /><rect x="17" y="13" width="3" height="4" rx="1" /></NavIcon>
               Usage & Cost
@@ -973,6 +980,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'dashboard' && 'Dashboard'}
             {adminView === 'marketing' && 'Marketing'}
             {adminView === 'engagement' && 'Engagement'}
+            {adminView === 'agents' && 'Agents'}
             {adminView === 'usageCost' && 'Usage & Cost'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -1893,6 +1901,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
                           {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.75, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
                         </div>
+                      ) : m.senderRole === 'ai' ? (
+                        <div key={m.id} style={{ alignSelf: 'flex-start', background: '#eef2ff', border: '1px solid #d8deff', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
+                          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.7px', color: '#7c6ef7', marginBottom: 6, textTransform: 'uppercase' }}>AI Advisor</div>
+                          <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
+                          {m.sentAt && <bdi style={{ display: 'block', fontSize: 10.5, opacity: 0.6, marginTop: 6 }}>{formatChatDate(m.sentAt, chatLanguage)}</bdi>}
+                        </div>
                       ) : (
                         <div key={m.id} style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', maxWidth: '90%' }}>
                           <bdi style={{ display: 'block', unicodeBidi: 'plaintext' }}>{m.text}</bdi>
@@ -1924,6 +1938,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </div>
             );
           })()}
+
+          {/* ── AGENTS ── */}
+          {adminView === 'agents' && canManageUsers && (
+            <AgentsTab showToast={showToast} />
+          )}
 
           {/* ── USAGE & COST ── */}
           {adminView === 'usageCost' && canManageUsers && (

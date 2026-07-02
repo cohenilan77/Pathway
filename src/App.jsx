@@ -8,6 +8,7 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
+import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
@@ -38,14 +39,22 @@ const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
 
 // Stage context for AI engagement
-function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime) {
+function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime, weaknesses) {
   const category = profile?.category;
   const isUndergrad = category === 'Undergraduate';
   const steps = isUndergrad ? UNDERGRAD_STEPS : STEPS;
   const currentStep = steps[Math.min(stepIdx, steps.length - 1)] || 'Profile';
 
-  // Calculate days in current stage (rough estimate based on chat history)
   const daysInStage = lastChatTime ? Math.floor((Date.now() - lastChatTime) / (1000 * 60 * 60 * 24)) : 0;
+
+  // Find the weakest scoring dimension for adaptive guidance
+  const scoreWeights = getTrackConfig(profile).scoreWeights || {};
+  const lowestScoreKey = scores
+    ? Object.entries(scoreWeights)
+        .map(([k]) => ({ key: k, val: scores[k] ?? 100 }))
+        .filter(({ val }) => typeof val === 'number')
+        .sort((a, b) => a.val - b.val)[0]?.key || null
+    : null;
 
   return {
     stepIdx,
@@ -53,6 +62,8 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     totalSteps: steps.length,
     isUndergrad,
     grade: profile?.grade,
+    intendedMajor: profile?.intendedMajor || profile?.major || profile?.subjects || '',
+    destination: profile?.destination || profile?.countries || '',
     daysInStage,
 
     // Completion tracking
@@ -60,13 +71,20 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     hasScores: !!scores?.overall,
     hasActivities: Array.isArray(strengths) && strengths.length > 0,
     hasUniversities: Array.isArray(programs) && programs.length > 0,
-    hasTestingScore: !!scores?.testScore,
+    hasTestingScore: !!scores?.testScore && scores.testScore > 0,
     hasEssays: Object.keys(essays || {}).length > 0,
     hasTasks: Array.isArray(tasks) && tasks.length > 0,
 
+    // Actual content for adaptive questioning
+    topTask: Array.isArray(tasks) && tasks.length > 0 ? tasks[0] : null,
+    topWeakness: Array.isArray(weaknesses) && weaknesses.length > 0 ? weaknesses[0] : null,
+    lowestScoreKey,
+    overallScore: scores?.overall ?? null,
+    pathwayType: profile?.pathwayType || null,
+
     // Stage-specific insights
     nextStageName: stepIdx + 1 < steps.length ? steps[stepIdx + 1] : 'Complete',
-    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3, // Nudge if stuck 60+ days or at universities
+    shouldNudgeToNextStage: daysInStage > 60 || stepIdx === 3,
   };
 }
 
@@ -96,33 +114,83 @@ function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
 
 // Build AI system context based on student stage for better guidance
 function buildAISystemContext(stage) {
-  const { stageName, nextStageName, isUndergrad, daysInStage, shouldNudgeToNextStage, hasUniversities, hasTestingScore } = stage;
+  const { isUndergrad, daysInStage, shouldNudgeToNextStage } = stage;
 
   let systemContext = `You are an admissions advisor guiding a student through their journey.
 
-CURRENT STAGE: "${stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
-STUDENT PROGRESS: ${stage.daysInStage} days in current stage
+CURRENT STAGE: "${stage.stageName}" (Step ${stage.stepIdx + 1} of ${stage.totalSteps})
 TRACK: ${isUndergrad ? 'Undergraduate' : 'Graduate/Professional'}
+DATA: Profile ${stage.hasProfile ? '✓' : '✗'} · Scores ${stage.hasScores ? '✓' : '✗'} · Activities ${stage.hasActivities ? '✓' : '✗'} · Universities ${stage.hasUniversities ? '✓' : '✗'} · Testing ${stage.hasTestingScore ? '✓' : '✗'} · Essays ${stage.hasEssays ? '✓' : '✗'}`;
 
-DATA COLLECTED:
-- Profile: ${stage.hasProfile ? '✓' : '✗'}
-- Scores: ${stage.hasScores ? '✓' : '✗'}
-- Activities: ${stage.hasActivities ? '✓' : '✗'}
-- Universities: ${stage.hasUniversities ? '✓' : '✗'}
-- Testing: ${stage.hasTestingScore ? '✓' : '✗'}
-- Essays: ${stage.hasEssays ? '✓' : '✗'}`;
-
-  // Add stage-specific guidance
   if (isUndergrad) {
-    if (stage.stepIdx === 3 && shouldNudgeToNextStage) {
+    systemContext += `
+
+MANDATORY RESPONSE RULES (no exceptions):
+1. Max 1-2 sentences. No paragraphs.
+2. No hyphens or dashes anywhere.
+3. Every message ends with → Option1 | Option2 | Option3 | Other
+4. Never echo or confirm what the student said. Move forward.`;
+
+    const gradeStr = stage.grade ? `Grade ${stage.grade}` : 'this student';
+    const majorStr = stage.intendedMajor ? `(interested in ${stage.intendedMajor})` : '';
+    const pathwayType = stage.pathwayType;
+    const pathwayLabel = pathwayType === 'focused' ? 'focused' : pathwayType === 'exploring' ? 'still exploring' : pathwayType === 'partial' ? 'partially decided' : null;
+
+    if (stage.grade) {
       systemContext += `
 
-⚠️ ENGAGEMENT ALERT: Student has been on university list for ${daysInStage} days.
-ACTION: Ask about testing (SAT/ACT). This is the natural next step.
-NUDGE QUESTIONS:
-- "Now that we have your university targets, let's talk testing..."
-- "When are you planning to take the SAT or ACT?"
-- "What's your target score for your reach schools?"`;
+STUDENT: ${gradeStr}${pathwayLabel ? ` · Pathway: ${pathwayLabel}` : ''}${stage.intendedMajor ? ` · Interested in: ${stage.intendedMajor}` : ''}${stage.destination ? ` · Destination: ${stage.destination}` : ''}`;
+    }
+
+    if (stage.hasProfile && stage.hasScores && stage.hasUniversities) {
+      // Post-snapshot: derive next question from pathway type + top task / lowest score
+      if (pathwayType === 'exploring' || pathwayType === null) {
+        if (!stage.hasTestingScore) {
+          systemContext += `
+
+NEXT FOCUS: Student is still exploring their direction. Ask about a subject or activity they enjoyed most recently to help uncover their interests. Keep it discovery-focused, not pressure-filled. Options should be specific subjects, clubs, or experiences, not generic.`;
+        } else if (stage.topWeakness) {
+          systemContext += `
+
+NEXT FOCUS: Student is exploring. Address this gap: "${stage.topWeakness}". Ask ONE question to help them discover something new or deepen an interest. Options must be concrete activities or experiences.`;
+        } else if (stage.topTask) {
+          systemContext += `
+
+NEXT FOCUS: Help exploring student with this task: "${stage.topTask}". Frame as an opportunity to discover, not a deadline. Options must be specific to that task.`;
+        }
+      } else if (pathwayType === 'focused') {
+        if (!stage.hasTestingScore) {
+          systemContext += `
+
+NEXT FOCUS: Student is focused on ${stage.intendedMajor || 'their intended field'}. They have no SAT/ACT score yet. Ask about their testing plan. ${upcomingTestDatesPromptLine()} Use only these future dates as chip options — never a date that has already passed.`;
+        } else if (stage.topWeakness) {
+          systemContext += `
+
+NEXT FOCUS: Focused student. Address this specific weakness: "${stage.topWeakness}". Ask ONE concrete question to close this gap. Options must be actionable steps in their intended field, not generic.`;
+        } else if (stage.topTask) {
+          systemContext += `
+
+NEXT FOCUS: Help focused student with: "${stage.topTask}". Ask ONE specific question. Options must be field-specific actions tied to ${stage.intendedMajor || 'their focus area'}.`;
+        } else if (shouldNudgeToNextStage) {
+          systemContext += `
+
+NEXT FOCUS: Student has been here ${daysInStage} days. Ask about their next concrete step in ${stage.intendedMajor || 'their field'} with specific competition, project, or activity options.`;
+        }
+      } else if (pathwayType === 'partial') {
+        if (stage.topTask) {
+          systemContext += `
+
+NEXT FOCUS: Student is partially decided ${majorStr}. Help them commit by asking about one of their top interests: "${stage.topTask}". Options should help them choose between their two or three possible directions.`;
+        } else if (!stage.hasTestingScore) {
+          systemContext += `
+
+NEXT FOCUS: Partially-decided student. Ask about testing plans. ${upcomingTestDatesPromptLine()} Offer upcoming dates from both tests — use only future dates, never past ones.`;
+        }
+      }
+    } else if (stage.hasProfile && !stage.hasScores) {
+      systemContext += `
+
+NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'goals and university preferences'}.`;
     }
   }
 
@@ -177,20 +245,31 @@ function parseBlocks(raw) {
   };
 }
 
-function safeVisibleReply(raw, parsed) {
+function safeVisibleReply(raw, parsed, currentProfile) {
   const clean = sanitizeVisibleText(parsed.clean || '');
+  const category = parsed.profile?.category || currentProfile?.category;
+  const isUndergrad = category === 'Undergraduate';
   if (parsed.profile && parsed.scores && parsed.programs) {
-    if (parsed.profile?.category === 'Undergraduate') {
-      return clean || "This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.";
+    if (isUndergrad) {
+      return clean || 'Your university matches are ready — check the University List tab to see your Reach, Target, and Likely schools.';
     }
-    return 'Your analysis is ready. Tap below to view your profile, scores, and school matches.';
+    // Prefer the AI's actual text (which should now include a follow-up question)
+    return clean || 'Your analysis is live in the Analysis tab — head there to see your scores and school matches.';
   }
   if (clean) return clean;
-  if (parsed.programs) return 'Your portfolio is live in the Analysis tab.';
+  if (parsed.programs) {
+    return isUndergrad
+      ? 'Your university matches are live in the University List tab.'
+      : 'Your portfolio is live in the Analysis tab.';
+  }
   if (parsed.chosenSchools) return 'Your target schools are saved.';
   if (parsed.essay) return 'Your essay draft is saved in Documents.';
   if (parsed.interviewResult) return 'Your interview results are saved.';
-  if (parsed.scores || parsed.profile) return 'Your profile analysis is live in the Analysis tab.';
+  if (parsed.scores || parsed.profile) {
+    return isUndergrad
+      ? 'Your profile is updated in the Advisor.'
+      : 'Your profile analysis is live in the Analysis tab.';
+  }
   return sanitizeVisibleText(raw) || 'Done — I updated your workspace.';
 }
 
@@ -436,14 +515,17 @@ export default function App() {
 
         // Detect if student is stuck and needs nudge
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp);
+        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
 
         if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
           // Student has universities but hasn't discussed testing yet - add nudge
           const nudgeMsg = {
             role: 'ai',
             channel: 'web',
-            text: `Welcome back! I see you've built a solid university list. Now let's focus on testing strategy.\n\nYour target schools typically require:\n- Reach schools: 1500+ SAT (75th percentile)\n- Target schools: 1400-1480 SAT\n- Likely schools: 1300+ SAT\n\nWhen are you planning to take the SAT or ACT? Let's map out your test prep timeline.`
+            text: (() => {
+              const { sat, act } = getUpcomingTestDates(3);
+              return `Welcome back! You've got a solid university list — next step is locking in your test plan. When are you thinking of sitting the SAT or ACT? → ${sat[0]} | ${act[0]} | ${sat[1]} | Not sure yet`;
+            })()
           };
           if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
             setChat(prev => [...prev, nudgeMsg]);
@@ -679,7 +761,7 @@ export default function App() {
     setBusy(true);
 
     try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp);
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -749,7 +831,7 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        const displayText = safeVisibleReply(raw, parsed);
+        const displayText = safeVisibleReply(raw, parsed, profile);
 
         // Auto-advance stepper based on stage-aware triggers
         const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
@@ -769,6 +851,33 @@ export default function App() {
       setBusy(false);
     }
   }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
+
+  // Sends a silent idle check-in to the AI without showing a user message in chat.
+  // Only the AI response appears.
+  const sendIdleCheckin = useCallback(async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
+      const systemContext = buildAISystemContext(stage);
+      const idleMessages = [...chat, { role: 'user', channel: 'system', text: '__idle_checkin__' }];
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
+        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+      const raw = data.raw || data.reply || '';
+      if (raw) {
+        const parsed = parseBlocks(raw);
+        const displayText = safeVisibleReply(raw, parsed, profile);
+        if (displayText) setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
+      }
+    } catch { /* silent — idle checkin failure must never break the UI */ } finally {
+      setBusy(false);
+    }
+  }, [busy, chat, profile, scores, programs, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
@@ -954,7 +1063,7 @@ export default function App() {
     authUser: auth?.user || null, authToken: auth?.token || null, authError, authBusy, adminSecret,
     requiresOAuthDetails, saveUserDetails, updateAuthUser, setProfile,
     login, register, adminAuth,
-    go, signOut, send, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
+    go, signOut, send, sendIdleCheckin, submitCv, handleFileUpload, rewriteEssay, analyzeEssay, selectEssaySchool, resetSession, showToast,
     noop: () => showToast('This section is coming soon.'),
     forgot: () => showToast('Password reset link sent to your academic email.'),
   };
