@@ -12,6 +12,40 @@ function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
 }
 
+function hybridMetadata(metadata = {}, overrides = {}) {
+  return {
+    routerSource: metadata.routerSource || 'regex_fallback',
+    routedAgent: metadata.routedAgent || 'AdvisorAgent',
+    executionPlan: metadata.executionPlan || ['AdvisorAgent'],
+    primaryAgent: metadata.primaryAgent || 'AdvisorAgent',
+    synthesisAgent: metadata.synthesisAgent || null,
+    finalAgent: metadata.finalAgent || 'AdvisorAgent',
+    fallbackUsed: !!metadata.fallbackUsed,
+    latencyMs: Number(metadata.latencyMs || 0),
+    ...metadata,
+    ...overrides,
+  };
+}
+
+function safeRoutingDiagnostic({ candidateId, message, metadata }) {
+  const rawPreview = String(message || '');
+  const messagePreview = /(?:here is|attached|uploaded)[\s\S]{0,50}(?:cv|resume|résumé|transcript)/i.test(rawPreview)
+    ? '[candidate document/profile upload]'
+    : rawPreview.slice(0, 300);
+  const diagnostic = {
+    candidateId,
+    messagePreview,
+    routerSource: metadata.routerSource,
+    routedAgent: metadata.routedAgent,
+    executionPlan: metadata.executionPlan,
+    finalAgent: metadata.finalAgent,
+    synthesisAgent: metadata.synthesisAgent,
+    latencyMs: metadata.latencyMs,
+  };
+  console.info('[real-agent-router]', diagnostic);
+  return diagnostic;
+}
+
 async function invokeAdvisor(req, bypassRuntimeConfig) {
   const headers = { ...(req.headers || {}) };
   if (bypassRuntimeConfig) headers['x-pathway-legacy-bypass'] = '1';
@@ -57,10 +91,11 @@ export default async function handler(req, res) {
 
   const body = req.body || {};
   const message = body.message || [...(body.messages || [])].reverse().find(m => m.role === 'user')?.text || '';
+  let routingResult = null;
   try {
     const coordinator = new HybridCoordinator();
     const storedState = candidateId ? (await getUserData(candidateId).catch(() => null)) : null;
-    const effectiveState = { ...(body.candidateState || body), ...(storedState || {}) };
+    const effectiveState = { ...body, ...(body.candidateState || {}), ...(storedState || {}) };
     if (candidateId && effectiveState.profile) {
       await updateCandidateProfile(candidateId, effectiveState.profile).catch(() => {});
     }
@@ -68,23 +103,45 @@ export default async function handler(req, res) {
       candidateId: candidateId || 'anonymous', message, action: body.action, payload: body.payload,
       conversationHistory: body.messages || [], candidateState: effectiveState,
     });
+    routingResult = result;
+    const routedMetadata = hybridMetadata(result.metadata, {
+      latencyMs: Number(result.metadata?.latencyMs || 0),
+    });
+    const diagnostic = safeRoutingDiagnostic({ candidateId, message, metadata: routedMetadata });
     await recordCandidateActivity(candidateId, {
       type: 'routing',
-      label: result.metadata?.plan?.length > 1
-        ? `Execution plan: ${result.metadata.plan.map(agent => `${agent}Agent`).join(' → ')}${result.continueWithAdvisor ? ' → AdvisorAgent' : ''}`
-        : result.delegateToAdvisor ? 'Routed to AdvisorAgent' : `Routed to ${result.agent || 'AdvisorAgent'}`,
+      label: result.metadata?.executionPlan?.length > 1
+        ? `Execution plan: ${result.metadata.executionPlan.join(' → ')}${result.continueWithAdvisor ? ' → AdvisorAgent' : ''}`
+        : result.delegateToAdvisor ? 'Routed to AdvisorAgent' : `Routed to ${result.metadata?.finalAgent || result.agent || 'AdvisorAgent'}`,
       agent: result.agent || 'AdvisorAgent',
       architecture: 'hybrid',
       latencyMs: result.metadata?.latencyMs,
       detail: result.continueWithAdvisor
-        ? `${result.agent} completed its specialist step; control returned to AdvisorAgent.`
+        ? `${result.metadata?.executionPlan?.join(' → ') || result.agent} completed; control returned to AdvisorAgent for synthesis.`
         : result.delegateToAdvisor ? 'Coordinator selected the main advisor.' : 'Coordinator selected a specialist agent.',
-      metadata: { continueWithAdvisor: !!result.continueWithAdvisor, fallback: !!result.disabledAgent, plan: result.metadata?.plan, steps: result.metadata?.steps },
+      metadata: {
+        candidateId,
+        messagePreview: diagnostic.messagePreview,
+        routerSource: routedMetadata.routerSource,
+        routedAgent: routedMetadata.routedAgent,
+        executionPlan: routedMetadata.executionPlan,
+        finalAgent: routedMetadata.finalAgent,
+        synthesisAgent: routedMetadata.synthesisAgent,
+        continueWithAdvisor: !!result.continueWithAdvisor,
+        fallback: !!result.disabledAgent,
+        plan: result.metadata?.plan,
+        steps: result.metadata?.steps,
+      },
     }).catch(() => {});
     if (!result.delegateToAdvisor && !result.continueWithAdvisor) {
       const response = makeAdvisorResponse({
         architecture: 'hybrid', agent: result.agent, raw: result.message,
-        statePatch: result.statePatch, metadata: result.metadata,
+        statePatch: result.statePatch,
+        metadata: hybridMetadata(result.metadata, {
+          finalAgent: result.metadata?.finalAgent || result.agent,
+          fallbackUsed: !!result.metadata?.fallbackUsed,
+          latencyMs: Date.now() - startedAt,
+        }),
       });
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: response.metadata?.configVersion });
@@ -111,10 +168,18 @@ export default async function handler(req, res) {
         statePatch: { ...(result.statePatch || {}), ...(continued.response.statePatch || {}) },
         metadata: {
           ...continued.response.metadata,
+          ...result.metadata,
           delegatedAgent: result.agent,
           specialistConfigVersion: result.metadata?.configVersion,
           specialistLatencyMs: result.metadata?.latencyMs,
+          routerSource: result.metadata?.routerSource || 'regex_fallback',
+          routedAgent: result.metadata?.routedAgent || result.agent,
+          executionPlan: result.metadata?.executionPlan || [],
+          primaryAgent: result.metadata?.primaryAgent || result.agent,
+          synthesisAgent: 'AdvisorAgent',
+          finalAgent: 'AdvisorAgent',
           fallbackUsed: false,
+          latencyMs: Date.now() - startedAt,
         },
       };
       await persistStatePatch(candidateId, response);
@@ -124,7 +189,18 @@ export default async function handler(req, res) {
 
     const fallback = await invokeAdvisor(req, false);
     if (fallback.error) throw new Error(fallback.error?.details || fallback.error?.error || 'Hybrid AdvisorAgent failed.');
-    const response = { ...fallback.response, architecture: 'hybrid', coordinator: 'AdvisorCoordinator', agent: 'AdvisorAgent', metadata: { ...fallback.response.metadata, delegatedAgent: result.disabledAgent || 'advisor', fallbackUsed: false } };
+    const response = {
+      ...fallback.response,
+      architecture: 'hybrid', coordinator: 'AdvisorCoordinator', agent: 'AdvisorAgent',
+      metadata: hybridMetadata(result.metadata, {
+        ...fallback.response.metadata,
+        delegatedAgent: result.disabledAgent || 'advisor',
+        synthesisAgent: null,
+        finalAgent: 'AdvisorAgent',
+        fallbackUsed: !!result.disabledAgent || !!result.metadata?.fallbackUsed,
+        latencyMs: Date.now() - startedAt,
+      }),
+    };
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(response);
@@ -140,7 +216,18 @@ export default async function handler(req, res) {
     if (!architecture.fallbackToLegacy) return res.status(500).json({ error: 'Hybrid advisor failed.', detail: error.message });
     const fallback = await invokeAdvisor(req, true);
     if (fallback.error) return res.status(fallback.statusCode).json(fallback.error);
-    const response = { ...fallback.response, architecture: 'hybrid', coordinator: 'AdvisorCoordinator', metadata: { ...fallback.response.metadata, fallbackUsed: true, hybridError: error.message } };
+    const response = {
+      ...fallback.response,
+      architecture: 'hybrid', coordinator: 'AdvisorCoordinator',
+      metadata: hybridMetadata(routingResult?.metadata, {
+        ...fallback.response.metadata,
+        finalAgent: 'LegacyAdvisor',
+        synthesisAgent: null,
+        fallbackUsed: true,
+        hybridError: error.message,
+        latencyMs: Date.now() - startedAt,
+      }),
+    };
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: true, error: error.message });
     return res.status(200).json(response);
