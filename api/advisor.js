@@ -52,8 +52,14 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
   let finalized = applyDeterministicKpiToResponse(response, { candidateState });
   const mergedProfile = { ...(candidateState?.profile || {}), ...(finalized?.statePatch?.profile || {}) };
   const candidateFacts = buildCandidateFacts({
-    cvExtraction: candidateState?.cvExtraction || mergedProfile?.candidateFacts?.cvExtraction || {},
-    extraText: candidateState?.extraText || candidateState?.systemContext || '',
+    cvExtraction: candidateState?.profileSources?.fileText || candidateState?.cvExtraction || mergedProfile?.candidateFacts?.cvExtraction || {},
+    extraText: [
+      candidateState?.profileSources?.pastedText,
+      candidateState?.profileSources?.additionalText,
+      candidateState?.extraText,
+      candidateState?.systemContext,
+    ].filter(Boolean).join('\n\n'),
+    profileSources: candidateState?.profileSources || mergedProfile?.candidateFacts?.profileSources || {},
     messages: candidateState?.messages || [],
     profile: mergedProfile,
     scores: { ...(candidateState?.scores || {}), ...(finalized?.statePatch?.scores || {}) },
@@ -78,6 +84,15 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       postMbaGoal: candidateFacts.postMbaGoal,
       targetSchools: candidateFacts.targetSchools,
       selectedCandidateType: candidateFacts.selectedCandidateType,
+      profileSources: candidateState?.profileSources ? {
+        hasFileText: !!candidateState.profileSources.fileText,
+        hasPastedText: !!candidateState.profileSources.pastedText,
+        hasAdditionalText: !!candidateState.profileSources.additionalText,
+        targetLanguage: 'English',
+        normalizeToEnglish: true,
+      } : mergedProfile?.candidateFacts?.profileSources,
+      sourceLanguages: candidateFacts.sourceLanguages,
+      normalizationLanguage: candidateFacts.normalizationLanguage,
     },
     profileCompleteness: candidateFacts.profileCompleteness,
   };
@@ -164,6 +179,9 @@ async function invokeAdvisor(req, bypassRuntimeConfig, candidateState = {}) {
     programs: candidateState.programs || req.body?.programs,
     chosenSchools: candidateState.chosenSchools || req.body?.chosenSchools,
     candidateFacts: candidateState.candidateFacts || candidateState.profile?.candidateFacts || req.body?.candidateFacts,
+    profileSources: candidateState.profileSources || req.body?.profileSources,
+    cvExtraction: candidateState.cvExtraction || req.body?.cvExtraction,
+    extraText: candidateState.extraText || req.body?.extraText,
   };
   const body = deterministicContext
     ? { ...baseBody, systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }
