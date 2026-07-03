@@ -10,6 +10,7 @@ import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
+import { calculateCandidateOverall } from '../lib/candidate-kpi-schemas.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -313,17 +314,7 @@ function createSessionId() {
 }
 
 function weightedOverallScore(scores, profile) {
-  const weights = getTrackConfig(profile).scoreWeights || TRACK_CONFIG.Graduate.scoreWeights;
-  let total = 0;
-  let weight = 0;
-  for (const key of Object.keys(weights)) {
-    const value = scores?.[key];
-    if (typeof value !== 'number' || Number.isNaN(value)) continue;
-    const w = weights[key] || 1;
-    total += value * w;
-    weight += w;
-  }
-  return weight ? Math.round(total / weight) : 0;
+  return calculateCandidateOverall(scores, profile);
 }
 
 function safeDocBaseName(value, fallback) {
