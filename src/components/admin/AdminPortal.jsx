@@ -6,6 +6,7 @@ import { LANGUAGES } from '../../constants.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
 import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
+import CallLogTab from './CallLogTab.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -922,6 +923,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Usage & Cost
             </button>
           )}
+          {import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' && (
+            <button onClick={() => setAdminView('callLog')} style={sideStyle(adminView === 'callLog')}>
+              <NavIcon><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NavIcon>
+              Call Log
+            </button>
+          )}
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
             <NavIcon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></NavIcon>
             Settings
@@ -974,6 +981,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'marketing' && 'Marketing'}
             {adminView === 'engagement' && 'Engagement'}
             {adminView === 'usageCost' && 'Usage & Cost'}
+            {adminView === 'callLog' && 'Call Log'}
             {adminView === 'settings' && 'Settings'}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -2300,6 +2308,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── CALL LOG ── */}
+          {adminView === 'callLog' && import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' && (
+            <CallLogTab showToast={showToast} adminHeaders={adminHeaders} />
           )}
 
           {/* ── SETTINGS ── */}
