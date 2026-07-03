@@ -64,6 +64,8 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
         scoredKeys: finalized.metadata.scoredKeys || [],
         overall: finalized.metadata.overall,
         missingFields: finalized.metadata.missingFields || [],
+        confidence: finalized.metadata.confidence,
+        reason: finalized.metadata.reason,
         fallback,
       },
     }).catch(() => {});
