@@ -109,40 +109,105 @@ const paidChannels = [
   { name: 'LinkedIn', spend: 3720, budget: 6000, color: '#eaa129' },
 ];
 
-const engagementKpis = [
-  { label: 'MEETINGS', value: 18, color: '#141b34' },
-  { label: 'CONSULTANT ACTIONS', value: 126, color: '#5b46e0' },
-  { label: 'NOTES', value: 43, color: '#19c08a' },
-  { label: 'FOLLOW-UPS', value: 21, color: '#eaa129' },
-  { label: 'WAITING', value: 9, color: '#e0457a' },
-];
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-const consultantLeaderboard = [
-  { consultant: 'Jessica Cohen', candidates: 18, meetings: 7, actions: 42, notes: 15, response: '18m' },
-  { consultant: 'David Rosen', candidates: 14, meetings: 5, actions: 31, notes: 10, response: '24m' },
-  { consultant: 'Sarah Levy', candidates: 12, meetings: 4, actions: 28, notes: 9, response: '32m' },
-  { consultant: 'Michael Stein', candidates: 10, meetings: 2, actions: 25, notes: 9, response: '41m' },
-];
+function relTime(ts) {
+  if (!ts) return 'Never';
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(diff / 3600000);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(diff / DAY_MS);
+  return `${days}d ago`;
+}
 
-const upcomingMeetings = [
-  { candidate: 'Adam G.', consultant: 'Jessica Cohen', date: 'Today, 14:30', status: 'Confirmed' },
-  { candidate: 'Galit S.', consultant: 'David Rosen', date: 'Today, 16:00', status: 'Prep Needed' },
-  { candidate: 'Noa L.', consultant: 'Sarah Levy', date: 'Tomorrow, 10:15', status: 'Confirmed' },
-];
+const lastSeen = (u) => Math.max(u?.lastActiveAt || 0, u?.lastLoginAt || 0);
 
-const followUpCandidates = [
-  { candidate: 'Adam G.', last: 'Essay draft reviewed', inactive: '3 days', priority: 'High' },
-  { candidate: 'Maya R.', last: 'Profile scores updated', inactive: '5 days', priority: 'Medium' },
-  { candidate: 'Daniel K.', last: 'Waiting on transcript', inactive: '7 days', priority: 'High' },
-  { candidate: 'Lior P.', last: 'University list opened', inactive: '4 days', priority: 'Medium' },
-];
+function buildEngagement({ candidateUsers = [], consultantUsers = [], stepsFor }) {
+  const now = Date.now();
+  const activeToday = candidateUsers.filter(u => lastSeen(u) >= now - DAY_MS);
+  const activeWeek = candidateUsers.filter(u => lastSeen(u) >= now - 7 * DAY_MS);
+  const totalMessages = candidateUsers.reduce((s, u) => s + (u.chatLength || 0), 0);
+  const totalUnread = candidateUsers.reduce((s, u) => s + (u.unreadMessages || 0), 0);
 
-const activityFeed = [
-  { actor: 'Jessica', action: 'reviewed essay', target: 'Adam G.', time: '12 min ago' },
-  { actor: 'David', action: 'completed interview prep', target: 'Galit S.', time: '38 min ago' },
-  { actor: 'Sarah', action: 'met candidate', target: 'Noa L.', time: '1h ago' },
-  { actor: 'Michael', action: 'added notes', target: 'Daniel K.', time: '2h ago' },
-];
+  const followUps = candidateUsers
+    .filter(u => !u.suspended && (!lastSeen(u) || lastSeen(u) < now - 3 * DAY_MS))
+    .sort((a, b) => lastSeen(a) - lastSeen(b))
+    .slice(0, 8)
+    .map(u => {
+      const seen = lastSeen(u);
+      const inactiveDays = seen ? Math.floor((now - seen) / DAY_MS) : null;
+      return {
+        candidate: u.name || u.email,
+        last: seen ? `Last seen ${relTime(seen)}` : 'Never signed in',
+        inactive: inactiveDays === null ? '—' : `${inactiveDays}d`,
+        priority: !seen || inactiveDays >= 7 ? 'High' : 'Medium',
+      };
+    });
+
+  const leaderboard = consultantUsers
+    .map(c => {
+      const assigned = candidateUsers.filter(u => u.consultantId === c.id);
+      return {
+        consultant: c.name || c.email,
+        candidates: assigned.length,
+        active: assigned.filter(u => lastSeen(u) >= now - 7 * DAY_MS).length,
+        messages: assigned.reduce((s, u) => s + (u.chatLength || 0), 0),
+        unread: assigned.reduce((s, u) => s + (u.unreadMessages || 0), 0),
+        lastLogin: relTime(c.lastLoginAt),
+      };
+    })
+    .sort((a, b) => b.messages - a.messages || b.candidates - a.candidates);
+
+  const topEngaged = [...candidateUsers]
+    .filter(u => (u.chatLength || 0) > 0)
+    .sort((a, b) => (b.chatLength || 0) - (a.chatLength || 0))
+    .slice(0, 6)
+    .map(u => ({
+      candidate: u.name || u.email,
+      messages: u.chatLength || 0,
+      step: stepsFor(u.category)[u.stepIdx || 0] || 'Profile',
+      lastActive: relTime(lastSeen(u)),
+      status: lastSeen(u) >= now - DAY_MS ? 'Active' : 'Idle',
+    }));
+
+  const feed = [...candidateUsers, ...consultantUsers]
+    .flatMap(u => {
+      const who = u.name || u.email;
+      const events = [];
+      if (u.lastActiveAt) events.push({ actor: who, action: u.role === 'consultant' ? 'was active in the portal' : 'was active in the advisor', target: '', ts: u.lastActiveAt });
+      if (u.lastLoginAt && u.lastLoginAt !== u.lastActiveAt) events.push({ actor: who, action: 'signed in', target: '', ts: u.lastLoginAt });
+      return events;
+    })
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 8)
+    .map(e => ({ ...e, time: relTime(e.ts) }));
+
+  const rhythm = [
+    ['Started advisor', candidateUsers.filter(u => u.sessionActive).length, '#3fdca9'],
+    ['Profile scored', candidateUsers.filter(u => u.scores).length, '#5b46e0'],
+    ['Awaiting reply', candidateUsers.filter(u => (u.unreadMessages || 0) > 0).length, '#eaa129'],
+    ['Inactive 7d+', candidateUsers.filter(u => !u.suspended && lastSeen(u) < now - 7 * DAY_MS).length, '#e384a5'],
+  ];
+
+  return {
+    kpis: [
+      { label: 'ACTIVE TODAY', value: activeToday.length, color: '#141b34', detail: 'candidates seen in 24h' },
+      { label: 'ACTIVE 7 DAYS', value: activeWeek.length, color: '#5b46e0' },
+      { label: 'CHAT MESSAGES', value: totalMessages.toLocaleString(), color: '#19c08a' },
+      { label: 'UNREAD', value: totalUnread, color: '#e0457a', detail: 'waiting for consultant' },
+      { label: 'NEED FOLLOW-UP', value: followUps.length, color: '#eaa129' },
+      { label: 'CONSULTANTS', value: consultantUsers.length, color: '#141b34' },
+    ],
+    followUps,
+    leaderboard,
+    topEngaged,
+    feed,
+    rhythm,
+  };
+}
 
 function AdminMetricCard({ label, value, color = '#141b34', detail }) {
   return (
@@ -384,6 +449,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const candidateUsers = users.filter(u => (u.role || 'candidate') === 'candidate');
   const consultantUsers = users.filter(u => u.role === 'consultant');
   const assignableConsultants = consultantUsers.filter(u => !u.suspended);
+  const engagement = buildEngagement({ candidateUsers, consultantUsers, stepsFor });
   const sortCandidates = (column) => {
     setCandidateSort(prev => ({
       column,
@@ -1067,10 +1133,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                     {[
-                      ['Consultant actions today', 126],
-                      ['Meetings today', 18],
-                      ['Notes written', 43],
-                      ['Need follow-up', 21],
+                      ['Active today', engagement.kpis[0].value],
+                      ['Active this week', engagement.kpis[1].value],
+                      ['Unread messages', candidateUsers.reduce((sum, u) => sum + (u.unreadMessages || 0), 0)],
+                      ['Need follow-up', engagement.followUps.length],
                     ].map(([label, value]) => (
                       <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '13px 14px' }}>
                         <div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 6 }}>{String(label).toUpperCase()}</div>
@@ -1124,7 +1190,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     </div>
                   </div>
                 </div>
-                <ActivityFeed items={activityFeed} />
+                <ActivityFeed items={engagement.feed.length ? engagement.feed : [{ actor: 'No activity yet', action: '', target: '', time: '—' }]} />
               </div>
             </div>
           )}
@@ -1200,72 +1266,81 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {adminView === 'engagement' && canManageUsers && (
             <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 24 }}>
               <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
-                Consultant productivity, meetings and candidate follow-up health.
+                Live consultant productivity and candidate follow-up health, computed from real platform activity.
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
-                {engagementKpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
+                {engagement.kpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
               </div>
 
               <div>
                 <SectionTitle eyebrow="CONSULTANT PRODUCTIVITY" title="Leaderboard" />
-                <DataTable
-                  columns={[
-                    { key: 'consultant', label: 'CONSULTANT', width: '1.4fr', strong: true },
-                    { key: 'candidates', label: 'CANDIDATES' },
-                    { key: 'meetings', label: 'MEETINGS' },
-                    { key: 'actions', label: 'ACTIONS' },
-                    { key: 'notes', label: 'NOTES' },
-                    { key: 'response', label: 'AVG RESPONSE' },
-                  ]}
-                  rows={consultantLeaderboard}
-                />
+                {engagement.leaderboard.length === 0 ? (
+                  <div style={{ ...cardShell, padding: 24, fontSize: 13, color: '#9098b5', textAlign: 'center' }}>
+                    No consultants yet. Create consultant accounts to see their activity here.
+                  </div>
+                ) : (
+                  <DataTable
+                    columns={[
+                      { key: 'consultant', label: 'CONSULTANT', width: '1.4fr', strong: true },
+                      { key: 'candidates', label: 'CANDIDATES' },
+                      { key: 'active', label: 'ACTIVE (7D)' },
+                      { key: 'messages', label: 'MESSAGES' },
+                      { key: 'unread', label: 'UNREAD' },
+                      { key: 'lastLogin', label: 'LAST LOGIN' },
+                    ]}
+                    rows={engagement.leaderboard}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
                 <div>
-                  <SectionTitle eyebrow="CALENDAR" title="Upcoming Meetings" />
-                  <DataTable
-                    columns={[
-                      { key: 'candidate', label: 'CANDIDATE', strong: true },
-                      { key: 'consultant', label: 'CONSULTANT', width: '1.2fr' },
-                      { key: 'date', label: 'DATE', width: '1.2fr' },
-                      { key: 'status', label: 'STATUS', render: (value) => <StatusPill tone={value === 'Prep Needed' ? 'warn' : 'good'}>{value}</StatusPill> },
-                    ]}
-                    rows={upcomingMeetings}
-                  />
+                  <SectionTitle eyebrow="ADVISOR USAGE" title="Most Engaged Candidates" />
+                  {engagement.topEngaged.length === 0 ? (
+                    <div style={{ ...cardShell, padding: 24, fontSize: 13, color: '#9098b5', textAlign: 'center' }}>
+                      No advisor conversations yet.
+                    </div>
+                  ) : (
+                    <DataTable
+                      columns={[
+                        { key: 'candidate', label: 'CANDIDATE', strong: true },
+                        { key: 'messages', label: 'MESSAGES' },
+                        { key: 'step', label: 'STEP', width: '1.2fr' },
+                        { key: 'lastActive', label: 'LAST ACTIVE' },
+                        { key: 'status', label: 'STATUS', render: (value) => <StatusPill tone={value === 'Active' ? 'good' : 'warn'}>{value}</StatusPill> },
+                      ]}
+                      rows={engagement.topEngaged}
+                    />
+                  )}
                 </div>
 
                 <div>
                   <SectionTitle eyebrow="FOLLOW-UP QUEUE" title="Candidates Needing Follow-Up" />
-                  <DataTable
-                    columns={[
-                      { key: 'candidate', label: 'CANDIDATE', strong: true },
-                      { key: 'last', label: 'LAST ACTIVITY', width: '1.4fr' },
-                      { key: 'inactive', label: 'INACTIVE' },
-                      { key: 'priority', label: 'PRIORITY', render: (value) => <StatusPill tone={value === 'High' ? 'risk' : 'warn'}>{value}</StatusPill> },
-                    ]}
-                    rows={followUpCandidates}
-                  />
+                  {engagement.followUps.length === 0 ? (
+                    <div style={{ ...cardShell, padding: 24, fontSize: 13, color: '#9098b5', textAlign: 'center' }}>
+                      All candidates were active in the last 3 days. Nothing to chase.
+                    </div>
+                  ) : (
+                    <DataTable
+                      columns={[
+                        { key: 'candidate', label: 'CANDIDATE', strong: true },
+                        { key: 'last', label: 'LAST ACTIVITY', width: '1.4fr' },
+                        { key: 'inactive', label: 'INACTIVE' },
+                        { key: 'priority', label: 'PRIORITY', render: (value) => <StatusPill tone={value === 'High' ? 'risk' : 'warn'}>{value}</StatusPill> },
+                      ]}
+                      rows={engagement.followUps}
+                    />
+                  )}
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 18 }}>
-                <ActivityFeed items={[
-                  { actor: 'Jessica', action: 'completed meeting', target: 'Adam G.', time: '9 min ago' },
-                  { actor: 'David', action: 'reviewed essay', target: 'Galit S.', time: '28 min ago' },
-                  { actor: 'Sarah', action: 'approved CV', target: 'Noa L.', time: '54 min ago' },
-                  { actor: 'Michael', action: 'booked interview', target: 'Daniel K.', time: '1h ago' },
-                ]} />
+                <ActivityFeed items={engagement.feed.length ? engagement.feed : [{ actor: 'No activity yet', action: '', target: '', time: '—' }]} />
                 <div style={{ ...cardShell, padding: 24 }}>
                   <SectionTitle eyebrow="WORKFLOW" title="Engagement Rhythm" />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                    {[
-                      ['Meeting completed', 18, '#3fdca9'],
-                      ['Essay reviewed', 27, '#5b46e0'],
-                      ['CV approved', 11, '#eaa129'],
-                      ['Interview booked', 9, '#e384a5'],
-                    ].map(([label, value, color]) => (
+                    {engagement.rhythm.map(([label, value, color]) => (
                       <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 16, padding: 14 }}>
                         <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, marginBottom: 12 }} />
                         <div style={{ fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>{value}</div>
