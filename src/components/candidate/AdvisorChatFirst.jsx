@@ -144,11 +144,10 @@ function ReadinessCard({ scores, profile }) {
 
 function tierMeta(program) {
   const tier = String(program?.tier || '').toLowerCase();
-  const fit = Number(program?.fit);
-  if (tier === 'locked') return { label: 'Not Eligible', color: '#9098b5', bg: '#f6f1e8', border: '#e7dcc7' };
-  if (tier === 'safe' || fit > 80) return { label: 'Strong Fit', color: '#16875c', bg: '#e9f9f1', border: '#b7ecd4' };
-  if (tier === 'possible' || fit >= 50) return { label: 'Competitive', color: '#b58522', bg: '#fff8e8', border: '#f3e3b6' };
-  return { label: 'Reach', color: '#c02d5e', bg: '#fdeaf0', border: '#f8c4d1' };
+  if (tier === 'locked') return { label: 'Locked', color: '#747b91', bg: '#f2f1ef', border: '#d7d3cc' };
+  if (tier === 'safe') return { label: 'Strong Fit', color: '#16875c', bg: '#e9f9f1', border: '#b7ecd4' };
+  if (tier === 'possible') return { label: 'Possible', color: '#a97510', bg: '#fff8e1', border: '#eed58f' };
+  return { label: 'Stretch', color: '#c02d5e', bg: '#fdeaf0', border: '#f3b3c4' };
 }
 
 // University list as a first-class chat artifact. Selection writes through
@@ -180,29 +179,49 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
         {shown.map(program => {
           const meta = tierMeta(program);
           const isPicked = selected.includes(program.name);
+          const drivers = Array.isArray(program.fitDrivers) ? program.fitDrivers : [];
+          const risks = Array.isArray(program.riskFlags) ? program.riskFlags : [];
+          const gaps = Array.isArray(program.evidenceGaps) ? program.evidenceGaps : [];
+          const actions = Array.isArray(program.missingActions) ? program.missingActions : [];
           return (
             <div key={program.name} onClick={() => toggle(program.name)}
-              style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 13, cursor: 'pointer', transition: 'all .15s', border: `1.5px solid ${isPicked ? '#b899fb' : '#f1eadd'}`, background: isPicked ? '#f7f3ff' : '#faf7f2' }}>
-              <span style={{
-                width: 20, height: 20, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
-                ...(isPicked ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 8px rgba(105,91,255,.3)' } : { background: '#fff', border: '1.5px solid #d8cdb4' }),
-              }}>
-                {isPicked && (
-                  <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
-                )}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{program.name}</div>
-                {program.selectivityLabel && (
-                  <div style={{ fontSize: 11, color: '#9098b5', fontWeight: 600, marginTop: 1 }}>{program.selectivityLabel}</div>
+              style={{ padding: '12px 13px', borderRadius: 14, cursor: 'pointer', transition: 'all .15s', border: `1.5px solid ${isPicked ? '#9b83f5' : meta.border}`, background: isPicked ? '#f7f3ff' : meta.bg, boxShadow: isPicked ? 'inset 3px 0 0 #9b83f5' : 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
+                <span style={{
+                  width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
+                  ...(isPicked ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 8px rgba(105,91,255,.3)' } : { background: '#fff', border: `1.5px solid ${meta.border}` }),
+                }}>
+                  {isPicked && (
+                    <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
+                  )}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#141b34' }}>{program.name}</div>
+                    <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#ffffffb8', color: meta.color, border: `1px solid ${meta.border}` }}>{meta.label}</span>
+                    {program.selectivityLabel && (
+                      <span style={{ fontSize: 10, color: '#6b7392', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#ffffff9c', border: '1px solid #e7dcc7' }}>{program.selectivityLabel}</span>
+                    )}
+                  </div>
+                  {(program.fitExplanation || program.notes) && (
+                    <div style={{ fontSize: 11.5, color: '#5f6885', lineHeight: 1.45, marginTop: 5 }}>{program.fitExplanation || program.notes}</div>
+                  )}
+                </div>
+                {Number.isFinite(Number(program.fitIndex ?? program.fit)) && (
+                  <div style={{ textAlign: 'center', flexShrink: 0 }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: meta.color, lineHeight: 1 }}>{Math.round(Number(program.fitIndex ?? program.fit))}%</div>
+                    <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.45px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                  </div>
                 )}
               </div>
-              {Number.isFinite(Number(program.fit)) && (
-                <span style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0', flexShrink: 0 }}>{Math.round(Number(program.fit))}%</span>
+              {(drivers.length || risks.length || gaps.length || actions.length) > 0 && (
+                <div style={{ marginLeft: 31, marginTop: 9, display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 6 }}>
+                  {drivers.length > 0 && <div style={{ fontSize: 10.5, color: '#16875c', lineHeight: 1.4 }}><b>Drivers:</b> {drivers.join(' · ')}</div>}
+                  {risks.length > 0 && <div style={{ fontSize: 10.5, color: '#b44b57', lineHeight: 1.4 }}><b>Risks:</b> {risks.join(' · ')}</div>}
+                  {gaps.length > 0 && <div style={{ fontSize: 10.5, color: '#8a6717', lineHeight: 1.4 }}><b>Evidence gaps:</b> {gaps.join(' · ')}</div>}
+                  {actions.length > 0 && <div style={{ fontSize: 10.5, color: '#5b46e0', lineHeight: 1.4 }}><b>Next actions:</b> {actions.join(' · ')}</div>}
+                </div>
               )}
-              <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 9px', borderRadius: 7, flexShrink: 0, background: meta.bg, color: meta.color, border: `1px solid ${meta.border}` }}>
-                {meta.label}
-              </span>
             </div>
           );
         })}
