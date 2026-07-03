@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import { getTrackConfig } from '../../trackConfig.js';
+import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.js';
 
 const BAR_COLORS = [
   { from: '#7dd3fc', to: '#4dbbec' }, // sky
@@ -15,18 +16,19 @@ const BAR_COLORS = [
   { from: '#86efac', to: '#28d367' }, // green
 ];
 
-function ScoreBar({ score, title, last, color }) {
-  const pct = Math.max(0, Math.min(100, score || 0));
+function ScoreBar({ score, title, last, color, incomplete = false }) {
+  const pct = incomplete ? 0 : Math.max(0, Math.min(100, score || 0));
   return (
     <div style={{ marginBottom: last ? 0 : 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
         <span style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{title}</span>
-        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{pct}</span>
+        <span style={{ fontSize: incomplete ? 12 : 14.5, fontWeight: 700, color: incomplete ? '#9098b5' : '#141b34' }}>{incomplete ? 'Incomplete' : pct}</span>
       </div>
       <div style={{
         height: 12,
         borderRadius: 10,
-        background: '#f1eadd',
+        background: incomplete ? '#f7f4ee' : '#f1eadd',
+        border: incomplete ? '1px dashed #d8cdb4' : 'none',
         boxShadow: 'inset 0 1px 3px rgba(60,72,130,.08)',
         overflow: 'hidden',
         position: 'relative',
@@ -533,9 +535,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
     );
   }
 
-  const scoreItems = (trackConfig.kpis || [])
-    .map(([key, title, desc]) => ({ key, title, desc }))
-    .filter(item => scores[item.key] != null);
+  const descriptions = Object.fromEntries((trackConfig.kpis || []).map(([key, , desc]) => [key, desc]));
+  const scoreItems = getCandidateKpiDisplayItems(scores, profile)
+    .map(item => ({ ...item, title: item.label, desc: descriptions[item.key] }));
 
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];
@@ -673,7 +675,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
         <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
-            <ScoreBar key={item.key} score={scores[item.key]} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
+            <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
           ))}
         </div>
 
