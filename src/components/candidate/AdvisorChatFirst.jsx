@@ -5,6 +5,7 @@ import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { getTrackConfig } from '../../trackConfig.js';
+import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
@@ -110,9 +111,8 @@ function CardShell({ label, labelColor = '#5b46e0', children }) {
 function ReadinessCard({ scores, profile }) {
   const [open, setOpen] = useState(false);
   const trackConfig = getTrackConfig(profile || {});
-  const dims = (trackConfig.kpis || [])
-    .map(([key, title]) => ({ key, title, value: scores?.[key] }))
-    .filter(d => typeof d.value === 'number');
+  const dims = getCandidateKpiDisplayItems(scores, profile)
+    .map(item => ({ ...item, title: item.label }));
   const shown = open ? dims : dims.slice(0, 3);
   return (
     <CardShell label="READINESS SNAPSHOT">
@@ -129,10 +129,10 @@ function ReadinessCard({ scores, profile }) {
           <div key={d.key}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
               <span style={{ fontSize: 11.5, fontWeight: 700, color: '#33405e' }}>{d.title}</span>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: '#5b46e0' }}>{d.value}</span>
+              <span style={{ fontSize: d.status === 'incomplete' ? 10.5 : 11.5, fontWeight: 800, color: d.status === 'incomplete' ? '#9098b5' : '#5b46e0' }}>{d.status === 'incomplete' ? 'Incomplete' : d.value}</span>
             </div>
             <div style={{ height: 5, borderRadius: 3, background: '#f1eadd', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${Math.max(0, Math.min(100, d.value))}%`, borderRadius: 3, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .4s ease' }} />
+              <div style={{ height: '100%', width: `${d.status === 'incomplete' ? 0 : Math.max(0, Math.min(100, d.value))}%`, borderRadius: 3, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .4s ease' }} />
             </div>
           </div>
         ))}
