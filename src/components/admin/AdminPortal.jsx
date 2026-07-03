@@ -6,6 +6,7 @@ import { LANGUAGES } from '../../constants.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
 import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
+import AgentsTab from './AgentsTab.jsx';
 import CallLogTab from './CallLogTab.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
@@ -924,6 +925,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </button>
           )}
           {import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' && (
+            <button onClick={() => setAdminView('agents')} style={sideStyle(adminView === 'agents')}>
+              <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
+              Agents
+            </button>
+          )}
+          {import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' && (
             <button onClick={() => setAdminView('callLog')} style={sideStyle(adminView === 'callLog')}>
               <NavIcon><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NavIcon>
               Call Log
@@ -981,6 +988,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'marketing' && 'Marketing'}
             {adminView === 'engagement' && 'Engagement'}
             {adminView === 'usageCost' && 'Usage & Cost'}
+            {adminView === 'agents' && 'Agents'}
             {adminView === 'callLog' && 'Call Log'}
             {adminView === 'settings' && 'Settings'}
           </h1>
@@ -2308,6 +2316,11 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── AGENTS ── */}
+          {adminView === 'agents' && import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' && (
+            <AgentsTab showToast={showToast} />
           )}
 
           {/* ── CALL LOG ── */}
