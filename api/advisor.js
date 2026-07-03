@@ -157,9 +157,17 @@ async function invokeAdvisor(req, bypassRuntimeConfig, candidateState = {}) {
   const headers = { ...(req.headers || {}) };
   if (bypassRuntimeConfig) headers['x-pathway-legacy-bypass'] = '1';
   const deterministicContext = buildDeterministicAdvisorContext(candidateState);
+  const baseBody = {
+    ...(req.body || {}),
+    profile: candidateState.profile || req.body?.profile,
+    scores: candidateState.scores || req.body?.scores,
+    programs: candidateState.programs || req.body?.programs,
+    chosenSchools: candidateState.chosenSchools || req.body?.chosenSchools,
+    candidateFacts: candidateState.candidateFacts || candidateState.profile?.candidateFacts || req.body?.candidateFacts,
+  };
   const body = deterministicContext
-    ? { ...(req.body || {}), systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }
-    : req.body;
+    ? { ...baseBody, systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }
+    : baseBody;
   const result = await invokeHandler(chatHandler, { ...req, body, method: 'POST', headers });
   if (result.statusCode >= 400) return { error: result.payload, statusCode: result.statusCode };
   const raw = result.payload?.raw || result.payload?.reply || '';
