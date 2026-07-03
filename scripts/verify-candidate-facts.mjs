@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 import { buildCandidateFacts, buildComplementaryQuestion, extractWorkTimeline } from '../lib/candidate-facts.js';
-import { CANDIDATE_KPI_SCHEMAS } from '../lib/candidate-kpi-schemas.js';
+import {
+  CANDIDATE_KPI_SCHEMAS,
+  calculateCandidateOverall,
+  getCandidateKpiDisplayItems,
+  getCandidateKpiWeights,
+} from '../lib/candidate-kpi-schemas.js';
+import { scoreCandidateKPIs, trackWeights } from '../lib/kpi-engine.js';
+import { normalizeProfileFacts } from '../lib/profile-facts.js';
 import { normalizeProgram } from '../lib/program-normalizer.js';
 import { applyDeterministicKpiToResponse } from '../lib/deterministic-kpi-response.js';
 import { longRunningStatus } from '../src/lib/longRunningAdvisorStatus.js';
@@ -199,6 +206,66 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   assert.equal(facts.sources.additionalText, true);
   assert.equal(facts.sources.normalizationLanguage, 'English');
   assert.deepEqual(facts.sourceLanguages, ['Hebrew', 'Spanish', 'French']);
+}
+
+// 12. Every track's calculation weights are exactly the shared schema weights.
+{
+  for (const [track, schema] of Object.entries(CANDIDATE_KPI_SCHEMAS)) {
+    const schemaWeights = Object.fromEntries(schema.kpis.map(([key, , weight]) => [key, weight]));
+    assert.deepEqual(trackWeights(track), schemaWeights, `${track} engine weights must match its schema`);
+    assert.deepEqual(getCandidateKpiWeights({}, track), schemaWeights, `${track} UI weights must match its schema`);
+    assert.equal(Object.values(schemaWeights).reduce((sum, value) => sum + value, 0), 100, `${track} weights must total 100`);
+  }
+}
+
+// 13. A complete MBA profile calculates and exposes all eleven required KPI scores.
+{
+  const profile = {
+    category: 'Graduate',
+    degree: 'MBA',
+    gpa: 3.8,
+    gmat: 730,
+    workYears: 6,
+    currentRole: 'Senior Product Manager',
+    currentCompany: 'Global Tech',
+    employerStrength: 'global',
+    achievementsImpact: ['Launched a product used by 50,000 customers'],
+    quantifiedImpact: ['Increased revenue by 20%'],
+    careerProgression: 'Promoted twice into increasing responsibility',
+    managedPeople: true,
+    teamSize: 6,
+    leadershipImpact: ['Improved team delivery by 25%'],
+    internationalExposure: ['Cross-border product launch'],
+    countriesWorked: ['Israel', 'United States'],
+    languages: ['Hebrew', 'English'],
+    whyMBA: 'Build general-management skills for a broader leadership role.',
+    whyNow: 'My next promotion requires cross-functional management depth.',
+    postMbaGoal: 'Become a product director in fintech within three years.',
+    recommenders: ['Direct manager'],
+    directEvaluatorConfirmed: true,
+    recommenderEvidenceSpecificity: 'specific concrete achievements',
+    community: ['Board volunteer for a youth nonprofit'],
+    communityYears: 3,
+    communityImpact: 'Mentored 40 students',
+  };
+  const facts = normalizeProfileFacts(profile);
+  const result = scoreCandidateKPIs(facts);
+  const expectedKeys = CANDIDATE_KPI_SCHEMAS.MBA.kpis.map(([key]) => key);
+  assert.deepEqual(Object.keys(result.scores).filter(key => key !== 'overall').sort(), expectedKeys.slice().sort());
+  assert.equal(result.overall, calculateCandidateOverall(result.scores, profile));
+  const display = getCandidateKpiDisplayItems(result.scores, profile);
+  assert.equal(display.length, 11);
+  assert.ok(display.every(item => item.status === 'scored'));
+  assert.ok(!display.some(item => /school fit/i.test(item.label)));
+}
+
+// 14. UI display data keeps every MBA KPI visible and marks missing evidence incomplete.
+{
+  const display = getCandidateKpiDisplayItems({ professional: 75 }, { category: 'Graduate', degree: 'MBA' });
+  assert.equal(display.length, 11);
+  assert.equal(display.find(item => item.key === 'professional').status, 'scored');
+  assert.equal(display.find(item => item.key === 'achievementsImpact').status, 'incomplete');
+  assert.equal(display.find(item => item.key === 'community').status, 'incomplete');
 }
 
 console.log('candidate facts and analysis flow checks passed');
