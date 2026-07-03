@@ -363,6 +363,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   });
   const [usageSettingsBusy, setUsageSettingsBusy] = useState(false);
 
+  const [callLogRuns, setCallLogRuns] = useState([]);
+  const [callLogLoading, setCallLogLoading] = useState(false);
+  const [callLogError, setCallLogError] = useState('');
+  const [callLogEnabled, setCallLogEnabled] = useState(true);
+  const [expandedRunId, setExpandedRunId] = useState(null);
+
   const canManageUsers = authUser?.role === 'admin' || !!adminSecret;
   const adminHeaders = authToken ? { Authorization: `Bearer ${authToken}` } : { 'X-Admin-Secret': adminSecret };
 
@@ -458,6 +464,28 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   useEffect(() => {
     if (canManageUsers) loadUsageData();
   }, [canManageUsers, loadUsageData]);
+
+  const loadCallLog = useCallback(() => {
+    if (!canManageUsers) return;
+    setCallLogLoading(true);
+    setCallLogError('');
+    return fetch('/api/admin/orchestration-log', { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) {
+          setCallLogError(d.error);
+          return;
+        }
+        setCallLogEnabled(d.enabled !== false);
+        setCallLogRuns(d.runs || []);
+      })
+      .catch(() => setCallLogError('Failed to load the orchestration Call Log.'))
+      .finally(() => setCallLogLoading(false));
+  }, [adminSecret, authToken, canManageUsers]);
+
+  useEffect(() => {
+    if (canManageUsers && adminView === 'callLog') loadCallLog();
+  }, [canManageUsers, adminView, loadCallLog]);
 
   const saveUsageSettings = async () => {
     setUsageSettingsBusy(true);
@@ -922,6 +950,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Usage & Cost
             </button>
           )}
+          {canManageUsers && (
+            <button onClick={() => setAdminView('callLog')} style={sideStyle(adminView === 'callLog')}>
+              <NavIcon><circle cx="12" cy="12" r="3" /><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.9 4.9l2.8 2.8" /><path d="M16.3 16.3l2.8 2.8" /><path d="M2 12h4" /><path d="M18 12h4" /></NavIcon>
+              Call Log
+            </button>
+          )}
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
             <NavIcon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></NavIcon>
             Settings
@@ -974,6 +1008,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'marketing' && 'Marketing'}
             {adminView === 'engagement' && 'Engagement'}
             {adminView === 'usageCost' && 'Usage & Cost'}
+            {adminView === 'callLog' && 'Call Log — Multi-Agent Orchestrator (Staging)'}
             {adminView === 'settings' && 'Settings'}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -2299,6 +2334,93 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── CALL LOG (staging-only multi-agent orchestrator trace viewer) ── */}
+          {adminView === 'callLog' && canManageUsers && (
+            <div style={{ maxWidth: 1100, display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, marginTop: -8 }}>
+                <button onClick={loadCallLog} disabled={callLogLoading} style={{ ...btnPrimary, padding: '8px 13px', fontSize: 12, opacity: callLogLoading ? 0.6 : 1 }}>
+                  {callLogLoading ? 'Refreshing…' : 'Refresh'}
+                </button>
+              </div>
+
+              {!callLogEnabled && (
+                <div style={{ background: '#fff8e6', border: '1px solid #f4dfa3', borderRadius: 16, padding: 18, color: '#8a6a12', fontSize: 13.5, fontWeight: 600 }}>
+                  MULTI_AGENT_ORCHESTRATOR is off, so every chat turn is still handled by the single-agent path — there's nothing to trace here yet. Set MULTI_AGENT_ORCHESTRATOR=1 on staging to see Router → Planner → Specialists → Synthesizer runs.
+                </div>
+              )}
+              {callLogError && (
+                <div style={{ background: '#fff1f6', border: '1px solid #fbd3e2', borderRadius: 16, padding: 18, color: '#e0457a', fontSize: 13.5, fontWeight: 600 }}>
+                  {callLogError}
+                </div>
+              )}
+
+              {callLogEnabled && !callLogRuns.length && !callLogLoading && !callLogError && (
+                <div style={{ ...cardShell, padding: 24, fontSize: 13.5, color: '#6b7392' }}>
+                  No orchestration runs recorded yet. Send a message through the Advisor chat to generate one.
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {callLogRuns.map((run) => {
+                  const expanded = expandedRunId === run.id;
+                  const stepIcon = { router: '🧭', planner: '🗺️', specialist: '🧩', synthesizer: '🧵' };
+                  return (
+                    <div key={run.id} style={{ ...cardShell, padding: 0, overflow: 'hidden' }}>
+                      <button
+                        onClick={() => setExpandedRunId(expanded ? null : run.id)}
+                        style={{ width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', fontFamily: 'inherit' }}
+                      >
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#141b34', minWidth: 150 }}>{new Date(run.startedAt).toLocaleString()}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#5b46e0', background: '#f1eefd', borderRadius: 8, padding: '3px 8px' }}>{run.feature || 'general_chat'}</span>
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: run.routingMethod === 'regex_fallback' ? '#a16207' : '#19c08a', background: run.routingMethod === 'regex_fallback' ? '#fff8e6' : '#eafff6', borderRadius: 8, padding: '3px 8px' }}>
+                          {run.routingMethod === 'regex_fallback' ? 'regex fallback' : 'LLM router'}
+                        </span>
+                        <span style={{ fontSize: 12.5, color: '#33405e', flex: 1 }}>
+                          {(run.agentsInvoked || []).length ? run.agentsInvoked.join(' → ') : '(clarifying question — no specialists run)'}
+                        </span>
+                        <span style={{ fontSize: 11.5, color: '#9098b5' }}>{run.durationMs != null ? `${run.durationMs}ms` : '—'}</span>
+                        {run.finalConfidence != null && (
+                          <span style={{ fontSize: 11.5, fontWeight: 700, color: run.finalConfidence >= 60 ? '#19c08a' : '#e0457a' }}>{run.finalConfidence}% conf.</span>
+                        )}
+                        <span style={{ fontSize: 12, color: '#9098b5' }}>{expanded ? '▲' : '▼'}</span>
+                      </button>
+                      {expanded && (
+                        <div style={{ borderTop: '1px solid #f1eadd', padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10, background: '#fffefb' }}>
+                          {run.error && (
+                            <div style={{ fontSize: 12.5, color: '#e0457a', fontWeight: 700 }}>Error: {run.error}</div>
+                          )}
+                          {(run.steps || []).map((step) => (
+                            <div key={step.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 12.5, borderLeft: `3px solid ${step.status === 'error' ? '#e0457a' : step.status === 'fallback' ? '#eaa129' : '#3fdca9'}`, paddingLeft: 12 }}>
+                              <span style={{ fontSize: 15 }}>{stepIcon[step.type] || '•'}</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 700, color: '#141b34' }}>
+                                  {step.type === 'specialist' ? `Specialist: ${step.name}` : step.name}
+                                  <span style={{ fontWeight: 500, color: '#9098b5' }}> — {step.durationMs}ms{step.model ? `, ${step.model}` : ''}</span>
+                                </div>
+                                {(step.inputTokens || step.outputTokens) ? (
+                                  <div style={{ color: '#9098b5' }}>tokens: {step.inputTokens || 0} in / {step.outputTokens || 0} out{step.toolCalls ? ` · ${step.toolCalls} tool call(s)` : ''}</div>
+                                ) : null}
+                                {step.confidence != null && (
+                                  <div style={{ color: step.confidence >= 60 ? '#19c08a' : '#e0457a' }}>confidence: {step.confidence}%</div>
+                                )}
+                                {step.reasoning && <div style={{ color: '#33405e' }}>{step.reasoning}</div>}
+                                {!!(step.missingInformation && step.missingInformation.length) && (
+                                  <div style={{ color: '#a16207' }}>missing: {step.missingInformation.join(', ')}</div>
+                                )}
+                                {step.suggestedFollowUp && <div style={{ color: '#a16207' }}>follow-up: "{step.suggestedFollowUp}"</div>}
+                                {step.status === 'error' && step.error && <div style={{ color: '#e0457a' }}>error: {step.error}</div>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
