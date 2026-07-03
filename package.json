@@ -13,6 +13,7 @@
     "test:usage-reset": "node scripts/verify-usage-reset.mjs",
     "test:test-simulation": "node scripts/verify-test-simulation.mjs",
     "test:program-matching": "node scripts/verify-program-matching.mjs",
+    "test:candidate-facts": "node scripts/verify-candidate-facts.mjs",
     "test:whatsapp-live-chat": "node --test lib/whatsapp/__tests__/human-chat.test.js"
   },
   "dependencies": {
