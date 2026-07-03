@@ -16,15 +16,17 @@ export default function LongRunningAdvisorStatus({ busy, message }) {
   }, [busy]);
 
   const status = useMemo(() => longRunningStatus(elapsedSeconds, message), [elapsedSeconds, message]);
-  if (!busy || !status) return null;
+  if (!busy) return null;
+  const isFileScan = /\b(cv|resume|résumé|file|document|transcript)\b/i.test(String(message || ''));
+  const label = status?.title || (isFileScan ? 'Scanning your file…' : 'Advisor is analyzing…');
 
   return (
     <span
       role="status"
       aria-live="polite"
-      style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7392', lineHeight: 1.4, whiteSpace: 'normal', animation: 'pwFade .25s ease' }}
+      style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7392', lineHeight: 1.4, whiteSpace: 'nowrap', flexShrink: 0, animation: 'pwFade .25s ease' }}
     >
-      {status.title} · {status.detail}
+      {label}
     </span>
   );
 }
