@@ -2,7 +2,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { enforceProgramFormatInRaw, requestedProgramFormat } from '../lib/program-format.js';
-import { ensureSelectionContinuity, selectionFromMessage } from '../lib/selection-continuity.js';
+import { ensureSelectionContinuity, selectionFromMessage, N1_QUESTION } from '../lib/selection-continuity.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
@@ -826,7 +826,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs, stage, systemContext } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -883,7 +883,10 @@ export default async function handler(req, res) {
       ? `\n\nIDLE RE-ENGAGEMENT (priority override): The user has been inactive for 60 seconds. Generate a brief, warm, contextual check-in (1-2 sentences MAX). Reference something specific and useful from their profile or top task — never say "still there?", never ask a generic question. End with → 2-3 specific chips tied to their current state. Do not echo previous questions.`
       : '';
 
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + idleContext;
+    const lockedTargetsContext = Array.isArray(chosenSchools) && chosenSchools.length
+      ? `\n\nLOCKED TARGET SCHOOLS (authoritative current state): ${chosenSchools.join(' | ')}. The candidate already selected and confirmed these schools using the app. Never ask them to name, choose, narrow, or lock target schools again. Continue from the current Narrative question.`
+      : '';
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + lockedTargetsContext + idleContext;
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
@@ -1004,6 +1007,13 @@ export default async function handler(req, res) {
     // saves those schools and asks the first narrative question, regardless
     // of what the model produced. Prevents the pick-your-schools loop.
     raw = ensureSelectionContinuity(raw, lastRealUserText);
+
+    // Final anti-loop guard: even if the model ignores the authoritative
+    // target state, never show another request to name/lock schools.
+    const asksForTargetsAgain = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i.test(String(raw || ''));
+    if (Array.isArray(chosenSchools) && chosenSchools.length && asksForTargetsAgain) {
+      raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
+    }
 
     if (action === 'warn') {
       raw = `${raw}\n\n⚠️ You are approaching the AI usage limit for this period. Some features may be limited.`;

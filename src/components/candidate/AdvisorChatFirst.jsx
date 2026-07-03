@@ -256,7 +256,7 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
   }
   if (!narrative) {
     return [
-      { label: 'Choose my narrative', msg: 'Help me choose my narrative strategy.' },
+      { label: 'Continue narrative', msg: `Continue with the next narrative question using my confirmed target schools: ${(chosenSchools || []).join(' | ')}.` },
       { label: 'Improve my odds', msg: 'What would most improve my odds at my target schools?' },
     ];
   }

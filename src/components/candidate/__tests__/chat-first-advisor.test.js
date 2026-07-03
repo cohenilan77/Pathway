@@ -64,6 +64,12 @@ test('saved targets can be reopened for checkbox selection without typing names'
   assert.match(chatFirst, />\s*Change school selection\s*</);
 });
 
+test('confirmed targets continue narrative instead of asking for names again', () => {
+  assert.match(chatFirst, /Continue narrative/);
+  assert.match(chatFirst, /using my confirmed target schools/);
+  assert.ok(!chatFirst.includes("label: 'Choose my narrative'"));
+});
+
 test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /function contextualChips/);
   assert.match(chatFirst, /Advisor is analyzing/);

@@ -782,7 +782,7 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
@@ -878,7 +878,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, chosenSchools, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   // Sends a silent idle check-in to the AI without showing a user message in chat.
   // Only the AI response appears.
@@ -892,7 +892,7 @@ export default function App() {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
-        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, stage, systemContext }),
+        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext }),
       });
       const data = await res.json();
       if (!res.ok) return;
@@ -905,7 +905,7 @@ export default function App() {
     } catch { /* silent — idle checkin failure must never break the UI */ } finally {
       setBusy(false);
     }
-  }, [busy, chat, profile, scores, programs, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
+  }, [busy, chat, profile, scores, programs, chosenSchools, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
 
   const submitCv = useCallback(() => {
     if (!cvDraft.trim() && !cvExtra.trim()) return;
