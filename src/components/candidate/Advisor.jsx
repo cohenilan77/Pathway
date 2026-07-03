@@ -233,15 +233,15 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                   <AiAvatar />
                   <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '14px 18px' }}>
-                    <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+                    <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', flexShrink: 0 }}>
                       {[0, 1, 2].map(i => (
                         <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#b899fb', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
                       ))}
                     </span>
+                    <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
                   </div>
                 </div>
               )}
-              <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
 
               {showSchoolPathChips && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginLeft: 42 }}>
