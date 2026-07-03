@@ -311,7 +311,12 @@ export default function AdvisorChatFirst({
   // after targets are confirmed pushes the new Narrative question above them,
   // making the UI look frozen even though the state advanced successfully.
   const showReadiness = !!scores && stepIdx >= 2 && !hasPrograms;
-  const showPrograms = hasPrograms && !chosenSchools?.length;
+  // Existing sessions created before the atomic-confirm fix may have saved
+  // targets while their last advisor reply still asks them to choose schools.
+  // Reopen the existing list in place, pre-checked, so they can recover without
+  // restarting or losing profile/analysis data.
+  const needsSelectionRecovery = hasPrograms && chosenSchools?.length > 0 && TARGET_SELECTION_LOOP.test(lastAiText);
+  const showPrograms = hasPrograms && (!chosenSchools?.length || needsSelectionRecovery);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
@@ -340,7 +345,7 @@ export default function AdvisorChatFirst({
             {visibleChat.map((m, i) => {
               if (m.role === 'ai') {
                 const isLast = i === visibleChat.length - 1;
-                const visibleText = isLast && chosenSchools?.length && TARGET_SELECTION_LOOP.test(m.text || '') ? NARRATIVE_START : m.text;
+                const visibleText = isLast && chosenSchools?.length && TARGET_SELECTION_LOOP.test(m.text || '') && !needsSelectionRecovery ? NARRATIVE_START : m.text;
                 const parsed = parseOptions(visibleText);
                 const showChipsHere = parsed && (!isLast || busy);
                 return (

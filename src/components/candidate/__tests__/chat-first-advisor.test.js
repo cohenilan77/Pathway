@@ -53,9 +53,16 @@ test('program selection writes through shared state and advances the journey', (
 });
 
 test('confirmed targets remove old program artifacts so the narrative question stays visible', () => {
-  assert.match(chatFirst, /const showPrograms = hasPrograms && !chosenSchools\?\.length/);
+  assert.match(chatFirst, /const needsSelectionRecovery = hasPrograms/);
+  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
   assert.match(chatFirst, /\{showPrograms && \(/);
   assert.ok(!chatFirst.includes('{hasPrograms && (\n              <ProgramsCard'), 'confirmed targets must not leave the program card below the latest chat reply');
+});
+
+test('old stuck sessions reopen the saved list without restarting', () => {
+  assert.match(chatFirst, /TARGET_SELECTION_LOOP\.test\(lastAiText\)/);
+  assert.match(chatFirst, /needsSelectionRecovery/);
+  assert.match(chatFirst, /useState\(\(\) => chosenSchools \|\| \[\]\)/);
 });
 
 test('saved targets can be reopened for checkbox selection without typing names', () => {
