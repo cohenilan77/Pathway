@@ -19,7 +19,8 @@ export function longRunningStatus(elapsedSeconds, message) {
   const steps = advisorTaskCopy(message);
   if (elapsedSeconds < 10) return null;
   const stepIndex = Math.min(steps.length - 1, Math.floor((elapsedSeconds - 10) / 12));
-  if (elapsedSeconds >= 60) return { title: 'Deep analysis can take a little longer.', detail: steps[stepIndex] };
-  if (elapsedSeconds >= 30) return { title: 'This is taking a little longer, but I’m still working.', detail: steps[stepIndex] };
-  return { title: steps[stepIndex], detail: 'I’m working through the details carefully.' };
+  const isFileScan = /\b(cv|resume|résumé|file|document|transcript)\b/i.test(String(message || ''));
+  if (elapsedSeconds >= 60) return { title: 'Deep analysis in progress…', detail: steps[stepIndex] };
+  if (elapsedSeconds >= 30) return { title: isFileScan ? 'Still scanning your file…' : 'Still working on your request…', detail: steps[stepIndex] };
+  return { title: isFileScan ? 'Reviewing extracted details…' : 'Working through the details…', detail: steps[stepIndex] };
 }
