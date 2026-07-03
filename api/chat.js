@@ -828,7 +828,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext, cvExtraction, extraText, candidateFacts: suppliedCandidateFacts } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext, cvExtraction, extraText, profileSources, candidateFacts: suppliedCandidateFacts } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -877,8 +877,9 @@ export default async function handler(req, res) {
 
     const kpiPromptSummary = await getKpiPromptSummary();
     const candidateFacts = buildCandidateFacts({
-      cvExtraction: cvExtraction || suppliedCandidateFacts?.cvExtraction || profile?.candidateFacts?.cvExtraction || {},
-      extraText: [extraText, systemContext, suppliedCandidateFacts?.extraText].filter(Boolean).join('\n'),
+      cvExtraction: profileSources?.fileText || cvExtraction || suppliedCandidateFacts?.cvExtraction || profile?.candidateFacts?.cvExtraction || {},
+      extraText: [profileSources?.pastedText, profileSources?.additionalText, extraText, systemContext, suppliedCandidateFacts?.extraText].filter(Boolean).join('\n'),
+      profileSources: profileSources || suppliedCandidateFacts?.profileSources || profile?.candidateFacts?.profileSources || {},
       messages,
       profile: { ...(suppliedCandidateFacts || {}), ...(profile || {}) },
       scores,
