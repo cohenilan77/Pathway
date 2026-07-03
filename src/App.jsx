@@ -8,6 +8,7 @@ import AdminPortal from './components/admin/AdminPortal.jsx';
 import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
+import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -1066,6 +1067,22 @@ export default function App() {
     setStepIdx(3);
     setCandTab('advisor');
   }, []);
+  const confirmTargetSchools = useCallback((schools) => {
+    const confirmed = [...new Set((Array.isArray(schools) ? schools : []).map(name => String(name || '').trim()).filter(Boolean))];
+    if (!confirmed.length) return;
+    const userText = `I confirm these target schools: ${confirmed.join(' | ')}.`;
+    const aiText = `Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
+    setChosenSchools(confirmed);
+    setStepIdx(prev => Math.max(prev, 4));
+    setCandTab('advisor');
+    setInput('');
+    setBusy(false);
+    setChat(prev => {
+      const lastTwo = prev.slice(-2);
+      if (lastTwo[0]?.text === userText && lastTwo[1]?.text === aiText) return prev;
+      return [...prev, { role: 'user', channel: 'web', text: userText }, { role: 'ai', channel: 'web', text: aiText }];
+    });
+  }, []);
 
   const sharedProps = {
     screen, role, setRole,
@@ -1080,7 +1097,7 @@ export default function App() {
     sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
-    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, reopenProgramSelection, insights,
+    profile, scores, setScores, strengths, weaknesses, programs, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, insights,
     tasks, completedTasks, setCompletedTasks,
     cvText, setCvText, cvFile, setCvFile,
     essayText, setEssayText,

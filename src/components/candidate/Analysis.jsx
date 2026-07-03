@@ -483,7 +483,7 @@ function buildAccordionSummary(school, profile) {
   return firstSentences(limitWords(summary, 125), '', 4);
 }
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools, confirmTargetSchools }) {
   const hasData = !!scores;
   const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
@@ -503,10 +503,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   const confirmSelection = () => {
     if (!selected.length || busy) return;
-    setChosenSchools && setChosenSchools(selected);
-    const msg = `I'd like to move forward with: ${selected.join(' | ')}.`;
-    setCandTab('advisor');
-    send(msg);
+    confirmTargetSchools?.(selected);
   };
 
   const refreshAnalysis = () => {

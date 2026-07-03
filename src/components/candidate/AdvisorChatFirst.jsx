@@ -6,6 +6,8 @@ import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
+const TARGET_SELECTION_LOOP = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i;
+const NARRATIVE_START = "Your targets are locked in. Now let's shape your story. What's the specific moment or experience that convinced you this is the right path?";
 
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
@@ -150,7 +152,7 @@ function tierMeta(program) {
 // University list as a first-class chat artifact. Selection writes through
 // setChosenSchools, the exact state the Analysis tab reads, so both views stay
 // in sync with no extra plumbing.
-function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy }) {
+function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTargetSchools, busy }) {
   const list = useMemo(() => normalizeProgramList(programs) || [], [programs]);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(() => chosenSchools || []);
@@ -167,8 +169,7 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, send, busy })
   // the candidate lands directly on the next stage instead of a dead end.
   const confirm = () => {
     if (!selected.length || busy) return;
-    setChosenSchools && setChosenSchools(selected);
-    send(`I'd like to move forward with: ${selected.join(' | ')}. Take me to the next step of my journey.`);
+    confirmTargetSchools?.(selected);
   };
 
   return (
@@ -269,7 +270,7 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
 
 export default function AdvisorChatFirst({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
-  setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, reopenProgramSelection, authUser,
+  setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, authUser,
 }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -339,14 +340,15 @@ export default function AdvisorChatFirst({
             {visibleChat.map((m, i) => {
               if (m.role === 'ai') {
                 const isLast = i === visibleChat.length - 1;
-                const parsed = parseOptions(m.text);
+                const visibleText = isLast && chosenSchools?.length && TARGET_SELECTION_LOOP.test(m.text || '') ? NARRATIVE_START : m.text;
+                const parsed = parseOptions(visibleText);
                 const showChipsHere = parsed && (!isLast || busy);
                 return (
                   <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', animation: 'pwFade .3s ease' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                       <AiAvatar />
                       <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.65, color: '#33405e', maxWidth: 640, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
-                        {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                        {renderFormattedText(parsed ? parsed.mainText : visibleText)}
                       </div>
                     </div>
                     {showChipsHere && (
@@ -376,7 +378,7 @@ export default function AdvisorChatFirst({
             {/* inline artifacts: readiness and program list */}
             {showReadiness && <ReadinessCard scores={scores} profile={profile} />}
             {showPrograms && (
-              <ProgramsCard programs={programs} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} send={send} busy={busy} />
+              <ProgramsCard programs={programs} chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools} busy={busy} />
             )}
 
             {showNarrativeCTA && (

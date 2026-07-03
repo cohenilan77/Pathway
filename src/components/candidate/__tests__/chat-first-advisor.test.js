@@ -48,9 +48,8 @@ test('no task checklist inside the chat stream', () => {
 });
 
 test('program selection writes through shared state and advances the journey', () => {
-  assert.match(chatFirst, /setChosenSchools && setChosenSchools\(selected\)/);
-  assert.match(chatFirst, /I'd like to move forward with:/);
-  assert.match(chatFirst, /Take me to the next step of my journey\./);
+  assert.match(chatFirst, /confirmTargetSchools\?\.\(selected\)/);
+  assert.ok(!chatFirst.includes('send(`I\'d like to move forward with:'), 'checkbox confirmation must not depend on an AI request');
 });
 
 test('confirmed targets remove old program artifacts so the narrative question stays visible', () => {
@@ -68,6 +67,8 @@ test('confirmed targets continue narrative instead of asking for names again', (
   assert.match(chatFirst, /Continue narrative/);
   assert.match(chatFirst, /using my confirmed target schools/);
   assert.ok(!chatFirst.includes("label: 'Choose my narrative'"));
+  assert.match(chatFirst, /TARGET_SELECTION_LOOP/);
+  assert.match(chatFirst, /NARRATIVE_START/);
 });
 
 test('chat-first has contextual chips and the analyzing state', () => {
