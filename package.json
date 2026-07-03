@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:api": "node dev-server.js",
     "headroom:proxy": "node scripts/headroom-proxy.js",
+    "prebuild": "node scripts/verify-candidate-facts.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test:usage-costs": "node scripts/verify-usage-costs.mjs",
