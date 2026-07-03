@@ -1,5 +1,6 @@
 import { getActor } from '../lib/admin.js';
 import { getUserById, ROLES } from '../lib/db.js';
+import { getStore } from '../lib/store.js';
 import { isTraceEnabled, getTrace, clearTrace } from '../lib/agent-trace.js';
 
 export default async function handler(req, res) {
@@ -25,25 +26,14 @@ export default async function handler(req, res) {
 
   if (!resolvedCandidateId && email) {
     try {
-      const users = await fetch('https://api.example.com/users?email=' + encodeURIComponent(email)).then(r => r.json()).catch(() => ({}));
-      if (users.data && users.data.length > 0) {
-        resolvedCandidateId = users.data[0].id;
+      const store = getStore();
+      const normalized = email.toLowerCase().trim();
+      resolvedCandidateId = await store.get(`user:byEmail:${normalized}`);
+      if (resolvedCandidateId) {
         resolvedEmail = email;
       }
-    } catch (e) {
-      // Fallback to direct lookup
-    }
-
-    if (!resolvedCandidateId) {
-      try {
-        const user = await getUserById(email);
-        if (user && user.email === email) {
-          resolvedCandidateId = user.id;
-          resolvedEmail = email;
-        }
-      } catch {
-        // Try searching users by email
-      }
+    } catch (error) {
+      console.error('[admin-agent-trace] email lookup failed:', error?.message);
     }
   }
 
