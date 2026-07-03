@@ -9,6 +9,7 @@ import ContactModal from './components/ContactModal.jsx';
 import { LANGUAGES } from './constants.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { N1_QUESTION } from '../lib/selection-continuity.js';
+import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -396,6 +397,7 @@ export default function App() {
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [cvDraft, setCvDraft] = useState('');
+  const [cvFileTextDraft, setCvFileTextDraft] = useState('');
   const [cvFileDraft, setCvFileDraft] = useState(null);
   const [cvExtra, setCvExtra] = useState('');
   const [aiConfig, setAiConfigState] = useState(loadAiConfig);
@@ -742,7 +744,7 @@ export default function App() {
     setAuth({ token: auth.token, user: { ...(auth.user || {}), ...patch } });
   }, [auth, setAuth]);
 
-  const send = useCallback(async (text) => {
+  const send = useCallback(async (text, requestExtras = {}) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
@@ -794,7 +796,25 @@ export default function App() {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ action: 'candidate_message', message: t, messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext, candidateState: { profile, scores, programs, chosenSchools, narrative, documents, essays, interviews } }),
+        body: JSON.stringify({
+          action: 'candidate_message',
+          message: t,
+          messages: newChat,
+          aiConfig,
+          language,
+          conversationId: sessionId,
+          profile,
+          scores,
+          programs: normalizeProgramList(programs) || programs,
+          chosenSchools,
+          stage,
+          systemContext,
+          ...requestExtras,
+          candidateState: {
+            profile, scores, programs, chosenSchools, narrative, documents, essays, interviews,
+            ...(requestExtras.profileSources ? { profileSources: requestExtras.profileSources } : {}),
+          },
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
@@ -931,29 +951,34 @@ export default function App() {
   }, [busy, chat, profile, scores, programs, chosenSchools, essays, tasks, strengths, weaknesses, stepIdx, auth?.token, sessionId, language, aiConfig]);
 
   const submitCv = useCallback(() => {
-    if (!cvDraft.trim() && !cvExtra.trim()) return;
-    setCvText(cvDraft);
+    const sourceBundle = buildProfileSourceBundle({
+      fileText: cvFileTextDraft,
+      pastedText: cvDraft,
+      additionalText: cvExtra,
+    });
+    if (!sourceBundle.combinedOriginal) return;
+    setCvText(sourceBundle.combinedOriginal);
     setCvFile(cvFileDraft);
     saveDocument({
-      name: cvFileDraft?.name || titleFromText(cvDraft, 'CV / Resume'),
+      name: cvFileDraft?.name || titleFromText(cvDraft || cvExtra, 'CV / Resume'),
       type: 'resume',
       source: cvFileDraft ? 'Upload' : 'Simulation',
       status: 'Ready',
-      text: cvDraft,
+      text: sourceBundle.combinedOriginal,
       file: cvFileDraft,
       linkedWorkflow: 'my_cv',
     });
     setShowCvModal(false);
-    const draft = cvDraft;
-    const extra = cvExtra;
     setCvDraft('');
+    setCvFileTextDraft('');
     setCvFileDraft(null);
     setCvExtra('');
-    const combined = extra.trim()
-      ? `Here is my CV/resume:\n\n${draft}\n\n---ADDITIONAL BACKGROUND---\n\n${extra}`
-      : `Here is my CV/resume:\n\n${draft}`;
-    send(combined);
-  }, [cvDraft, cvFileDraft, cvExtra, send, saveDocument]);
+    send(sourceBundle.advisorMessage, {
+      profileSources: sourceBundle,
+      cvExtraction: sourceBundle.fileText,
+      extraText: [sourceBundle.pastedText, sourceBundle.additionalText].filter(Boolean).join('\n\n'),
+    });
+  }, [cvDraft, cvFileTextDraft, cvFileDraft, cvExtra, send, saveDocument]);
 
   const handleFileUpload = useCallback((e) => {
     const file = e.target.files[0];
@@ -988,8 +1013,8 @@ export default function App() {
           });
           const data = await res.json();
           if (data.text) {
-            setCvDraft(data.text);
-            setCvFileDraft(data.file || null);
+            setCvFileTextDraft(data.text);
+            setCvFileDraft(data.file || { name: file.name, size: file.size, type: mediaType });
             showToast(ext === 'pdf' ? 'PDF loaded — review the text below.' : 'Word document loaded — review the text below.');
           }
           else showToast('Could not extract text — please paste it manually.');
@@ -1002,7 +1027,7 @@ export default function App() {
 
     // .txt / .rtf
     const reader = new FileReader();
-    reader.onload = (ev) => { setCvDraft(ev.target.result || ''); setCvFileDraft(null); };
+    reader.onload = (ev) => { setCvFileTextDraft(ev.target.result || ''); setCvFileDraft({ name: file.name, size: file.size, type: file.type || 'text/plain' }); };
     reader.onerror = () => showToast('Could not read file — try pasting the text directly.');
     reader.readAsText(file);
     e.target.value = '';
@@ -1159,7 +1184,7 @@ export default function App() {
           <div style={{ background: '#fff', borderRadius: 18, padding: 36, width: '100%', maxWidth: 620, boxShadow: '0 24px 60px rgba(15,26,48,.28)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f', margin: 0 }}>Upload Your Profile</h2>
-              <button onClick={() => { setShowCvModal(false); setCvDraft(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
+              <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
               Paste your CV or upload a file. Add honors, awards, major achievements, test scores, goals, and recommenders if they are not already clear.
@@ -1170,14 +1195,14 @@ export default function App() {
               <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
-              {cvDraft
-                ? (cvFileDraft ? `Original saved: ${cvFileDraft.name}` : 'Text loaded — review below or upload another')
-                : 'Upload PDF or Word (.docx) under 3 MB, or paste text below'}
+              {cvFileTextDraft
+                ? (cvFileDraft ? `File loaded: ${cvFileDraft.name}` : 'File text loaded')
+                : 'Upload PDF or Word (.docx) under 3 MB'}
               <input type="file" accept=".txt,.rtf,.pdf,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>CV / RESUME</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>PASTED CV / PROFILE TEXT</div>
               <textarea
                 value={cvDraft}
                 onChange={e => setCvDraft(e.target.value)}
@@ -1200,9 +1225,9 @@ export default function App() {
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{(cvDraft + ' ' + cvExtra).trim().split(/\s+/).filter(Boolean).length} words</span>
-              <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvExtra(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={submitCv} disabled={!cvDraft.trim() && !cvExtra.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5 }}>
+              <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{(cvFileTextDraft + ' ' + cvDraft + ' ' + cvExtra).trim().split(/\s+/).filter(Boolean).length} words across all sources</span>
+              <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={submitCv} disabled={!cvFileTextDraft.trim() && !cvDraft.trim() && !cvExtra.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5 }}>
                 Analyze →
               </button>
             </div>
