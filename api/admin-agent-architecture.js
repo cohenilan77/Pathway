@@ -1,6 +1,7 @@
 import { getActor } from '../lib/admin.js';
 import { ROLES } from '../lib/db.js';
 import { getAgentArchitecture, getAgentArchitectureAudit, setAgentArchitecture } from '../lib/agent-architecture.js';
+import { getArchitectureMetrics } from '../lib/architecture-metrics.js';
 
 export default async function handler(req, res) {
   const actor = await getActor(req);
@@ -8,8 +9,8 @@ export default async function handler(req, res) {
   if (actor.role !== ROLES.admin) return res.status(403).json({ error: 'Forbidden.' });
 
   if (req.method === 'GET') {
-    const [config, audit] = await Promise.all([getAgentArchitecture(), getAgentArchitectureAudit()]);
-    return res.status(200).json({ config, audit: (audit || []).slice(-20).reverse() });
+    const [config, audit, metrics] = await Promise.all([getAgentArchitecture(), getAgentArchitectureAudit(), getArchitectureMetrics()]);
+    return res.status(200).json({ config, metrics, audit: (audit || []).slice(-20).reverse() });
   }
   if (req.method === 'POST') {
     try {

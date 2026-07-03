@@ -777,13 +777,13 @@ export default function App() {
     try {
       const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/advisor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
         },
-        body: JSON.stringify({ messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext }),
+        body: JSON.stringify({ action: 'candidate_message', message: t, messages: newChat, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext, candidateState: { profile, scores, programs, chosenSchools, narrative, documents, essays, interviews } }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
@@ -791,6 +791,17 @@ export default function App() {
 
       if (raw) {
         const parsed = parseBlocks(raw);
+        const typedPatch = data.statePatch || {};
+        if (!parsed.profile && typedPatch.profile) parsed.profile = typedPatch.profile;
+        if (!parsed.scores && typedPatch.scores) parsed.scores = typedPatch.scores;
+        if (!parsed.strengths && typedPatch.strengths) parsed.strengths = typedPatch.strengths;
+        if (!parsed.weaknesses && typedPatch.weaknesses) parsed.weaknesses = typedPatch.weaknesses;
+        if (!parsed.tasks && typedPatch.tasks) parsed.tasks = typedPatch.tasks;
+        if (!parsed.programs && typedPatch.programs) parsed.programs = typedPatch.programs;
+        if (!parsed.chosenSchools && typedPatch.chosenSchools) parsed.chosenSchools = typedPatch.chosenSchools;
+        if (!parsed.insights && typedPatch.insights) parsed.insights = typedPatch.insights;
+        if (!parsed.essay && typedPatch.essays) parsed.essay = Object.entries(typedPatch.essays).map(([school, value]) => ({ school, ...value }))[0];
+        if (!parsed.interviewResult && typedPatch.interviews) parsed.interviewResult = Object.values(typedPatch.interviews)[0];
         const category = parsed.profile?.category || profile?.category;
         const isUndergrad = category === 'Undergraduate';
         if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
@@ -890,10 +901,10 @@ export default function App() {
       const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
       const idleMessages = [...chat, { role: 'user', channel: 'system', text: '__idle_checkin__' }];
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
-        body: JSON.stringify({ messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext }),
+        body: JSON.stringify({ action: 'candidate_message', message: '__idle_checkin__', messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext, candidateState: { profile, scores, programs, chosenSchools, narrative, documents, essays, interviews } }),
       });
       const data = await res.json();
       if (!res.ok) return;

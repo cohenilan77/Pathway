@@ -1,0 +1,88 @@
+import chatHandler from './chat.js';
+import { getAgentArchitecture } from '../lib/agent-architecture.js';
+import { getUserIdByToken, getUserData, setUserData } from '../lib/db.js';
+import { invokeHandler } from '../lib/handler-invoker.js';
+import { makeAdvisorResponse } from '../lib/advisor-contract.js';
+import { HybridCoordinator } from '../lib/hybrid-coordinator.js';
+import { recordArchitectureEvent } from '../lib/architecture-metrics.js';
+import { updateCandidateProfile } from '../lib/agents/tools/update.js';
+
+function token(req) {
+  return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
+}
+
+async function invokeAdvisor(req, bypassRuntimeConfig) {
+  const headers = { ...(req.headers || {}) };
+  if (bypassRuntimeConfig) headers['x-pathway-legacy-bypass'] = '1';
+  const result = await invokeHandler(chatHandler, { ...req, method: 'POST', headers });
+  if (result.statusCode >= 400) return { error: result.payload, statusCode: result.statusCode };
+  const raw = result.payload?.raw || result.payload?.reply || '';
+  return { response: makeAdvisorResponse({ architecture: 'legacy', agent: 'LegacyAdvisor', raw }) };
+}
+
+async function persistStatePatch(candidateId, response) {
+  if (!candidateId || !response?.statePatch || !Object.keys(response.statePatch).length) return;
+  const current = (await getUserData(candidateId)) || {};
+  const patch = response.statePatch;
+  await setUserData(candidateId, {
+    ...current,
+    ...patch,
+    essays: patch.essays ? { ...(current.essays || {}), ...patch.essays } : current.essays,
+    interviews: patch.interviews ? { ...(current.interviews || {}), ...patch.interviews } : current.interviews,
+    stateVersion: Number(current.stateVersion || 0) + 1,
+    updatedAt: Date.now(),
+  });
+}
+
+export default async function handler(req, res) {
+  const startedAt = Date.now();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const architecture = await getAgentArchitecture();
+  if (architecture.mode !== 'hybrid') {
+    const output = await invokeAdvisor(req, true);
+    if (output.error) return res.status(output.statusCode).json(output.error);
+    const candidateId = await getUserIdByToken(token(req));
+    await persistStatePatch(candidateId, output.response);
+    await recordArchitectureEvent({ architecture: 'legacy', agent: output.response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
+    return res.status(200).json(output.response);
+  }
+
+  const candidateId = await getUserIdByToken(token(req));
+  const body = req.body || {};
+  const message = body.message || [...(body.messages || [])].reverse().find(m => m.role === 'user')?.text || '';
+  try {
+    const coordinator = new HybridCoordinator();
+    const storedState = candidateId ? (await getUserData(candidateId).catch(() => null)) : null;
+    const effectiveState = { ...(body.candidateState || body), ...(storedState || {}) };
+    if (candidateId && effectiveState.profile) {
+      await updateCandidateProfile(candidateId, effectiveState.profile).catch(() => {});
+    }
+    const result = await coordinator.execute({
+      candidateId: candidateId || 'anonymous', message, action: body.action, payload: body.payload,
+      conversationHistory: body.messages || [], candidateState: effectiveState,
+    });
+    if (!result.delegateToAdvisor) {
+      const response = makeAdvisorResponse({
+        architecture: 'hybrid', agent: result.agent, raw: result.message,
+        statePatch: result.statePatch, metadata: result.metadata,
+      });
+      await persistStatePatch(candidateId, response);
+      await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: response.metadata?.configVersion });
+      return res.status(200).json(response);
+    }
+    const fallback = await invokeAdvisor(req, false);
+    if (fallback.error) throw new Error(fallback.error?.details || fallback.error?.error || 'Hybrid AdvisorAgent failed.');
+    const response = { ...fallback.response, architecture: 'hybrid', coordinator: 'AdvisorCoordinator', agent: 'AdvisorAgent', metadata: { ...fallback.response.metadata, delegatedAgent: result.disabledAgent || 'advisor', fallbackUsed: false } };
+    await persistStatePatch(candidateId, response);
+    await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
+    return res.status(200).json(response);
+  } catch (error) {
+    if (!architecture.fallbackToLegacy) return res.status(500).json({ error: 'Hybrid advisor failed.', detail: error.message });
+    const fallback = await invokeAdvisor(req, true);
+    if (fallback.error) return res.status(fallback.statusCode).json(fallback.error);
+    const response = { ...fallback.response, architecture: 'hybrid', coordinator: 'AdvisorCoordinator', metadata: { ...fallback.response.metadata, fallbackUsed: true, hybridError: error.message } };
+    await persistStatePatch(candidateId, response);
+    await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: true, error: error.message });
+    return res.status(200).json(response);
+  }
+}

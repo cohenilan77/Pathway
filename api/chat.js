@@ -952,6 +952,7 @@ export default async function handler(req, res) {
       raw = ensureSelectionContinuity('', lastRealUserText);
     } else {
       const advisor = new AdvisorAgent();
+      advisor.bypassRuntimeConfig = req.headers['x-pathway-legacy-bypass'] === '1';
       raw = await advisor.chat(anthropicMessages, {
         systemPrompt: compressedSystemPrompt,
         formatConstraint: requestedProgramFormat(profile, messages),

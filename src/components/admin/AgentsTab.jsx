@@ -54,6 +54,10 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   const [architecture, setArchitecture] = useState(null);
   const [architectureBusy, setArchitectureBusy] = useState(false);
   const [architectureError, setArchitectureError] = useState('');
+  const [architectureAudit, setArchitectureAudit] = useState([]);
+  const [architectureMetrics, setArchitectureMetrics] = useState(null);
+  const [configBusy, setConfigBusy] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   const loadUsage = useCallback(async () => {
     setUsageLoading(true);
@@ -85,12 +89,33 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to load architecture mode.');
       setArchitecture(data.config);
+      setArchitectureAudit(data.audit || []);
+      setArchitectureMetrics(data.metrics || null);
     } catch (err) {
       setArchitectureError(err.message || 'Failed to load architecture mode.');
     }
   }, [adminHeaders.Authorization, adminHeaders['X-Admin-Secret']]);
 
   useEffect(() => { loadArchitecture(); }, [loadArchitecture]);
+
+  const loadAgentConfigs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin-agents', { headers: adminHeaders });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to load agent configurations.');
+      const configs = new Map((data.agents || []).map(item => [item.agentId, item]));
+      setAgents(current => current.map(item => {
+        const record = configs.get(item.id);
+        if (!record) return item;
+        const config = record.draftConfig || record.publishedConfig || {};
+        return { ...item, status: record.status, model: config.model || item.model, behavior: config.systemPrompt || item.behavior, _config: record };
+      }));
+    } catch (err) {
+      setUsageError(err.message || 'Failed to load agent configurations.');
+    }
+  }, [adminHeaders.Authorization, adminHeaders['X-Admin-Secret']]);
+
+  useEffect(() => { loadAgentConfigs(); }, [loadAgentConfigs]);
 
   const switchArchitecture = async () => {
     const nextMode = architecture?.mode === 'hybrid' ? 'legacy' : 'hybrid';
@@ -138,24 +163,49 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   const agent = agents.find((a) => a.id === selected);
 
   const startEdit = () => {
-    setDraft({ behavior: agent.behavior, description: agent.description, model: agent.model });
+    const config = agent._config?.draftConfig || agent._config?.publishedConfig || {};
+    setDraft({ behavior: agent.behavior, description: agent.description, model: agent.model, maxTokens: config.maxTokens || 8192, retryLimit: config.retryLimit ?? 3, timeoutMs: config.timeoutMs || 30000, tools: (config.tools || []).join(', '), fallbackAgent: config.fallbackAgent || 'advisor' });
     setEditing(true);
     setOpenSection('behavior');
   };
 
   const cancelEdit = () => { setEditing(false); setDraft(null); };
 
-  const saveEdit = () => {
+  const agentConfigAction = async (action, extra = {}) => {
+    setConfigBusy(true);
+    try {
+      const response = await fetch('/api/admin-agents', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ action, agentId: agent.id, ...extra }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `Failed to ${action}.`);
+      await loadAgentConfigs();
+      if (action === 'test') setTestResult(data.test || null);
+      showToast?.(action === 'test' ? 'Draft configuration validated.' : `${agent.name}: ${action.replace('_', ' ')} complete.`);
+      return data;
+    } catch (err) {
+      showToast?.(err.message || `Failed to ${action}.`);
+      return null;
+    } finally {
+      setConfigBusy(false);
+    }
+  };
+
+  const saveEdit = async () => {
+    const current = agent._config?.draftConfig || agent._config?.publishedConfig || {};
+    const data = await agentConfigAction('save_draft', { config: { ...current, model: draft.model, systemPrompt: draft.behavior, maxTokens: Number(draft.maxTokens), retryLimit: Number(draft.retryLimit), timeoutMs: Number(draft.timeoutMs), tools: String(draft.tools || '').split(',').map(v => v.trim()).filter(Boolean), fallbackAgent: draft.fallbackAgent } });
+    if (!data) return;
     setAgents((prev) => prev.map((a) => a.id === selected ? { ...a, ...draft } : a));
     setEditing(false);
     setDraft(null);
-    showToast?.(`${agent.name} saved.`);
   };
 
-  const togglePause = () => {
+  const togglePause = async () => {
     const next = agent.status === 'active' ? 'paused' : 'active';
-    setAgents((prev) => prev.map((a) => a.id === selected ? { ...a, status: next } : a));
-    showToast?.(`${agent.name} ${next === 'paused' ? 'paused' : 'resumed'}.`);
+    const apiStatus = next === 'paused' ? 'disabled' : 'active';
+    const data = await agentConfigAction('status', { status: apiStatus });
+    if (data) setAgents((prev) => prev.map((a) => a.id === selected ? { ...a, status: apiStatus } : a));
   };
 
   const deleteAgent = () => {
@@ -195,6 +245,14 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
             {architecture?.mode === 'hybrid'
               ? 'The multi-agent orchestration endpoint is enabled.'
               : 'Multi-agent orchestration is disabled; the current Advisor workflow remains active.'}
+          </div>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 7, fontSize: 10.5, fontWeight: 700, color: '#6b7392' }}>
+            <span>Fallback: {architecture?.fallbackToLegacy ? 'Legacy enabled' : 'Disabled'}</span>
+            <span>Health: {architectureMetrics?.errors ? `${architectureMetrics.errors} errors` : 'Ready'}</span>
+            <span>Requests: {formatNumber(architectureMetrics?.total)}</span>
+            <span>Fallback: {architectureMetrics ? `${(Number(architectureMetrics.fallbackRate || 0) * 100).toFixed(1)}%` : '0.0%'}</span>
+            {architecture?.updatedAt && <span>Changed {new Date(architecture.updatedAt).toLocaleString()} by {architecture.updatedBy || 'admin'}</span>}
+            {architectureAudit[0] && <span>Audit version {architectureAudit[0].version}</span>}
           </div>
           {architectureError && <div style={{ fontSize: 11, color: '#c94f79', marginTop: 6 }}>{architectureError}</div>}
         </div>
@@ -257,6 +315,7 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
                 <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#141b34' }}>{agent.name}</h2>
                 {chip(STATUS_COLOR[agent.status] || '#9098b5', STATUS_BG[agent.status] || '#f1eadd', (agent.status || 'active').toUpperCase())}
                 {chip('#5b46e0', '#f0eeff', agent.role)}
+                {agent._config && chip('#6b7392', '#f6f1e8', `DRAFT v${agent._config.draftVersion} · LIVE v${agent._config.publishedVersion}`)}
               </div>
               {editing ? (
                 <textarea
@@ -280,6 +339,17 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
                 </>
               ) : (
                 <>
+                  <button onClick={() => agentConfigAction('test')} disabled={configBusy} style={{ background: '#faf7f2', color: '#5b46e0', border: '1px solid #b899fb', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 11px', fontSize: 12 }}>
+                    Test Draft
+                  </button>
+                  <button onClick={() => agentConfigAction('publish')} disabled={configBusy} style={{ background: '#eafff6', color: '#16875c', border: '1px solid #b7ecd4', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 11px', fontSize: 12 }}>
+                    Publish
+                  </button>
+                  {agent._config?.publishedVersion > 1 && (
+                    <button onClick={() => agentConfigAction('rollback', { version: agent._config.publishedVersion - 1 })} disabled={configBusy} style={{ background: '#fff8ea', color: '#b58522', border: '1px solid #ffe3a8', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 11px', fontSize: 12 }}>
+                      Roll Back
+                    </button>
+                  )}
                   <button onClick={startEdit} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 14px', fontSize: 13 }}>
                     Edit
                   </button>
@@ -290,6 +360,13 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
               )}
             </div>
           </div>
+
+          {testResult && (
+            <div style={{ marginBottom: 16, padding: '12px 14px', background: '#f0eeff', border: '1px solid #d4c4f8', borderRadius: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 850, color: '#5b46e0', marginBottom: 5 }}>DRAFT TEST · v{testResult.configVersion} · {formatLatency(testResult.latencyMs)}</div>
+              <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5 }}>{testResult.message}</div>
+            </div>
+          )}
 
           {/* KPI strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
@@ -328,6 +405,22 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
           </Section>
 
           <Section id="settings" label="Settings">
+            {editing && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+                {[
+                  ['maxTokens', 'Maximum tokens', 'number'],
+                  ['retryLimit', 'Retry limit', 'number'],
+                  ['timeoutMs', 'Timeout (ms)', 'number'],
+                  ['fallbackAgent', 'Fallback agent', 'text'],
+                  ['tools', 'Allowed tools (comma separated)', 'text'],
+                ].map(([key, label, type]) => (
+                  <label key={key} style={{ fontSize: 11, fontWeight: 700, color: '#6b7392', gridColumn: key === 'tools' ? '1 / -1' : 'auto' }}>
+                    {label}
+                    <input type={type} value={draft[key]} onChange={e => setDraft(d => ({ ...d, [key]: e.target.value }))} style={{ ...inputStyle, marginTop: 5, padding: '7px 9px' }} />
+                  </label>
+                ))}
+              </div>
+            )}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {Object.entries(agent.settings).map(([key, val]) => (
                 <div key={key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 12px', background: '#f6f1e8', borderRadius: 10 }}>
