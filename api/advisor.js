@@ -70,14 +70,16 @@ export default async function handler(req, res) {
     });
     await recordCandidateActivity(candidateId, {
       type: 'routing',
-      label: result.delegateToAdvisor ? 'Routed to AdvisorAgent' : `Routed to ${result.agent || 'AdvisorAgent'}`,
+      label: result.metadata?.plan?.length > 1
+        ? `Execution plan: ${result.metadata.plan.map(agent => `${agent}Agent`).join(' → ')}${result.continueWithAdvisor ? ' → AdvisorAgent' : ''}`
+        : result.delegateToAdvisor ? 'Routed to AdvisorAgent' : `Routed to ${result.agent || 'AdvisorAgent'}`,
       agent: result.agent || 'AdvisorAgent',
       architecture: 'hybrid',
       latencyMs: result.metadata?.latencyMs,
       detail: result.continueWithAdvisor
         ? `${result.agent} completed its specialist step; control returned to AdvisorAgent.`
         : result.delegateToAdvisor ? 'Coordinator selected the main advisor.' : 'Coordinator selected a specialist agent.',
-      metadata: { continueWithAdvisor: !!result.continueWithAdvisor, fallback: !!result.disabledAgent },
+      metadata: { continueWithAdvisor: !!result.continueWithAdvisor, fallback: !!result.disabledAgent, plan: result.metadata?.plan, steps: result.metadata?.steps },
     }).catch(() => {});
     if (!result.delegateToAdvisor && !result.continueWithAdvisor) {
       const response = makeAdvisorResponse({
@@ -127,6 +129,14 @@ export default async function handler(req, res) {
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(response);
   } catch (error) {
+    await recordCandidateActivity(candidateId, {
+      type: 'fallback',
+      label: 'Specialist pipeline failed; legacy fallback started',
+      status: 'error',
+      architecture: 'hybrid',
+      latencyMs: Date.now() - startedAt,
+      detail: error.message || 'Unknown specialist failure.',
+    }).catch(() => {});
     if (!architecture.fallbackToLegacy) return res.status(500).json({ error: 'Hybrid advisor failed.', detail: error.message });
     const fallback = await invokeAdvisor(req, true);
     if (fallback.error) return res.status(fallback.statusCode).json(fallback.error);
