@@ -4,6 +4,7 @@ import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { resolveTrack } from '../../trackConfig.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 import AdvisorChatFirst from './AdvisorChatFirst.jsx';
+import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 
 // Chat-first advisor is on by default for graduate tracks on this branch.
 // Set VITE_CHAT_FIRST_GRAD=false at build time to fall back to the legacy layout.
@@ -110,6 +111,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];
   const lastAiText = lastAiMsg?.text || '';
+  const latestUserText = visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
@@ -239,6 +241,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                   </div>
                 </div>
               )}
+              <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
 
               {showSchoolPathChips && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginLeft: 42 }}>

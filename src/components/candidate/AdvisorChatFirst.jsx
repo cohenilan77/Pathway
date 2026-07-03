@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { getTrackConfig } from '../../trackConfig.js';
@@ -302,6 +303,7 @@ export default function AdvisorChatFirst({
 
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];
   const lastAiText = lastAiMsg?.text || '';
+  const latestUserText = visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
   const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative }) : [];
@@ -379,6 +381,7 @@ export default function AdvisorChatFirst({
             })}
 
             {busy && <ThinkingLine />}
+            <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
 
             {/* inline artifacts: readiness and program list */}
             {showReadiness && <ReadinessCard scores={scores} profile={profile} />}
