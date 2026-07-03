@@ -19,6 +19,7 @@ import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
+import { buildCandidateFacts, buildComplementaryQuestion, candidateFactsPrompt, stripStructuredBlocks } from '../lib/candidate-facts.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -827,7 +828,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext, cvExtraction, extraText, candidateFacts: suppliedCandidateFacts } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -875,7 +876,16 @@ export default async function handler(req, res) {
     }
 
     const kpiPromptSummary = await getKpiPromptSummary();
-    const verifiedScoringSection = buildVerifiedScoringSection(profile, scores, normalizeProgramList(programs));
+    const candidateFacts = buildCandidateFacts({
+      cvExtraction: cvExtraction || suppliedCandidateFacts?.cvExtraction || profile?.candidateFacts?.cvExtraction || {},
+      extraText: [extraText, systemContext, suppliedCandidateFacts?.extraText].filter(Boolean).join('\n'),
+      messages,
+      profile: { ...(suppliedCandidateFacts || {}), ...(profile || {}) },
+      scores,
+      candidateType: profile?.category || profile?.degree,
+      targetSchools: [...(Array.isArray(profile?.targetSchools) ? profile.targetSchools : []), ...(Array.isArray(chosenSchools) ? chosenSchools : [])],
+    });
+    const verifiedScoringSection = buildVerifiedScoringSection(candidateFacts, scores, normalizeProgramList(programs));
 
     // Detect idle check-in: frontend sends __idle_checkin__ as a silent system trigger.
     // Strip it from chat history and instead inject a contextual re-engagement instruction.
@@ -887,7 +897,7 @@ export default async function handler(req, res) {
     const lockedTargetsContext = Array.isArray(chosenSchools) && chosenSchools.length
       ? `\n\nLOCKED TARGET SCHOOLS (authoritative current state): ${chosenSchools.join(' | ')}. The candidate already selected and confirmed these schools using the app. Never ask them to name, choose, narrow, or lock target schools again. Continue from the current Narrative question.`
       : '';
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + lockedTargetsContext + idleContext;
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + lockedTargetsContext + idleContext;
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
@@ -1031,6 +1041,46 @@ export default async function handler(req, res) {
     const asksForTargetsAgain = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i.test(String(raw || ''));
     if (Array.isArray(chosenSchools) && chosenSchools.length && asksForTargetsAgain) {
       raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
+    }
+
+    // Candidate-facts gates are deterministic: missing evidence cannot silently
+    // become a low score, and programs cannot appear before facts + school-path
+    // choice are complete. Persist completeness in PROFILE so askedFields remains
+    // stable across turns and the advisor never repeats a complementary checklist.
+    if (!candidateFacts.readyForScoring) {
+      raw = stripStructuredBlocks(raw, ['SCORES', 'PROGRAMS']);
+      const complementaryQuestion = buildComplementaryQuestion(candidateFacts);
+      if (complementaryQuestion && !isIdleCheckin) {
+        const askedFields = [...new Set([
+          ...(candidateFacts.profileCompleteness?.askedFields || []),
+          ...(candidateFacts.nextMissingFields || []),
+        ])];
+        const profileUpdate = {
+          ...(profile || {}),
+          candidateFacts: {
+            workYears: candidateFacts.workYears,
+            militaryYears: candidateFacts.militaryYears,
+            civilianWorkYears: candidateFacts.civilianWorkYears,
+            currentRole: candidateFacts.currentRole,
+            currentCompany: candidateFacts.currentCompany,
+            companies: candidateFacts.companies,
+            careerProgression: candidateFacts.careerProgression,
+            leadershipEvidence: candidateFacts.leadershipEvidence,
+            achievementsImpact: candidateFacts.achievementsImpact,
+            whyMBA: candidateFacts.whyMBA,
+            postMbaGoal: candidateFacts.postMbaGoal,
+            targetSchools: candidateFacts.targetSchools,
+            selectedCandidateType: candidateFacts.selectedCandidateType,
+          },
+          profileCompleteness: { ...candidateFacts.profileCompleteness, askedFields },
+        };
+        raw = `<PROFILE>${JSON.stringify(profileUpdate)}</PROFILE>${complementaryQuestion}`;
+      }
+    } else if (!candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
+      raw = stripStructuredBlocks(raw, ['PROGRAMS']);
+      if (!isIdleCheckin && !/specific schools|want recommendations/i.test(raw)) {
+        raw = `${raw}\n\nDo you already have specific schools, or do you want recommendations?`.trim();
+      }
     }
 
     if (action === 'warn') {
