@@ -1,5 +1,6 @@
 import { getUserIdByToken, getUserById, ROLES } from '../../lib/db.js';
 import { MainAgent } from '../../lib/agents/MainAgent.js';
+import { getAgentArchitecture } from '../../lib/agent-architecture.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -25,6 +26,14 @@ export default async function handler(req, res) {
   const isStaff = user.role === ROLES.consultant || user.role === ROLES.admin;
   if (!isCandidate && !isStaff) {
     return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const architecture = await getAgentArchitecture();
+  if (architecture.mode !== 'hybrid') {
+    return res.status(409).json({
+      error: 'Multi-agent architecture is disabled.',
+      architecture: 'legacy',
+    });
   }
 
   const {
@@ -59,6 +68,7 @@ export default async function handler(req, res) {
       toolUses: response.result?.toolUses || [],
       usage: response.result?.usage || null,
       latencyMs: response.latencyMs,
+      architecture: 'hybrid',
     });
   } catch (err) {
     console.error('[agents/orchestrate] error', { candidateId, error: err.message });

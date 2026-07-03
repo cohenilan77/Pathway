@@ -51,6 +51,9 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   const [usageError, setUsageError] = useState('');
   const [resetBusy, setResetBusy] = useState(false);
   const [resetAt, setResetAt] = useState(null);
+  const [architecture, setArchitecture] = useState(null);
+  const [architectureBusy, setArchitectureBusy] = useState(false);
+  const [architectureError, setArchitectureError] = useState('');
 
   const loadUsage = useCallback(async () => {
     setUsageLoading(true);
@@ -74,6 +77,44 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   }, [adminHeaders.Authorization, adminHeaders['X-Admin-Secret']]);
 
   useEffect(() => { loadUsage(); }, [loadUsage]);
+
+  const loadArchitecture = useCallback(async () => {
+    setArchitectureError('');
+    try {
+      const response = await fetch('/api/admin-agent-architecture', { headers: adminHeaders });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to load architecture mode.');
+      setArchitecture(data.config);
+    } catch (err) {
+      setArchitectureError(err.message || 'Failed to load architecture mode.');
+    }
+  }, [adminHeaders.Authorization, adminHeaders['X-Admin-Secret']]);
+
+  useEffect(() => { loadArchitecture(); }, [loadArchitecture]);
+
+  const switchArchitecture = async () => {
+    const nextMode = architecture?.mode === 'hybrid' ? 'legacy' : 'hybrid';
+    const action = nextMode === 'hybrid' ? 'enable the Multi-Agent architecture' : 'disable Multi-Agent and return to Legacy';
+    if (!window.confirm(`Are you sure you want to ${action}?`)) return;
+    setArchitectureBusy(true);
+    setArchitectureError('');
+    try {
+      const response = await fetch('/api/admin-agent-architecture', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ mode: nextMode }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to switch architecture.');
+      setArchitecture(data.config);
+      showToast?.(nextMode === 'hybrid' ? 'Multi-Agent architecture enabled.' : 'Legacy architecture restored.');
+    } catch (err) {
+      setArchitectureError(err.message || 'Failed to switch architecture.');
+      showToast?.(err.message || 'Failed to switch architecture.');
+    } finally {
+      setArchitectureBusy(false);
+    }
+  };
 
   const resetCounters = async () => {
     if (!window.confirm('Reset usage counters for all agents? This cannot be undone.')) return;
@@ -143,7 +184,29 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   };
 
   return (
-    <div style={{ display: 'flex', gap: 22, maxWidth: 1100 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1100 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, padding: '18px 20px', background: architecture?.mode === 'hybrid' ? '#eafff6' : '#faf7f2', border: `1px solid ${architecture?.mode === 'hybrid' ? '#b7ecd4' : '#f1eadd'}`, borderRadius: 16 }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '.8px', color: '#9098b5', marginBottom: 5 }}>ARCHITECTURE MODE</div>
+          <div style={{ fontSize: 18, fontWeight: 850, color: '#141b34' }}>
+            {architecture?.mode === 'hybrid' ? 'Multi-Agent Enabled' : 'Legacy Enabled'}
+          </div>
+          <div style={{ fontSize: 12, color: '#6b7392', marginTop: 4 }}>
+            {architecture?.mode === 'hybrid'
+              ? 'The multi-agent orchestration endpoint is enabled.'
+              : 'Multi-agent orchestration is disabled; the current Advisor workflow remains active.'}
+          </div>
+          {architectureError && <div style={{ fontSize: 11, color: '#c94f79', marginTop: 6 }}>{architectureError}</div>}
+        </div>
+        <button
+          onClick={switchArchitecture}
+          disabled={!architecture || architectureBusy}
+          style={{ minWidth: 190, background: architecture?.mode === 'hybrid' ? '#fff1f6' : 'linear-gradient(135deg,#94b3fb,#b899fb)', color: architecture?.mode === 'hybrid' ? '#c94f79' : '#fff', border: architecture?.mode === 'hybrid' ? '1px solid #e384a560' : 'none', borderRadius: 11, padding: '11px 16px', fontSize: 12.5, fontWeight: 850, cursor: !architecture || architectureBusy ? 'not-allowed' : 'pointer', opacity: !architecture || architectureBusy ? .55 : 1 }}
+        >
+          {architectureBusy ? 'SWITCHING…' : architecture?.mode === 'hybrid' ? 'Disable Multi-Agent' : 'Enable Multi-Agent'}
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: 22 }}>
       {/* Agent list */}
       <div style={{ width: 240, flexShrink: 0, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, overflow: 'hidden' }}>
         <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid #f1eadd' }}>
@@ -315,6 +378,7 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
           No agents registered.
         </div>
       )}
+      </div>
     </div>
   );
 }
