@@ -1,3 +1,28 @@
+/* cosmetic pass — see commit for scope */
+:root {
+  /* spacing scale */
+  --pw-space-1: 4px;
+  --pw-space-2: 8px;
+  --pw-space-3: 12px;
+  --pw-space-4: 16px;
+  --pw-space-6: 24px;
+  --pw-space-8: 32px;
+
+  /* radius scale */
+  --pw-radius-sm: 8px;
+  --pw-radius-md: 11px;
+  --pw-radius-lg: 13px;
+  --pw-radius-xl: 16px;
+  --pw-radius-pill: 999px;
+
+  /* purple-tinted shadow scale (matches existing rgba(105,91,255,.32) tone) */
+  --pw-shadow-sm: 0 2px 6px rgba(60,72,130,.08);
+  --pw-shadow-md: 0 10px 22px rgba(105,91,255,.24);
+  --pw-shadow-lg: 0 18px 40px rgba(105,91,255,.32);
+
+  --pw-focus-ring: 0 0 0 3px rgba(148,179,251,.35), 0 0 0 1px rgba(184,153,251,.55);
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 html, body, #root { height: 100%; }
 html, body { margin: 0; padding: 0; background: #eef1fc; overflow-x: hidden; }
@@ -15,6 +40,90 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 @keyframes pwFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-7px); }
+}
+
+/* --- Advisor chat: message/typography polish --- */
+.pw-rich-text { color: #6b7392; }
+.pw-rich-text strong { font-weight: 800; color: #33405e; }
+
+.pw-msg-row { position: relative; }
+.pw-msg-timestamp {
+  opacity: 0;
+  transition: opacity 150ms ease;
+  pointer-events: none;
+}
+.pw-msg-row:hover .pw-msg-timestamp { opacity: 1; }
+
+/* --- Chips --- */
+.pw-chip {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+.pw-chip:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--pw-shadow-md);
+  border-color: #b899fb;
+}
+.pw-chip:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* --- Composer --- */
+.pw-composer-textarea {
+  resize: none;
+  overflow-y: hidden;
+  field-sizing: content;
+}
+.pw-composer-shell {
+  transition: box-shadow 150ms ease, border-color 150ms ease;
+}
+.pw-composer-shell:focus-within {
+  border-color: #b899fb;
+  box-shadow: var(--pw-focus-ring);
+}
+.pw-send-spinner {
+  animation: pwSpin .7s linear infinite;
+}
+@keyframes pwSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* --- Stepper progress fill --- */
+.pw-progress-track {
+  width: 100%;
+  height: 3px;
+  border-radius: var(--pw-radius-pill);
+  background: #f1eadd;
+  overflow: hidden;
+  margin-top: 8px;
+}
+.pw-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg,#94b3fb,#b899fb);
+  transition: width 300ms ease;
+}
+
+/* --- Sidebar nav (visual only) --- */
+.pw-nav-item { transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
+.pw-nav-item:hover:not(:disabled) { transform: translateX(2px); }
+.pw-nav-item-active-bar {
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  border-radius: var(--pw-radius-pill);
+  background: linear-gradient(180deg,#94b3fb,#b899fb);
+  box-shadow: 0 0 8px rgba(105,91,255,.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
 }
 
 .pw-mobile-bar { display: none; }

@@ -1,4 +1,6 @@
+/* cosmetic pass — see commit for scope */
 import React, { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 
@@ -17,6 +19,15 @@ function parseOptions(text) {
 function undergradGradeNumber(profile) {
   const grade = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/)?.[0];
   return grade ? Number(grade) : null;
+}
+
+// purely decorative — mirrors the header avatar, shown once per consecutive AI run
+function MiniAiAvatar() {
+  return (
+    <span style={{ width: 28, height: 28, borderRadius: 9, background: 'linear-gradient(140deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 4px 10px rgba(105,91,255,.3)' }}>
+      <svg viewBox="0 0 24 24" width="14" height="14" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+    </span>
+  );
 }
 
 function NarrativeModal({ onClose, onChoose }) {
@@ -112,6 +123,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
   const chatScrollRef = useRef(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const reduceMotion = useReducedMotion();
   const visibleChat = visibleCandidateChat(chat, {
     whatsapp: authUser?.whatsappOptIn === true,
     telegram: authUser?.telegramOptIn === true,
@@ -158,33 +170,41 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
       <div style={{ flex: 1, minHeight: 0, background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '18px 28px', borderBottom: '1px solid #f1eadd', overflowX: 'auto', flexShrink: 0 }}>
-          {STEPS.map((label, i) => {
-            const active = i === stepIdx;
-            const done = i < stepIdx;
-            const on = active || done;
-            const future = futureStages.has(label);
-            return (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                <span style={{
-                  width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 800, flexShrink: 0,
-                  ...(future
-                    ? { background: '#faf7f2', color: '#c8a85c', border: '1.5px dashed #dfcfaa' }
-                    : on
-                    ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', boxShadow: '0 6px 14px rgba(105,91,255,.3)' }
-                    : { background: '#faf7f2', color: '#aab2cc', border: '1.5px solid #e7dcc7' }),
-                }}>
-                  {done ? '✓' : i + 1}
-                </span>
-                <span style={{ fontSize: 13.5, fontWeight: active ? 800 : 600, color: active ? '#141b34' : future ? '#b58522' : '#aab2cc', whiteSpace: 'nowrap' }}>
-                  {label}
-                  {future && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, color: '#c08a1a', background: '#fff8ea', border: '1px solid #f4deb0', borderRadius: 999, padding: '2px 6px' }}>Future</span>}
-                </span>
-                {i < STEPS.length - 1 && <span style={{ width: 30, height: 2, borderRadius: 2, background: done ? '#b9a8ff' : '#e7dcc7', margin: '0 2px' }} />}
-              </div>
-            );
-          })}
+        <div style={{ padding: '18px 28px 14px', borderBottom: '1px solid #f1eadd', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto' }}>
+            {STEPS.map((label, i) => {
+              const active = i === stepIdx;
+              const done = i < stepIdx;
+              const on = active || done;
+              const future = futureStages.has(label);
+              return (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <span style={{
+                    width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13, fontWeight: 800, flexShrink: 0,
+                    ...(future
+                      ? { background: '#faf7f2', color: '#c8a85c', border: '1.5px dashed #dfcfaa' }
+                      : on
+                      ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', boxShadow: '0 6px 14px rgba(105,91,255,.3)' }
+                      : { background: '#faf7f2', color: '#aab2cc', border: '1.5px solid #e7dcc7' }),
+                  }}>
+                    {done ? '✓' : i + 1}
+                  </span>
+                  <span style={{ fontSize: 13.5, fontWeight: active ? 800 : 600, color: active ? '#141b34' : future ? '#b58522' : '#aab2cc', whiteSpace: 'nowrap' }}>
+                    {label}
+                    {future && <span style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 800, color: '#c08a1a', background: '#fff8ea', border: '1px solid #f4deb0', borderRadius: 999, padding: '2px 6px' }}>Future</span>}
+                  </span>
+                  {i < STEPS.length - 1 && <span style={{ width: 30, height: 2, borderRadius: 2, background: done ? '#b9a8ff' : '#e7dcc7', margin: '0 2px' }} />}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#aab2cc', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
+          </div>
+          <div className="pw-progress-track">
+            <div className="pw-progress-fill" style={{ width: `${Math.min(((stepIdx + 1) / STEPS.length) * 100, 100)}%` }} />
+          </div>
         </div>
 
         {/* grid: chat + rail */}
@@ -228,58 +248,88 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
                 {visibleChat.map((m, i) => {
                   if (m.role === 'ai') {
                     const parsed = parseOptions(m.text);
+                    const showAvatar = i === 0 || visibleChat[i - 1].role !== 'ai';
+                    const delay = Math.min(i * 0.03, 0.3);
                     return (
                       <React.Fragment key={i}>
-                        <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '16px 19px', fontSize: 14.5, lineHeight: 1.62, color: '#33405e', whiteSpace: 'pre-wrap', animation: 'pwFade .35s ease', maxWidth: '90%' }}>
-                          {renderFormattedText(parsed ? parsed.mainText : m.text)}
-                        </div>
+                        <motion.div
+                          className="pw-msg-row"
+                          initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay, ease: 'easeOut' }}
+                          style={{ alignSelf: 'flex-start', maxWidth: '68%', display: 'flex', alignItems: 'flex-start', gap: 10 }}
+                        >
+                          {showAvatar ? <MiniAiAvatar /> : <span style={{ width: 28, flexShrink: 0 }} />}
+                          <div className="pw-rich-text" style={{ flex: 1, minWidth: 0, background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: 'var(--pw-space-4) var(--pw-space-6)', fontSize: 14.5, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
+                            {renderFormattedText(parsed ? parsed.mainText : m.text)}
+                          </div>
+                        </motion.div>
                         {parsed && (
-                          <div style={{ alignSelf: 'flex-start', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: '0 8px 18px rgba(60,72,130,.04)' }}>
+                          <motion.div
+                            initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: delay + 0.05, ease: 'easeOut' }}
+                            style={{ alignSelf: 'flex-start', marginLeft: 38, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 16, padding: '11px 12px', display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: '90%', boxShadow: 'var(--pw-shadow-sm)' }}
+                          >
                             {parsed.options.map(opt => (
-                              <button key={opt} onClick={() => send(opt)} disabled={busy}
-                                style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                              <button key={opt} className="pw-chip" onClick={() => send(opt)} disabled={busy}
+                                style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '9px 16px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                                 {opt}
                               </button>
                             ))}
-                          </div>
+                          </motion.div>
                         )}
                       </React.Fragment>
                     );
                   }
                   return (
-                    <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: '14px 19px', fontSize: 14.5, lineHeight: 1.55, maxWidth: '82%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)', animation: 'pwFade .35s ease' }}>
+                    <motion.div
+                      key={i}
+                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
+                      style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 6px 18px', padding: 'var(--pw-space-3) var(--pw-space-4)', fontSize: 14.5, lineHeight: 1.55, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 10px 22px rgba(105,91,255,.28)' }}
+                    >
                       {m.text.startsWith('Here is my CV') ? '📄 CV / background submitted for analysis' : m.text}
-                    </div>
+                    </motion.div>
                   );
                 })}
 
                 {busy && (
-                  <div style={{ alignSelf: 'flex-start', background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '17px 20px' }}>
-                    <span style={{ display: 'inline-flex', gap: 5 }}>
-                      {[0, 1, 2].map(i => (
-                        <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#9aa3c0', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
-                      ))}
-                    </span>
+                  <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <MiniAiAvatar />
+                    <div style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: '6px 18px 18px 18px', padding: '17px 20px' }}>
+                      <span style={{ display: 'inline-flex', gap: 5 }}>
+                        {[0, 1, 2].map(i => (
+                          <span key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#9aa3c0', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+                        ))}
+                      </span>
+                    </div>
                   </div>
                 )}
 
                 {showSchoolPathChips && (
-                  <div style={{ marginTop: 4 }}>
+                  <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    style={{ marginTop: 4 }}
+                  >
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                      <button onClick={() => send("I have specific schools in mind.")} disabled={busy}
-                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <button className="pw-chip" onClick={() => send("I have specific schools in mind.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '13px 18px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
                         🎯 I know my schools
                       </button>
-                      <button onClick={() => send("Recommend a tailored portfolio for me.")} disabled={busy}
-                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <button className="pw-chip" onClick={() => send("Recommend a tailored portfolio for me.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '13px 18px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
                         ✨ Recommend me a portfolio
                       </button>
-                      <button onClick={() => send("Let's do an AI-led search together.")} disabled={busy}
-                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '11px 17px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <button className="pw-chip" onClick={() => send("Let's do an AI-led search together.")} disabled={busy}
+                        style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 14, padding: '13px 18px', fontSize: 13.5, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
                         🤝 Search with me, step by step
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
 
                 {/* Upload CV prompt */}
@@ -321,26 +371,34 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, b
 
             {/* input */}
             <div style={{ padding: '16px 24px 20px', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
+              <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
                 <button onClick={() => setShowCvModal(true)} title="Upload or paste your CV / background info"
                   style={{ background: '#faf7f2', border: 'none', borderRadius: 13, width: 42, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0, boxShadow: '0 2px 6px rgba(60,72,130,.08)' }}>
                   <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
                   </svg>
                 </button>
-                <input
+                <textarea
+                  className="pw-composer-textarea"
+                  rows={1}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKey}
                   disabled={busy}
                   placeholder={busy ? 'Analyzing…' : 'Type your answer or ask anything…'}
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14.5, padding: '11px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
                 />
                 <button onClick={() => send()} disabled={busy || !input.trim()}
                   style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: '#faf7f2', flexShrink: 0, boxShadow: '0 8px 18px rgba(105,91,255,.36)', opacity: busy || !input.trim() ? 0.55 : 1 }}>
-                  <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
-                  </svg>
+                  {busy ? (
+                    <svg className="pw-send-spinner" viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
+                      <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="19" height="19" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                    </svg>
+                  )}
                 </button>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9, paddingLeft: 6 }}>
