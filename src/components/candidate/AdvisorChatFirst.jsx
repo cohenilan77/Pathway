@@ -75,7 +75,7 @@ function StatusBar({ STEPS, stepIdx, programs }) {
 }
 
 // Live "thinking" state shown while the agent works.
-function ThinkingLine() {
+function ThinkingLine({ message }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, animation: 'pwFade .3s ease' }}>
       <AiAvatar />
@@ -85,7 +85,8 @@ function ThinkingLine() {
             <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#b899fb', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
           ))}
         </span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7392' }}>Advisor is analyzing…</span>
+        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7392', whiteSpace: 'nowrap' }}>Advisor is analyzing…</span>
+        <LongRunningAdvisorStatus busy message={message} />
       </div>
     </div>
   );
@@ -380,8 +381,7 @@ export default function AdvisorChatFirst({
               );
             })}
 
-            {busy && <ThinkingLine />}
-            <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
+            {busy && <ThinkingLine message={latestUserText} />}
 
             {/* inline artifacts: readiness and program list */}
             {showReadiness && <ReadinessCard scores={scores} profile={profile} />}
