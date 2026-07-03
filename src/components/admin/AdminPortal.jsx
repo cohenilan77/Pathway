@@ -975,7 +975,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0 }}>
             {adminView === 'candidates' && (candidateOpen ? candidateName : 'Candidates')}
             {adminView === 'users' && 'Consultants'}
-            {adminView === 'session' && 'Live Session'}
+            {adminView === 'session' && 'Logs'}
             {adminView === 'liveChat' && chatT(chatLanguage, 'liveChat')}
             {adminView === 'dashboard' && 'Dashboard'}
             {adminView === 'marketing' && 'Marketing'}
@@ -1790,24 +1790,49 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </div>
           )}
 
-          {/* ── LIVE SESSION FEED ── */}
-          {adminView === 'session' && !selectedUserId && (
-            <div style={{ maxWidth: 720, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>Select a candidate</div>
-              <div style={{ fontSize: 13, color: '#9098b5', marginBottom: 16 }}>Scroll through the candidate list and select a name to open their logs. No email is required.</div>
-              <div style={{ maxHeight: 440, overflowY: 'auto', border: '1px solid #f1eadd', borderRadius: 14, background: '#f6f1e8', padding: 8 }}>
-                {sortedCandidateUsers.length ? sortedCandidateUsers.map((candidate) => (
-                  <button key={candidate.id} onClick={() => setSelectedUserId(candidate.id)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '11px 13px', border: 'none', borderBottom: '1px solid #f1eadd', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                    <span style={{ fontSize: 13.5, fontWeight: 750, color: '#33405e' }}>{candidate.name || candidate.username || 'Candidate'}</span>
-                    <span style={{ fontSize: 11.5, color: '#9098b5' }}>{candidate.residency || 'Open logs'} →</span>
-                  </button>
-                )) : <div style={{ padding: 24, textAlign: 'center', color: '#9098b5', fontSize: 13 }}>No candidates available.</div>}
+          {/* ── CANDIDATE LOGS ── */}
+          {adminView === 'session' && (
+            <div style={{ width: '100%', maxWidth: 1120 }}>
+              <div style={{ ...cardShell, padding: 20, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, marginBottom: 14 }}>
+                  <div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>Select a candidate</div>
+                    <div style={{ fontSize: 13, color: '#9098b5' }}>Scroll through the candidate list. Select a user to display their activity log below.</div>
+                  </div>
+                  <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#6b7392', background: '#f6f1e8', borderRadius: 999, padding: '6px 10px' }}>
+                    {sortedCandidateUsers.length} candidates
+                  </div>
+                </div>
+                <div style={{ height: 190, overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #e7dcc7', borderRadius: 14, background: '#f6f1e8', padding: 7 }}>
+                  {sortedCandidateUsers.length ? sortedCandidateUsers.map((candidate) => {
+                    const selected = candidate.id === selectedUserId;
+                    const initials = (candidate.name || candidate.username || 'C').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
+                    return (
+                      <button key={candidate.id} onClick={() => setSelectedUserId(candidate.id)}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', marginBottom: 5, border: selected ? '1px solid #9a87ef' : '1px solid transparent', borderRadius: 10, background: selected ? '#eee9ff' : '#faf7f2', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: selected ? '0 4px 12px rgba(91,70,224,.08)' : 'none' }}>
+                        <span style={{ width: 32, height: 32, borderRadius: 9, background: selected ? 'linear-gradient(135deg,#6f60e8,#9a87ef)' : '#e9e1d5', color: selected ? '#fff' : '#6b7392', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials}</span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 750, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.name || candidate.username || 'Candidate'}</span>
+                          <span style={{ display: 'block', fontSize: 11.5, color: '#9098b5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.residency || 'Candidate profile'}</span>
+                        </span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: selected ? '#5b46e0' : '#aab2cc' }}>{selected ? 'Selected' : 'View'}</span>
+                      </button>
+                    );
+                  }) : <div style={{ padding: 24, textAlign: 'center', color: '#9098b5', fontSize: 13 }}>No candidates available.</div>}
+                </div>
               </div>
-            </div>
-          )}
-          {adminView === 'session' && selectedUserId && (
-            <div style={{ maxWidth: 800 }}>
+
+              <div style={{ ...cardShell, minHeight: 500, padding: 24 }}>
+                {!selectedUserId ? (
+                  <div style={{ minHeight: 450, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', border: '1px dashed #dfd4c2', borderRadius: 16, background: '#f6f1e8' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 14, background: '#eee9ff', color: '#6f60e8', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                      <NavIcon><path d="M4 4h16v16H4z" /><path d="M8 9h8M8 13h8M8 17h5" /></NavIcon>
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#33405e', marginBottom: 5 }}>Candidate logs will appear here</div>
+                    <div style={{ fontSize: 13, color: '#9098b5' }}>Choose a candidate from the list above to review their complete session.</div>
+                  </div>
+                ) : (
+                  <>
               <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
               {/* Summarize button */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -1871,6 +1896,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   <div ref={chatLogEndRef} />
                 </div>
               )}
+                  </>
+                )}
+              </div>
             </div>
           )}
 
