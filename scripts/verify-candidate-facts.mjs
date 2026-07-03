@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { buildCandidateFacts, buildComplementaryQuestion, extractWorkTimeline } from '../lib/candidate-facts.js';
 import { CANDIDATE_KPI_SCHEMAS } from '../lib/candidate-kpi-schemas.js';
 import { normalizeProgram } from '../lib/program-normalizer.js';
+import { applyDeterministicKpiToResponse } from '../lib/deterministic-kpi-response.js';
+import { longRunningStatus } from '../src/lib/longRunningAdvisorStatus.js';
 
 const fixedNow = new Date('2026-01-01T00:00:00Z');
 
@@ -104,6 +106,50 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
     assert.ok(Array.isArray(program.missingActions));
     assert.ok(program.fitExplanation);
   }
+}
+
+// 7. CV education is a valid academic baseline even when no GPA is printed.
+{
+  const facts = buildCandidateFacts({
+    candidateType: 'MBA',
+    cvExtraction: 'Tel Aviv University — Bachelor of Arts in Economics, 2013\nConsultant 2018-2024',
+    profile: {
+      leadershipEvidence: 'Led the diligence workstream',
+      careerProgression: 'Promoted to senior consultant',
+      achievementsImpact: 'Reduced client costs by 15%',
+      gmat: 720,
+      whyMBA: 'I need an MBA now to move into general management.',
+      postMbaGoal: 'After the MBA I want to lead corporate strategy.',
+    },
+  });
+  assert.ok(facts.profileCompleteness.knownFields.includes('academic'));
+  assert.ok(!facts.profileCompleteness.missingFields.includes('academic'));
+}
+
+// 8. The old deterministic fallback never replaces CV analysis with a generic prompt.
+{
+  const previous = process.env.DETERMINISTIC_KPI_ENGINE;
+  process.env.DETERMINISTIC_KPI_ENGINE = 'true';
+  const response = applyDeterministicKpiToResponse({
+    raw: 'I extracted your CV details.<SCORES>{"overall":40}</SCORES><PROGRAMS>[]</PROGRAMS>',
+    message: 'I extracted your CV details.',
+    statePatch: { profile: { category: 'MBA', education: ['Bachelor of Arts'] } },
+  }, {
+    candidateState: { message: 'Here is my CV', profile: { category: 'MBA' } },
+  });
+  assert.ok(!response.raw.includes('I have the initial profile facts'));
+  assert.ok(!response.raw.includes('To finish the score'));
+  assert.ok(!response.raw.includes('<SCORES>'));
+  assert.ok(!response.raw.includes('<PROGRAMS>'));
+  if (previous == null) delete process.env.DETERMINISTIC_KPI_ENGINE;
+  else process.env.DETERMINISTIC_KPI_ENGINE = previous;
+}
+
+// 9. Timed loading copy stays compact enough for the ellipsis row.
+{
+  const status = longRunningStatus(30, 'Here is my CV');
+  assert.equal(status.title, 'Still scanning your file…');
+  assert.ok(status.title.length < 40);
 }
 
 console.log('candidate facts and analysis flow checks passed');
