@@ -1,6 +1,7 @@
 import { getActor } from '../lib/admin.js';
 import { getUserById, ROLES } from '../lib/db.js';
 import { getStore } from '../lib/store.js';
+import { normalizeEmail } from '../lib/auth.js';
 import { isTraceEnabled, getTrace, clearTrace } from '../lib/agent-trace.js';
 
 export default async function handler(req, res) {
@@ -27,7 +28,7 @@ export default async function handler(req, res) {
   if (!resolvedCandidateId && email) {
     try {
       const store = getStore();
-      const normalized = email.toLowerCase().trim();
+      const normalized = normalizeEmail(email);
       resolvedCandidateId = await store.get(`user:byEmail:${normalized}`);
       if (resolvedCandidateId) {
         resolvedEmail = email;
