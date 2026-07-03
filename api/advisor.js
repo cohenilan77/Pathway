@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       candidateId: candidateId || 'anonymous', message, action: body.action, payload: body.payload,
       conversationHistory: body.messages || [], candidateState: effectiveState,
     });
-    if (!result.delegateToAdvisor) {
+    if (!result.delegateToAdvisor && !result.continueWithAdvisor) {
       const response = makeAdvisorResponse({
         architecture: 'hybrid', agent: result.agent, raw: result.message,
         statePatch: result.statePatch, metadata: result.metadata,
@@ -70,6 +70,38 @@ export default async function handler(req, res) {
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: response.metadata?.configVersion });
       return res.status(200).json(response);
     }
+
+    // A CV/profile upload is a two-agent turn: ProfileAgent extracts and saves
+    // structured facts, then AdvisorAgent produces the user-facing continuation.
+    // Never expose the specialist's tool-completion prose as the final reply.
+    if (result.continueWithAdvisor) {
+      const specialistResponse = makeAdvisorResponse({
+        architecture: 'hybrid', agent: result.agent, raw: '',
+        statePatch: result.statePatch, metadata: result.metadata,
+      });
+      await persistStatePatch(candidateId, specialistResponse);
+
+      const continued = await invokeAdvisor(req, false);
+      if (continued.error) throw new Error(continued.error?.details || continued.error?.error || 'Advisor continuation failed.');
+      const response = {
+        ...continued.response,
+        architecture: 'hybrid',
+        coordinator: 'AdvisorCoordinator',
+        agent: 'AdvisorAgent',
+        statePatch: { ...(result.statePatch || {}), ...(continued.response.statePatch || {}) },
+        metadata: {
+          ...continued.response.metadata,
+          delegatedAgent: result.agent,
+          specialistConfigVersion: result.metadata?.configVersion,
+          specialistLatencyMs: result.metadata?.latencyMs,
+          fallbackUsed: false,
+        },
+      };
+      await persistStatePatch(candidateId, response);
+      await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: result.metadata?.configVersion });
+      return res.status(200).json(response);
+    }
+
     const fallback = await invokeAdvisor(req, false);
     if (fallback.error) throw new Error(fallback.error?.details || fallback.error?.error || 'Hybrid AdvisorAgent failed.');
     const response = { ...fallback.response, architecture: 'hybrid', coordinator: 'AdvisorCoordinator', agent: 'AdvisorAgent', metadata: { ...fallback.response.metadata, delegatedAgent: result.disabledAgent || 'advisor', fallbackUsed: false } };
