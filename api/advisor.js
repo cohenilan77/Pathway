@@ -7,6 +7,7 @@ import { HybridCoordinator } from '../lib/hybrid-coordinator.js';
 import { recordArchitectureEvent } from '../lib/architecture-metrics.js';
 import { updateCandidateProfile } from '../lib/agents/tools/update.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
+import { applyDeterministicKpiToResponse, buildDeterministicAdvisorContext } from '../lib/deterministic-kpi-response.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -46,10 +47,38 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
   return diagnostic;
 }
 
-async function invokeAdvisor(req, bypassRuntimeConfig) {
+async function finalizeKpiResponse(response, candidateState, candidateId) {
+  const finalized = applyDeterministicKpiToResponse(response, { candidateState });
+  if (finalized?.metadata?.deterministicKpiEngine) {
+    const fallback = !!finalized.metadata.deterministicKpiEngineFallback;
+    await recordCandidateActivity(candidateId, {
+      type: 'scoring',
+      label: fallback ? 'Deterministic KPI fallback used' : 'Deterministic KPI scores calculated',
+      status: fallback ? 'warning' : 'success',
+      agent: 'KpiEngine',
+      architecture: 'deterministic',
+      detail: fallback ? 'Existing model values were preserved because normalized facts were insufficient.' : `Calculated overall readiness ${finalized.metadata.overall}.`,
+      metadata: {
+        deterministicKpiEngine: true,
+        kpiVersion: finalized.metadata.kpiVersion,
+        scoredKeys: finalized.metadata.scoredKeys || [],
+        overall: finalized.metadata.overall,
+        missingFields: finalized.metadata.missingFields || [],
+        fallback,
+      },
+    }).catch(() => {});
+  }
+  return finalized;
+}
+
+async function invokeAdvisor(req, bypassRuntimeConfig, candidateState = {}) {
   const headers = { ...(req.headers || {}) };
   if (bypassRuntimeConfig) headers['x-pathway-legacy-bypass'] = '1';
-  const result = await invokeHandler(chatHandler, { ...req, method: 'POST', headers });
+  const deterministicContext = buildDeterministicAdvisorContext(candidateState);
+  const body = deterministicContext
+    ? { ...(req.body || {}), systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }
+    : req.body;
+  const result = await invokeHandler(chatHandler, { ...req, body, method: 'POST', headers });
   if (result.statusCode >= 400) return { error: result.payload, statusCode: result.statusCode };
   const raw = result.payload?.raw || result.payload?.reply || '';
   return { response: makeAdvisorResponse({ architecture: 'legacy', agent: 'LegacyAdvisor', raw }) };
@@ -82,11 +111,14 @@ export default async function handler(req, res) {
   }).catch(() => {});
   const architecture = await getAgentArchitecture();
   if (architecture.mode !== 'hybrid') {
-    const output = await invokeAdvisor(req, true);
+    const candidateState = candidateId ? (await getUserData(candidateId).catch(() => ({}))) : {};
+    const effectiveState = { ...req.body, ...(req.body?.candidateState || {}), ...(candidateState || {}) };
+    const output = await invokeAdvisor(req, true, effectiveState);
     if (output.error) return res.status(output.statusCode).json(output.error);
-    await persistStatePatch(candidateId, output.response);
-    await recordArchitectureEvent({ architecture: 'legacy', agent: output.response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
-    return res.status(200).json(output.response);
+    const response = await finalizeKpiResponse(output.response, effectiveState, candidateId);
+    await persistStatePatch(candidateId, response);
+    await recordArchitectureEvent({ architecture: 'legacy', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
+    return res.status(200).json(response);
   }
 
   const body = req.body || {};
@@ -134,7 +166,7 @@ export default async function handler(req, res) {
       },
     }).catch(() => {});
     if (!result.delegateToAdvisor && !result.continueWithAdvisor) {
-      const response = makeAdvisorResponse({
+      let response = makeAdvisorResponse({
         architecture: 'hybrid', agent: result.agent, raw: result.message,
         statePatch: result.statePatch,
         metadata: hybridMetadata(result.metadata, {
@@ -143,6 +175,7 @@ export default async function handler(req, res) {
           latencyMs: Date.now() - startedAt,
         }),
       });
+      response = await finalizeKpiResponse(response, effectiveState, candidateId);
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: response.metadata?.configVersion });
       return res.status(200).json(response);
@@ -158,9 +191,9 @@ export default async function handler(req, res) {
       });
       await persistStatePatch(candidateId, specialistResponse);
 
-      const continued = await invokeAdvisor(req, false);
+      const continued = await invokeAdvisor(req, false, { ...effectiveState, ...(result.statePatch || {}) });
       if (continued.error) throw new Error(continued.error?.details || continued.error?.error || 'Advisor continuation failed.');
-      const response = {
+      let response = {
         ...continued.response,
         architecture: 'hybrid',
         coordinator: 'AdvisorCoordinator',
@@ -182,14 +215,15 @@ export default async function handler(req, res) {
           latencyMs: Date.now() - startedAt,
         },
       };
+      response = await finalizeKpiResponse(response, effectiveState, candidateId);
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: result.metadata?.configVersion });
       return res.status(200).json(response);
     }
 
-    const fallback = await invokeAdvisor(req, false);
+    const fallback = await invokeAdvisor(req, false, effectiveState);
     if (fallback.error) throw new Error(fallback.error?.details || fallback.error?.error || 'Hybrid AdvisorAgent failed.');
-    const response = {
+    let response = {
       ...fallback.response,
       architecture: 'hybrid', coordinator: 'AdvisorCoordinator', agent: 'AdvisorAgent',
       metadata: hybridMetadata(result.metadata, {
@@ -201,6 +235,7 @@ export default async function handler(req, res) {
         latencyMs: Date.now() - startedAt,
       }),
     };
+    response = await finalizeKpiResponse(response, effectiveState, candidateId);
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(response);
@@ -214,9 +249,11 @@ export default async function handler(req, res) {
       detail: error.message || 'Unknown specialist failure.',
     }).catch(() => {});
     if (!architecture.fallbackToLegacy) return res.status(500).json({ error: 'Hybrid advisor failed.', detail: error.message });
-    const fallback = await invokeAdvisor(req, true);
+    const fallbackState = candidateId ? (await getUserData(candidateId).catch(() => ({}))) : {};
+    const effectiveFallbackState = { ...req.body, ...(req.body?.candidateState || {}), ...(fallbackState || {}) };
+    const fallback = await invokeAdvisor(req, true, effectiveFallbackState);
     if (fallback.error) return res.status(fallback.statusCode).json(fallback.error);
-    const response = {
+    let response = {
       ...fallback.response,
       architecture: 'hybrid', coordinator: 'AdvisorCoordinator',
       metadata: hybridMetadata(routingResult?.metadata, {
@@ -228,6 +265,7 @@ export default async function handler(req, res) {
         latencyMs: Date.now() - startedAt,
       }),
     };
+    response = await finalizeKpiResponse(response, effectiveFallbackState, candidateId);
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: true, error: error.message });
     return res.status(200).json(response);
