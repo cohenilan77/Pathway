@@ -1,4 +1,6 @@
+/* cosmetic pass — see commit for scope */
 import React, { useEffect, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { resolveTrack } from '../../trackConfig.js';
@@ -51,6 +53,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const idleCountRef = useRef(0);
   const MAX_IDLE_FIRES = 2;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const visibleChat = visibleCandidateChat(chat, {
     whatsapp: authUser?.whatsappOptIn === true,
@@ -137,39 +140,47 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
       <div style={{ flex: 1, minHeight: 0, borderRadius: 24, border: '1px solid #ece6f8', boxShadow: '0 20px 50px rgba(60,72,130,.10)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2' }}>
 
         {/* stepper */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '14px 24px', borderBottom: '1px solid #f1eadd', overflowX: 'auto', flexShrink: 0, background: '#faf7f2' }}>
-          {STEPS.map((label, i) => {
-            const active = i === stepIdx;
-            const done = i < stepIdx;
-            const future = futureStages.has(label);
-            return (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px 5px 7px', borderRadius: 999,
-                  ...(future
-                    ? { background: '#fff8e8', border: '1px dashed #dfcfaa' }
-                    : active
-                    ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 4px 12px rgba(105,91,255,.30)' }
-                    : done
-                    ? { background: '#eafff6', border: '1px solid #b7ecd4' }
-                    : { background: '#f6f1e8', border: '1px solid #e7dcc7' }),
-                }}>
-                  <span style={{
-                    width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0,
-                    ...(active ? { background: 'rgba(255,255,255,.25)', color: '#faf7f2' } : done ? { background: '#3fdca9', color: '#fff' } : future ? { background: '#fbe9c0', color: '#c08a1a' } : { background: '#e7dcc7', color: '#9098b5' }),
+        <div style={{ padding: '14px 24px 10px', borderBottom: '1px solid #f1eadd', flexShrink: 0, background: '#faf7f2' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto' }}>
+            {STEPS.map((label, i) => {
+              const active = i === stepIdx;
+              const done = i < stepIdx;
+              const future = futureStages.has(label);
+              return (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px 5px 7px', borderRadius: 999,
+                    ...(future
+                      ? { background: '#fff8e8', border: '1px dashed #dfcfaa' }
+                      : active
+                      ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 4px 12px rgba(105,91,255,.30)' }
+                      : done
+                      ? { background: '#eafff6', border: '1px solid #b7ecd4' }
+                      : { background: '#f6f1e8', border: '1px solid #e7dcc7' }),
                   }}>
-                    {done ? '✓' : i + 1}
-                  </span>
-                  <span style={{ fontSize: 12.5, fontWeight: active ? 800 : 600, whiteSpace: 'nowrap', color: active ? '#faf7f2' : done ? '#16875c' : future ? '#b58522' : '#9098b5' }}>
-                    {label}
-                  </span>
+                    <span style={{
+                      width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0,
+                      ...(active ? { background: 'rgba(255,255,255,.25)', color: '#faf7f2' } : done ? { background: '#3fdca9', color: '#fff' } : future ? { background: '#fbe9c0', color: '#c08a1a' } : { background: '#e7dcc7', color: '#9098b5' }),
+                    }}>
+                      {done ? '✓' : i + 1}
+                    </span>
+                    <span style={{ fontSize: 12.5, fontWeight: active ? 800 : 600, whiteSpace: 'nowrap', color: active ? '#faf7f2' : done ? '#16875c' : future ? '#b58522' : '#9098b5' }}>
+                      {label}
+                    </span>
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <span style={{ width: 20, height: 2, borderRadius: 2, background: done ? 'linear-gradient(90deg,#b9a8ff,#d4c9ff)' : '#e7dcc7', flexShrink: 0 }} />
+                  )}
                 </div>
-                {i < STEPS.length - 1 && (
-                  <span style={{ width: 20, height: 2, borderRadius: 2, background: done ? 'linear-gradient(90deg,#b9a8ff,#d4c9ff)' : '#e7dcc7', flexShrink: 0 }} />
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#aab2cc', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
+          </div>
+          <div className="pw-progress-track">
+            <div className="pw-progress-fill" style={{ width: `${Math.min(((stepIdx + 1) / STEPS.length) * 100, 100)}%` }} />
+          </div>
         </div>
 
         {/* body: chat + rail */}
@@ -199,33 +210,46 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                   const isLast = i === visibleChat.length - 1;
                   const parsed = parseOptions(m.text);
                   const showChipsHere = parsed && (!isLast || busy);
+                  const showAvatar = i === 0 || visibleChat[i - 1].role !== 'ai';
+                  const delay = Math.min(i * 0.03, 0.3);
                   return (
-                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', animation: 'pwFade .3s ease' }}>
+                    <motion.div
+                      key={i}
+                      className="pw-msg-row"
+                      initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay, ease: 'easeOut' }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}
+                    >
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                        <AiAvatar />
-                        <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.6, color: '#33405e', maxWidth: 520, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
+                        {showAvatar ? <AiAvatar /> : <span style={{ width: 34, flexShrink: 0 }} />}
+                        <div className="pw-rich-text" style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.6, maxWidth: 520, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
                           {renderFormattedText(parsed ? parsed.mainText : m.text)}
                         </div>
                       </div>
                       {showChipsHere && (
                         <div style={{ marginLeft: 42, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                           {parsed.options.map(opt => (
-                            <button key={opt} onClick={() => handleChip(opt)} disabled={busy}
-                              style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                              onMouseEnter={e => { if (!busy) { e.target.style.background = '#f0ebff'; e.target.style.borderColor = '#b899fb'; } }}
-                              onMouseLeave={e => { e.target.style.background = '#fff'; e.target.style.borderColor = '#d8cdb4'; }}>
+                            <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
+                              style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                               {opt}
                             </button>
                           ))}
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   );
                 }
                 return (
-                  <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#7c6ef5,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 4px 18px', padding: '12px 17px', fontSize: 14, lineHeight: 1.55, maxWidth: '76%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(105,91,255,.26)', animation: 'pwFade .3s ease' }}>
+                  <motion.div
+                    key={i}
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
+                    style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#7c6ef5,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 4px 18px', padding: '12px 17px', fontSize: 14, lineHeight: 1.55, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(105,91,255,.26)' }}
+                  >
                     {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
-                  </div>
+                  </motion.div>
                 );
               })}
 
@@ -244,18 +268,23 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               )}
 
               {showSchoolPathChips && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginLeft: 42 }}>
+                <motion.div
+                  initial={reduceMotion ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginLeft: 42 }}
+                >
                   {[
                     { label: '🎯 I know my schools', msg: 'I have specific schools in mind.' },
                     { label: '✨ Recommend a portfolio', msg: 'Recommend a tailored portfolio for me.' },
                     { label: '🤝 Search with me', msg: "Let's do an AI-led search together." },
                   ].map(({ label, msg }) => (
-                    <button key={msg} onClick={() => send(msg)} disabled={busy}
-                      style={{ background: '#faf7f2', border: '1.5px solid #d8cdb4', borderRadius: 14, padding: '10px 16px', fontSize: 13, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button key={msg} className="pw-chip" onClick={() => send(msg)} disabled={busy}
+                      style={{ background: '#faf7f2', border: '1.5px solid #d8cdb4', borderRadius: 14, padding: '12px 18px', fontSize: 13, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {label}
                     </button>
                   ))}
-                </div>
+                </motion.div>
               )}
 
               {scores && stepIdx >= 2 && (
@@ -286,8 +315,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 8 }}>QUICK REPLY</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                   {lastParsed.options.map(opt => (
-                    <button key={opt} onClick={() => handleChip(opt)} disabled={busy}
-                      style={{ background: 'linear-gradient(135deg,#f0ebff,#ece6f8)', border: '1.5px solid #d4c4f8', borderRadius: 999, padding: '7px 15px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                    <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
+                      style={{ background: 'linear-gradient(135deg,#f0ebff,#ece6f8)', border: '1.5px solid #d4c4f8', borderRadius: 999, padding: '9px 17px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
                       onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#94b3fb,#b899fb)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#b899fb'; }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#f0ebff,#ece6f8)'; e.currentTarget.style.color = '#5b46e0'; e.currentTarget.style.borderColor = '#d4c4f8'; }}>
                       {opt}
@@ -299,27 +328,35 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
             {/* input */}
             <div style={{ padding: lastParsed && !busy ? '10px 20px 18px' : '14px 20px 18px', flexShrink: 0, background: '#faf7f2' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
+              <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
                 <button onClick={() => setShowCvModal(true)} title="Upload CV"
                   style={{ background: '#faf7f2', border: 'none', borderRadius: 12, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0 }}>
                   <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
                   </svg>
                 </button>
-                <input
+                <textarea
                   ref={inputRef}
+                  className="pw-composer-textarea"
+                  rows={1}
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKey}
                   disabled={busy}
                   placeholder={busy ? 'Analyzing…' : lastParsed ? 'Or type your own answer…' : 'Type your answer or ask anything…'}
-                  style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                  style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
                 />
                 <button onClick={() => send()} disabled={busy || !input.trim()}
                   style={{ background: input.trim() ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7', border: 'none', borderRadius: 13, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#faf7f2' : '#9098b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(105,91,255,.32)' : 'none' }}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
-                  </svg>
+                  {busy ? (
+                    <svg className="pw-send-spinner" viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
+                      <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                      <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                    </svg>
+                  )}
                 </button>
               </div>
               <div style={{ marginTop: 7, paddingLeft: 4, fontSize: 11, color: '#c0c8e0', fontWeight: 500 }}>

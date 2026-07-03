@@ -1,4 +1,6 @@
+/* cosmetic pass — see commit for scope */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
@@ -50,6 +52,9 @@ function StatusBar({ STEPS, stepIdx, programs }) {
         <span style={{ flex: 1 }} />
         <span style={{ fontSize: 11, fontWeight: 600, color: '#c0c8e0' }}>{open ? 'Hide journey' : 'View journey'}</span>
         <Chevron open={open} />
+      </div>
+      <div className="pw-progress-track" style={{ marginTop: 9 }}>
+        <div className="pw-progress-fill" style={{ width: `${Math.min(((Math.min(stepIdx, STEPS.length - 1) + 1) / STEPS.length) * 100, 100)}%` }} />
       </div>
       {open && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1eadd' }}>
@@ -184,12 +189,12 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
           const gaps = Array.isArray(program.evidenceGaps) ? program.evidenceGaps : [];
           const actions = Array.isArray(program.missingActions) ? program.missingActions : [];
           return (
-            <div key={program.name} onClick={() => toggle(program.name)}
-              style={{ padding: '12px 13px', borderRadius: 14, cursor: 'pointer', transition: 'all .15s', border: `1.5px solid ${isPicked ? '#9b83f5' : meta.border}`, background: isPicked ? '#f7f3ff' : meta.bg, boxShadow: isPicked ? 'inset 3px 0 0 #9b83f5' : 'none' }}>
+            <div key={program.name} className={`pw-card${isPicked ? ' is-selected' : ''}`} onClick={() => toggle(program.name)}
+              style={{ padding: '12px 13px', borderRadius: 14, cursor: 'pointer', border: `1.5px solid ${isPicked ? '#9b83f5' : meta.border}`, background: isPicked ? '#f7f3ff' : meta.bg }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-                <span style={{
-                  width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
-                  ...(isPicked ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 8px rgba(105,91,255,.3)' } : { background: '#fff', border: `1.5px solid ${meta.border}` }),
+                <span className="pw-card-check-badge" style={{
+                  width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  ...(isPicked ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 8px rgba(105,91,255,.3)', transform: 'scale(1.05)' } : { background: '#fff', border: `1.5px solid ${meta.border}` }),
                 }}>
                   {isPicked && (
                     <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
@@ -296,6 +301,7 @@ export default function AdvisorChatFirst({
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const reduceMotion = useReducedMotion();
 
   const visibleChat = visibleCandidateChat(chat, {
     whatsapp: authUser?.whatsappOptIn === true,
@@ -370,33 +376,46 @@ export default function AdvisorChatFirst({
                 const visibleText = isLast && chosenSchools?.length && TARGET_SELECTION_LOOP.test(m.text || '') && !needsSelectionRecovery ? NARRATIVE_START : m.text;
                 const parsed = parseOptions(visibleText);
                 const showChipsHere = parsed && (!isLast || busy);
+                const showAvatar = i === 0 || visibleChat[i - 1].role !== 'ai';
+                const delay = Math.min(i * 0.03, 0.3);
                 return (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', animation: 'pwFade .3s ease' }}>
+                  <motion.div
+                    key={i}
+                    className="pw-msg-row"
+                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay, ease: 'easeOut' }}
+                    style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}
+                  >
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                      <AiAvatar />
-                      <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.65, color: '#33405e', maxWidth: 640, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
+                      {showAvatar ? <AiAvatar /> : <span style={{ width: 34, flexShrink: 0 }} />}
+                      <div className="pw-rich-text" style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.65, maxWidth: 640, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
                         {renderFormattedText(parsed ? parsed.mainText : visibleText)}
                       </div>
                     </div>
                     {showChipsHere && (
                       <div style={{ marginLeft: 42, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                         {parsed.options.map(opt => (
-                          <button key={opt} onClick={() => handleChip(opt)} disabled={busy}
-                            style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                            onMouseEnter={e => { if (!busy) { e.target.style.background = '#f0ebff'; e.target.style.borderColor = '#b899fb'; } }}
-                            onMouseLeave={e => { e.target.style.background = '#fff'; e.target.style.borderColor = '#d8cdb4'; }}>
+                          <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
+                            style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                             {opt}
                           </button>
                         ))}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 );
               }
               return (
-                <div key={i} style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#7c6ef5,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 4px 18px', padding: '12px 17px', fontSize: 14, lineHeight: 1.55, maxWidth: '76%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(105,91,255,.26)', animation: 'pwFade .3s ease' }}>
+                <motion.div
+                  key={i}
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
+                  style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#7c6ef5,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 4px 18px', padding: '12px 17px', fontSize: 14, lineHeight: 1.55, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(105,91,255,.26)' }}
+                >
                   {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
-                </div>
+                </motion.div>
               );
             })}
 
@@ -429,8 +448,8 @@ export default function AdvisorChatFirst({
               <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 8 }}>QUICK REPLY</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                 {lastParsed.options.map(opt => (
-                  <button key={opt} onClick={() => handleChip(opt)} disabled={busy}
-                    style={{ background: 'linear-gradient(135deg,#f0ebff,#ece6f8)', border: '1.5px solid #d4c4f8', borderRadius: 999, padding: '7px 15px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                  <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
+                    style={{ background: 'linear-gradient(135deg,#f0ebff,#ece6f8)', border: '1.5px solid #d4c4f8', borderRadius: 999, padding: '9px 17px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#94b3fb,#b899fb)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#b899fb'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#f0ebff,#ece6f8)'; e.currentTarget.style.color = '#5b46e0'; e.currentTarget.style.borderColor = '#d4c4f8'; }}>
                     {opt}
@@ -444,27 +463,35 @@ export default function AdvisorChatFirst({
         {/* input */}
         <div style={{ padding: lastParsed && !busy ? '10px 20px 8px' : '14px 20px 8px', flexShrink: 0, background: '#faf7f2' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
+            <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
               <button onClick={() => setShowCvModal(true)} title="Upload CV"
                 style={{ background: '#faf7f2', border: 'none', borderRadius: 12, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0 }}>
                 <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
                 </svg>
               </button>
-              <input
+              <textarea
                 ref={inputRef}
+                className="pw-composer-textarea"
+                rows={1}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
                 disabled={busy}
                 placeholder={busy ? 'Advisor is analyzing…' : lastParsed ? 'Or type your own answer…' : 'Ask anything or type your answer…'}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500 }}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
               />
               <button onClick={() => send()} disabled={busy || !input.trim()}
                 style={{ background: input.trim() ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7', border: 'none', borderRadius: 13, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#faf7f2' : '#9098b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(105,91,255,.32)' : 'none' }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                  <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
-                </svg>
+                {busy ? (
+                  <svg className="pw-send-spinner" viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
+                    <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                  </svg>
+                )}
               </button>
             </div>
 
@@ -472,14 +499,14 @@ export default function AdvisorChatFirst({
             {chips.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
                 {chosenSchools?.length > 0 && !narrative && (
-                  <button onClick={reopenProgramSelection} disabled={busy}
-                    style={{ background: '#f0ebff', border: '1.5px solid #b899fb', borderRadius: 999, padding: '6px 13px', fontSize: 12, fontWeight: 800, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                  <button className="pw-chip" onClick={reopenProgramSelection} disabled={busy}
+                    style={{ background: '#f0ebff', border: '1.5px solid #b899fb', borderRadius: 999, padding: '8px 15px', fontSize: 12, fontWeight: 800, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                     Change school selection
                   </button>
                 )}
                 {chips.map(({ label, msg }) => (
-                  <button key={msg} onClick={() => handleChip(msg)} disabled={busy}
-                    style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 999, padding: '6px 13px', fontSize: 12, fontWeight: 700, color: '#6b7392', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                  <button key={msg} className="pw-chip" onClick={() => handleChip(msg)} disabled={busy}
+                    style={{ background: '#faf7f2', border: '1.5px solid #e7dcc7', borderRadius: 999, padding: '8px 15px', fontSize: 12, fontWeight: 700, color: '#6b7392', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
                     onMouseEnter={e => { if (!busy) { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.color = '#5b46e0'; } }}
                     onMouseLeave={e => { e.currentTarget.style.borderColor = '#e7dcc7'; e.currentTarget.style.color = '#6b7392'; }}>
                     {label}

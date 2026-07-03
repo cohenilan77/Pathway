@@ -88,8 +88,8 @@ function navFromConfig(config, hasChatAccess) {
 
 function navStyle(active) {
   return active
-    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 13, padding: '12px 15px', borderRadius: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#faf7f2', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 12px 24px rgba(105,91,255,.36), inset 0 1px 0 rgba(255,255,255,.32)' }
-    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 13, padding: '12px 15px', borderRadius: 15, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#5e688c', background: 'transparent' };
+    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 13, padding: '13px 16px', borderRadius: 15, fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#faf7f2', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 12px 24px rgba(105,91,255,.36), inset 0 1px 0 rgba(255,255,255,.32)' }
+    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 13, padding: '13px 16px', borderRadius: 15, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#5e688c', background: 'transparent' };
 }
 function navIconStyle(active) {
   return active
@@ -973,13 +973,14 @@ export default function CandidatePortal(props) {
 
         <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', margin: '24px 12px 10px' }}>MENU</div>
 
-        {/* nav */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* nav — cosmetic pass — see commit for scope */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {navItems.map(item => {
             const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
-              <button key={item.key} onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
+              <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
+                {active && <span className="pw-nav-item-active-bar" />}
                 <span style={navIconStyle(active)}>{item.icon}</span>
                 <span style={{ minWidth: 0, flex: 1 }}>
                   <span>{item.label}</span>
