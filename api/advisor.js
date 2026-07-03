@@ -88,6 +88,16 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
     delete nextStatePatch.programs;
     let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['SCORES', 'PROGRAMS']);
     const question = buildComplementaryQuestion(candidateFacts);
+    if (question) {
+      persistedProfile.profileCompleteness = {
+        ...persistedProfile.profileCompleteness,
+        askedFields: [...new Set([
+          ...(persistedProfile.profileCompleteness?.askedFields || []),
+          ...(candidateFacts.nextMissingFields || []),
+        ])],
+      };
+      nextStatePatch.profile = persistedProfile;
+    }
     if (question && !String(raw).includes(question)) raw = `${raw}\n\n${question}`.trim();
     finalized = {
       ...finalized,
