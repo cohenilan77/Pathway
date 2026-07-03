@@ -5,7 +5,10 @@ import { normalizeEmail } from '../lib/auth.js';
 import { isTraceEnabled, getTrace, clearTrace } from '../lib/agent-trace.js';
 
 export default async function handler(req, res) {
-  if (!isTraceEnabled()) {
+  const traceEnabled = isTraceEnabled();
+  console.log('[admin-agent-trace] isTraceEnabled:', traceEnabled, 'env:', process.env.AGENT_TRACE_ENABLED);
+
+  if (!traceEnabled) {
     return res.status(404).json({ error: 'Not found' });
   }
 
