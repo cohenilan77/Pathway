@@ -1,4 +1,4 @@
-import { CANDIDATE_KPI_SCHEMAS } from '../lib/candidate-kpi-schemas.js';
+import { CANDIDATE_KPI_SCHEMAS, getCandidateKpiWeights } from '../lib/candidate-kpi-schemas.js';
 
 export const DEFAULT_STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 export const UNDERGRAD_STEPS = ['Profile', 'Roadmap', 'Activities', 'Universities', 'Testing', 'Essays', 'Applications'];
@@ -169,6 +169,20 @@ export const TRACK_CONFIG = {
   },
 };
 
+// Make the shared schema authoritative for every consumer, including code
+// that imports TRACK_CONFIG directly instead of calling getTrackConfig.
+for (const [track, config] of Object.entries(TRACK_CONFIG)) {
+  const schema = CANDIDATE_KPI_SCHEMAS[track] || CANDIDATE_KPI_SCHEMAS.Graduate;
+  const descriptions = Object.fromEntries((config.kpis || []).map(([key, , description]) => [key, description]));
+  config.kpis = schema.kpis.map(([key, label]) => [
+    key,
+    label,
+    descriptions[key] || schema.scoringRules?.[key] || `${label} evidence and readiness.`,
+  ]);
+  config.scoreWeights = getCandidateKpiWeights({}, track);
+  config.candidateKpiSchema = schema;
+}
+
 export function resolveTrack(profile = {}) {
   const category = profile?.category;
   const degree = `${profile?.degree || profile?.program || ''}`.toLowerCase();
@@ -181,6 +195,5 @@ export function resolveTrack(profile = {}) {
 
 export function getTrackConfig(profile = {}) {
   const track = resolveTrack(profile);
-  const config = TRACK_CONFIG[track] || TRACK_CONFIG.Graduate;
-  return { ...config, candidateKpiSchema: CANDIDATE_KPI_SCHEMAS[track] || CANDIDATE_KPI_SCHEMAS.Graduate };
+  return TRACK_CONFIG[track] || TRACK_CONFIG.Graduate;
 }
