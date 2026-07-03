@@ -8,6 +8,7 @@ import { recordArchitectureEvent } from '../lib/architecture-metrics.js';
 import { updateCandidateProfile } from '../lib/agents/tools/update.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { applyDeterministicKpiToResponse, buildDeterministicAdvisorContext } from '../lib/deterministic-kpi-response.js';
+import { buildCandidateFacts, buildComplementaryQuestion, stripStructuredBlocks } from '../lib/candidate-facts.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -48,7 +49,76 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
 }
 
 async function finalizeKpiResponse(response, candidateState, candidateId) {
-  const finalized = applyDeterministicKpiToResponse(response, { candidateState });
+  let finalized = applyDeterministicKpiToResponse(response, { candidateState });
+  const mergedProfile = { ...(candidateState?.profile || {}), ...(finalized?.statePatch?.profile || {}) };
+  const candidateFacts = buildCandidateFacts({
+    cvExtraction: candidateState?.cvExtraction || mergedProfile?.candidateFacts?.cvExtraction || {},
+    extraText: candidateState?.extraText || candidateState?.systemContext || '',
+    messages: candidateState?.messages || [],
+    profile: mergedProfile,
+    scores: { ...(candidateState?.scores || {}), ...(finalized?.statePatch?.scores || {}) },
+    candidateType: mergedProfile.category || mergedProfile.degree,
+    targetSchools: finalized?.statePatch?.chosenSchools || candidateState?.chosenSchools || [],
+  });
+  const nextStatePatch = { ...(finalized?.statePatch || {}) };
+  const persistedProfile = {
+    ...mergedProfile,
+    candidateFacts: {
+      ...(mergedProfile.candidateFacts || {}),
+      workYears: candidateFacts.workYears,
+      militaryYears: candidateFacts.militaryYears,
+      civilianWorkYears: candidateFacts.civilianWorkYears,
+      currentRole: candidateFacts.currentRole,
+      currentCompany: candidateFacts.currentCompany,
+      companies: candidateFacts.companies,
+      careerProgression: candidateFacts.careerProgression,
+      leadershipEvidence: candidateFacts.leadershipEvidence,
+      achievementsImpact: candidateFacts.achievementsImpact,
+      whyMBA: candidateFacts.whyMBA,
+      postMbaGoal: candidateFacts.postMbaGoal,
+      targetSchools: candidateFacts.targetSchools,
+      selectedCandidateType: candidateFacts.selectedCandidateType,
+    },
+    profileCompleteness: candidateFacts.profileCompleteness,
+  };
+  nextStatePatch.profile = persistedProfile;
+
+  if (!candidateFacts.readyForScoring) {
+    delete nextStatePatch.scores;
+    delete nextStatePatch.programs;
+    let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['SCORES', 'PROGRAMS']);
+    const question = buildComplementaryQuestion(candidateFacts);
+    if (question && !String(raw).includes(question)) raw = `${raw}\n\n${question}`.trim();
+    finalized = {
+      ...finalized,
+      raw,
+      message: question || finalized?.message,
+      statePatch: nextStatePatch,
+      metadata: {
+        ...(finalized?.metadata || {}),
+        candidateFactsReady: false,
+        profileCompleteness: candidateFacts.profileCompleteness,
+      },
+    };
+  } else if (!candidateFacts.readyForPrograms) {
+    delete nextStatePatch.programs;
+    let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['PROGRAMS']);
+    const schoolChoiceQuestion = 'Do you already have specific schools, or do you want recommendations?';
+    if (!/specific schools|want recommendations/i.test(raw)) raw = `${raw}\n\n${schoolChoiceQuestion}`.trim();
+    finalized = {
+      ...finalized,
+      raw,
+      statePatch: nextStatePatch,
+      metadata: { ...(finalized?.metadata || {}), candidateFactsReady: true, programsReady: false },
+    };
+  } else {
+    finalized = {
+      ...finalized,
+      statePatch: nextStatePatch,
+      metadata: { ...(finalized?.metadata || {}), candidateFactsReady: true, programsReady: true },
+    };
+  }
+
   if (finalized?.metadata?.deterministicKpiEngine) {
     const fallback = !!finalized.metadata.deterministicKpiEngineFallback;
     await recordCandidateActivity(candidateId, {
