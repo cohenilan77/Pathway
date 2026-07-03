@@ -924,18 +924,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Usage & Cost
             </button>
           )}
-          {(import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') && (
-            <button onClick={() => setAdminView('agents')} style={sideStyle(adminView === 'agents')}>
-              <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
-              Agents
-            </button>
-          )}
-          {(import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') && (
-            <button onClick={() => setAdminView('callLog')} style={sideStyle(adminView === 'callLog')}>
-              <NavIcon><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NavIcon>
-              Call Log
-            </button>
-          )}
+          <button onClick={() => setAdminView('agents')} style={sideStyle(adminView === 'agents')}>
+            <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
+            Agents
+          </button>
+          <button onClick={() => setAdminView('callLog')} style={sideStyle(adminView === 'callLog')}>
+            <NavIcon><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></NavIcon>
+            Call Log
+          </button>
           <button onClick={() => setAdminView('settings')} style={sideStyle(adminView === 'settings')}>
             <NavIcon><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></NavIcon>
             Settings
@@ -2319,13 +2315,39 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           )}
 
           {/* ── AGENTS ── */}
-          {adminView === 'agents' && (import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') && (
-            <AgentsTab showToast={showToast} />
+          {adminView === 'agents' && (
+            (import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') ? (
+              <AgentsTab showToast={showToast} />
+            ) : (
+              <div style={{ padding: '24px' }}>
+                <div style={{ ...cardShell, padding: '24px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#141b34', marginBottom: 12 }}>Agents Disabled</div>
+                  <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.6 }}>
+                    The Agents tab is only available in staging environments.
+                    <br /><br />
+                    Set <code style={{ background: '#f6f1e8', padding: '2px 6px', borderRadius: 4 }}>VITE_AGENT_TRACE_ENABLED=1</code> in Vercel environment variables (Preview only) to enable.
+                  </div>
+                </div>
+              </div>
+            )
           )}
 
           {/* ── CALL LOG ── */}
-          {adminView === 'callLog' && (import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') && (
-            <CallLogTab showToast={showToast} adminHeaders={adminHeaders} />
+          {adminView === 'callLog' && (
+            (import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') ? (
+              <CallLogTab showToast={showToast} adminHeaders={adminHeaders} />
+            ) : (
+              <div style={{ padding: '24px' }}>
+                <div style={{ ...cardShell, padding: '24px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#141b34', marginBottom: 12 }}>Call Log Disabled</div>
+                  <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.6 }}>
+                    The Call Log is only available in staging environments.
+                    <br /><br />
+                    Set <code style={{ background: '#f6f1e8', padding: '2px 6px', borderRadius: 4 }}>VITE_AGENT_TRACE_ENABLED=1</code> in Vercel environment variables (Preview only) to enable.
+                  </div>
+                </div>
+              </div>
+            )
           )}
 
           {/* ── SETTINGS ── */}
