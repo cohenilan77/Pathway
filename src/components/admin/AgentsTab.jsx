@@ -234,11 +234,11 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 1100 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, padding: '18px 20px', background: architecture?.mode === 'hybrid' ? '#eafff6' : '#faf7f2', border: `1px solid ${architecture?.mode === 'hybrid' ? '#b7ecd4' : '#f1eadd'}`, borderRadius: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 1280 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '12px 16px', background: architecture?.mode === 'hybrid' ? '#eafff6' : '#faf7f2', border: `1px solid ${architecture?.mode === 'hybrid' ? '#b7ecd4' : '#f1eadd'}`, borderRadius: 14 }}>
         <div>
           <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '.8px', color: '#9098b5', marginBottom: 5 }}>ARCHITECTURE MODE</div>
-          <div style={{ fontSize: 18, fontWeight: 850, color: '#141b34' }}>
+          <div style={{ fontSize: 16, fontWeight: 850, color: '#141b34' }}>
             {architecture?.mode === 'hybrid' ? 'Multi-Agent Enabled' : 'Legacy Enabled'}
           </div>
           <div style={{ fontSize: 12, color: '#6b7392', marginTop: 4 }}>
@@ -264,9 +264,9 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
           {architectureBusy ? 'SWITCHING…' : architecture?.mode === 'hybrid' ? 'Disable Multi-Agent' : 'Enable Multi-Agent'}
         </button>
       </div>
-      <div style={{ display: 'flex', gap: 22 }}>
+      <div style={{ display: 'flex', gap: 22, alignItems: 'flex-start' }}>
       {/* Agent list */}
-      <div style={{ width: 240, flexShrink: 0, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, overflow: 'hidden' }}>
+      <div style={{ width: 260, flexShrink: 0, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, overflow: 'hidden' }}>
         <div style={{ padding: '16px 16px 10px', borderBottom: '1px solid #f1eadd' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#9098b5' }}>AGENTS</div>
@@ -283,7 +283,7 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
           {resetAt && <div style={{ fontSize: 10, color: '#9098b5', marginTop: 4 }}>Since {new Date(resetAt).toLocaleString()}</div>}
           {usageError && <div style={{ fontSize: 10, color: '#c94f79', marginTop: 5 }}>{usageError}</div>}
         </div>
-        <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 220px)' }}>
+        <div>
           {agents.map((a) => (
             <button
               key={a.id}
@@ -307,7 +307,7 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
 
       {/* Detail panel */}
       {agent ? (
-        <div style={{ flex: 1, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: '24px 28px' }}>
+        <div style={{ flex: 1, minWidth: 0, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: '24px 28px' }}>
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
             <div style={{ flex: 1 }}>
@@ -327,7 +327,7 @@ export default function AgentsTab({ showToast, adminHeaders = {} }) {
                 <div style={{ fontSize: 13, color: '#6b7392', maxWidth: 500 }}>{agent.description}</div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               {editing ? (
                 <>
                   <button onClick={saveEdit} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '8px 16px', fontSize: 13 }}>

@@ -905,10 +905,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
               Engagement
             </button>
           )}
-          {selectedUserId && (
+          {(
             <button onClick={() => setAdminView('session')} style={sideStyle(adminView === 'session')}>
               <NavIcon><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></NavIcon>
-              Live Session
+              Logs
             </button>
           )}
           {selectedUserId && (
@@ -1792,9 +1792,18 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── LIVE SESSION FEED ── */}
           {adminView === 'session' && !selectedUserId && (
-            <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
-              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>No candidate selected.</div>
-              <div style={{ fontSize: 13, color: '#aab2cc' }}>Open a candidate from the Candidates list to view their live session.</div>
+            <div style={{ maxWidth: 720, background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>Select a candidate</div>
+              <div style={{ fontSize: 13, color: '#9098b5', marginBottom: 16 }}>Scroll through the candidate list and select a name to open their logs. No email is required.</div>
+              <div style={{ maxHeight: 440, overflowY: 'auto', border: '1px solid #f1eadd', borderRadius: 14, background: '#f6f1e8', padding: 8 }}>
+                {sortedCandidateUsers.length ? sortedCandidateUsers.map((candidate) => (
+                  <button key={candidate.id} onClick={() => setSelectedUserId(candidate.id)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '11px 13px', border: 'none', borderBottom: '1px solid #f1eadd', background: 'transparent', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 750, color: '#33405e' }}>{candidate.name || candidate.username || 'Candidate'}</span>
+                    <span style={{ fontSize: 11.5, color: '#9098b5' }}>{candidate.residency || 'Open logs'} →</span>
+                  </button>
+                )) : <div style={{ padding: 24, textAlign: 'center', color: '#9098b5', fontSize: 13 }}>No candidates available.</div>}
+              </div>
             </div>
           )}
           {adminView === 'session' && selectedUserId && (
