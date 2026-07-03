@@ -6,6 +6,7 @@ import { makeAdvisorResponse } from '../lib/advisor-contract.js';
 import { HybridCoordinator } from '../lib/hybrid-coordinator.js';
 import { recordArchitectureEvent } from '../lib/architecture-metrics.js';
 import { updateCandidateProfile } from '../lib/agents/tools/update.js';
+import { recordCandidateActivity } from '../lib/candidate-activity.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -37,17 +38,23 @@ async function persistStatePatch(candidateId, response) {
 export default async function handler(req, res) {
   const startedAt = Date.now();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  const candidateId = await getUserIdByToken(token(req));
+  const latestMessage = req.body?.message || [...(req.body?.messages || [])].reverse().find(message => message.role === 'user')?.text || '';
+  await recordCandidateActivity(candidateId, {
+    type: 'request',
+    label: 'Advisor request received',
+    detail: String(latestMessage).startsWith('Here is my CV') ? 'Candidate submitted a CV/background document for analysis.' : String(latestMessage).slice(0, 240),
+    metadata: { action: req.body?.action || 'candidate_message' },
+  }).catch(() => {});
   const architecture = await getAgentArchitecture();
   if (architecture.mode !== 'hybrid') {
     const output = await invokeAdvisor(req, true);
     if (output.error) return res.status(output.statusCode).json(output.error);
-    const candidateId = await getUserIdByToken(token(req));
     await persistStatePatch(candidateId, output.response);
     await recordArchitectureEvent({ architecture: 'legacy', agent: output.response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(output.response);
   }
 
-  const candidateId = await getUserIdByToken(token(req));
   const body = req.body || {};
   const message = body.message || [...(body.messages || [])].reverse().find(m => m.role === 'user')?.text || '';
   try {
@@ -61,6 +68,17 @@ export default async function handler(req, res) {
       candidateId: candidateId || 'anonymous', message, action: body.action, payload: body.payload,
       conversationHistory: body.messages || [], candidateState: effectiveState,
     });
+    await recordCandidateActivity(candidateId, {
+      type: 'routing',
+      label: result.delegateToAdvisor ? 'Routed to AdvisorAgent' : `Routed to ${result.agent || 'AdvisorAgent'}`,
+      agent: result.agent || 'AdvisorAgent',
+      architecture: 'hybrid',
+      latencyMs: result.metadata?.latencyMs,
+      detail: result.continueWithAdvisor
+        ? `${result.agent} completed its specialist step; control returned to AdvisorAgent.`
+        : result.delegateToAdvisor ? 'Coordinator selected the main advisor.' : 'Coordinator selected a specialist agent.',
+      metadata: { continueWithAdvisor: !!result.continueWithAdvisor, fallback: !!result.disabledAgent },
+    }).catch(() => {});
     if (!result.delegateToAdvisor && !result.continueWithAdvisor) {
       const response = makeAdvisorResponse({
         architecture: 'hybrid', agent: result.agent, raw: result.message,

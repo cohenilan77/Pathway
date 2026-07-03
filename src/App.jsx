@@ -563,6 +563,17 @@ export default function App() {
     return () => clearInterval(interval);
   }, [screen, auth?.token]);
 
+  // Candidate-specific navigation telemetry powers the admin activity trace.
+  // It records meaningful tab changes only; the regular online heartbeat stays quiet.
+  useEffect(() => {
+    if (screen !== 'candidate' || !auth?.token || !candTab) return;
+    fetch('/api/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
+      body: JSON.stringify({ event: 'navigation', tab: candTab }),
+    }).catch(() => {});
+  }, [screen, auth?.token, candTab]);
+
   // Persist the candidate's session to their account, debounced
   useEffect(() => {
     if (!auth?.token || chat.length <= 1) return;

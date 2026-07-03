@@ -336,6 +336,9 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [selectedData, setSelectedData] = useState(null); // { user, data }
   const [selectedLoading, setSelectedLoading] = useState(false);
+  const [candidateLogs, setCandidateLogs] = useState([]);
+  const [candidateLogsLoading, setCandidateLogsLoading] = useState(false);
+  const [candidateLogsError, setCandidateLogsError] = useState('');
   const [userDetailId, setUserDetailId] = useState(null);
   const [userActionBusy, setUserActionBusy] = useState(null);
   const [userForm, setUserForm] = useState(null);
@@ -511,6 +514,32 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
       .catch(() => setLiveChatLoadError(true))
       .finally(() => setLiveChatLoading(false));
   }, [selectedUserId, adminSecret, authToken]);
+
+  const fetchCandidateLogs = useCallback(() => {
+    if (!selectedUserId) {
+      setCandidateLogs([]);
+      setCandidateLogsError('');
+      return Promise.resolve();
+    }
+    setCandidateLogsLoading(true);
+    return fetch(`/api/admin-candidate-logs?candidateId=${encodeURIComponent(selectedUserId)}`, { headers: adminHeaders })
+      .then(response => response.json().then(data => ({ response, data })))
+      .then(({ response, data }) => {
+        if (!response.ok) throw new Error(data.error || 'Could not load candidate activity.');
+        setCandidateLogs(data.events || []);
+        setCandidateLogsError('');
+      })
+      .catch(error => setCandidateLogsError(error.message || 'Could not load candidate activity.'))
+      .finally(() => setCandidateLogsLoading(false));
+  }, [selectedUserId, adminSecret, authToken]);
+
+  useEffect(() => {
+    if (adminView !== 'session') return undefined;
+    fetchCandidateLogs();
+    if (!selectedUserId) return undefined;
+    const interval = setInterval(fetchCandidateLogs, 5000);
+    return () => clearInterval(interval);
+  }, [adminView, selectedUserId, fetchCandidateLogs]);
 
   useEffect(() => {
     if (!selectedUserId || adminView !== 'liveChat') { if (!selectedUserId) setLiveChatMessages([]); return; }
@@ -1790,114 +1819,83 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             </div>
           )}
 
-          {/* ── CANDIDATE LOGS ── */}
+          {/* ── CANDIDATE ACTIVITY LOGS ── */}
           {adminView === 'session' && (
-            <div style={{ width: '100%', maxWidth: 1120 }}>
-              <div style={{ ...cardShell, padding: 20, marginBottom: 20 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, marginBottom: 14 }}>
+            <div style={{ width: '100%', maxWidth: 1180 }}>
+              <div style={{ ...cardShell, padding: 22, marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 18, flexWrap: 'wrap' }}>
+                  <label style={{ flex: '1 1 420px' }}>
+                    <span style={{ display: 'block', fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 8 }}>CANDIDATE</span>
+                    <select value={selectedUserId || ''} onChange={event => setSelectedUserId(event.target.value || null)}
+                      style={{ width: '100%', height: 46, borderRadius: 12, border: '1px solid #dfd4c2', background: '#faf7f2', color: '#33405e', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, padding: '0 14px', outline: 'none', cursor: 'pointer' }}>
+                      <option value="">Choose a candidate…</option>
+                      {sortedCandidateUsers.map(candidate => (
+                        <option key={candidate.id} value={candidate.id}>{candidate.name || candidate.username || 'Candidate'}{candidate.residency ? ` — ${candidate.residency}` : ''}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button onClick={fetchCandidateLogs} disabled={!selectedUserId || candidateLogsLoading}
+                    style={{ ...btnGhost, height: 46, padding: '0 18px', opacity: !selectedUserId || candidateLogsLoading ? .55 : 1 }}>
+                    {candidateLogsLoading ? 'Refreshing…' : 'Refresh log'}
+                  </button>
+                </div>
+                <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 10 }}>The log refreshes every five seconds and follows candidate movement, messages, routing, agent calls, retries, latency, and token usage.</div>
+              </div>
+
+              <div style={{ ...cardShell, minHeight: 580, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '18px 22px', borderBottom: '1px solid #f1eadd', background: '#faf7f2' }}>
                   <div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>Select a candidate</div>
-                    <div style={{ fontSize: 13, color: '#9098b5' }}>Scroll through the candidate list. Select a user to display their activity log below.</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34' }}>{selectedUserId ? `${users.find(user => user.id === selectedUserId)?.name || 'Candidate'} activity trace` : 'Candidate activity trace'}</div>
+                    <div style={{ fontSize: 12, color: '#9098b5', marginTop: 3 }}>{selectedUserId ? `${candidateLogs.length} recorded events` : 'Select a candidate above to load their log.'}</div>
                   </div>
-                  <div style={{ flexShrink: 0, fontSize: 12, fontWeight: 700, color: '#6b7392', background: '#f6f1e8', borderRadius: 999, padding: '6px 10px' }}>
-                    {sortedCandidateUsers.length} candidates
-                  </div>
+                  {selectedUserId && <span style={{ fontSize: 11, fontWeight: 800, color: '#19a878', background: '#eafff6', border: '1px solid #aaeed1', borderRadius: 999, padding: '5px 9px' }}>LIVE</span>}
                 </div>
-                <div style={{ height: 190, overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #e7dcc7', borderRadius: 14, background: '#f6f1e8', padding: 7 }}>
-                  {sortedCandidateUsers.length ? sortedCandidateUsers.map((candidate) => {
-                    const selected = candidate.id === selectedUserId;
-                    const initials = (candidate.name || candidate.username || 'C').split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
-                    return (
-                      <button key={candidate.id} onClick={() => setSelectedUserId(candidate.id)}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', marginBottom: 5, border: selected ? '1px solid #9a87ef' : '1px solid transparent', borderRadius: 10, background: selected ? '#eee9ff' : '#faf7f2', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', boxShadow: selected ? '0 4px 12px rgba(91,70,224,.08)' : 'none' }}>
-                        <span style={{ width: 32, height: 32, borderRadius: 9, background: selected ? 'linear-gradient(135deg,#6f60e8,#9a87ef)' : '#e9e1d5', color: selected ? '#fff' : '#6b7392', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{initials}</span>
-                        <span style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ display: 'block', fontSize: 13.5, fontWeight: 750, color: '#33405e', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.name || candidate.username || 'Candidate'}</span>
-                          <span style={{ display: 'block', fontSize: 11.5, color: '#9098b5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{candidate.residency || 'Candidate profile'}</span>
-                        </span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: selected ? '#5b46e0' : '#aab2cc' }}>{selected ? 'Selected' : 'View'}</span>
-                      </button>
-                    );
-                  }) : <div style={{ padding: 24, textAlign: 'center', color: '#9098b5', fontSize: 13 }}>No candidates available.</div>}
-                </div>
-              </div>
 
-              <div style={{ ...cardShell, minHeight: 500, padding: 24 }}>
-                {!selectedUserId ? (
-                  <div style={{ minHeight: 450, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', border: '1px dashed #dfd4c2', borderRadius: 16, background: '#f6f1e8' }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 14, background: '#eee9ff', color: '#6f60e8', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                      <NavIcon><path d="M4 4h16v16H4z" /><path d="M8 9h8M8 13h8M8 17h5" /></NavIcon>
+                <div style={{ height: '62vh', minHeight: 500, maxHeight: 760, overflowY: 'auto', overscrollBehavior: 'contain', padding: 20, background: '#f6f1e8' }}>
+                  {!selectedUserId ? (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9098b5', fontSize: 14 }}>Choose a candidate from the dropdown to view their activity.</div>
+                  ) : candidateLogsError ? (
+                    <div style={{ padding: 22, borderRadius: 12, background: '#fff1f6', border: '1px solid #fbd3e2', color: '#c43f6b' }}>{candidateLogsError}</div>
+                  ) : candidateLogsLoading && !candidateLogs.length ? (
+                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9098b5', fontSize: 14 }}>Loading candidate activity…</div>
+                  ) : !candidateLogs.length ? (
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: '#33405e', marginBottom: 6 }}>No activity recorded yet</div>
+                      <div style={{ fontSize: 13, color: '#9098b5' }}>New navigation, chat, and agent activity will appear here automatically.</div>
                     </div>
-                    <div style={{ fontSize: 16, fontWeight: 800, color: '#33405e', marginBottom: 5 }}>Candidate logs will appear here</div>
-                    <div style={{ fontSize: 13, color: '#9098b5' }}>Choose a candidate from the list above to review their complete session.</div>
-                  </div>
-                ) : (
-                  <>
-              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 4 }}>Viewing: {candidateName}</div>
-              {/* Summarize button */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600 }}>{chat.length} messages in session</div>
-                <button onClick={generateSummary} disabled={summarizing || !sessionActive}
-                  style={{ ...btnPrimary, padding: '10px 20px', fontSize: 13, cursor: summarizing || !sessionActive ? 'not-allowed' : 'pointer', opacity: summarizing || !sessionActive ? 0.5 : 1 }}>
-                  {summarizing ? 'Summarizing…' : 'Summarize Chat'}
-                </button>
-              </div>
-
-              {/* Summary card */}
-              {summary && (
-                <div style={{ background: '#fff8ea', border: '1px solid #f5e3b8', borderRadius: 16, padding: '20px 24px', marginBottom: 24 }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#c77f0a', marginBottom: 10 }}>SESSION SUMMARY</div>
-                  <div style={{ fontSize: 14, lineHeight: 1.7, color: '#33405e', whiteSpace: 'pre-wrap' }}>{renderFormattedText(summary)}</div>
-                </div>
-              )}
-
-              {/* Full chat log */}
-              {!sessionActive ? (
-                <div style={{ background: '#faf7f2', borderRadius: 16, padding: 32, textAlign: 'center', color: '#9098b5', border: '1px solid #f1eadd' }}>No session data. Have a candidate log in and start the advisor.</div>
-              ) : (
-                <div
-                  style={{
-                    display: 'flex', flexDirection: 'column', gap: 10,
-                    height: '55vh', minHeight: 280, maxHeight: 640,
-                    overflowY: 'auto', overscrollBehavior: 'contain',
-                    background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18, padding: 18,
-                  }}
-                >
-                  {chat.map((m, i) => {
-                    const channel = m.channel || 'web';
-                    const isSystem = m.role === 'system';
-                    const isCandidate = m.role === 'user';
-                    const label = isSystem
-                      ? '[System]'
-                      : isCandidate
-                        ? `[Candidate] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`
-                        : `[AI Advisor] [${channel === 'whatsapp' ? 'WhatsApp' : 'Web'}]`;
-                    return (
-                      <div key={i} style={{
-                        borderRadius: isSystem ? 999 : isCandidate ? '14px 14px 4px 14px' : '4px 14px 14px 14px',
-                        padding: isSystem ? '8px 14px' : '12px 16px',
-                        maxWidth: isSystem ? '92%' : '88%',
-                        alignSelf: isSystem ? 'center' : isCandidate ? 'flex-end' : 'flex-start',
-                        background: isSystem ? '#fff8ea' : isCandidate ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#f1eadd',
-                        color: isSystem ? '#a16207' : isCandidate ? '#faf7f2' : '#33405e',
-                        flexShrink: 0,
-                      }}>
-                        {!isSystem && (
-                          <div style={{ fontSize: 13, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>
-                            {isCandidate && m.text.startsWith('Here is my CV')
-                              ? '📄 [CV submitted for analysis]'
-                              : m.role === 'ai' ? renderFormattedText(m.text) : m.text}
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {candidateLogs.map((event, index) => {
+                        const isAgent = event.type === 'agent_call' || event.type === 'routing';
+                        const isCandidate = event.type === 'candidate_message' || event.type === 'request';
+                        const tokenTotal = Number(event.totalTokens || 0);
+                        const eventColor = event.status === 'error' ? '#e0457a' : isAgent ? '#6f60e8' : isCandidate ? '#2f78c4' : '#6b7392';
+                        return (
+                          <div key={event.id || `${event.at}_${index}`} style={{ display: 'grid', gridTemplateColumns: '155px minmax(0,1fr)', gap: 16, background: '#faf7f2', border: '1px solid #ebe3d7', borderRadius: 13, padding: '13px 15px' }}>
+                            <div style={{ fontSize: 11.5, lineHeight: 1.5, color: '#9098b5' }}>
+                              <div style={{ fontWeight: 750, color: '#6b7392' }}>{new Date(event.at).toLocaleDateString()}</div>
+                              <div>{new Date(event.at).toLocaleTimeString()}</div>
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: event.detail ? 7 : 0 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: eventColor, flexShrink: 0 }} />
+                                <span style={{ fontSize: 13.5, fontWeight: 800, color: '#33405e' }}>{event.label}</span>
+                                {event.agent && <span style={{ fontSize: 10.5, fontWeight: 800, color: '#5b46e0', background: '#eee9ff', borderRadius: 7, padding: '3px 7px' }}>{event.agent}</span>}
+                                {event.architecture && <span style={{ fontSize: 10.5, fontWeight: 750, color: '#6b7392', background: '#eee8df', borderRadius: 7, padding: '3px 7px' }}>{event.architecture}</span>}
+                                {tokenTotal > 0 && <span style={{ fontSize: 10.5, fontWeight: 750, color: '#196b55', background: '#eafff6', borderRadius: 7, padding: '3px 7px' }}>{tokenTotal.toLocaleString()} tokens</span>}
+                                {Number(event.latencyMs || 0) > 0 && <span style={{ fontSize: 10.5, fontWeight: 750, color: '#9b650b', background: '#fff8ea', borderRadius: 7, padding: '3px 7px' }}>{Number(event.latencyMs).toLocaleString()} ms</span>}
+                              </div>
+                              {event.detail && <div style={{ fontSize: 12.5, lineHeight: 1.55, color: '#6b7392', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{String(event.detail).startsWith('Here is my CV') ? '📄 CV submitted for analysis' : event.detail}</div>}
+                              {(Number(event.inputTokens || 0) > 0 || Number(event.outputTokens || 0) > 0) && (
+                                <div style={{ fontSize: 10.5, color: '#a0a7bc', marginTop: 7 }}>Input {Number(event.inputTokens || 0).toLocaleString()} · Output {Number(event.outputTokens || 0).toLocaleString()} · Cache {Number(event.cacheTokens || 0).toLocaleString()}{event.model ? ` · ${event.model}` : ''}</div>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        {isSystem && <span style={{ fontSize: 12 }}>{m.text}</span>}
-                      </div>
-                    );
-                  })}
-                  <div ref={chatLogEndRef} />
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-                  </>
-                )}
               </div>
             </div>
           )}

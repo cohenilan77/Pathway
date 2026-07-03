@@ -18,6 +18,7 @@ import { logTokenUsage } from '../lib/token-usage-logger.js';
 import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
+import { recordCandidateActivity } from '../lib/candidate-activity.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -957,6 +958,22 @@ export default async function handler(req, res) {
         systemPrompt: compressedSystemPrompt,
         formatConstraint: requestedProgramFormat(profile, messages),
         onAttempt: (response, attempt, { useWebSearch }) => {
+        const inputTokens = Number(response.usage?.input_tokens || 0);
+        const outputTokens = Number(response.usage?.output_tokens || 0);
+        const cacheTokens = Number(response.usage?.cache_creation_input_tokens || 0) + Number(response.usage?.cache_read_input_tokens || 0);
+        recordCandidateActivity(userId, {
+          type: 'agent_call',
+          label: `AdvisorAgent call${attempt ? ` (retry ${attempt})` : ''}`,
+          agent: 'AdvisorAgent',
+          model: CHAT_MODEL,
+          architecture: req.headers['x-pathway-legacy-bypass'] === '1' ? 'legacy' : 'hybrid',
+          inputTokens,
+          outputTokens,
+          cacheTokens,
+          totalTokens: inputTokens + outputTokens + cacheTokens,
+          detail: useWebSearch ? 'Advisor response generated with program web-search enabled.' : 'Advisor response generated.',
+          metadata: { attempt, useWebSearch, stopReason: response.stop_reason },
+        }).catch(() => {});
         logTokenUsage({
           userId: usageUserId,
           conversationId: convoId,
