@@ -2335,7 +2335,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── CALL LOG ── */}
           {adminView === 'callLog' && (
             (import.meta.env.VITE_AGENT_TRACE_ENABLED === '1' || import.meta.env.VITE_AGENT_TRACE_ENABLED === 'true') ? (
-              <CallLogTab showToast={showToast} adminHeaders={adminHeaders} />
+              <CallLogTab showToast={showToast} adminHeaders={adminHeaders} users={users} />
             ) : (
               <div style={{ padding: '24px' }}>
                 <div style={{ ...cardShell, padding: '24px' }}>

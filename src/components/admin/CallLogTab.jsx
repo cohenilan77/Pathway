@@ -58,16 +58,6 @@ const preStyle = {
   wordWrap: 'break-word',
 };
 
-const inputStyle = {
-  padding: '10px 12px',
-  borderRadius: 8,
-  border: '1px solid #f1eadd',
-  fontFamily: 'inherit',
-  fontSize: 13,
-  background: '#fff',
-  color: '#141b34',
-};
-
 function formatTime(timestamp) {
   const d = new Date(timestamp);
   return d.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -109,23 +99,24 @@ out: ${data.responseText || ''}`;
   return `[${time}] ${event.level.toUpperCase()} ${event.agent}`;
 }
 
-export default function CallLogTab({ showToast, adminHeaders }) {
-  const [email, setEmail] = useState('');
+export default function CallLogTab({ showToast, adminHeaders, users = [] }) {
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [events, setEvents] = useState([]);
-  const [candidateId, setCandidateId] = useState(null);
-  const [candidateEmail, setCandidateEmail] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const preRef = useRef(null);
 
-  const loadCalls = async () => {
-    if (!email.trim()) {
-      showToast('Please enter a candidate email.');
+  const candidateUsers = (users || []).filter(u => (u.role || 'candidate') === 'candidate').sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+  const loadCalls = async (candidate) => {
+    if (!candidate) {
+      showToast('Please select a candidate.');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin-agent-trace?email=${encodeURIComponent(email)}&limit=300`, {
+      const res = await fetch(`/api/admin-agent-trace?candidateId=${candidate.id}&limit=300`, {
         headers: adminHeaders,
       });
 
@@ -140,9 +131,8 @@ export default function CallLogTab({ showToast, adminHeaders }) {
       }
 
       const data = await res.json();
-      setCandidateId(data.candidateId);
-      setCandidateEmail(data.email);
       setEvents(data.events || []);
+      setDropdownOpen(false);
 
       if (!data.events || data.events.length === 0) {
         showToast('No call log entries found.');
@@ -156,16 +146,16 @@ export default function CallLogTab({ showToast, adminHeaders }) {
   };
 
   const refreshCalls = async () => {
-    if (!candidateId) {
-      showToast('Load a candidate first.');
+    if (!selectedCandidate) {
+      showToast('Select a candidate first.');
       return;
     }
-    loadCalls();
+    loadCalls(selectedCandidate);
   };
 
   const clearLog = async () => {
-    if (!candidateId) {
-      showToast('Load a candidate first.');
+    if (!selectedCandidate) {
+      showToast('Select a candidate first.');
       return;
     }
 
@@ -174,7 +164,7 @@ export default function CallLogTab({ showToast, adminHeaders }) {
     }
 
     try {
-      const res = await fetch(`/api/admin-agent-trace?candidateId=${candidateId}`, {
+      const res = await fetch(`/api/admin-agent-trace?candidateId=${selectedCandidate.id}`, {
         method: 'DELETE',
         headers: adminHeaders,
       });
@@ -202,14 +192,6 @@ export default function CallLogTab({ showToast, adminHeaders }) {
     }
   };
 
-  const copyEvent = (text) => {
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('Event copied.');
-    }).catch(() => {
-      showToast('Failed to copy.');
-    });
-  };
-
   const logText = events.length > 0
     ? events.map(e => formatEvent(e)).join('\n---\n')
     : 'No call log entries.';
@@ -224,39 +206,88 @@ export default function CallLogTab({ showToast, adminHeaders }) {
           </p>
 
           <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ position: 'relative', minWidth: 200 }}>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6b7392', marginBottom: 6 }}>
-                Candidate Email
+                Select Candidate
               </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="candidate@example.com"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') loadCalls();
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  border: '1px solid #f1eadd',
+                  fontFamily: 'inherit',
+                  fontSize: 13,
+                  background: '#fff',
+                  color: '#141b34',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                 }}
-                style={inputStyle}
-              />
+              >
+                <span>{selectedCandidate ? selectedCandidate.name : 'Choose candidate...'}</span>
+                <span>{dropdownOpen ? '▲' : '▼'}</span>
+              </button>
+              {dropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: '#fff',
+                    border: '1px solid #f1eadd',
+                    borderRadius: 8,
+                    marginTop: 4,
+                    maxHeight: 300,
+                    overflowY: 'auto',
+                    zIndex: 10,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  {candidateUsers.map((candidate) => (
+                    <button
+                      key={candidate.id}
+                      onClick={() => {
+                        setSelectedCandidate(candidate);
+                        loadCalls(candidate);
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        border: 'none',
+                        background: selectedCandidate?.id === candidate.id ? '#f0f4ff' : 'transparent',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f1eadd',
+                        fontSize: 13,
+                        color: '#33405e',
+                        fontWeight: selectedCandidate?.id === candidate.id ? 700 : 600,
+                      }}
+                    >
+                      {candidate.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <button onClick={loadCalls} disabled={loading} style={{ ...btnPrimary, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Loading...' : 'Load'}
-            </button>
-            <button onClick={refreshCalls} disabled={loading || !candidateId} style={{ ...btnGhost, opacity: loading || !candidateId ? 0.6 : 1, cursor: loading || !candidateId ? 'not-allowed' : 'pointer' }}>
+            <button onClick={refreshCalls} disabled={loading || !selectedCandidate} style={{ ...btnGhost, opacity: loading || !selectedCandidate ? 0.6 : 1, cursor: loading || !selectedCandidate ? 'not-allowed' : 'pointer' }}>
               Refresh
             </button>
             <button onClick={copyAll} disabled={events.length === 0} style={{ ...btnGhost, opacity: events.length === 0 ? 0.6 : 1, cursor: events.length === 0 ? 'not-allowed' : 'pointer' }}>
               Copy All
             </button>
-            <button onClick={clearLog} disabled={!candidateId} style={{ ...btnDanger, opacity: !candidateId ? 0.6 : 1, cursor: !candidateId ? 'not-allowed' : 'pointer' }}>
+            <button onClick={clearLog} disabled={!selectedCandidate} style={{ ...btnDanger, opacity: !selectedCandidate ? 0.6 : 1, cursor: !selectedCandidate ? 'not-allowed' : 'pointer' }}>
               Clear Log
             </button>
           </div>
 
-          {candidateId && (
+          {selectedCandidate && (
             <div style={{ fontSize: 12, color: '#6b7392', marginBottom: 16 }}>
-              {candidateEmail && `Candidate: ${candidateEmail} (ID: ${candidateId})`}
-              {!candidateEmail && `Candidate ID: ${candidateId}`}
+              Candidate: <strong>{selectedCandidate.name}</strong> (ID: {selectedCandidate.id})
             </div>
           )}
 
@@ -266,7 +297,7 @@ export default function CallLogTab({ showToast, adminHeaders }) {
 
           {events.length > 0 && (
             <div style={{ marginTop: 16, fontSize: 12, color: '#9098b5' }}>
-              Showing {events.length} events. Each event can be copied individually from the log above.
+              Showing {events.length} events.
             </div>
           )}
         </div>
