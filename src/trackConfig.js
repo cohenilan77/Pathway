@@ -1,3 +1,5 @@
+import { CANDIDATE_KPI_SCHEMAS } from '../lib/candidate-kpi-schemas.js';
+
 export const DEFAULT_STEPS = ['Profile', 'Recommender', 'Analysis', 'Programs', 'Narrative', 'Fit', 'CV', 'Essay', 'Interview'];
 export const UNDERGRAD_STEPS = ['Profile', 'Roadmap', 'Activities', 'Universities', 'Testing', 'Essays', 'Applications'];
 
@@ -55,22 +57,30 @@ export const TRACK_CONFIG = {
     steps: DEFAULT_STEPS,
     docLabel: 'CV, essays, recommendations, interview prep',
     kpis: [
-      ['professional', 'Professional', 'Work impact, role scope, and employer quality.'],
-      ['leadership', 'Leadership', 'People leadership, ownership, and influence.'],
+      ['professional', 'Professional Experience', 'Work duration, relevance, role scope, and employer context.'],
+      ['leadership', 'Leadership', 'People leadership, ownership, influence, and concrete outcomes.'],
       ['careerProgression', 'Career Progression', 'Promotions, increasing responsibility, and trajectory.'],
-      ['internationalExposure', 'International Exposure', 'Cross-border work, languages, and global perspective.'],
+      ['achievementsImpact', 'Achievements / Impact', 'Measurable results, recognition, and distinctive contribution.'],
       ['testScore', 'Testing', 'GMAT or GRE strength against MBA medians.'],
       ['academic', 'Academic', 'GPA, rigor, and analytical readiness.'],
-      ['narrative', 'Narrative', 'Career logic, why MBA, and school fit.'],
+      ['narrative', 'Narrative / Why MBA', 'Career logic, why MBA, and why now.'],
+      ['goalClarity', 'Post-MBA Goal Clarity', 'Specific target role, sector, and credible transition logic.'],
+      ['recommenders', 'Recommenders', 'Direct evaluator strength and evidence specificity.'],
+      ['internationalExposure', 'International Exposure', 'Cross-border work, languages, and global perspective.'],
+      ['community', 'Community / Extracurricular', 'Sustained contribution outside core employment.'],
     ],
     scoreWeights: {
-      professional: 20,
-      leadership: 18,
-      careerProgression: 14,
-      internationalExposure: 8,
-      testScore: 13,
-      academic: 12,
-      narrative: 15,
+      professional: 14,
+      leadership: 12,
+      careerProgression: 10,
+      achievementsImpact: 10,
+      testScore: 10,
+      academic: 10,
+      narrative: 10,
+      goalClarity: 9,
+      recommenders: 6,
+      internationalExposure: 5,
+      community: 4,
     },
     universityScoringModel: 'mba-career-outcomes-fit',
     universityDescriptionModel: 'mba-recruiting-alumni-outcomes',
@@ -170,5 +180,7 @@ export function resolveTrack(profile = {}) {
 }
 
 export function getTrackConfig(profile = {}) {
-  return TRACK_CONFIG[resolveTrack(profile)] || TRACK_CONFIG.Graduate;
+  const track = resolveTrack(profile);
+  const config = TRACK_CONFIG[track] || TRACK_CONFIG.Graduate;
+  return { ...config, candidateKpiSchema: CANDIDATE_KPI_SCHEMAS[track] || CANDIDATE_KPI_SCHEMAS.Graduate };
 }
