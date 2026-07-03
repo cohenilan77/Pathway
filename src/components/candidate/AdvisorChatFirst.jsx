@@ -84,13 +84,12 @@ function ThinkingLine({ message }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, animation: 'pwFade .3s ease' }}>
       <AiAvatar />
-      <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '12px 17px', display: 'flex', alignItems: 'center', gap: 9 }}>
+      <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '12px 17px', display: 'flex', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: 9, maxWidth: '100%' }}>
         <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
           {[0, 1, 2].map(i => (
             <span key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#b899fb', display: 'inline-block', animation: `pwPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
           ))}
         </span>
-        <span style={{ fontSize: 12.5, fontWeight: 600, color: '#6b7392', whiteSpace: 'nowrap' }}>Advisor is analyzing…</span>
         <LongRunningAdvisorStatus busy message={message} />
       </div>
     </div>
