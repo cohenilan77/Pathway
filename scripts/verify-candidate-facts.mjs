@@ -4,6 +4,7 @@ import { CANDIDATE_KPI_SCHEMAS } from '../lib/candidate-kpi-schemas.js';
 import { normalizeProgram } from '../lib/program-normalizer.js';
 import { applyDeterministicKpiToResponse } from '../lib/deterministic-kpi-response.js';
 import { longRunningStatus } from '../src/lib/longRunningAdvisorStatus.js';
+import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 
 const fixedNow = new Date('2026-01-01T00:00:00Z');
 
@@ -150,6 +151,54 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   const status = longRunningStatus(30, 'Here is my CV');
   assert.equal(status.title, 'Still scanning your file…');
   assert.ok(status.title.length < 40);
+}
+
+// 10. File text, pasted text, and additional text are all preserved and normalized as one English-target bundle.
+{
+  const bundle = buildProfileSourceBundle({
+    fileText: 'ניסיון מקצועי: ייעוץ 2018-2024',
+    pastedText: 'Educación: Universidad de Barcelona',
+    additionalText: 'Objectif: devenir responsable produit',
+  });
+  assert.equal(bundle.hasFileText, true);
+  assert.equal(bundle.hasPastedText, true);
+  assert.equal(bundle.hasAdditionalText, true);
+  assert.equal(bundle.targetLanguage, 'English');
+  assert.equal(bundle.normalizeToEnglish, true);
+  assert.match(bundle.advisorMessage, /UPLOADED FILE TEXT/);
+  assert.match(bundle.advisorMessage, /PASTED CV \/ FIRST TEXT BOX/);
+  assert.match(bundle.advisorMessage, /ADDITIONAL TEXT \/ SECOND TEXT BOX/);
+  assert.ok(bundle.combinedOriginal.includes('ייעוץ'));
+  assert.ok(bundle.combinedOriginal.includes('Universidad'));
+  assert.ok(bundle.combinedOriginal.includes('Objectif'));
+}
+
+// 11. Candidate facts records all three sources and the English normalization contract.
+{
+  const facts = buildCandidateFacts({
+    candidateType: 'MBA',
+    profileSources: {
+      fileText: 'Consultant 2018-2024',
+      pastedText: 'Bachelor of Arts, Tel Aviv University',
+      additionalText: 'GMAT 720',
+      normalizeToEnglish: true,
+      targetLanguage: 'English',
+    },
+    profile: {
+      leadershipEvidence: 'Led a team',
+      careerProgression: 'Promoted',
+      achievementsImpact: 'Improved revenue 15%',
+      whyMBA: 'MBA for general management',
+      postMbaGoal: 'Lead product strategy',
+      normalizationLanguage: 'English',
+      sourceLanguages: ['Hebrew', 'Spanish', 'French'],
+    },
+  });
+  assert.equal(facts.sources.uploadedFileText, true);
+  assert.equal(facts.sources.pastedText, true);
+  assert.equal(facts.sources.additionalText, true);
+  assert.equal(facts.sources.normalizationLanguage, 'English');
+  assert.deepEqual(facts.sourceLanguages, ['Hebrew', 'Spanish', 'French']);
 }
 
 console.log('candidate facts and analysis flow checks passed');
