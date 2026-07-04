@@ -99,6 +99,9 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
   return (
     <div dir={dir} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '30px 36px' }}>
       <div style={{ maxWidth: 800 }}>
+        <div style={{ background: '#fff3cd', border: '1px solid #ffe69c', borderRadius: 10, padding: '10px 16px', fontSize: 13, fontWeight: 600, color: '#664d03', marginBottom: 16 }}>
+          This is Live Chat, not the new Advisor UI. Open Advisor NEW UI.
+        </div>
         <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(language, 'viewingConsultant')}</div>
         <div style={{ position: 'relative', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
           {showScrollTop && (
