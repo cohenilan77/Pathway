@@ -9,6 +9,7 @@ import { updateCandidateProfile } from '../lib/agents/tools/update.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { applyDeterministicKpiToResponse, buildDeterministicAdvisorContext } from '../lib/deterministic-kpi-response.js';
 import { buildCandidateFacts, buildComplementaryQuestion, stripStructuredBlocks } from '../lib/candidate-facts.js';
+import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidate-state.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -98,7 +99,24 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
   };
   nextStatePatch.profile = persistedProfile;
 
-  if (!candidateFacts.readyForScoring) {
+  if (shouldRequestProfileUpload({ ...candidateState, profile: persistedProfile })) {
+    delete nextStatePatch.scores;
+    delete nextStatePatch.programs;
+    nextStatePatch.profile = persistedProfile;
+    const uploadPrompt = 'Upload or paste your CV/background now. I’ll scan the uploaded file, the first text box, and the additional-text box together, translate every source to English, extract the facts, and then ask only for information genuinely missing.';
+    finalized = {
+      ...finalized,
+      raw: `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${uploadPrompt}`,
+      message: uploadPrompt,
+      statePatch: nextStatePatch,
+      metadata: {
+        ...(finalized?.metadata || {}),
+        candidateFactsReady: false,
+        profileUploadRequested: true,
+        profileCompleteness: candidateFacts.profileCompleteness,
+      },
+    };
+  } else if (!candidateFacts.readyForScoring) {
     delete nextStatePatch.scores;
     delete nextStatePatch.programs;
     let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['SCORES', 'PROGRAMS']);
@@ -113,7 +131,9 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       };
       nextStatePatch.profile = persistedProfile;
     }
-    if (question && !String(raw).includes(question)) raw = `${raw}\n\n${question}`.trim();
+    raw = question
+      ? `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${question}`
+      : 'I still need your answers to the earlier complementary checklist before I can finalize scoring. I will not repeat questions you have already answered.';
     finalized = {
       ...finalized,
       raw,
@@ -219,8 +239,8 @@ export default async function handler(req, res) {
   }).catch(() => {});
   const architecture = await getAgentArchitecture();
   if (architecture.mode !== 'hybrid') {
-    const candidateState = candidateId ? (await getUserData(candidateId).catch(() => ({}))) : {};
-    const effectiveState = { ...req.body, ...(req.body?.candidateState || {}), ...(candidateState || {}) };
+    const storedState = candidateId ? (await getUserData(candidateId).catch(() => ({}))) : {};
+    const effectiveState = mergeCandidateState({ body: req.body, frontendState: req.body?.candidateState, storedState });
     const output = await invokeAdvisor(req, true, effectiveState);
     if (output.error) return res.status(output.statusCode).json(output.error);
     const response = await finalizeKpiResponse(output.response, effectiveState, candidateId);
@@ -235,7 +255,7 @@ export default async function handler(req, res) {
   try {
     const coordinator = new HybridCoordinator();
     const storedState = candidateId ? (await getUserData(candidateId).catch(() => null)) : null;
-    const effectiveState = { ...body, ...(body.candidateState || {}), ...(storedState || {}) };
+    const effectiveState = mergeCandidateState({ body, frontendState: body.candidateState, storedState });
     if (candidateId && effectiveState.profile) {
       await updateCandidateProfile(candidateId, effectiveState.profile).catch(() => {});
     }
@@ -299,7 +319,8 @@ export default async function handler(req, res) {
       });
       await persistStatePatch(candidateId, specialistResponse);
 
-      const continued = await invokeAdvisor(req, false, { ...effectiveState, ...(result.statePatch || {}) });
+      const continuedState = mergeCandidateState({ storedState: effectiveState, frontendState: result.statePatch || {} });
+      const continued = await invokeAdvisor(req, false, continuedState);
       if (continued.error) throw new Error(continued.error?.details || continued.error?.error || 'Advisor continuation failed.');
       let response = {
         ...continued.response,
@@ -323,7 +344,7 @@ export default async function handler(req, res) {
           latencyMs: Date.now() - startedAt,
         },
       };
-      response = await finalizeKpiResponse(response, effectiveState, candidateId);
+      response = await finalizeKpiResponse(response, continuedState, candidateId);
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: result.metadata?.configVersion });
       return res.status(200).json(response);
@@ -358,7 +379,7 @@ export default async function handler(req, res) {
     }).catch(() => {});
     if (!architecture.fallbackToLegacy) return res.status(500).json({ error: 'Hybrid advisor failed.', detail: error.message });
     const fallbackState = candidateId ? (await getUserData(candidateId).catch(() => ({}))) : {};
-    const effectiveFallbackState = { ...req.body, ...(req.body?.candidateState || {}), ...(fallbackState || {}) };
+    const effectiveFallbackState = mergeCandidateState({ body: req.body, frontendState: req.body?.candidateState, storedState: fallbackState });
     const fallback = await invokeAdvisor(req, true, effectiveFallbackState);
     if (fallback.error) return res.status(fallback.statusCode).json(fallback.error);
     let response = {
