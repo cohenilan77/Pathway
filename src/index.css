@@ -723,6 +723,34 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
 }
 
+/* --- Advisor conversational (ADAPTIVE_GRAD) --- */
+@keyframes adv2In { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes adv2Shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes adv2Pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+@keyframes adv2Pop { 0% { transform: scale(1); } 40% { transform: scale(1.1); } 70% { transform: scale(.97); } 100% { transform: scale(1); } }
+
+.pw-adv2-btn { transition: filter 150ms ease, transform 150ms ease, background 150ms ease; }
+.pw-adv2-btn:hover:not(:disabled) { filter: brightness(1.03); }
+.pw-adv2-btn:active:not(:disabled) { transform: scale(.97); }
+.pw-adv2-btn:focus-visible { outline: 2px solid #5b46e0; outline-offset: 2px; }
+
+.pw-adv2-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 680px) {
+  .pw-adv2-stage-grid {
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: minmax(112px, 1fr);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .pw-adv2-stage-grid::-webkit-scrollbar { display: none; }
+}
+
 @media (max-width: 520px) {
   .pw-candidate-topbar {
     padding: 10px 12px !important;

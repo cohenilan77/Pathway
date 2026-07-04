@@ -5,6 +5,7 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 import AdvisorChatFirst from './AdvisorChatFirst.jsx';
+import AdvisorConversational from './AdvisorConversational.jsx';
 import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 
 // The chat-first single-stream workspace (AdvisorChatFirst) is the default
@@ -14,6 +15,13 @@ import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 // multi-column 9-step layout defined later in this file — that layout is
 // kept only as an explicit, non-default fallback.
 const LEGACY_ADVISOR_LAYOUT = import.meta.env?.VITE_LEGACY_ADVISOR_LAYOUT === 'true';
+
+// Conversation-first redesign (chats/chat1.md, project/AI Advisor.dc.html),
+// scoped entirely behind this flag per its hard guardrail: flag off must
+// render exactly as today. Set VITE_ADAPTIVE_GRAD=true to opt in; it takes
+// priority over VITE_LEGACY_ADVISOR_LAYOUT since it's a superset redesign,
+// not a fallback.
+const ADAPTIVE_GRAD = import.meta.env?.VITE_ADAPTIVE_GRAD === 'true';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
@@ -39,7 +47,7 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, cvText }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -112,6 +120,21 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
+
+  // Conversation-first redesign, flag-gated. Checked first — and before any
+  // early return below reads component state — so flag-off candidates never
+  // observe a behavior change, per the design brief's hard guardrail.
+  if (ADAPTIVE_GRAD) {
+    return (
+      <AdvisorConversational
+        STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
+        busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
+        cvText={cvText}
+        chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
+        authUser={authUser}
+      />
+    );
+  }
 
   // Chat-first workspace for every track, including pre-category sessions.
   // Placed after all hooks so hook order stays stable when the category is
