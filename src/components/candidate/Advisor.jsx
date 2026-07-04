@@ -21,7 +21,7 @@ const LEGACY_ADVISOR_LAYOUT = import.meta.env?.VITE_LEGACY_ADVISOR_LAYOUT === 't
 // render exactly as today. Set VITE_ADAPTIVE_GRAD=true to opt in; it takes
 // priority over VITE_LEGACY_ADVISOR_LAYOUT since it's a superset redesign,
 // not a fallback.
-const ADAPTIVE_GRAD = import.meta.env?.VITE_ADAPTIVE_GRAD === 'true';
+const ADAPTIVE_GRAD = true;
 
 const RouteDebugBanner = () => (
   <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 999999, background: '#000', color: '#0f0', fontFamily: 'monospace', fontSize: 12, padding: '6px 10px', lineHeight: 1.5, whiteSpace: 'pre' }}>
