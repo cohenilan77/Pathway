@@ -9,9 +9,10 @@ import {
 import { scoreCandidateKPIs, trackWeights } from '../lib/kpi-engine.js';
 import { normalizeProfileFacts } from '../lib/profile-facts.js';
 import { normalizeProgram } from '../lib/program-normalizer.js';
-import { applyDeterministicKpiToResponse } from '../lib/deterministic-kpi-response.js';
+import { applyDeterministicKpiToResponse, deterministicKpiEnabled } from '../lib/deterministic-kpi-response.js';
 import { longRunningStatus } from '../src/lib/longRunningAdvisorStatus.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
+import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidate-state.js';
 
 const fixedNow = new Date('2026-01-01T00:00:00Z');
 
@@ -266,6 +267,47 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   assert.equal(display.find(item => item.key === 'professional').status, 'scored');
   assert.equal(display.find(item => item.key === 'achievementsImpact').status, 'incomplete');
   assert.equal(display.find(item => item.key === 'community').status, 'incomplete');
+}
+
+// 15. Fresh upload sources and extracted facts override stale session fields without losing track selection.
+{
+  const requestState = mergeCandidateState({
+    storedState: {
+      profile: { category: 'Graduate', degree: 'MBA', name: 'Tal', oldFact: 'preserved' },
+      profileSources: { fileText: 'old file text' },
+    },
+    body: {
+      profile: { category: 'Graduate', degree: 'MBA — 2-year, full-time' },
+      profileSources: { fileText: 'fresh CV with GPA 3.8 and dated roles' },
+      messages: [{ role: 'user', text: 'Here is my CV/resume profile source bundle.' }],
+    },
+  });
+  assert.equal(requestState.profile.degree, 'MBA — 2-year, full-time');
+  assert.equal(requestState.profile.oldFact, 'preserved');
+  assert.equal(requestState.profileSources.fileText, 'fresh CV with GPA 3.8 and dated roles');
+
+  const extractedState = mergeCandidateState({
+    storedState: requestState,
+    frontendState: { profile: { gpa: 3.8, currentRole: 'Consultant', workYears: 6 } },
+  });
+  assert.equal(extractedState.profile.category, 'Graduate');
+  assert.equal(extractedState.profile.degree, 'MBA — 2-year, full-time');
+  assert.equal(extractedState.profile.gpa, 3.8);
+  assert.equal(shouldRequestProfileUpload(extractedState), false);
+}
+
+// 16. A selected graduate track requests the profile upload before generic baseline questions.
+{
+  assert.equal(shouldRequestProfileUpload({
+    profile: { category: 'Graduate', degree: 'MBA — 2-year, full-time' },
+    messages: [{ role: 'user', text: '2 year fulltime' }],
+  }), true);
+}
+
+// 17. Staging defaults to the authoritative schema KPI engine when no flag is configured.
+{
+  assert.equal(deterministicKpiEnabled({}), true);
+  assert.equal(deterministicKpiEnabled({ DETERMINISTIC_KPI_ENGINE: 'false' }), false);
 }
 
 console.log('candidate facts and analysis flow checks passed');
