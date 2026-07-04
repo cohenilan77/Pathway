@@ -547,12 +547,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   const tierOrder = hasAnyUnlockedPrograms ? ['stretch', 'possible', 'safe', 'locked'] : ['locked', 'stretch', 'possible', 'safe'];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-      <div style={{ maxWidth: 980, margin: '0 auto', padding: '24px 34px 64px' }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#faf6ec' }}>
+      <div style={{ maxWidth: 1020, margin: '0 auto', padding: '24px 34px 64px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 20, padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#fffdf7,#fff8ea)', border: '1px solid #efe5cf', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, lineHeight: 1.08, fontWeight: 800, color: '#16233f', margin: 0 }}>
               {profile?.name ? `${profile.name}'s` : 'Your'} Competitiveness
             </h1>
@@ -577,13 +577,13 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               style={{
                 background: busy
                   ? 'linear-gradient(135deg,#d7ddec,#c8cfdf)'
-                  : 'linear-gradient(135deg,#fef7d6,#f5c94c 45%,#d9a62c)',
+                  : 'linear-gradient(135deg,#16233f,#2c3e63)',
                 border: '1px solid rgba(255,255,255,.55)',
                 borderRadius: 999,
                 padding: '11px 18px',
                 fontSize: 13.5,
                 fontWeight: 800,
-                color: busy ? '#788198' : '#4b3708',
+                color: busy ? '#788198' : '#faf7f2',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
                 display: 'flex',
@@ -603,11 +603,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {busy ? 'Refreshing...' : 'Refresh Analysis'}
             </button>
             <button onClick={() => setCandTab('documents')}
-              style={{ background: '#fff', border: '1px solid #d3c9a8', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
             </button>
             <button onClick={() => setCandTab('advisor')}
-              style={{ background: '#16233f', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.26)' }}>
+              style={{ background: '#b8902f', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(184,144,47,.26)' }}>
               Ask Advisor
             </button>
           </div>
@@ -674,8 +674,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score breakdown */}
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
-        <div style={{ background: '#fffdf7', borderRadius: 16, padding: '28px 26px', border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
+        <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
             <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
           ))}
@@ -685,8 +685,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
           <div className="pw-analysis-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 40 }}>
             {displayStrengths.length > 0 && (
-              <div style={{ background: '#faf7f2', borderRadius: 20, padding: 28, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #f1eadd', paddingBottom: 14, marginBottom: 18 }}>
+              <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
                   <span style={{ width: 30, height: 30, borderRadius: 9, background: '#eafdf6', color: '#19c08a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Core Strengths</h3>
                 </div>
@@ -701,8 +701,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               </div>
             )}
             {displayWeaknesses.length > 0 && (
-              <div style={{ background: '#faf7f2', borderRadius: 20, padding: 28, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #f1eadd', paddingBottom: 14, marginBottom: 18 }}>
+              <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
                   <span style={{ width: 30, height: 30, borderRadius: 9, background: '#fff1f6', color: '#e0457a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
                   <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Growth Areas</h3>
                 </div>
@@ -722,7 +722,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800, color: '#16233f', margin: 0 }}>Strategic School Portfolio</h2>
             </div>
@@ -735,7 +735,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 const schools = displayPrograms.filter(p => p.tier === tier.key);
                 if (schools.length === 0) return null;
                 return (
-                  <div key={tier.key} style={{ background: tier.bg, border: `1px solid ${tier.border}`, borderRadius: 18, overflow: 'hidden' }}>
+                  <div key={tier.key} style={{ background: tier.bg, border: `1px solid ${tier.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 12px 28px rgba(22,35,63,.05)' }}>
                     {/* Tier header */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tier.border}` }}>
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tier.accent, flexShrink: 0, display: 'inline-block' }} />

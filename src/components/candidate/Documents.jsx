@@ -53,13 +53,13 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
   ];
 
   return (
-    <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px' }}>
-      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
+    <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#faf6ec' }}>
+      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#fffdf7', borderRadius: 24, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
-        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #f1eadd', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #f1eadd' }}>
+        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #efe5cf', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#eef1fc' }}>
+          <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e1e6f5' }}>
             {currentConfig?.docLabel && (
-              <div style={{ fontSize: 11.5, color: '#9098b5', lineHeight: 1.5, marginBottom: 14 }}>
+              <div style={{ fontSize: 11.5, color: '#7e86a5', lineHeight: 1.5, marginBottom: 14 }}>
                 Simulation for this track: <span style={{ color: '#5b46e0', fontWeight: 700 }}>{currentConfig.docLabel}</span>
               </div>
             )}
@@ -75,21 +75,21 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
           <div className="pw-sim-status" style={{ padding: 18, flex: 1 }}>
             <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', marginBottom: 14 }}>STATUS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#eafdf6' : '#f6f1e8', border: `1px solid ${cvText ? '#a9eed1' : '#f1eadd'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#eafdf6' : '#f8fafc', border: `1px solid ${cvText ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>CV / Resume</div>
                   <div style={{ fontSize: 11, color: '#9098b5' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: essayText ? '#eafdf6' : '#f6f1e8', border: `1px solid ${essayText ? '#a9eed1' : '#f1eadd'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: essayText ? '#eafdf6' : '#f8fafc', border: `1px solid ${essayText ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: essayText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>Personal Essay</div>
                   <div style={{ fontSize: 11, color: '#9098b5' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: insights ? '#eafdf6' : '#f6f1e8', border: `1px solid ${insights ? '#a9eed1' : '#f1eadd'}` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: insights ? '#eafdf6' : '#f8fafc', border: `1px solid ${insights ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: insights ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>AI Insights</div>
@@ -116,9 +116,9 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         </div>
 
         {/* Main content */}
-        <div className="pw-sim-main" style={{ background: '#f6f1e8', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <div className="pw-sim-main" style={{ background: '#faf6ec', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
           {docTab === 'editor' && (
-            <div className="pw-sim-editor-card" style={{ background: '#faf7f2', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #f1eadd' }}>
+            <div className="pw-sim-editor-card" style={{ background: '#fffdf7', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #efe5cf' }}>
               <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
 
               {savedSchools.length > 0 && (
@@ -128,9 +128,9 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                     {savedSchools.map(school => (
                       <button key={school} onClick={() => selectEssaySchool(school)}
                         style={{
-                          background: essaySchool === school ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#faf7f2',
+                          background: essaySchool === school ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#fffdf7',
                           color: essaySchool === school ? '#faf7f2' : '#141b34',
-                          border: essaySchool === school ? 'none' : '1.5px solid #f1eadd', borderRadius: 12, padding: '7px 14px',
+                          border: essaySchool === school ? 'none' : '1.5px solid #efe5cf', borderRadius: 12, padding: '7px 14px',
                           fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                           boxShadow: essaySchool === school ? '0 8px 16px rgba(105,91,255,.3)' : 'none',
                         }}>
@@ -147,7 +147,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   value={essaySchool}
                   onChange={e => setEssaySchool(e.target.value)}
                   placeholder="e.g. Harvard Business School"
-                  style={{ width: '100%', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', background: '#f6f1e8' }}
+                  style={{ width: '100%', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', background: '#fffdf7' }}
                 />
               </div>
 
@@ -157,7 +157,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   value={essayQuestion}
                   onChange={e => setEssayQuestion(e.target.value)}
                   placeholder="Paste the exact essay prompt/question for this school…"
-                  style={{ width: '100%', minHeight: 60, border: '1.5px solid #f1eadd', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, background: '#f6f1e8' }}
+                  style={{ width: '100%', minHeight: 60, border: '1.5px solid #efe5cf', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, background: '#fffdf7' }}
                 />
               </div>
 
@@ -167,7 +167,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 </h1>
                 {essayText && (
                   <button onClick={saveEssayToDocuments}
-                    style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                      style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                     Save to Documents
                   </button>
                 )}
@@ -255,7 +255,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 <>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                   <button onClick={() => saveCvToDocuments(cvText)}
-                    style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
                     Save to Documents
                   </button>
                 </div>
@@ -263,16 +263,16 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   <textarea
                     value={cvEdit}
                     onChange={e => setCvEdit(e.target.value)}
-                    style={{ width: '100%', minHeight: 500, border: '1.5px solid #f1eadd', borderRadius: 14, padding: '20px', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.7, color: '#141b34', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#f6f1e8' }}
+                    style={{ width: '100%', minHeight: 500, border: '1.5px solid #efe5cf', borderRadius: 14, padding: '20px', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.7, color: '#141b34', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#fffdf7' }}
                   />
                 ) : (
-                  <div style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#33405e', fontFamily: 'inherit', minHeight: 400, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#33405e', fontFamily: 'inherit', minHeight: 400, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
                     {cvText}
                   </div>
                 )}
                 </>
               ) : (
-                <div style={{ background: '#faf7f2', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
+                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
                   <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
                     No CV uploaded yet. Paste your CV to unlock profile analysis and personalized strategy.
                   </div>
@@ -287,22 +287,22 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               {savedSchools.filter(s => essays?.[s]?.text).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {savedSchools.filter(s => essays?.[s]?.text).map(school => (
-                    <div className="pw-sim-list-row" key={school} style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
+                    <div className="pw-sim-list-row" key={school} style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
                       <div>
                         <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{school}</div>
                         <div style={{ fontSize: 12, color: '#9098b5' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
                       </div>
                   <div className="pw-sim-actions" style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => selectEssaySchool(school)}
-                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Open
                         </button>
                         <button onClick={() => downloadAsPdf(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
-                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
                           PDF
                         </button>
                         <button onClick={() => downloadAsDocx(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
-                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Word
                         </button>
                       </div>
@@ -327,7 +327,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   {interviewSchools.map(school => {
                     const result = interviews?.[school];
                     return (
-                      <div key={school} style={{ background: '#faf7f2', borderRadius: 16, border: '1px solid #f1eadd', padding: '20px 22px', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+                      <div key={school} style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '20px 22px', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
                           <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34' }}>{school}</div>
                           {result?.rating != null && (
@@ -358,7 +358,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   })}
                 </div>
               ) : (
-                <div style={{ background: '#faf7f2', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
+                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
                   <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
                     Choose your target schools in the chat first, then come back here to start a mock interview for each one.
                   </div>
@@ -396,7 +396,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   </button>
                 </div>
               ) : (
-                <div style={{ background: '#faf7f2', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
+                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
                   <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
                     Paste your essay in the Essay Editor, then click "Analyze with AI" to get specific, actionable feedback.
                   </div>

@@ -8,7 +8,7 @@ function ScoreRing({ value }) {
   const c = 2 * Math.PI * r;
   const offset = c - (pct / 100) * c;
   return (
-    <svg viewBox="0 0 100 100" width="92" height="92" style={{ flexShrink: 0 }}>
+    <svg viewBox="0 0 100 100" width="104" height="104" style={{ flexShrink: 0 }}>
       <circle cx="50" cy="50" r={r} fill="none" stroke="#f1eadd" strokeWidth="9" />
       <circle
         cx="50" cy="50" r={r} fill="none" stroke="url(#dashGrad)" strokeWidth="9"
@@ -24,13 +24,16 @@ function ScoreRing({ value }) {
       <text x="50" y="55" textAnchor="middle" fontSize="22" fontWeight="800" fill="#141b34" fontFamily="inherit">
         {value != null ? value : '–'}
       </text>
+      <text x="50" y="70" textAnchor="middle" fontSize="9" fontWeight="700" letterSpacing="1" fill="#9aa3b5" fontFamily="inherit">
+        READINESS
+      </text>
     </svg>
   );
 }
 
 function Card({ children, style }) {
   return (
-    <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24, ...style }}>
+    <div style={{ background: '#fffdf7', borderRadius: 20, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.07)', padding: 24, ...style }}>
       {children}
     </div>
   );
@@ -59,23 +62,31 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
 
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
-      <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 20, maxWidth: 920 }}>
+      <div style={{ maxWidth: 980, margin: '0 auto 18px', padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#ffffff,#fff8ea)', border: '1px solid #efe5cf', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 6 }}>CANDIDATE DASHBOARD</div>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: '#16233f', lineHeight: 1.08 }}>Your private office, at a glance.</div>
+        <div style={{ marginTop: 7, fontSize: 13.5, color: '#6b7392', lineHeight: 1.55 }}>A quick read on your current readiness, latest tasks, and where your portfolio is headed next.</div>
+      </div>
+      <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 20, maxWidth: 980 }}>
 
         {/* Score card */}
-        <Card style={{ display: 'flex', alignItems: 'center', gap: 22, gridColumn: '1 / -1' }}>
+        <Card style={{ display: 'flex', alignItems: 'center', gap: 22, gridColumn: '1 / -1', background: 'linear-gradient(135deg,#fffdf7,#f9f4e6)' }}>
           <ScoreRing value={overall} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 6 }}>{scoreLabel}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#b8902f', textTransform: 'uppercase', marginBottom: 6 }}>{scoreLabel}</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: '#16233f', marginBottom: 10 }}>
               {overall != null ? `${overall} / 100` : 'Not analyzed yet'}
+            </div>
+            <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.55, maxWidth: 620 }}>
+              Your score is built from the full candidate facts layer, including uploaded files, chat context, and saved profile data.
             </div>
             <div className="pw-dashboard-actions" style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button onClick={() => setCandTab(isUndergrad ? 'studentProfile' : 'advisor')}
-                style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                style={{ background: '#16233f', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.22)' }}>
                 {isUndergrad ? 'Open Counselor →' : 'Go to Advisor →'}
               </button>
               <button className="pw-dashboard-new-session" onClick={resetSession} disabled={requiresOAuthDetails}
-                style={{ background: '#faf7f2', color: '#5b46e0', border: '1.5px solid #e7dcc7', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
+                style={{ background: '#fff', color: '#16233f', border: '1.5px solid #e7dcc7', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
                 New session
               </button>
             </div>
@@ -83,7 +94,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         </Card>
 
         {isUndergrad && (
-          <Card style={{ gridColumn: '1 / -1', background: '#fffaf0' }}>
+          <Card style={{ gridColumn: '1 / -1', background: '#fff8ea' }}>
             <CardLabel>Starting Point</CardLabel>
             <div style={{ fontSize: 15, lineHeight: 1.55, color: '#33405e', fontWeight: 650 }}>
               This is your starting point today. During the next few years we'll work together to move universities from Reach into Target, and from Target into Likely.

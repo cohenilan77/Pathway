@@ -947,29 +947,40 @@ export default function CandidatePortal(props) {
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (
-    <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#f6f7fb', fontFamily: "'Public Sans',system-ui,sans-serif", color: '#1c2433', WebkitFontSmoothing: 'antialiased' }}>
+    <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#faf6ec', fontFamily: "'Public Sans',system-ui,sans-serif", color: '#1c2433', WebkitFontSmoothing: 'antialiased' }}>
       {/* Mobile top bar with hamburger */}
-      <div className="pw-mobile-bar">
+      <div className="pw-mobile-bar" style={{ background: 'rgba(250,246,236,.96)', borderBottom: '1px solid #efe5cf', backdropFilter: 'blur(14px)' }}>
         <button className="pw-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle menu" aria-expanded={menuOpen}>
           <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#141b34', strokeWidth: '2', strokeLinecap: 'round' }}><path d="M3 6h18M3 12h18M3 18h18" /></svg>
         </button>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: '#16233f' }}>Pathway</div>
+        <div>
+          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#a38b4a', marginTop: 2 }}>PRIVATE OFFICE</div>
+        </div>
       </div>
 
       {/* Backdrop for mobile drawer */}
       {menuOpen && <div className="pw-sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
 
       {/* Sidebar */}
-      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 266, flexShrink: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '26px 18px', background: '#eef1fc', borderRight: '1px solid #e1e6f5' }}>
+      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 284, flexShrink: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '22px 18px', background: '#eef1fc', borderRight: '1px solid #e1e6f5', boxShadow: 'inset -1px 0 0 rgba(255,255,255,.55)' }}>
 
         {/* brand */}
-        <div style={{ padding: '4px 10px 4px' }}>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
+        <div style={{ padding: '10px 12px 14px', borderRadius: 20, background: 'linear-gradient(180deg,#f7f9ff,#eef1fc)', border: '1px solid #e1e6f5', boxShadow: '0 14px 26px rgba(60,72,130,.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#16233f', boxShadow: '0 10px 18px rgba(22,35,63,.2)' }} />
+            <div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: '#5a6478', lineHeight: 1.55 }}>
+            Candidate portal, matching, analysis, and documents share the same design language.
+          </div>
         </div>
 
         {/* language */}
-        <div style={{ position: 'relative', marginTop: 24 }}>
+        <div style={{ position: 'relative', marginTop: 18 }}>
           <select
             value={language}
             onChange={e => setLanguage(e.target.value)}
@@ -981,7 +992,7 @@ export default function CandidatePortal(props) {
           <svg viewBox="0 0 24 24" width="15" height="15" style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fill: 'none', stroke: '#9aa3c0', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}><path d="M6 9l6 6 6-6" /></svg>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#9aa3b5', margin: '24px 12px 10px' }}>MENU</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#9aa3b5', margin: '22px 12px 10px' }}>MENU</div>
 
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1007,7 +1018,7 @@ export default function CandidatePortal(props) {
         </div>
 
         {/* help */}
-        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#3a425a', background: 'transparent' }}>
+        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#3a425a', background: '#f8fafc', borderTop: '1px solid #e1e6f5', borderBottom: '1px solid #e1e6f5' }}>
           <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#5a6478' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
           </span>
@@ -1016,7 +1027,7 @@ export default function CandidatePortal(props) {
 
         {/* plan card + user */}
         <div style={{ marginTop: 'auto' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14, padding: '18px', background: '#16233f', boxShadow: '0 16px 30px rgba(22,35,63,.28)' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '18px', background: '#16233f', boxShadow: '0 16px 30px rgba(22,35,63,.28)' }}>
             <div style={{ position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
                 <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: '#f5c94c', stroke: 'none' }}><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.7L12 2Z" /></svg>
@@ -1033,7 +1044,7 @@ export default function CandidatePortal(props) {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '8px 8px', borderRadius: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '10px 10px', borderRadius: 16, background: '#f8fafc', border: '1px solid #e1e6f5' }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 6px 14px rgba(22,35,63,.3)' }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
@@ -1050,8 +1061,9 @@ export default function CandidatePortal(props) {
       <div className="pw-candidate-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 
         {/* top bar */}
-        <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '22px 36px', borderBottom: '1px solid #e7eaf3', background: '#fff', flexShrink: 0 }}>
+        <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '22px 36px', borderBottom: '1px solid #efe5cf', background: 'rgba(255,253,247,.92)', backdropFilter: 'blur(14px)', flexShrink: 0 }}>
           <div>
+            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '1.2px', color: '#a38b4a', marginBottom: 6 }}>CANDIDATE PORTAL</div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f' }}>Good {tod}, {first}</div>
             <div style={{ fontSize: 13.5, color: '#8a93a3', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
           </div>
