@@ -6,13 +6,14 @@ import {
   getCandidateKpiDisplayItems,
   getCandidateKpiWeights,
 } from '../lib/candidate-kpi-schemas.js';
-import { scoreCandidateKPIs, trackWeights } from '../lib/kpi-engine.js';
+import { assessScoringConfidence, scoreCandidateKPIs, trackWeights } from '../lib/kpi-engine.js';
 import { normalizeProfileFacts } from '../lib/profile-facts.js';
 import { normalizeProgram } from '../lib/program-normalizer.js';
 import { applyDeterministicKpiToResponse, deterministicKpiEnabled } from '../lib/deterministic-kpi-response.js';
 import { longRunningStatus } from '../src/lib/longRunningAdvisorStatus.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidate-state.js';
+import { specialistPatch } from '../lib/hybrid-coordinator.js';
 
 const fixedNow = new Date('2026-01-01T00:00:00Z');
 
@@ -308,6 +309,44 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
 {
   assert.equal(deterministicKpiEnabled({}), true);
   assert.equal(deterministicKpiEnabled({ DETERMINISTIC_KPI_ENGINE: 'false' }), false);
+}
+
+// 17. A successful ProfileAgent tool call is authoritative even if its final
+// text is prose rather than strict JSON.
+{
+  const patch = specialistPatch('profile', {
+    text: 'Profile extraction complete.',
+    history: [{
+      role: 'assistant',
+      content: [{
+        type: 'tool_use',
+        name: 'update_profile',
+        input: {
+          candidateId: 'candidate_1',
+          updates: {
+            education: [{ school: 'Tel Aviv University', degree: 'BA Economics' }],
+            currentRole: 'Senior Consultant',
+            careerGoal: 'Move into product strategy',
+          },
+        },
+      }],
+    }],
+  });
+  assert.equal(patch.profile.currentRole, 'Senior Consultant');
+  assert.equal(patch.profile.education[0].degree, 'BA Economics');
+}
+
+// 18. Education extracted from a CV satisfies the generic academic baseline
+// without inventing a GPA; only genuinely absent goal evidence remains.
+{
+  const normalized = normalizeProfileFacts({
+    category: 'Graduate',
+    degree: 'MSc',
+    education: [{ school: 'Tel Aviv University', degree: 'BA Economics' }],
+  });
+  const confidence = assessScoringConfidence(normalized);
+  assert.ok(!confidence.missingFields.includes('academic or professional baseline'));
+  assert.ok(confidence.missingFields.includes('career or academic goal'));
 }
 
 console.log('candidate facts and analysis flow checks passed');
