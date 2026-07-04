@@ -18,8 +18,15 @@ function getRequestUrl(req) {
 }
 
 function getOrigin(req) {
-  const explicitOrigin = process.env.OAUTH_REDIRECT_ORIGIN;
-  if (explicitOrigin) return explicitOrigin.replace(/\/$/, '');
+  const explicitOrigin =
+    process.env.OAUTH_REDIRECT_ORIGIN ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+    process.env.VERCEL_URL;
+  if (explicitOrigin) {
+    const normalized = explicitOrigin.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return normalized.startsWith('http') ? normalized : `https://${normalized}`;
+  }
   const proto = req.headers['x-forwarded-proto'] || (req.headers.host?.startsWith('localhost') ? 'http' : 'https');
   return `${proto}://${req.headers.host}`;
 }
