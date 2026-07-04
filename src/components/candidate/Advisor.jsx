@@ -37,8 +37,8 @@ function undergradGradeNumber(profile) {
 }
 
 const AiAvatar = () => (
-  <div style={{ width: 34, height: 34, borderRadius: 11, background: 'linear-gradient(140deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(105,91,255,.32)' }}>
-    <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(22,35,63,.28)' }}>
+    <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
       <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z" />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
     </svg>
@@ -137,10 +137,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
-      <div style={{ flex: 1, minHeight: 0, borderRadius: 24, border: '1px solid #ece6f8', boxShadow: '0 20px 50px rgba(60,72,130,.10)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#faf7f2' }}>
+      <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #e7eaf3', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
 
         {/* stepper */}
-        <div style={{ padding: '14px 24px 10px', borderBottom: '1px solid #f1eadd', flexShrink: 0, background: '#faf7f2' }}>
+        <div style={{ padding: '14px 24px 10px', borderBottom: '1px solid #e7eaf3', flexShrink: 0, background: '#fff' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, overflowX: 'auto' }}>
             {STEPS.map((label, i) => {
               const active = i === stepIdx;
@@ -148,35 +148,26 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               const future = futureStages.has(label);
               return (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px 5px 7px', borderRadius: 999,
-                    ...(future
-                      ? { background: '#fff8e8', border: '1px dashed #dfcfaa' }
-                      : active
-                      ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 4px 12px rgba(105,91,255,.30)' }
-                      : done
-                      ? { background: '#eafff6', border: '1px solid #b7ecd4' }
-                      : { background: '#f6f1e8', border: '1px solid #e7dcc7' }),
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <span style={{
-                      width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0,
-                      ...(active ? { background: 'rgba(255,255,255,.25)', color: '#faf7f2' } : done ? { background: '#3fdca9', color: '#fff' } : future ? { background: '#fbe9c0', color: '#c08a1a' } : { background: '#e7dcc7', color: '#9098b5' }),
+                      width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, fontWeight: 700, flexShrink: 0,
+                      ...(active ? { background: '#16233f', color: '#fff', boxShadow: '0 4px 10px rgba(22,35,63,.28)' } : done ? { background: '#16233f', color: '#fff' } : future ? { background: '#fffaf0', color: '#b8902f', border: '1px dashed #d3c9a8' } : { background: '#fff', color: '#9aa3b5', border: '1px solid #d7ddec' }),
                     }}>
                       {done ? '✓' : i + 1}
                     </span>
-                    <span style={{ fontSize: 12.5, fontWeight: active ? 800 : 600, whiteSpace: 'nowrap', color: active ? '#faf7f2' : done ? '#16875c' : future ? '#b58522' : '#9098b5' }}>
+                    <span style={{ fontSize: 13, fontWeight: active ? 700 : 600, whiteSpace: 'nowrap', color: active ? '#16233f' : done ? '#3a425a' : future ? '#b8902f' : '#9aa3b5' }}>
                       {label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
-                    <span style={{ width: 20, height: 2, borderRadius: 2, background: done ? 'linear-gradient(90deg,#b9a8ff,#d4c9ff)' : '#e7dcc7', flexShrink: 0 }} />
+                    <span style={{ width: 28, height: 1, background: done ? '#b8902f' : '#e1e6f0', flexShrink: 0, margin: '0 2px' }} />
                   )}
                 </div>
               );
             })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#aab2cc', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#9aa3b5', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
           </div>
           <div className="pw-progress-track">
             <div className="pw-progress-fill" style={{ width: `${Math.min(((stepIdx + 1) / STEPS.length) * 100, 100)}%` }} />
@@ -187,18 +178,18 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
         <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 310px', overflow: 'hidden' }}>
 
           {/* chat column */}
-          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #f1eadd' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #eef1f6' }}>
 
             {/* header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 24px', borderBottom: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
               <AiAvatar />
               <div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: '#16233f' }}>
                   {profile?.name ? `${profile.name}'s Advisor` : 'AI Advisor'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3fdca9', boxShadow: '0 0 8px rgba(63,220,169,.7)', display: 'inline-block' }} />
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: '#3fdca9' }}>Online · Smart AI</span>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2fa876', boxShadow: '0 0 8px rgba(47,168,118,.6)', display: 'inline-block' }} />
+                  <span style={{ fontSize: 11.5, fontWeight: 600, color: '#2fa876' }}>Online · Smart AI</span>
                 </div>
               </div>
             </div>
@@ -223,7 +214,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                         {showAvatar ? <AiAvatar /> : <span style={{ width: 34, flexShrink: 0 }} />}
-                        <div className="pw-rich-text" style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '13px 17px', fontSize: 14, lineHeight: 1.6, maxWidth: 520, boxShadow: '0 4px 14px rgba(105,91,255,.07)' }}>
+                        <div className="pw-rich-text" style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '14px 18px', fontSize: 14.5, lineHeight: 1.6, maxWidth: 520, boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
                           {renderFormattedText(parsed ? parsed.mainText : m.text)}
                         </div>
                       </div>
@@ -231,7 +222,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                         <div style={{ marginLeft: 42, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                           {parsed.options.map(opt => (
                             <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
-                              style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '8px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                              style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#16233f', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                               {opt}
                             </button>
                           ))}
@@ -246,7 +237,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                     initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
-                    style={{ alignSelf: 'flex-end', background: 'linear-gradient(135deg,#7c6ef5,#b899fb)', color: '#faf7f2', borderRadius: '18px 18px 4px 18px', padding: '12px 17px', fontSize: 14, lineHeight: 1.55, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(105,91,255,.26)' }}
+                    style={{ alignSelf: 'flex-end', background: '#16233f', color: '#eef2fa', borderRadius: '16px 16px 4px 16px', padding: '13px 18px', fontSize: 14.5, lineHeight: 1.6, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(22,35,63,.22)' }}
                   >
                     {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
                   </motion.div>
@@ -256,7 +247,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               {busy && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                   <AiAvatar />
-                  <div style={{ background: '#f0ebff', border: '1px solid #e2d9f8', borderRadius: '4px 18px 18px 18px', padding: '14px 18px', display: 'flex', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: 9, maxWidth: '100%' }}>
+                  <div style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '14px 18px', display: 'flex', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: 9, maxWidth: '100%' }}>
                     <LongRunningAdvisorStatus busy={busy} message={latestUserText} />
                   </div>
                 </div>
@@ -275,7 +266,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                     { label: '🤝 Search with me', msg: "Let's do an AI-led search together." },
                   ].map(({ label, msg }) => (
                     <button key={msg} className="pw-chip" onClick={() => send(msg)} disabled={busy}
-                      style={{ background: '#faf7f2', border: '1.5px solid #d8cdb4', borderRadius: 14, padding: '12px 18px', fontSize: 13, fontWeight: 700, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, padding: '12px 18px', fontSize: 13.5, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
                       {label}
                     </button>
                   ))}
@@ -283,21 +274,21 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               )}
 
               {scores && stepIdx >= 2 && (
-                <div style={{ marginLeft: 42, background: 'linear-gradient(135deg,#e9f9f1,#d1f5e6)', border: '1px solid #b7ecd4', borderRadius: 14, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ fontSize: 13, color: '#119467', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
-                  <button onClick={() => setCandTab(isUndergrad ? 'universities' : 'analysis')} style={{ background: 'linear-gradient(135deg,#3fdca9,#80dbbf)', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
+                <div style={{ marginLeft: 42, background: '#fffaf0', border: '1px solid #ecd9a8', borderLeft: '4px solid #c2962f', borderRadius: 12, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ fontSize: 13, color: '#8a6717', fontWeight: 700 }}>✓ Your profile analysis is ready</span>
+                  <button onClick={() => setCandTab(isUndergrad ? 'universities' : 'analysis')} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>
                     {isUndergrad ? 'University List →' : 'View Analysis →'}
                   </button>
                 </div>
               )}
 
               {showNarrativeCTA && (
-                <div style={{ marginLeft: 42, background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ marginLeft: 42, background: '#16233f', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#ffd76a', marginBottom: 3 }}>NEXT STEP</div>
-                    <span style={{ fontSize: 13.5, color: '#e7dcc7', fontWeight: 600 }}>Choose your narrative strategy</span>
+                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                    <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
                   </div>
-                  <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#faf7f2', color: '#5b46e0', border: 'none', borderRadius: 10, padding: '9px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
+                  <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
                 </div>
               )}
 
@@ -306,14 +297,14 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
             {/* quick replies from last AI message — pinned above input */}
             {lastParsed && !busy && (
-              <div style={{ padding: '10px 24px 0', borderTop: '1px solid #f1eadd', background: '#faf7f2', flexShrink: 0 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 8 }}>QUICK REPLY</div>
+              <div style={{ padding: '10px 24px 0', borderTop: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 8 }}>QUICK REPLY</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                   {lastParsed.options.map(opt => (
                     <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
-                      style={{ background: 'linear-gradient(135deg,#f0ebff,#ece6f8)', border: '1.5px solid #d4c4f8', borderRadius: 999, padding: '9px 17px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#94b3fb,#b899fb)'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#b899fb'; }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg,#f0ebff,#ece6f8)'; e.currentTarget.style.color = '#5b46e0'; e.currentTarget.style.borderColor = '#d4c4f8'; }}>
+                      style={{ background: '#f4f6fb', border: '1px solid #d7ddec', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#16233f'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#16233f'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#f4f6fb'; e.currentTarget.style.color = '#16233f'; e.currentTarget.style.borderColor = '#d7ddec'; }}>
                       {opt}
                     </button>
                   ))}
@@ -322,10 +313,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             )}
 
             {/* input */}
-            <div style={{ padding: lastParsed && !busy ? '10px 20px 18px' : '14px 20px 18px', flexShrink: 0, background: '#faf7f2' }}>
-              <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#f6f1e8', border: '1.5px solid #e2d9f8', borderRadius: 18, padding: '6px 6px 6px 10px', boxShadow: '0 2px 12px rgba(105,91,255,.06)' }}>
+            <div style={{ padding: lastParsed && !busy ? '10px 20px 18px' : '14px 20px 18px', flexShrink: 0, background: '#fff', borderTop: '1px solid #eef1f6' }}>
+              <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 12px', boxShadow: '0 2px 12px rgba(22,35,63,.04)' }}>
                 <button onClick={() => setShowCvModal(true)} title="Upload CV"
-                  style={{ background: '#faf7f2', border: 'none', borderRadius: 12, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5b46e0', flexShrink: 0 }}>
+                  style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
                   <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
                   </svg>
@@ -342,7 +333,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                   style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
                 />
                 <button onClick={() => send()} disabled={busy || !input.trim()}
-                  style={{ background: input.trim() ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7', border: 'none', borderRadius: 13, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#faf7f2' : '#9098b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(105,91,255,.32)' : 'none' }}>
+                  style={{ background: input.trim() ? '#16233f' : '#e2e7f2', border: 'none', borderRadius: 9, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#fff' : '#9aa3b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(22,35,63,.26)' : 'none' }}>
                   {busy ? (
                     <svg className="pw-send-spinner" viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
                       <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
@@ -354,8 +345,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                   )}
                 </button>
               </div>
-              <div style={{ marginTop: 7, paddingLeft: 4, fontSize: 11, color: '#c0c8e0', fontWeight: 500 }}>
-                Confidential · AI guidance
+              <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: '#9aa3b5', fontWeight: 500 }}>
+                Confidential consultation active. End-to-end encrypted.
               </div>
             </div>
 
@@ -365,43 +356,43 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
           </div>
 
           {/* tasks rail */}
-          <div className="pw-advisor-rail" style={{ background: '#f6f1e8', padding: '22px 18px', overflowY: 'auto', minHeight: 0 }}>
+          <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '24px 20px', overflowY: 'auto', minHeight: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#141b34', margin: 0 }}>Your tasks</h3>
+              <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f', margin: 0 }}>Your tasks</h3>
               {taskList.length > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#eee8ff', padding: '3px 9px', borderRadius: 8 }}>{doneCount}/{taskList.length}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
               )}
             </div>
-            <p style={{ fontSize: 12, color: '#9098b5', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
+            <p style={{ fontSize: 12, color: '#8a93a3', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
             {taskList.length === 0 ? (
-              <div style={{ background: '#faf7f2', border: '1.5px dashed #e7dcc7', borderRadius: 14, padding: '20px 16px', textAlign: 'center' }}>
+              <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
                 <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
-                <div style={{ fontSize: 12.5, color: '#aeb6cf', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
+                <div style={{ fontSize: 12.5, color: '#9aa3b5', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {doneCount > 0 && taskList.length > 0 && (
-                  <div style={{ height: 4, borderRadius: 2, background: '#e7dcc7', marginBottom: 4, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#3fdca9,#94b3fb)', borderRadius: 2, transition: 'width .4s ease' }} />
+                  <div style={{ height: 4, borderRadius: 2, background: '#e7eaf3', marginBottom: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#16233f,#b8902f)', borderRadius: 2, transition: 'width .4s ease' }} />
                   </div>
                 )}
                 {taskList.map((text) => {
                   const done = !!completedTasks?.[text];
                   return (
                     <div key={text} onClick={() => toggleTask(text)}
-                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 13, cursor: 'pointer', border: `1px solid ${done ? '#b7ecd4' : '#f1eadd'}`, background: done ? '#f0faf6' : '#faf7f2', transition: 'all .15s' }}>
+                      style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#d9e3d5' : '#e8ecf6'}`, background: done ? '#f5f9f4' : '#fff', transition: 'all .15s' }}>
                       <span style={{
                         width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        ...(done ? { background: '#3fdca9', boxShadow: '0 3px 8px rgba(25,192,138,.28)' } : { background: '#faf7f2', border: '1.5px solid #d8cdb4' }),
+                        ...(done ? { background: '#16233f', boxShadow: '0 3px 8px rgba(22,35,63,.24)' } : { background: '#fff', border: '1px solid #d7ddec' }),
                       }}>
                         {done && (
-                          <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                             <path d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </span>
-                      <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3bf' : '#33405e', textDecoration: done ? 'line-through' : 'none' }}>
+                      <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3b5' : '#2a3447', textDecoration: done ? 'line-through' : 'none' }}>
                         {text}
                       </span>
                     </div>
@@ -411,20 +402,20 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             )}
 
             {isUndergrad && programs?.length > 0 && (
-              <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#e9f9f1,#d5f5e5)', border: '1px solid #b7ecd4', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#16875c', marginBottom: 6 }}>UNIVERSITY LIST</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 10 }}>{programs.length} universities matched</div>
-                <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: 'linear-gradient(135deg,#3fdca9,#5bbfa0)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <div style={{ marginTop: 20, background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: '14px 14px' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>UNIVERSITY LIST</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f', marginBottom: 10 }}>{programs.length} universities matched</div>
+                <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Open University List →
                 </button>
               </div>
             )}
 
             {!isUndergrad && scores && (
-              <div style={{ marginTop: 20, background: 'linear-gradient(135deg,#f0ebff,#e8e1ff)', border: '1px solid #d4c4f8', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>PROFILE SCORE</div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#5b46e0', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontSize: 14, fontWeight: 600, color: '#9098b5' }}>/100</span></div>
-                <button onClick={() => setCandTab('analysis')} style={{ marginTop: 10, width: '100%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 10, padding: '9px 0', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 12, padding: '14px 14px', boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>PROFILE SCORE</div>
+                <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontFamily: "'Public Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#9aa3b5' }}>/100</span></div>
+                <button onClick={() => setCandTab('analysis')} style={{ marginTop: 10, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   View Full Analysis →
                 </button>
               </div>

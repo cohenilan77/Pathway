@@ -4,16 +4,16 @@ import { getTrackConfig } from '../../trackConfig.js';
 import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.js';
 
 const BAR_COLORS = [
-  { from: '#7dd3fc', to: '#4dbbec' }, // sky
-  { from: '#fda4af', to: '#e25f7b' }, // rose
-  { from: '#bef264', to: '#89d71c' }, // lime
-  { from: '#f9e193', to: '#f09731' }, // amber
-  { from: '#d9cbb3', to: '#a67ded' }, // violet
-  { from: '#5eead4', to: '#1bc8b9' }, // teal
-  { from: '#f0abfc', to: '#cc62d9' }, // fuchsia
-  { from: '#93c5fd', to: '#6991ea' }, // blue
-  { from: '#fbdab8', to: '#ed834b' }, // orange
-  { from: '#86efac', to: '#28d367' }, // green
+  { from: '#2c3e63', to: '#16233f' }, // navy
+  { from: '#e3bc5e', to: '#b8902f' }, // gold
+  { from: '#8ea2c9', to: '#5a7099' }, // slate blue
+  { from: '#d3c9a8', to: '#a89767' }, // parchment
+  { from: '#4a5b82', to: '#22304f' }, // deep slate
+  { from: '#c9a85c', to: '#96742a' }, // bronze
+  { from: '#aebde6', to: '#7688b8' }, // periwinkle
+  { from: '#38507a', to: '#1a2947' }, // midnight
+  { from: '#e8d29a', to: '#c2962f' }, // champagne
+  { from: '#6d7f9e', to: '#42536f' }, // steel
 ];
 
 function ScoreBar({ score, title, last, color, incomplete = false }) {
@@ -516,18 +516,18 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   if (!hasData) {
     return (
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 34px 34px' }}>
-        <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#faf7f2', borderRadius: 24, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(140deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 12px 24px rgba(105,91,255,.34)' }}>
+        <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(22,35,63,.06)' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 12px 24px rgba(22,35,63,.3)' }}>
             <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" />
             </svg>
           </div>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: '#141b34', margin: '0 0 14px', letterSpacing: '-.4px' }}>Analysis Not Yet Available</h2>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 700, color: '#16233f', margin: '0 0 14px' }}>Analysis Not Yet Available</h2>
           <p style={{ fontSize: 14.5, color: '#6b7392', lineHeight: 1.65, margin: '0 0 28px' }}>
             Your competitiveness analysis will appear here once the advisor has enough information about your profile. Paste your CV or answer a few questions to get started.
           </p>
           <button onClick={() => setCandTab('advisor')}
-            style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 14, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 12px 24px rgba(105,91,255,.36)' }}>
+            style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 12px 24px rgba(22,35,63,.28)' }}>
             Go to Advisor →
           </button>
         </div>
@@ -550,8 +550,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 28 }}>
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
-            <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.6px' }}>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, lineHeight: 1.08, fontWeight: 800, color: '#16233f', margin: 0 }}>
               {profile?.name ? `${profile.name}'s` : 'Your'} Competitiveness
             </h1>
             {profile && (
@@ -601,11 +601,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {busy ? 'Refreshing...' : 'Refresh Analysis'}
             </button>
             <button onClick={() => setCandTab('documents')}
-              style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: '#fff', border: '1px solid #d3c9a8', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
             </button>
             <button onClick={() => setCandTab('advisor')}
-              style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 13, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#faf7f2', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+              style={{ background: '#16233f', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.26)' }}>
               Ask Advisor
             </button>
           </div>
@@ -672,8 +672,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score breakdown */}
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
-        <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
+        <div style={{ background: '#fffdf7', borderRadius: 16, padding: '28px 26px', border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
             <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
           ))}
@@ -720,9 +720,9 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
+            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
-              <h2 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.5px' }}>Strategic School Portfolio</h2>
+              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800, color: '#16233f', margin: 0 }}>Strategic School Portfolio</h2>
             </div>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: '0 0 24px', fontWeight: 500 }}>
               {savedTargets.length > 0 ? 'Your target schools are saved here. You can adjust them anytime.' : 'Tap the schools that excite you most, then send your picks straight to your advisor.'}
@@ -871,10 +871,10 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {selected.length > 0 && <div style={{ height: 88 }} />}
 
         {!displayPrograms.length && scores && (
-          <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
+          <div style={{ background: '#fffdf7', border: '1px dashed #d3c9a8', borderRadius: 16, padding: 32, textAlign: 'center' }}>
             <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>School recommendations will appear here after your advisor completes the Programs step.</div>
             <button onClick={() => setCandTab('advisor')}
-              style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 24px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+              style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.26)' }}>
               Continue with Advisor →
             </button>
           </div>
@@ -893,21 +893,21 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         }}>
           <div style={{
             margin: '0 auto 18px', maxWidth: 620, width: 'calc(100% - 32px)',
-            background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 18, padding: '14px 20px',
+            background: '#16233f', borderRadius: 14, padding: '14px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-            boxShadow: '0 16px 34px rgba(40,30,90,.32)',
+            boxShadow: '0 16px 34px rgba(15,26,48,.35)',
           }}>
-            <div style={{ color: '#faf7f2', fontSize: 13.5, fontWeight: 600, minWidth: 0 }}>
+            <div style={{ color: '#eef2fa', fontSize: 13.5, fontWeight: 600, minWidth: 0 }}>
               <span style={{ fontWeight: 800, fontSize: 17, marginRight: 8 }}>{selected.length}</span>
               {selected.length === 1 ? 'school selected' : 'schools selected'}
             </div>
             <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
               <button onClick={() => { setSelected([]); setChosenSchools && setChosenSchools([]); }}
-                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#d9cbb3', borderRadius: 10, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#c6d2ea', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear
               </button>
               <button onClick={confirmSelection} disabled={busy}
-                style={{ background: '#faf7f2', border: 'none', color: '#5b46e0', borderRadius: 10, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                style={{ background: '#f5c94c', border: 'none', color: '#42320a', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                 {busy ? 'Confirming…' : 'Back to Chat with Picks →'}
               </button>
             </div>
