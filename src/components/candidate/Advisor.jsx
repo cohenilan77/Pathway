@@ -23,6 +23,14 @@ const LEGACY_ADVISOR_LAYOUT = import.meta.env?.VITE_LEGACY_ADVISOR_LAYOUT === 't
 // not a fallback.
 const ADAPTIVE_GRAD = import.meta.env?.VITE_ADAPTIVE_GRAD === 'true';
 
+const RouteDebugBanner = () => (
+  <div style={{ position: 'fixed', top: 0, left: 0, zIndex: 999999, background: '#000', color: '#0f0', fontFamily: 'monospace', fontSize: 12, padding: '6px 10px', lineHeight: 1.5, whiteSpace: 'pre' }}>
+{`ADVISOR ROUTE DEBUG
+VITE_ADAPTIVE_GRAD=${String(import.meta.env?.VITE_ADAPTIVE_GRAD)}
+VITE_LEGACY_ADVISOR_LAYOUT=${String(import.meta.env?.VITE_LEGACY_ADVISOR_LAYOUT)}`}
+  </div>
+);
+
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
 function parseOptions(text) {
@@ -126,13 +134,16 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   // observe a behavior change, per the design brief's hard guardrail.
   if (ADAPTIVE_GRAD) {
     return (
-      <AdvisorConversational
-        STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
-        busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
-        cvText={cvText}
-        chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
-        authUser={authUser}
-      />
+      <>
+        <RouteDebugBanner />
+        <AdvisorConversational
+          STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
+          busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
+          cvText={cvText}
+          chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
+          authUser={authUser}
+        />
+      </>
     );
   }
 
@@ -142,23 +153,31 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   // legacy flag is explicitly set.
   if (!LEGACY_ADVISOR_LAYOUT) {
     return (
-      <AdvisorChatFirst
-        STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
-        busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
-        narrative={narrative} setNarrative={setNarrative}
-        chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
-        reopenProgramSelection={reopenProgramSelection}
-        confirmTargetSchools={confirmTargetSchools}
-        authUser={authUser}
-        setCandTab={setCandTab}
-        tasks={tasks}
-        completedTasks={completedTasks}
-        setCompletedTasks={setCompletedTasks}
-      />
+      <>
+        <RouteDebugBanner />
+        <AdvisorChatFirst
+          STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
+          busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
+          narrative={narrative} setNarrative={setNarrative}
+          chosenSchools={chosenSchools} setChosenSchools={setChosenSchools}
+          reopenProgramSelection={reopenProgramSelection}
+          confirmTargetSchools={confirmTargetSchools}
+          authUser={authUser}
+          setCandTab={setCandTab}
+          tasks={tasks}
+          completedTasks={completedTasks}
+          setCompletedTasks={setCompletedTasks}
+        />
+      </>
     );
   }
 
   return (
+    <>
+      <RouteDebugBanner />
+      <div style={{ position: 'fixed', top: 46, left: 0, zIndex: 999999, background: '#000', color: '#0f0', fontFamily: 'monospace', fontSize: 12, padding: '6px 10px' }}>
+        ACTIVE: Legacy Advisor
+      </div>
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
       <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #e7eaf3', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff' }}>
 
@@ -447,5 +466,6 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
         </div>
       </div>
     </div>
+    </>
   );
 }
