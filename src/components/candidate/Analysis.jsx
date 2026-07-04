@@ -58,11 +58,11 @@ function ScoreBar({ score, title, last, color, incomplete = false }) {
 
 const TIERS = [
   {
-    key: 'safe',
-    label: 'STRONG FIT · >80%',
-    accent: '#3fdca9',
-    bg: '#eafdf6',
-    border: '#a9eed1',
+    key: 'stretch',
+    label: 'LOW FIT · <50%',
+    accent: '#e384a5',
+    bg: '#fff1f6',
+    border: '#ffd3e3',
   },
   {
     key: 'possible',
@@ -72,11 +72,11 @@ const TIERS = [
     border: '#ffe3a8',
   },
   {
-    key: 'stretch',
-    label: 'LOW FIT · <50%',
-    accent: '#e384a5',
-    bg: '#fff1f6',
-    border: '#ffd3e3',
+    key: 'safe',
+    label: 'STRONG FIT · >80%',
+    accent: '#3fdca9',
+    bg: '#eafdf6',
+    border: '#a9eed1',
   },
   {
     key: 'locked',
@@ -543,6 +543,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   const displayWeaknesses = weaknesses || [];
   const displayPrograms = normalizeProgramList(programs) || [];
   const savedTargets = chosenSchools || [];
+  const hasAnyUnlockedPrograms = displayPrograms.some(program => program.tier !== 'locked');
+  const tierOrder = hasAnyUnlockedPrograms ? ['stretch', 'possible', 'safe', 'locked'] : ['locked', 'stretch', 'possible', 'safe'];
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
@@ -728,7 +730,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {savedTargets.length > 0 ? 'Your target schools are saved here. You can adjust them anytime.' : 'Tap the schools that excite you most, then send your picks straight to your advisor.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {TIERS.map(tier => {
+              {tierOrder.map(tierKey => {
+                const tier = TIERS.find(item => item.key === tierKey);
                 const schools = displayPrograms.filter(p => p.tier === tier.key);
                 if (schools.length === 0) return null;
                 return (

@@ -313,7 +313,20 @@ function splitUniversities(programs = []) {
     Reach: programs.filter(p => p.tier === 'stretch' || (p.fit ?? 0) < 50),
     Target: programs.filter(p => p.tier === 'possible' || ((p.fit ?? 0) >= 50 && (p.fit ?? 0) <= 80)),
     Likely: programs.filter(p => p.tier === 'safe' || (p.fit ?? 0) > 80),
+    Locked: programs.filter(p => p.tier === 'locked'),
   };
+}
+
+function orderedUniversityBuckets(programs = []) {
+  const buckets = splitUniversities(programs);
+  const hasNonLocked = buckets.Reach.length || buckets.Target.length || buckets.Likely.length;
+  const order = buckets.Locked.length && !hasNonLocked
+    ? ['Locked', 'Reach', 'Target', 'Likely']
+    : ['Reach', 'Target', 'Likely', 'Locked'];
+
+  return order
+    .map(label => [label, buckets[label] || []])
+    .filter(([, schools]) => schools.length);
 }
 
 function intendedMajor(profile = {}) {
@@ -723,11 +736,12 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {Object.entries(buckets).map(([tierLabel, schools]) => {
+              {orderedUniversityBuckets(programs || []).map(([tierLabel, schools]) => {
                 const tierColors = {
                   Reach: { accent: '#e384a5', bg: '#fff1f6', border: '#ffd3e3' },
                   Target: { accent: '#eaa129', bg: '#fff8ea', border: '#ffe3a8' },
                   Likely: { accent: '#3fdca9', bg: '#eafdf6', border: '#a9eed1' },
+                  Locked: { accent: '#9098b5', bg: '#f4f5f8', border: '#dde0e8' },
                 };
                 const tierConfig = tierColors[tierLabel];
                 if (!schools.length) return null;
@@ -820,8 +834,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                 </div>
                               </div>
                             )}
-                          </div>
-                        );
+                            </div>
+                          );
                       })}
                     </div>
                   </div>
