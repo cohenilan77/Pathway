@@ -191,7 +191,7 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
   const statusColor = (status) => status === 'Needs review'
     ? { bg: '#fff8ea', color: '#b27620' }
     : status === 'Generated'
-      ? { bg: '#eef0ff', color: '#5b46e0' }
+      ? { bg: '#eef1f7', color: '#16233f' }
       : { bg: '#eafdf6', color: '#119467' };
 
   return (
@@ -442,9 +442,9 @@ function undergradUniversityDescription(school = {}, profile = {}) {
 
 function UndergradCard({ title, children, action }) {
   return (
-    <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+    <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase' }}>{title}</div>
+        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', textTransform: 'uppercase' }}>{title}</div>
         {action}
       </div>
       {children}
@@ -453,13 +453,13 @@ function UndergradCard({ title, children, action }) {
 }
 
 const primaryButtonStyle = {
-  background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 11,
-  padding: '10px 15px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+  background: '#16233f', color: '#fff', border: 'none', borderRadius: 9,
+  padding: '10px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 };
 
 const secondaryButtonStyle = {
-  background: '#fff', color: '#5b46e0', border: '1px solid #e7dcc7', borderRadius: 11,
-  padding: '9px 13px', fontSize: 12.5, fontWeight: 750, cursor: 'pointer', fontFamily: 'inherit',
+  background: '#fff', color: '#16233f', border: '1px solid #d7ddec', borderRadius: 9,
+  padding: '9px 13px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
 };
 
 function TestingSimulationCard({ title, testType, authToken, sessionId }) {
@@ -532,13 +532,13 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
 
   if (phase === 'idle' || phase === 'loading' || phase === 'error') {
     return (
-      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{title}</div>
+      <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>{title}</div>
         <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginBottom: 18 }}>
           20 original questions · {testType === 'sat' ? '28' : '20'} minutes · new AI-generated session every time
         </div>
         {error && <div style={{ background: '#fff1f6', color: '#c2416c', border: '1px solid #fbd3e2', borderRadius: 12, padding: 12, fontSize: 13, marginBottom: 14 }}>{error}</div>}
-        <button onClick={startSimulation} disabled={phase === 'loading'} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 800, cursor: phase === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)', width: '100%', opacity: phase === 'loading' ? 0.65 : 1 }}>
+        <button onClick={startSimulation} disabled={phase === 'loading'} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 13, padding: '12px 18px', fontSize: 13.5, fontWeight: 800, cursor: phase === 'loading' ? 'wait' : 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.32)', width: '100%', opacity: phase === 'loading' ? 0.65 : 1 }}>
           {phase === 'loading' ? 'Generating a fresh test…' : `${phase === 'error' ? 'Try Again' : `Start ${title}`} →`}
         </button>
       </div>
@@ -548,18 +548,18 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   if (phase === 'results' && result) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
+        <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
           <div className="pw-test-result-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,.8fr) 1.5fr', gap: 28, alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 11, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px' }}>ESTIMATED {testType.toUpperCase()} SCORE</div>
-              <div style={{ fontSize: 54, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{result.estimatedScore}</div>
+              <div style={{ fontSize: 54, fontWeight: 900, color: '#16233f', lineHeight: 1.1 }}>{result.estimatedScore}</div>
               <div style={{ fontSize: 12, color: '#9098b5' }}>Scale {result.scale}</div>
             </div>
             <div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{result.correctCount} of {questions.length} correct · {result.percentage}%</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#16233f', marginBottom: 6 }}>{result.correctCount} of {questions.length} correct · {result.percentage}%</div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
                 {Object.entries(result.sectionScores).map(([section, sectionScore]) => (
-                  <span key={section} style={{ background: '#f0edff', color: '#5b46e0', borderRadius: 9, padding: '6px 9px', fontSize: 12, fontWeight: 800 }}>{section}: {sectionScore}</span>
+                  <span key={section} style={{ background: '#eef1f7', color: '#16233f', borderRadius: 9, padding: '6px 9px', fontSize: 12, fontWeight: 800 }}>{section}: {sectionScore}</span>
                 ))}
               </div>
               <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 14 }}>{simulation.scoringNote}</div>
@@ -568,8 +568,8 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
           </div>
         </div>
 
-        <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', padding: 24 }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 16 }}>Answer review</div>
+        <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', padding: 24 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#16233f', marginBottom: 16 }}>Answer review</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {questions.map((question, index) => {
               const selected = answers[index];
@@ -577,7 +577,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
               return (
                 <div key={question.id} style={{ border: `1px solid ${correct ? '#b7ead8' : '#f2c6d5'}`, background: correct ? '#f2fcf8' : '#fff7fa', borderRadius: 14, padding: 16 }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: correct ? '#168c68' : '#c2416c', marginBottom: 6 }}>QUESTION {index + 1} · {correct ? 'CORRECT' : 'REVIEW'}</div>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{question.prompt}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>{question.prompt}</div>
                   <div style={{ fontSize: 12.5, color: '#33405e', marginBottom: 4 }}>Your answer: {selected == null ? 'Unanswered' : `${String.fromCharCode(65 + selected)}. ${question.options[selected]}`}</div>
                   {!correct && <div style={{ fontSize: 12.5, color: '#168c68', marginBottom: 4 }}>Correct answer: {String.fromCharCode(65 + question.correctIndex)}. {question.options[question.correctIndex]}</div>}
                   <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5 }}>{question.explanation}</div>
@@ -593,25 +593,25 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   const question = questions[currentQuestion];
   return (
     <div className="pw-test-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 220px', gap: 18, alignItems: 'start' }}>
-      <div style={{ background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
+      <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, marginBottom: 14 }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0' }}>{question.section} · {question.domain}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#16233f' }}>{question.section} · {question.domain}</div>
             <div style={{ fontSize: 11, color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{question.difficulty} · Question {currentQuestion + 1} of {questions.length}</div>
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: timeLeft < 120 ? '#e0457a' : '#5b46e0' }}>{formatTime(timeLeft)}</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: timeLeft < 120 ? '#e0457a' : '#16233f' }}>{formatTime(timeLeft)}</div>
         </div>
         <div style={{ width: '100%', height: 7, borderRadius: 4, background: '#e7dcc7', marginBottom: 20 }}>
-          <div style={{ width: `${(answeredCount / questions.length) * 100}%`, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .25s ease' }} />
+          <div style={{ width: `${(answeredCount / questions.length) * 100}%`, height: '100%', borderRadius: 4, background: 'linear-gradient(90deg,#16233f,#b8902f)', transition: 'width .25s ease' }} />
         </div>
-        {question.stimulus && <div style={{ background: '#f6f1e8', borderRadius: 14, padding: 16, fontSize: 13.5, color: '#33405e', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{question.stimulus}</div>}
-        <div style={{ fontSize: 16, fontWeight: 750, color: '#141b34', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
+        {question.stimulus && <div style={{ background: '#f4f6fb', borderRadius: 14, padding: 16, fontSize: 13.5, color: '#33405e', lineHeight: 1.65, whiteSpace: 'pre-wrap', marginBottom: 18 }}>{question.stimulus}</div>}
+        <div style={{ fontSize: 16, fontWeight: 750, color: '#16233f', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {question.options.map((option, index) => {
             const selected = answers[currentQuestion] === index;
             return (
-              <button key={`${question.id}-${index}`} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#eeeaff' : '#fff', color: '#141b34', border: `1.5px solid ${selected ? '#8b72ef' : '#e7dcc7'}`, borderRadius: 12, padding: '13px 14px', fontSize: 13.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', gap: 10 }}>
-                <span style={{ color: selected ? '#5b46e0' : '#9098b5', fontWeight: 900 }}>{String.fromCharCode(65 + index)}.</span>
+              <button key={`${question.id}-${index}`} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#eef1f7' : '#fff', color: '#16233f', border: `1.5px solid ${selected ? '#8b72ef' : '#e7dcc7'}`, borderRadius: 12, padding: '13px 14px', fontSize: 13.5, fontWeight: 650, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', display: 'flex', gap: 10 }}>
+                <span style={{ color: selected ? '#16233f' : '#9098b5', fontWeight: 900 }}>{String.fromCharCode(65 + index)}.</span>
                 <span>{option}</span>
               </button>
             );
@@ -619,21 +619,21 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
         </div>
         <div className="pw-test-actions" style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
           <button onClick={() => setCurrentQuestion((value) => Math.max(0, value - 1))} disabled={currentQuestion === 0} style={{ ...secondaryButtonStyle, opacity: currentQuestion === 0 ? 0.45 : 1 }}>← Previous</button>
-          <button onClick={() => setFlagged((previous) => ({ ...previous, [currentQuestion]: !previous[currentQuestion] }))} style={{ ...secondaryButtonStyle, color: flagged[currentQuestion] ? '#c56a12' : '#5b46e0' }}>{flagged[currentQuestion] ? '★ Flagged' : '☆ Flag for review'}</button>
+          <button onClick={() => setFlagged((previous) => ({ ...previous, [currentQuestion]: !previous[currentQuestion] }))} style={{ ...secondaryButtonStyle, color: flagged[currentQuestion] ? '#c56a12' : '#16233f' }}>{flagged[currentQuestion] ? '★ Flagged' : '☆ Flag for review'}</button>
           {currentQuestion < questions.length - 1
             ? <button onClick={() => setCurrentQuestion((value) => Math.min(questions.length - 1, value + 1))} style={primaryButtonStyle}>Next →</button>
             : <button onClick={submitTest} style={primaryButtonStyle}>Submit Test</button>}
         </div>
       </div>
 
-      <div style={{ background: '#faf7f2', borderRadius: 18, border: '1px solid #f1eadd', padding: 16, position: 'sticky', top: 12 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>{answeredCount} / {questions.length} answered</div>
+      <div style={{ background: '#faf7f2', borderRadius: 18, border: '1px solid #e7eaf3', padding: 16, position: 'sticky', top: 12 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#16233f', marginBottom: 4 }}>{answeredCount} / {questions.length} answered</div>
         <div style={{ fontSize: 11, color: '#9098b5', marginBottom: 12 }}>{Object.values(flagged).filter(Boolean).length} flagged for review</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6, marginBottom: 14 }}>
           {questions.map((item, index) => {
             const active = index === currentQuestion;
             const answered = answers[index] != null;
-            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#5b46e0' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eeeaff' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
+            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#16233f' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eef1f7' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
           })}
         </div>
         <button onClick={submitTest} style={{ ...primaryButtonStyle, width: '100%', padding: '10px 12px' }}>Submit Test</button>
@@ -676,7 +676,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
   const list = (items = [], empty) => items.length
     ? items.slice(0, 6).map((item, i) => (
       <div key={`${item}-${i}`} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
-        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#b899fb', marginTop: 6, flexShrink: 0 }} />
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#b8902f', marginTop: 6, flexShrink: 0 }} />
         <span>{typeof item === 'string' ? item : item?.name}</span>
       </div>
     ))
@@ -693,7 +693,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
     return (
       <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
         <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
+          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
           <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: 0 }}>For Grade 9-10, the priority is grades, interests, activities, leadership, and a stronger profile foundation.</p>
         </UndergradCard>
       </div>
@@ -706,7 +706,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
         <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, maxWidth: 980 }}>
           {roadmap.map(([title, text]) => (
             <UndergradCard key={title} title={title}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>{title}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#16233f', marginBottom: 6 }}>{title}</div>
               <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.55 }}>{text}</div>
             </UndergradCard>
           ))}
@@ -728,7 +728,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       {type === 'universities' && (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>University List</h1>
+            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>University List</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
               {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
             </p>
@@ -765,7 +765,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                             >
                               <div
                                 onClick={(e) => { e.stopPropagation(); toggleSchool(school.name); }}
-                                style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: isSelected ? `2px solid ${tierConfig.accent}` : '2px solid #e7dcc7', background: isSelected ? tierConfig.accent : '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', cursor: 'pointer' }}
+                                style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: isSelected ? `2px solid ${tierConfig.accent}` : '2px solid #d7ddec', background: isSelected ? tierConfig.accent : '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', cursor: 'pointer' }}
                               >
                                 {isSelected && (
                                   <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -776,7 +776,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                                  <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{school.name}</div>
+                                  <div style={{ fontSize: 14.5, fontWeight: 700, color: '#16233f' }}>{school.name}</div>
                                   {school.selectivityLabel && (() => {
                                     const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
                                     return (
@@ -843,7 +843,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
               })}
             </div>
           ) : (
-            <div style={{ background: '#f6f1e8', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
+            <div style={{ background: '#f4f6fb', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
               <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
             </div>
           )}
@@ -853,26 +853,26 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       {type === 'testing' && (
         <div style={{ maxWidth: 1000 }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: '#16233f', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Choose a test to practice with timed simulations.</p>
           </div>
 
           {!selectedTest ? (
             <div className="pw-test-picker" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
-              <button onClick={() => setSelectedTest('sat')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>SAT Simulation</div>
+              <button onClick={() => setSelectedTest('sat')} style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 16, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b8902f'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(22,35,63,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>SAT Simulation</div>
                 <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>28 minutes · 20 questions</div>
                 <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Digital SAT-style Reading and Writing plus Math, with a fresh question set and estimated 400–1600 score.</div>
               </button>
-              <button onClick={() => setSelectedTest('act')} style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 20, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b899fb'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(105,91,255,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>ACT Simulation</div>
+              <button onClick={() => setSelectedTest('act')} style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 16, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#b8902f'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(22,35,63,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>ACT Simulation</div>
                 <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>20 minutes · 20 questions</div>
                 <div style={{ fontSize: 13, color: '#9098b5', lineHeight: 1.5 }}>Enhanced ACT-style English, Math, and Reading, with a fresh question set and estimated 1–36 composite.</div>
               </button>
             </div>
           ) : (
             <div style={{ marginBottom: 24 }}>
-              <button onClick={() => setSelectedTest(null)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 0', marginBottom: 16 }}>← Back to choose test</button>
+              <button onClick={() => setSelectedTest(null)} style={{ background: 'none', border: 'none', color: '#16233f', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', padding: '8px 0', marginBottom: 16 }}>← Back to choose test</button>
               {selectedTest === 'sat' && <TestingSimulationCard title="SAT Simulation" testType="sat" authToken={authToken} sessionId={sessionId} />}
               {selectedTest === 'act' && <TestingSimulationCard title="ACT Simulation" testType="act" authToken={authToken} sessionId={sessionId} />}
             </div>
@@ -880,7 +880,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
           {tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)).length > 0 && (
             <UndergradCard title="Testing Roadmap">
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>Your testing tasks</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#16233f', marginBottom: 14 }}>Your testing tasks</div>
               {list(tasks?.filter(t => /sat|act|psat|ap|toefl|ielts|test/i.test(t)) || [], 'No testing tasks yet.')}
             </UndergradCard>
           )}
@@ -889,11 +889,11 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
       {(type === 'essays' || type === 'applications') && !early && (
         <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>{type === 'essays' ? 'Essay preparation' : 'Application mode'}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#16233f', marginBottom: 8 }}>{type === 'essays' ? 'Essay preparation' : 'Application mode'}</div>
           <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>
             {type === 'essays' ? 'Use this space for personal statement, supplements, and school-specific drafts.' : 'Track deadlines, recommendations, transcripts, interviews, and final decisions.'}
           </div>
-          <button onClick={() => setCandTab('studentProfile')} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+          <button onClick={() => setCandTab('studentProfile')} style={{ background: '#16233f', color: '#fff', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.32)' }}>
             Work with counselor
           </button>
         </UndergradCard>

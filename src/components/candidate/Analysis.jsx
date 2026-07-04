@@ -21,13 +21,13 @@ function ScoreBar({ score, title, last, color, incomplete = false }) {
   return (
     <div style={{ marginBottom: last ? 0 : 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{title}</span>
+        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#16233f' }}>{title}</span>
         <span style={{ fontSize: incomplete ? 12 : 14.5, fontWeight: 700, color: incomplete ? '#9098b5' : '#141b34' }}>{incomplete ? 'Incomplete' : pct}</span>
       </div>
       <div style={{
         height: 12,
         borderRadius: 10,
-        background: incomplete ? '#f7f4ee' : '#f1eadd',
+        background: incomplete ? '#f2f4f9' : '#e7eaf3',
         border: incomplete ? '1px dashed #d8cdb4' : 'none',
         boxShadow: 'inset 0 1px 3px rgba(60,72,130,.08)',
         overflow: 'hidden',
@@ -518,7 +518,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 34px 34px' }}>
         <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(22,35,63,.06)' }}>
           <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 12px 24px rgba(22,35,63,.3)' }}>
-            <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+            <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#fff', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" />
             </svg>
           </div>
@@ -583,7 +583,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 padding: '11px 18px',
                 fontSize: 13.5,
                 fontWeight: 800,
-                color: busy ? '#788198' : '#faf7f2',
+                color: busy ? '#788198' : '#fff',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
                 display: 'flex',
@@ -603,7 +603,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {busy ? 'Refreshing...' : 'Refresh Analysis'}
             </button>
             <button onClick={() => setCandTab('documents')}
-              style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#16233f', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
             </button>
             <button onClick={() => setCandTab('advisor')}
@@ -638,7 +638,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           <button onClick={refreshAnalysis} disabled={busy}
             style={{
               position: 'relative',
-              background: busy ? 'rgba(255,255,255,.62)' : '#faf7f2',
+              background: busy ? 'rgba(255,255,255,.62)' : '#fff',
               border: '1px solid rgba(112,81,10,.14)',
               borderRadius: 999,
               padding: '12px 20px',
@@ -668,7 +668,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ position: 'relative' }}>
               <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#d9cbb3', marginBottom: 6 }}>OVERALL COMPETITIVENESS SCORE</div>
-              <div style={{ fontSize: 40, fontWeight: 800, color: '#faf7f2', letterSpacing: '-1px' }}>{scores.overall}<span style={{ fontSize: 18, color: '#d9cbb3', fontWeight: 600 }}>/100</span></div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-1px' }}>{scores.overall}<span style={{ fontSize: 18, color: '#d9cbb3', fontWeight: 600 }}>/100</span></div>
             </div>
           </div>
         )}
@@ -688,7 +688,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
                   <span style={{ width: 30, height: 30, borderRadius: 9, background: '#eafdf6', color: '#19c08a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Core Strengths</h3>
+                  <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: 0 }}>Core Strengths</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {displayStrengths.map((s, i) => (
@@ -704,7 +704,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
                   <span style={{ width: 30, height: 30, borderRadius: 9, background: '#fff1f6', color: '#e0457a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
-                  <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Growth Areas</h3>
+                  <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, fontWeight: 700, color: '#16233f', margin: 0 }}>Growth Areas</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {displayWeaknesses.map((w, i) => (
@@ -784,13 +784,13 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                               tabIndex={-1}
                               style={{
                                 width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                                border: isSelected ? `2px solid ${tier.accent}` : '2px solid #e7dcc7',
-                                background: isSelected ? tier.accent : '#faf7f2',
+                                border: isSelected ? `2px solid ${tier.accent}` : '2px solid #d7ddec',
+                                background: isSelected ? tier.accent : '#fff',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 transition: 'all 0.15s ease',
                               }}>
                               {isSelected && (
-                                <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#faf7f2', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                                <svg viewBox="0 0 24 24" width="13" height="13" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                                   <path d="M20 6 9 17l-5-5" />
                                 </svg>
                               )}
