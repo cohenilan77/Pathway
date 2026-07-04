@@ -1,25 +1,19 @@
-/* cosmetic pass — see commit for scope */
+/* candidate portal layout framework pass — see commit for scope */
 import React, { useEffect, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
-import { resolveTrack } from '../../trackConfig.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 import AdvisorChatFirst from './AdvisorChatFirst.jsx';
 import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
 
-// Chat-first advisor is on by default for graduate tracks on this branch.
-// Set VITE_CHAT_FIRST_GRAD=false at build time to fall back to the legacy layout.
-const CHAT_FIRST_GRAD = import.meta.env?.VITE_CHAT_FIRST_GRAD !== 'false';
-
-// Graduate, MBA, and Postgraduate/Doctoral get the conversation-first layout.
-// Undergraduate and Personal Development keep the existing experience, and so
-// does everyone before they have picked a category.
-function isGradChatFirst(profile) {
-  if (!CHAT_FIRST_GRAD || !profile?.category) return false;
-  const track = resolveTrack(profile);
-  return track !== 'Undergraduate' && track !== 'Personal Development';
-}
+// The chat-first single-stream workspace (AdvisorChatFirst) is the default
+// Advisor experience for every candidate track, including Undergraduate,
+// Personal Development, and pre-category sessions. Set
+// VITE_LEGACY_ADVISOR_LAYOUT=true at build time to fall back to the old
+// multi-column 9-step layout defined later in this file — that layout is
+// kept only as an explicit, non-default fallback.
+const LEGACY_ADVISOR_LAYOUT = import.meta.env?.VITE_LEGACY_ADVISOR_LAYOUT === 'true';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 
@@ -119,9 +113,11 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
 
-  // Conversation-first layout for graduate tracks. Placed after all hooks so
-  // the hook order stays stable when the category is chosen mid-session.
-  if (isGradChatFirst(profile)) {
+  // Chat-first workspace for every track, including pre-category sessions.
+  // Placed after all hooks so hook order stays stable when the category is
+  // chosen mid-session. The old 9-step layout below only renders when the
+  // legacy flag is explicitly set.
+  if (!LEGACY_ADVISOR_LAYOUT) {
     return (
       <AdvisorChatFirst
         STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
@@ -131,6 +127,10 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
         reopenProgramSelection={reopenProgramSelection}
         confirmTargetSchools={confirmTargetSchools}
         authUser={authUser}
+        setCandTab={setCandTab}
+        tasks={tasks}
+        completedTasks={completedTasks}
+        setCompletedTasks={setCompletedTasks}
       />
     );
   }

@@ -21,6 +21,11 @@ function parseOptions(text) {
   return { mainText: text.slice(0, match.index).trim(), options };
 }
 
+function undergradGradeNumber(profile) {
+  const grade = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/)?.[0];
+  return grade ? Number(grade) : null;
+}
+
 const AiAvatar = () => (
   <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(22,35,63,.28)' }}>
     <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -38,7 +43,7 @@ const Chevron = ({ open }) => (
 
 // Ambient stage bar. Replaces the full stepper for grad tracks: one quiet line
 // that expands into the full journey on click.
-function StatusBar({ STEPS, stepIdx, programs }) {
+function StatusBar({ STEPS, stepIdx, programs, futureStages }) {
   const [open, setOpen] = useState(false);
   const stage = STEPS[Math.min(stepIdx, STEPS.length - 1)] || STEPS[0];
   const matched = programs?.length || 0;
@@ -62,15 +67,17 @@ function StatusBar({ STEPS, stepIdx, programs }) {
           {STEPS.map((label, i) => {
             const active = i === stepIdx;
             const done = i < stepIdx;
+            const future = futureStages?.has?.(label);
             return (
               <span key={label} style={{
                 padding: '5px 12px', borderRadius: 999, fontSize: 11.5, fontWeight: active ? 800 : 600, whiteSpace: 'nowrap',
                 background: active ? '#16233f' : done ? '#fffaf0' : '#f4f6fb',
-                color: active ? '#fff' : done ? '#b8902f' : '#9aa3b5',
-                border: active ? 'none' : done ? '1px solid #ecd9a8' : '1px solid #e2e7f2',
+                color: active ? '#fff' : done ? '#b8902f' : future ? '#b8902f' : '#9aa3b5',
+                border: active ? 'none' : done ? '1px solid #ecd9a8' : future ? '1px dashed #d3c9a8' : '1px solid #e2e7f2',
                 boxShadow: active ? '0 4px 12px rgba(22,35,63,.24)' : 'none',
               }}>
                 {done ? '✓ ' : ''}{label}
+                {future && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 800, letterSpacing: '.4px' }}>· FUTURE</span>}
               </span>
             );
           })}
@@ -291,10 +298,14 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
 export default function AdvisorChatFirst({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
   setShowCvModal, narrative, setNarrative, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, authUser,
+  setCandTab, tasks, completedTasks, setCompletedTasks,
 }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const chatScrollRef = useRef(null);
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
   const reduceMotion = useReducedMotion();
 
   const visibleChat = visibleCandidateChat(chat, {
@@ -302,9 +313,29 @@ export default function AdvisorChatFirst({
     telegram: authUser?.telegramOptIn === true,
   });
 
+  const updateScrollButtons = () => {
+    const el = chatScrollRef.current;
+    if (!el) return;
+    setShowScrollTop(el.scrollTop > 80);
+    setShowScrollBottom(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
+  };
+
+  useEffect(() => {
+    const el = chatScrollRef.current;
+    if (!el) return undefined;
+    updateScrollButtons();
+    el.addEventListener('scroll', updateScrollButtons, { passive: true });
+    return () => el.removeEventListener('scroll', updateScrollButtons);
+  }, []);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const t = setTimeout(updateScrollButtons, 350);
+    return () => clearTimeout(t);
   }, [chat, busy]);
+
+  const scrollChatToTop = () => chatScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  const scrollChatToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
@@ -328,6 +359,13 @@ export default function AdvisorChatFirst({
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
   const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative }) : [];
 
+  const isUndergrad = profile?.category === 'Undergraduate';
+  const gradeNumber = undergradGradeNumber(profile);
+  const futureStages = isUndergrad && gradeNumber && gradeNumber <= 10 ? new Set(['Essays', 'Applications']) : new Set();
+  const taskList = tasks || [];
+  const doneCount = taskList.filter(t => completedTasks?.[t]).length;
+  const toggleTask = (text) => setCompletedTasks?.(prev => ({ ...prev, [text]: !prev[text] }));
+
   const hasPrograms = Array.isArray(programs) && programs.length > 0;
   // Artifacts are stage-specific. Keeping the large readiness/program cards
   // after targets are confirmed pushes the new Narrative question above them,
@@ -345,7 +383,13 @@ export default function AdvisorChatFirst({
       <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #e7eaf3', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', position: 'relative' }}>
 
         {/* ambient status bar (replaces the full stepper) */}
-        <StatusBar STEPS={STEPS} stepIdx={stepIdx} programs={programs} />
+        <StatusBar STEPS={STEPS} stepIdx={stepIdx} programs={programs} futureStages={futureStages} />
+
+        {/* workspace: conversation + intelligence panel */}
+        <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 300px', overflow: 'hidden' }}>
+
+        {/* chat column */}
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #eef1f6' }}>
 
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 24px', borderBottom: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
@@ -361,8 +405,9 @@ export default function AdvisorChatFirst({
           </div>
         </div>
 
-        {/* single-column conversation */}
-        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 24px 8px' }}>
+        {/* single-column conversation, with floating scroll controls */}
+        <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+        <div ref={chatScrollRef} style={{ height: '100%', overflowY: 'auto', padding: '20px 24px 8px' }}>
           <div style={{ maxWidth: 780, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {visibleChat.map((m, i) => {
               if (m.role === 'ai') {
@@ -433,6 +478,33 @@ export default function AdvisorChatFirst({
 
             <div ref={messagesEndRef} />
           </div>
+        </div>
+        {showScrollTop && (
+          <button
+            onClick={scrollChatToTop}
+            className="pw-scroll-btn"
+            aria-label="Scroll to top of conversation"
+            title="Scroll to top of conversation"
+            style={{ top: 14, left: '50%', marginLeft: -18 }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          </button>
+        )}
+        {showScrollBottom && (
+          <button
+            onClick={scrollChatToBottom}
+            className="pw-scroll-btn"
+            aria-label="Scroll to latest message"
+            title="Scroll to latest message"
+            style={{ bottom: 14, left: '50%', marginLeft: -18 }}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+          </button>
+        )}
         </div>
 
         {/* quick replies required by the current question */}
@@ -513,6 +585,77 @@ export default function AdvisorChatFirst({
               Confidential consultation active. End-to-end encrypted.
             </div>
           </div>
+        </div>
+
+        </div>
+
+        {/* intelligence / action panel */}
+        <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '24px 20px', overflowY: 'auto', minHeight: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f', margin: 0 }}>Your tasks</h3>
+            {taskList.length > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
+            )}
+          </div>
+          <p style={{ fontSize: 12, color: '#8a93a3', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
+          {taskList.length === 0 ? (
+            <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
+              <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
+              <div style={{ fontSize: 12.5, color: '#9aa3b5', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {doneCount > 0 && taskList.length > 0 && (
+                <div style={{ height: 4, borderRadius: 2, background: '#e7eaf3', marginBottom: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#16233f,#b8902f)', borderRadius: 2, transition: 'width .4s ease' }} />
+                </div>
+              )}
+              {taskList.map((text) => {
+                const done = !!completedTasks?.[text];
+                return (
+                  <div key={text} onClick={() => toggleTask(text)}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#d9e3d5' : '#e8ecf6'}`, background: done ? '#f5f9f4' : '#fff', transition: 'all .15s' }}>
+                    <span style={{
+                      width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      ...(done ? { background: '#16233f', boxShadow: '0 3px 8px rgba(22,35,63,.24)' } : { background: '#fff', border: '1px solid #d7ddec' }),
+                    }}>
+                      {done && (
+                        <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                          <path d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3b5' : '#2a3447', textDecoration: done ? 'line-through' : 'none' }}>
+                      {text}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {isUndergrad && programs?.length > 0 && (
+            <div style={{ marginTop: 20, background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: '14px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>UNIVERSITY LIST</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f', marginBottom: 10 }}>{programs.length} universities matched</div>
+              <button onClick={() => setCandTab?.('universities')} style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Open University List →
+              </button>
+            </div>
+          )}
+
+          {!isUndergrad && scores && (
+            <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 12, padding: '14px 14px', boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>PROFILE SCORE</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontFamily: "'Public Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#9aa3b5' }}>/100</span></div>
+              <button onClick={() => setCandTab?.('analysis')} style={{ marginTop: 10, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                View Full Analysis →
+              </button>
+            </div>
+          )}
+        </div>
+
         </div>
 
         {showNarrativeModal && (

@@ -132,6 +132,30 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   transition: transform 200ms ease, opacity 200ms ease;
 }
 
+/* --- Floating chat scroll controls --- */
+.pw-scroll-btn {
+  position: absolute;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #e7eaf3;
+  background: #fff;
+  color: #16233f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(22,35,63,.14);
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+.pw-scroll-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(22,35,63,.2);
+  background: #16233f;
+  color: #fff;
+}
+
 /* --- Sidebar nav (visual only) --- */
 .pw-nav-item { transition: background 150ms ease, box-shadow 150ms ease, transform 150ms ease; }
 .pw-nav-item:hover:not(:disabled) { transform: translateX(2px); }
