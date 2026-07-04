@@ -1,4 +1,11 @@
-/* cosmetic pass — see commit for scope */
+/*
+ * AI Advisor workspace — design-to-code implementation of
+ * "AI Advisor.dc.html" (Claude Design project, seeded at project/Pathway.dc.html).
+ * Structure mapped from the design: full-width numbered stepper, circular
+ * avatar + serif title header, chat stream, up-arrow composer, and the
+ * right-side "Real-time Analysis" panel with three circular ring gauges +
+ * Fit Index footer. Gauges/scores are fed from real KPI data, not mocked.
+ */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import LongRunningAdvisorStatus from './LongRunningAdvisorStatus.jsx';
@@ -13,6 +20,11 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
 const TARGET_SELECTION_LOOP = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i;
 const NARRATIVE_START = "Your targets are locked in. Now let's shape your story. What's the specific moment or experience that convinced you this is the right path?";
 
+// Ring circumference for r=50 (design uses 2·π·50 ≈ 314 for the dash array).
+const RING_CIRC = 314;
+// Ring accent colors, in the design's order: navy, gold, periwinkle.
+const RING_COLORS = ['#16233f', '#b8902f', '#aebde6'];
+
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
   if (!match) return null;
@@ -26,61 +38,137 @@ function undergradGradeNumber(profile) {
   return grade ? Number(grade) : null;
 }
 
-const AiAvatar = () => (
-  <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(22,35,63,.28)' }}>
-    <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+const AiAvatar = ({ size = 34 }) => (
+  <div style={{ width: size, height: size, borderRadius: '50%', background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(22,35,63,.28)' }}>
+    <svg viewBox="0 0 24 24" width={Math.round(size * 0.5)} height={Math.round(size * 0.5)} style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
       <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z" />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
     </svg>
   </div>
 );
 
-const Chevron = ({ open }) => (
-  <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: '#9098b5', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .2s', flexShrink: 0 }}>
-    <path d="M6 9l6 6 6-6" />
-  </svg>
-);
-
-// Ambient stage bar. Replaces the full stepper for grad tracks: one quiet line
-// that expands into the full journey on click.
-function StatusBar({ STEPS, stepIdx, programs, futureStages }) {
-  const [open, setOpen] = useState(false);
-  const stage = STEPS[Math.min(stepIdx, STEPS.length - 1)] || STEPS[0];
-  const matched = programs?.length || 0;
+// Numbered stepper across the top of the workspace — mapped from the design's
+// step row (numbered circles + hairline connectors). Uses the real STEPS array
+// and stepIdx; undergrad future stages render dashed/gold like the legacy view.
+function DesignStepper({ STEPS, stepIdx, futureStages }) {
   return (
-    <div onClick={() => setOpen(v => !v)} style={{ borderBottom: '1px solid #e7eaf3', background: '#fff', padding: '11px 24px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16233f', boxShadow: '0 0 8px rgba(22,35,63,.4)', flexShrink: 0 }} />
-        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#16233f' }}>
-          Stage {Math.min(stepIdx, STEPS.length - 1) + 1} of {STEPS.length} · {stage}
-          {matched > 0 && <span style={{ color: '#b8902f', fontWeight: 700 }}> · {matched} program{matched === 1 ? '' : 's'} matched</span>}
-        </span>
-        <span style={{ flex: 1 }} />
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#9aa3b5' }}>{open ? 'Hide journey' : 'View journey'}</span>
-        <Chevron open={open} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 32px', borderBottom: '1px solid #e7eaf3', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
+      {STEPS.map((label, i) => {
+        const active = i === stepIdx;
+        const done = i < stepIdx;
+        const future = futureStages?.has?.(label);
+        return (
+          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 9, flexShrink: 0 }}>
+            <span style={{
+              width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0,
+              ...(active
+                ? { background: '#16233f', color: '#fff', boxShadow: '0 4px 10px rgba(22,35,63,.28)' }
+                : done
+                ? { background: '#16233f', color: '#fff' }
+                : future
+                ? { background: '#fffaf0', color: '#b8902f', border: '1px dashed #d3c9a8' }
+                : { background: '#fff', color: '#9aa3b5', border: '1px solid #d7ddec' }),
+            }}>
+              {done ? '✓' : i + 1}
+            </span>
+            <span style={{ fontSize: 13.5, fontWeight: active ? 700 : 600, whiteSpace: 'nowrap', color: active ? '#16233f' : done ? '#3a425a' : future ? '#b8902f' : '#9aa3b5' }}>
+              {label}
+            </span>
+            {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: done ? '#b8902f' : '#e1e6f0', margin: '0 4px', flexShrink: 0 }} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// Circular ring gauge from the design's "Real-time Analysis" panel. Value is a
+// real KPI score (0–100); a null value renders an empty ring with an em dash.
+function RingGauge({ value, color, label, caption }) {
+  const has = Number.isFinite(value);
+  const pct = has ? Math.max(0, Math.min(100, value)) : 0;
+  const dash = (pct / 100) * RING_CIRC;
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <svg width="116" height="116" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" style={{ fill: 'none', stroke: '#eef1f7', strokeWidth: 9 }} />
+        <circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style={{ fill: 'none', stroke: color, strokeWidth: 9, strokeLinecap: 'round', strokeDasharray: `${dash} ${RING_CIRC}`, transition: 'stroke-dasharray .6s ease' }} />
+        <text x="60" y="70" textAnchor="middle" style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, fill: '#16233f' }}>{has ? Math.round(value) : '—'}</text>
+      </svg>
+      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#16233f', marginTop: 8, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 2 }}>{caption}</div>
+    </div>
+  );
+}
+
+// Right-side "Real-time Analysis" panel — the signature element of the design.
+// Renders the top three real KPI dimensions as ring gauges plus a Fit Index
+// footer (real overall score). A compact task list and the analysis/university
+// shortcut sit below a divider so existing behavior is preserved.
+function RealtimeAnalysisPanel({ scores, profile, programs, isUndergrad, setCandTab, tasks, completedTasks, toggleTask }) {
+  const dims = getCandidateKpiDisplayItems(scores, profile).slice(0, 3);
+  const slots = [0, 1, 2].map(i => dims[i] || null);
+  const fit = Number.isFinite(scores?.overall) ? Math.round(scores.overall) : null;
+  const taskList = tasks || [];
+  const doneCount = taskList.filter(t => completedTasks?.[t]).length;
+
+  return (
+    <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
+      <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 6px', lineHeight: 1.15 }}>Real-time Analysis</h3>
+      <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 30px', lineHeight: 1.5 }}>Live profile calibration based on dialogue.</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 30, alignItems: 'center' }}>
+        {slots.map((d, i) => (
+          <RingGauge
+            key={d?.key || `slot-${i}`}
+            value={d && d.status !== 'incomplete' ? d.value : null}
+            color={RING_COLORS[i]}
+            label={d?.label || 'Dimension'}
+            caption={!d ? 'Awaiting analysis' : d.status === 'incomplete' ? 'Awaiting data' : 'Live estimate'}
+          />
+        ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#b8902f', fontSize: 14, fontWeight: 700, borderTop: '1px solid #eef1f6', width: '100%', justifyContent: 'center', paddingTop: 22 }}>
+          <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7L22 9.2l-7.2-.6Z" /></svg>
+          Fit Index: {fit != null ? `${fit}%` : '—'}
+        </div>
       </div>
-      <div className="pw-progress-track" style={{ marginTop: 9 }}>
-        <div className="pw-progress-fill" style={{ width: `${Math.min(((Math.min(stepIdx, STEPS.length - 1) + 1) / STEPS.length) * 100, 100)}%` }} />
-      </div>
-      {open && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12, paddingTop: 12, borderTop: '1px solid #e7eaf3' }}>
-          {STEPS.map((label, i) => {
-            const active = i === stepIdx;
-            const done = i < stepIdx;
-            const future = futureStages?.has?.(label);
-            return (
-              <span key={label} style={{
-                padding: '5px 12px', borderRadius: 999, fontSize: 11.5, fontWeight: active ? 800 : 600, whiteSpace: 'nowrap',
-                background: active ? '#16233f' : done ? '#fffaf0' : '#f4f6fb',
-                color: active ? '#fff' : done ? '#b8902f' : future ? '#b8902f' : '#9aa3b5',
-                border: active ? 'none' : done ? '1px solid #ecd9a8' : future ? '1px dashed #d3c9a8' : '1px solid #e2e7f2',
-                boxShadow: active ? '0 4px 12px rgba(22,35,63,.24)' : 'none',
-              }}>
-                {done ? '✓ ' : ''}{label}
-                {future && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 800, letterSpacing: '.4px' }}>· FUTURE</span>}
-              </span>
-            );
-          })}
+
+      {(isUndergrad && programs?.length > 0) && (
+        <button onClick={() => setCandTab?.('universities')} style={{ marginTop: 26, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Open University List →
+        </button>
+      )}
+      {(!isUndergrad && scores) && (
+        <button onClick={() => setCandTab?.('analysis')} style={{ marginTop: 26, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+          View Full Analysis →
+        </button>
+      )}
+
+      {taskList.length > 0 && (
+        <div style={{ marginTop: 26, borderTop: '1px solid #eef1f6', paddingTop: 22 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#8a93a3' }}>YOUR TASKS</div>
+            <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {taskList.map((text) => {
+              const done = !!completedTasks?.[text];
+              return (
+                <div key={text} onClick={() => toggleTask(text)}
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#d9e3d5' : '#e8ecf6'}`, background: done ? '#f5f9f4' : '#fff', transition: 'all .15s' }}>
+                  <span style={{
+                    width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    ...(done ? { background: '#16233f', boxShadow: '0 3px 8px rgba(22,35,63,.24)' } : { background: '#fff', border: '1px solid #d7ddec' }),
+                  }}>
+                    {done && (
+                      <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
+                    )}
+                  </span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3b5' : '#2a3447', textDecoration: done ? 'line-through' : 'none' }}>{text}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
@@ -362,8 +450,6 @@ export default function AdvisorChatFirst({
   const isUndergrad = profile?.category === 'Undergraduate';
   const gradeNumber = undergradGradeNumber(profile);
   const futureStages = isUndergrad && gradeNumber && gradeNumber <= 10 ? new Set(['Essays', 'Applications']) : new Set();
-  const taskList = tasks || [];
-  const doneCount = taskList.filter(t => completedTasks?.[t]).length;
   const toggleTask = (text) => setCompletedTasks?.(prev => ({ ...prev, [text]: !prev[text] }));
 
   const hasPrograms = Array.isArray(programs) && programs.length > 0;
@@ -382,25 +468,24 @@ export default function AdvisorChatFirst({
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
       <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #e7eaf3', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', position: 'relative' }}>
 
-        {/* ambient status bar (replaces the full stepper) */}
-        <StatusBar STEPS={STEPS} stepIdx={stepIdx} programs={programs} futureStages={futureStages} />
+        {/* numbered stepper (design: step row) */}
+        <DesignStepper STEPS={STEPS} stepIdx={stepIdx} futureStages={futureStages} />
 
-        {/* workspace: conversation + intelligence panel */}
-        <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 300px', overflow: 'hidden' }}>
+        {/* workspace: conversation + Real-time Analysis panel (design grid 1fr 340px) */}
+        <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 340px', overflow: 'hidden' }}>
 
         {/* chat column */}
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #eef1f6' }}>
 
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 24px', borderBottom: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
-          <AiAvatar />
+        {/* header: circular avatar + serif title (design) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 32px 16px', flexShrink: 0 }}>
+          <AiAvatar size={46} />
           <div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, fontWeight: 700, color: '#16233f' }}>
-              {profile?.name ? `${profile.name}'s Advisor` : 'AI Advisor'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2fa876', boxShadow: '0 0 8px rgba(47,168,118,.6)', display: 'inline-block' }} />
-              <span style={{ fontSize: 11.5, fontWeight: 600, color: '#2fa876' }}>Online · Smart AI</span>
+            <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f', margin: 0, lineHeight: 1.1 }}>
+              {profile?.name ? `${String(profile.name).split(' ')[0]}'s Strategic Profile` : 'Strategic Profile Initiation'}
+            </h2>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#8a93a3', marginTop: 4 }}>
+              Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length} · {STEPS[Math.min(stepIdx, STEPS.length - 1)]}
             </div>
           </div>
         </div>
@@ -529,13 +614,7 @@ export default function AdvisorChatFirst({
         {/* input */}
         <div style={{ padding: lastParsed && !busy ? '10px 20px 8px' : '14px 20px 8px', flexShrink: 0, background: '#fff', borderTop: '1px solid #eef1f6' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 8, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 12px', boxShadow: '0 2px 12px rgba(22,35,63,.04)' }}>
-              <button onClick={() => setShowCvModal(true)} title="Upload CV"
-                style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
-                <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M12 18v-6M9 15l3 3 3-3" />
-                </svg>
-              </button>
+            <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px', boxShadow: '0 2px 12px rgba(22,35,63,.04)' }}>
               <textarea
                 ref={inputRef}
                 className="pw-composer-textarea"
@@ -544,18 +623,24 @@ export default function AdvisorChatFirst({
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
                 disabled={busy}
-                placeholder={busy ? 'Advisor is analyzing…' : lastParsed ? 'Or type your own answer…' : 'Ask anything or type your answer…'}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 14, padding: '10px 4px', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
+                placeholder={busy ? 'Advisor is analyzing…' : lastParsed ? 'Or type your own answer…' : 'Inquire about your strategy…'}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 15, padding: '10px 0', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
               />
+              <button onClick={() => setShowCvModal(true)} title="Upload CV / attach background"
+                style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                  <path d="M21.4 11.05 12.25 20.2a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.48-8.49" />
+                </svg>
+              </button>
               <button onClick={() => send()} disabled={busy || !input.trim()}
-                style={{ background: input.trim() ? '#16233f' : '#e2e7f2', border: 'none', borderRadius: 9, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#fff' : '#9aa3b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(22,35,63,.26)' : 'none' }}>
+                style={{ background: input.trim() ? '#16233f' : '#e2e7f2', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#fff' : '#9aa3b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(22,35,63,.26)' : 'none' }}>
                 {busy ? (
                   <svg className="pw-send-spinner" viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
                     <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
                   </svg>
                 ) : (
-                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.1, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                    <path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7Z" />
+                  <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
+                    <path d="M12 19V5M5 12l7-7 7 7" />
                   </svg>
                 )}
               </button>
@@ -589,72 +674,17 @@ export default function AdvisorChatFirst({
 
         </div>
 
-        {/* intelligence / action panel */}
-        <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '24px 20px', overflowY: 'auto', minHeight: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f', margin: 0 }}>Your tasks</h3>
-            {taskList.length > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
-            )}
-          </div>
-          <p style={{ fontSize: 12, color: '#8a93a3', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
-          {taskList.length === 0 ? (
-            <div style={{ background: '#fff', border: '1px dashed #d7ddec', borderRadius: 12, padding: '20px 16px', textAlign: 'center' }}>
-              <div style={{ fontSize: 22, marginBottom: 8 }}>📋</div>
-              <div style={{ fontSize: 12.5, color: '#9aa3b5', fontWeight: 500, lineHeight: 1.5 }}>Tasks will appear as we learn about you.</div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {doneCount > 0 && taskList.length > 0 && (
-                <div style={{ height: 4, borderRadius: 2, background: '#e7eaf3', marginBottom: 4, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(doneCount / taskList.length) * 100}%`, background: 'linear-gradient(90deg,#16233f,#b8902f)', borderRadius: 2, transition: 'width .4s ease' }} />
-                </div>
-              )}
-              {taskList.map((text) => {
-                const done = !!completedTasks?.[text];
-                return (
-                  <div key={text} onClick={() => toggleTask(text)}
-                    style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '11px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#d9e3d5' : '#e8ecf6'}`, background: done ? '#f5f9f4' : '#fff', transition: 'all .15s' }}>
-                    <span style={{
-                      width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      ...(done ? { background: '#16233f', boxShadow: '0 3px 8px rgba(22,35,63,.24)' } : { background: '#fff', border: '1px solid #d7ddec' }),
-                    }}>
-                      {done && (
-                        <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
-                          <path d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </span>
-                    <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3b5' : '#2a3447', textDecoration: done ? 'line-through' : 'none' }}>
-                      {text}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {isUndergrad && programs?.length > 0 && (
-            <div style={{ marginTop: 20, background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: '14px 14px' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>UNIVERSITY LIST</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f', marginBottom: 10 }}>{programs.length} universities matched</div>
-              <button onClick={() => setCandTab?.('universities')} style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                Open University List →
-              </button>
-            </div>
-          )}
-
-          {!isUndergrad && scores && (
-            <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 12, padding: '14px 14px', boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>PROFILE SCORE</div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontFamily: "'Public Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#9aa3b5' }}>/100</span></div>
-              <button onClick={() => setCandTab?.('analysis')} style={{ marginTop: 10, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                View Full Analysis →
-              </button>
-            </div>
-          )}
-        </div>
+        {/* right-side Real-time Analysis panel (design) */}
+        <RealtimeAnalysisPanel
+          scores={scores}
+          profile={profile}
+          programs={programs}
+          isUndergrad={isUndergrad}
+          setCandTab={setCandTab}
+          tasks={tasks}
+          completedTasks={completedTasks}
+          toggleTask={toggleTask}
+        />
 
         </div>
 
