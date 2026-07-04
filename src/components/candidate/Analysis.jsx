@@ -672,7 +672,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         )}
 
         {/* Score breakdown */}
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
         <div style={{ background: '#faf7f2', borderRadius: 20, padding: '28px 26px', border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
             <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
