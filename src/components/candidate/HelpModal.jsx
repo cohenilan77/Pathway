@@ -41,7 +41,7 @@ export default function HelpModal({ authToken, sessionId, onClose }) {
         style={{
           background: '#faf7f2', borderRadius: 24, maxWidth: 560, width: '100%',
           maxHeight: '82vh', display: 'flex', flexDirection: 'column',
-          fontFamily: "'Plus Jakarta Sans',system-ui,sans-serif",
+          fontFamily: "'Albert Sans',system-ui,sans-serif",
           boxShadow: '0 24px 80px rgba(40,30,90,0.28), 0 4px 16px rgba(40,30,90,0.12)',
           overflow: 'hidden',
         }}
