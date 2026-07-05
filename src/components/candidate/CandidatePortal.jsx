@@ -1084,7 +1084,19 @@ export default function CandidatePortal(props) {
         </div>
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
-        {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
+        {(candTab === 'advisor' || candTab === 'studentProfile') && (
+          <div style={{
+            padding: 60,
+            margin: 40,
+            borderRadius: 24,
+            background: '#19c08a',
+            color: 'white',
+            fontSize: 32,
+            fontWeight: 900
+          }}>
+            STAGING PROOF — CandidatePortal advisor route is live — commit diagnostic
+          </div>
+        )}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
