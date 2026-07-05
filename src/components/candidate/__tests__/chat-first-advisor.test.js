@@ -8,83 +8,70 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
 
 const advisor = read('Advisor.jsx');
-const chatFirst = read('AdvisorChatFirst.jsx');
+const conversational = read('AdvisorConversational.jsx');
 
-test('Advisor routes graduate tracks to the chat-first layout', () => {
-  assert.match(advisor, /isGradChatFirst\(profile\)/);
-  assert.match(advisor, /<AdvisorChatFirst/);
+// --- Advisor wrapper: every track renders the conversational workspace ---
+
+test('Advisor renders the conversational workspace for every track', () => {
+  assert.match(advisor, /<AdvisorConversational/);
+  assert.ok(!advisor.includes('<AdvisorChatFirst'), 'Advisor must not route to the retired chat-first layout');
+  assert.ok(!advisor.includes('VITE_ADAPTIVE_GRAD'), 'the redesign must not hide behind a build flag');
+  assert.ok(!advisor.includes('VITE_LEGACY_ADVISOR_LAYOUT'), 'no legacy-layout fallback flag in production');
 });
 
-test('Undergraduate and Personal Development keep the legacy layout', () => {
-  assert.match(advisor, /track !== 'Undergraduate' && track !== 'Personal Development'/);
-  // No category chosen yet also stays on the legacy layout
-  assert.match(advisor, /!profile\?\.category\) return false/);
+test('Advisor keeps the idle re-engagement nudge', () => {
+  assert.match(advisor, /sendIdleCheckin/);
+  assert.match(advisor, /MAX_IDLE_FIRES/);
 });
 
-test('legacy layout still renders the stepper and tasks rail', () => {
-  assert.match(advisor, /\{\/\* stepper \*\/\}/);
-  assert.match(advisor, /\{\/\* tasks rail \*\/\}/);
+test('Advisor passes narrative and school write-through props down', () => {
+  assert.match(advisor, /narrative=\{narrative\}/);
+  assert.match(advisor, /setChosenSchools=\{setChosenSchools\}/);
+  assert.match(advisor, /confirmTargetSchools=\{confirmTargetSchools\}/);
 });
 
-test('chat-first layout has no stepper grid and no tasks rail', () => {
-  assert.ok(!chatFirst.includes('pw-advisor-grid'), 'chat-first must not use the two-column grid');
-  assert.ok(!chatFirst.includes('pw-advisor-rail'), 'chat-first must not render the side rail');
+// --- Conversational workspace: real data, real send flow ---
+
+test('conversational renders normalized program cards from real props', () => {
+  assert.match(conversational, /normalizeProgramList\(programs\)/);
+  assert.match(conversational, /<ProgramCard/);
+  assert.match(conversational, /confirmTargetSchools\(picks\)/);
 });
 
-test('chat-first shows the ambient status bar with stage position', () => {
-  assert.match(chatFirst, /Stage \{.*\+ 1\} of \{STEPS\.length\}/);
-  assert.match(chatFirst, /function StatusBar/);
+test('quick replies are parsed from the brain’s option marker', () => {
+  // The Advisor brain ends fixed-choice questions with "→ A | B | C"
+  // (api/chat.js contract). The UI must strip the marker from the shown text
+  // and render the options as tappable buttons.
+  assert.match(conversational, /OPTIONS_PATTERN = \/→\\s\*\(\.\+\)\$\//);
+  assert.match(conversational, /parseOptions\(/);
+  assert.match(conversational, /parsed \? parsed\.mainText : m\.text/);
 });
 
-test('chat-first renders inline artifacts: readiness and programs', () => {
-  assert.match(chatFirst, /function ReadinessCard/);
-  assert.match(chatFirst, /function ProgramsCard/);
-  assert.match(chatFirst, /RECOMMENDED PROGRAMS/);
+test('quick-reply buttons submit through the real send flow', () => {
+  assert.match(conversational, /const handleQuickReply = \(opt\) => \{\s*\n\s*send\(opt\);/);
+  assert.match(conversational, /onClick=\{\(\) => handleQuickReply\(opt\)\}/);
 });
 
-test('no task checklist inside the chat stream', () => {
-  assert.ok(!chatFirst.includes('ChecklistCard'), 'chat-first must not render a task checklist');
-  assert.ok(!chatFirst.includes('ACTION CHECKLIST'), 'chat-first must not show an action checklist card');
+test('brain-supplied options replace the generic suggestion chips for that turn', () => {
+  assert.match(conversational, /const chips = !busy && !lastParsed \? contextualChips/);
 });
 
-test('program selection writes through shared state and advances the journey', () => {
-  assert.match(chatFirst, /confirmTargetSchools\?\.\(selected\)/);
-  assert.ok(!chatFirst.includes('send(`I\'d like to move forward with:'), 'checkbox confirmation must not depend on an AI request');
+test('free-text input stays available alongside quick replies', () => {
+  assert.match(conversational, /placeholder="Ask your advisor anything…"/);
+  assert.match(conversational, /onChange=\{e => setInput\(e\.target\.value\)\}/);
 });
 
-test('confirmed targets remove old program artifacts so the narrative question stays visible', () => {
-  assert.match(chatFirst, /const needsSelectionRecovery = hasPrograms/);
-  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
-  assert.match(chatFirst, /\{showPrograms && \(/);
-  assert.ok(!chatFirst.includes('{hasPrograms && (\n              <ProgramsCard'), 'confirmed targets must not leave the program card below the latest chat reply');
+test('contextual chips are state-driven, not substring-matched', () => {
+  assert.match(conversational, /function contextualChips\(\{ scores, programs, chosenSchools, narrative \}\)/);
 });
 
-test('old stuck sessions reopen the saved list without restarting', () => {
-  assert.match(chatFirst, /TARGET_SELECTION_LOOP\.test\(lastAiText\)/);
-  assert.match(chatFirst, /needsSelectionRecovery/);
-  assert.match(chatFirst, /useState\(\(\) => chosenSchools \|\| \[\]\)/);
+test('no mock data in the conversational workspace', () => {
+  const mockMarkers = /mockPrograms|MOCK_|fakeData|dummyData|placeholder(?:Schools|Programs|Candidate)/;
+  assert.ok(!mockMarkers.test(conversational), 'conversational workspace must render only real props');
 });
 
-test('saved targets can be reopened for checkbox selection without typing names', () => {
-  assert.match(chatFirst, /reopenProgramSelection/);
-  assert.match(chatFirst, />\s*Change school selection\s*</);
-});
-
-test('confirmed targets continue narrative instead of asking for names again', () => {
-  assert.match(chatFirst, /Continue narrative/);
-  assert.match(chatFirst, /using my confirmed target schools/);
-  assert.ok(!chatFirst.includes("label: 'Choose my narrative'"));
-  assert.match(chatFirst, /TARGET_SELECTION_LOOP/);
-  assert.match(chatFirst, /NARRATIVE_START/);
-});
-
-test('chat-first has contextual chips and the analyzing state', () => {
-  assert.match(chatFirst, /function contextualChips/);
-  assert.match(chatFirst, /Advisor is analyzing/);
-});
-
-test('no em-dashes in chat-first user-visible copy', () => {
-  const stringLiterals = chatFirst.match(/'[^'\n]*'|"[^"\n]*"|`[^`\n]*`/g) || [];
-  const offenders = stringLiterals.filter(s => s.includes('—'));
-  assert.deepEqual(offenders, []);
+test('no banner-style debug or alert strips', () => {
+  assert.ok(!conversational.includes('ACTIVE:'), 'no route-verification banners');
+  assert.ok(!advisor.includes('ACTIVE:'), 'no route-verification banners');
+  assert.ok(!/position:\s*'fixed'.*top:\s*0.*background:\s*'#(f00|0000ff|ff0000|00ff00)/.test(conversational), 'no full-width colored strips');
 });

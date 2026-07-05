@@ -40,6 +40,19 @@ function undergradGradeNumber(profile) {
   return grade ? Number(grade) : null;
 }
 
+// The Advisor brain marks fixed-choice questions with a trailing
+// "→ Option A | Option B | Option C" (see api/chat.js prompt contract). Same
+// parser as Chat.jsx/AdvisorChatFirst: split the marker off the display text
+// so the options render as tappable quick-reply bubbles instead of raw text.
+const OPTIONS_PATTERN = /→\s*(.+)$/;
+function parseOptions(text) {
+  const match = OPTIONS_PATTERN.exec(text || '');
+  if (!match) return null;
+  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+  if (options.length < 2) return null;
+  return { mainText: text.slice(0, match.index).trim(), options };
+}
+
 // Same state-driven suggestion logic already used by AdvisorChatFirst — keyed
 // off structured stage state (scores/programs/chosenSchools/narrative), never
 // off substring matching of the last AI message. First entry is always the
@@ -465,11 +478,23 @@ export default function AdvisorConversational({
   // Suggestion chips — regenerate from fresh state after every turn. Tapping
   // one freezes the set actually shown into chipLog (ghosted afterwards) and
   // sends the message; only the live set below the composer is interactive.
-  const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: narrative ?? profile?.narrative }) : [];
+  // When the brain's last reply carries its own "→ A | B | C" quick replies,
+  // those are the guided answers for this turn — show them and hold back the
+  // generic stage suggestions so there's a single, unambiguous chip row.
+  const lastMsg = visibleChat[visibleChat.length - 1];
+  const lastParsed = lastMsg?.role === 'ai' ? parseOptions(lastMsg.text) : null;
+  const chips = !busy && !lastParsed ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: narrative ?? profile?.narrative }) : [];
   const [chipLog, setChipLog] = useState([]);
   const handleChip = (label, msg) => {
     setChipLog(log => [...log, { id: `chip-${Date.now()}`, anchor: visibleChat.length, options: chips.map(c => c.label), picked: label }]);
     send(msg);
+    inputRef.current?.focus();
+  };
+
+  // Quick-reply buttons submit through the exact same send() flow as typed
+  // text — the brain receives the answer as a normal candidate message.
+  const handleQuickReply = (opt) => {
+    send(opt);
     inputRef.current?.focus();
   };
 
@@ -486,13 +511,44 @@ export default function AdvisorConversational({
             const isAi = m.role === 'ai';
             const ghost = chipLog.find(g => g.anchor === i + 1);
             const milestone = milestones.find(ms => ms.anchor === i + 1);
+            const parsed = isAi ? parseOptions(m.text) : null;
+            const isLastMessage = i === visibleChat.length - 1;
+            const liveOptions = parsed && isLastMessage && !busy;
+            // For answered questions, ghost the options and highlight the one
+            // the candidate actually picked (typed or tapped — same flow).
+            const pickedReply = parsed && !isLastMessage && visibleChat[i + 1]?.role === 'user' ? visibleChat[i + 1].text.trim() : null;
             return (
               <React.Fragment key={i}>
                 <div style={{ animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
                   {isAi ? (
                     <div style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px' }}>
                       <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
-                      <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{renderFormattedText(m.text)}</div>
+                      <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{renderFormattedText(parsed ? parsed.mainText : m.text)}</div>
+                      {liveOptions && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 12 }}>
+                          {parsed.options.map(opt => (
+                            <button
+                              key={opt}
+                              className="pw-adv2-btn"
+                              onClick={() => handleQuickReply(opt)}
+                              disabled={busy}
+                              style={{ display: 'inline-flex', alignItems: 'center', borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', minHeight: 38, border: '1px solid #b899fb', background: '#fff', color: VIOLET, boxShadow: '0 2px 8px rgba(148,153,251,.18)' }}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {parsed && !isLastMessage && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 10, opacity: .55, pointerEvents: 'none' }} aria-hidden="true">
+                          {parsed.options.map(opt => (
+                            <span key={opt} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 600, border: `1px solid ${opt === pickedReply ? '#b899fb' : BORDER_2}`, background: opt === pickedReply ? 'rgba(148,179,251,.14)' : 'none', color: opt === pickedReply ? VIOLET : MUTED_2 }}>
+                              {opt === pickedReply && <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5 5 9l4.5-6" stroke={VIOLET} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                              {opt}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
