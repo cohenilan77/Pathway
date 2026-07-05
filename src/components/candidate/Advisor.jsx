@@ -173,7 +173,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                     <span style={{
-                      width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11.5, fontWeight: 700, flexShrink: 0,
+                      width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0,
                       ...(active ? { background: '#16233f', color: '#fff', boxShadow: '0 4px 10px rgba(22,35,63,.28)' } : done ? { background: '#16233f', color: '#fff' } : future ? { background: '#fffaf0', color: '#b8902f', border: '1px dashed #d3c9a8' } : { background: '#fff', color: '#9aa3b5', border: '1px solid #d7ddec' }),
                     }}>
                       {done ? '✓' : i + 1}
@@ -190,7 +190,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             })}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#9aa3b5', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#9aa3b5', letterSpacing: '.3px' }}>Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length}</span>
           </div>
           <div className="pw-progress-track">
             <div className="pw-progress-fill" style={{ width: `${Math.min(((stepIdx + 1) / STEPS.length) * 100, 100)}%` }} />
@@ -212,7 +212,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
                   <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2fa876', boxShadow: '0 0 8px rgba(47,168,118,.6)', display: 'inline-block' }} />
-                  <span style={{ fontSize: 11.5, fontWeight: 600, color: '#2fa876' }}>Online · Smart AI</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#2fa876' }}>Online · Smart AI</span>
                 </div>
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               {showNarrativeCTA && (
                 <div style={{ marginLeft: 42, background: '#16233f', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
                     <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
                   </div>
                   <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
@@ -321,7 +321,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             {/* quick replies from last AI message — pinned above input */}
             {lastParsed && !busy && (
               <div style={{ padding: '10px 24px 0', borderTop: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 8 }}>QUICK REPLY</div>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 8 }}>QUICK REPLY</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                   {lastParsed.options.map(opt => (
                     <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
@@ -368,7 +368,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
                   )}
                 </button>
               </div>
-              <div style={{ marginTop: 8, textAlign: 'center', fontSize: 11, color: '#9aa3b5', fontWeight: 500 }}>
+              <div style={{ marginTop: 8, textAlign: 'center', fontSize: 12, color: '#9aa3b5', fontWeight: 500 }}>
                 Confidential consultation active. End-to-end encrypted.
               </div>
             </div>
@@ -383,7 +383,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 700, color: '#16233f', margin: 0 }}>Your tasks</h3>
               {taskList.length > 0 && (
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
               )}
             </div>
             <p style={{ fontSize: 12, color: '#8a93a3', margin: '0 0 16px', lineHeight: 1.5, fontWeight: 500 }}>Added as I learn more about you.</p>
@@ -426,7 +426,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
             {isUndergrad && programs?.length > 0 && (
               <div style={{ marginTop: 20, background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>UNIVERSITY LIST</div>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>UNIVERSITY LIST</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#16233f', marginBottom: 10 }}>{programs.length} universities matched</div>
                 <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Open University List →
@@ -436,7 +436,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
 
             {!isUndergrad && scores && (
               <div style={{ marginTop: 20, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 12, padding: '14px 14px', boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
-                <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>PROFILE SCORE</div>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 6 }}>PROFILE SCORE</div>
                 <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, fontWeight: 700, color: '#16233f', lineHeight: 1 }}>{scores.overall ?? 0}<span style={{ fontFamily: "'Public Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#9aa3b5' }}>/100</span></div>
                 <button onClick={() => setCandTab('analysis')} style={{ marginTop: 10, width: '100%', background: '#16233f', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                   View Full Analysis →

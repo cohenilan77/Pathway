@@ -59,7 +59,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #efe5cf', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#eef1fc' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e1e6f5' }}>
             {currentConfig?.docLabel && (
-              <div style={{ fontSize: 11.5, color: '#7e86a5', lineHeight: 1.5, marginBottom: 14 }}>
+              <div style={{ fontSize: 12, color: '#7e86a5', lineHeight: 1.5, marginBottom: 14 }}>
                 Simulation for this track: <span style={{ color: '#5b46e0', fontWeight: 700 }}>{currentConfig.docLabel}</span>
               </div>
             )}
@@ -73,27 +73,27 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
           </div>
           {/* Status panel */}
           <div className="pw-sim-status" style={{ padding: 18, flex: 1 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', marginBottom: 14 }}>STATUS</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', marginBottom: 14 }}>STATUS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#eafdf6' : '#f8fafc', border: `1px solid ${cvText ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>CV / Resume</div>
-                  <div style={{ fontSize: 11, color: '#9098b5' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
+                  <div style={{ fontSize: 12, color: '#9098b5' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: essayText ? '#eafdf6' : '#f8fafc', border: `1px solid ${essayText ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: essayText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>Personal Essay</div>
-                  <div style={{ fontSize: 11, color: '#9098b5' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
+                  <div style={{ fontSize: 12, color: '#9098b5' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: insights ? '#eafdf6' : '#f8fafc', border: `1px solid ${insights ? '#a9eed1' : '#e1e6f5'}` }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: insights ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>AI Insights</div>
-                  <div style={{ fontSize: 11, color: '#9098b5' }}>{insights ? `${insights.length} suggestions` : 'Submit essay to unlock'}</div>
+                  <div style={{ fontSize: 12, color: '#9098b5' }}>{insights ? `${insights.length} suggestions` : 'Submit essay to unlock'}</div>
                 </div>
               </div>
             </div>
@@ -119,11 +119,11 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
         <div className="pw-sim-main" style={{ background: '#faf6ec', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
           {docTab === 'editor' && (
             <div className="pw-sim-editor-card" style={{ background: '#fffdf7', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #efe5cf' }}>
-              <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
+              <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
 
               {savedSchools.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 11.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>YOUR SCHOOLS</label>
+                  <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>YOUR SCHOOLS</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {savedSchools.map(school => (
                       <button key={school} onClick={() => selectEssaySchool(school)}
@@ -142,7 +142,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               )}
 
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 11.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
+                <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
                 <input
                   value={essaySchool}
                   onChange={e => setEssaySchool(e.target.value)}
@@ -152,7 +152,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               </div>
 
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 11.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>ESSAY QUESTION</label>
+                <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>ESSAY QUESTION</label>
                 <textarea
                   value={essayQuestion}
                   onChange={e => setEssayQuestion(e.target.value)}
@@ -384,7 +384,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                       border: `1px solid ${item.type === 'strength' ? '#a9eed1' : '#ffe3a8'}`,
                       borderRadius: 14, padding: '16px 18px',
                     }}>
-                      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: item.type === 'strength' ? '#3fdca9' : '#eaa129', marginBottom: 6, textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: item.type === 'strength' ? '#3fdca9' : '#eaa129', marginBottom: 6, textTransform: 'uppercase' }}>
                         {item.type === 'strength' ? '✓ Strength' : '→ Suggestion'}
                       </div>
                       <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#33405e' }}>{item.text}</div>

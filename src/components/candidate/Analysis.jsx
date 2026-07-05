@@ -552,7 +552,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 20, padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#fffdf7,#fff8ea)', border: '1px solid #efe5cf', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
             <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, lineHeight: 1.08, fontWeight: 800, color: '#16233f', margin: 0 }}>
               {profile?.name ? `${profile.name}'s` : 'Your'} Competitiveness
             </h1>
@@ -632,7 +632,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           <div style={{ position: 'absolute', top: -28, right: 24, width: 82, height: 82, borderRadius: '50%', background: 'rgba(255,255,255,.24)' }} />
           <div style={{ position: 'absolute', bottom: -34, left: -18, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.16)' }} />
           <div style={{ position: 'relative', minWidth: 220 }}>
-            <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '1px', color: '#70510a', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
+            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '1px', color: '#70510a', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
             <div style={{ fontSize: 14, fontWeight: 800, color: '#3d2d08' }}>Refresh scores and school matches with new info.</div>
           </div>
           <button onClick={refreshAnalysis} disabled={busy}
@@ -667,14 +667,14 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#d9cbb3', marginBottom: 6 }}>OVERALL COMPETITIVENESS SCORE</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#d9cbb3', marginBottom: 6 }}>OVERALL COMPETITIVENESS SCORE</div>
               <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-1px' }}>{scores.overall}<span style={{ fontSize: 18, color: '#d9cbb3', fontWeight: 600 }}>/100</span></div>
             </div>
           </div>
         )}
 
         {/* Score breakdown */}
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
         <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
             <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
@@ -722,7 +722,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
-            <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#b8902f', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
               <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 32, fontWeight: 800, color: '#16233f', margin: 0 }}>Strategic School Portfolio</h2>
             </div>
@@ -739,7 +739,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                     {/* Tier header */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tier.border}` }}>
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tier.accent, flexShrink: 0, display: 'inline-block' }} />
-                      <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: tier.accent }}>{tier.label}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: tier.accent }}>{tier.label}</span>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                       {tier.key === 'locked' && (
                         <span style={{ fontSize: 12, fontStyle: 'italic', color: '#9098b5', marginLeft: 6 }}>Significant metric gaps — can still be selected.</span>
@@ -802,14 +802,14 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                   {school.name}
                                 </div>
                                 {(school.admissionStatus || school.tier || school.fit != null) && (
-                                  <span style={{ fontSize: 10.5, fontWeight: 800, color: fitBucketColor(school), background: '#ffffff99', border: `1px solid ${fitBucketColor(school)}55`, borderRadius: 999, padding: '3px 8px' }}>
+                                  <span style={{ fontSize: 12, fontWeight: 800, color: fitBucketColor(school), background: '#ffffff99', border: `1px solid ${fitBucketColor(school)}55`, borderRadius: 999, padding: '3px 8px' }}>
                                     {fitBucketLabel(school)}
                                   </span>
                                 )}
                                 {school.selectivityLabel && (() => {
                                   const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
                                   return (
-                                    <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
+                                    <span style={{ fontSize: 12, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
                                       {displaySelectivityLabel(school.selectivityLabel)}
                                     </span>
                                   );
@@ -826,25 +826,25 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                               {admitRate && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{admitRate}</div>
-                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT RATE</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT RATE</div>
                                 </div>
                               )}
                               {testMetric && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{testMetric.value}</div>
-                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>{testMetric.label}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>{testMetric.label}</div>
                                 </div>
                               )}
                               {school.avgGPA != null && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
-                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
                                 </div>
                               )}
                               {school.fit != null && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div>
-                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
                                 </div>
                               )}
                               <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>

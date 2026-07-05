@@ -61,7 +61,7 @@ export default function NotificationBell({ alerts = [], storageKey = 'pathway_al
           <span style={{
             position: 'absolute', top: 7, right: 8, minWidth: 16, height: 16, padding: '0 4px',
             borderRadius: 999, background: '#e0457a', color: '#fff', border: '2px solid #faf7f2',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9.5, fontWeight: 800,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800,
             lineHeight: 1,
           }}>
             {unreadCount > 9 ? '9+' : unreadCount}
@@ -77,10 +77,10 @@ export default function NotificationBell({ alerts = [], storageKey = 'pathway_al
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #f1eadd' }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34' }}>{title}</div>
-              <div style={{ fontSize: 11.5, color: '#9098b5', marginTop: 2 }}>{unreadCount ? `${unreadCount} unread` : 'All caught up'}</div>
+              <div style={{ fontSize: 12, color: '#9098b5', marginTop: 2 }}>{unreadCount ? `${unreadCount} unread` : 'All caught up'}</div>
             </div>
             {!!items.length && (
-              <button onClick={markAllRead} style={{ border: 'none', background: '#f6f1e8', color: '#5b46e0', borderRadius: 9, padding: '7px 10px', fontSize: 11.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={markAllRead} style={{ border: 'none', background: '#f6f1e8', color: '#5b46e0', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Mark all read
               </button>
             )}
@@ -100,7 +100,7 @@ export default function NotificationBell({ alerts = [], storageKey = 'pathway_al
                   <span style={{ minWidth: 0 }}>
                     <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#141b34', lineHeight: 1.25 }}>{item.title}</span>
                     {item.message && <span style={{ display: 'block', fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, marginTop: 3 }}>{item.message}</span>}
-                    {item.createdAt && <span style={{ display: 'block', fontSize: 11, color: '#aab2cc', marginTop: 5 }}>{new Date(item.createdAt).toLocaleString()}</span>}
+                    {item.createdAt && <span style={{ display: 'block', fontSize: 12, color: '#aab2cc', marginTop: 5 }}>{new Date(item.createdAt).toLocaleString()}</span>}
                   </span>
                 </button>
               );

@@ -145,9 +145,9 @@ export default function GMATSimulation() {
     <div style={{ width: '100%', maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ ...card, padding: 26 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div><div style={{ fontSize: 11, fontWeight: 850, color: '#9098b5', letterSpacing: '.8px' }}>GMAT PRACTICE RESULT</div><div style={{ fontSize: 42, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{results.percentage}%</div><div style={{ fontSize: 13.5, color: '#5f6987' }}>{results.correct} of {QUESTIONS.length} correct</div></div>
+          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#9098b5', letterSpacing: '.8px' }}>GMAT PRACTICE RESULT</div><div style={{ fontSize: 42, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{results.percentage}%</div><div style={{ fontSize: 13.5, color: '#5f6987' }}>{results.correct} of {QUESTIONS.length} correct</div></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(120px,1fr))', gap: 10 }}>
-            {[['TOTAL TIME', formatTime(results.totalSeconds), '#f1edff'], ['AVG / QUESTION', formatTime(results.averageSeconds), '#eefaf6']].map(([label, value, background]) => <div key={label} style={{ background, borderRadius: 12, padding: '11px 14px' }}><div style={{ fontSize: 10.5, fontWeight: 800, color: '#7d8499' }}>{label}</div><div style={{ fontSize: 20, fontWeight: 900, color: '#33265f' }}>{value}</div></div>)}
+            {[['TOTAL TIME', formatTime(results.totalSeconds), '#f1edff'], ['AVG / QUESTION', formatTime(results.averageSeconds), '#eefaf6']].map(([label, value, background]) => <div key={label} style={{ background, borderRadius: 12, padding: '11px 14px' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#7d8499' }}>{label}</div><div style={{ fontSize: 20, fontWeight: 900, color: '#33265f' }}>{value}</div></div>)}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>{Object.entries(results.sections).map(([section, score]) => <span key={section} style={{ background: '#f6f1e8', border: '1px solid #e7dcc7', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, color: '#4d5875' }}>{section}: {score.correct}/{score.total}</span>)}</div>
@@ -156,7 +156,7 @@ export default function GMATSimulation() {
       <div style={{ ...card, padding: 22, overflowX: 'auto' }}>
         <div style={{ fontSize: 17, fontWeight: 850, color: '#141b34', marginBottom: 12 }}>Question timing</div>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: '#4d5875' }}>
-          <thead><tr>{['Question', 'Section', 'Result', 'Time'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #e7dcc7', color: '#858da6', fontSize: 10.5 }}>{label.toUpperCase()}</th>)}</tr></thead>
+          <thead><tr>{['Question', 'Section', 'Result', 'Time'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #e7dcc7', color: '#858da6', fontSize: 12 }}>{label.toUpperCase()}</th>)}</tr></thead>
           <tbody>{QUESTIONS.map((question, index) => { const correct = answers[index] === question.correctIndex; return <tr key={question.id}><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', fontWeight: 800 }}>Q{index + 1}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd' }}>{question.section}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', color: correct ? '#168c68' : '#c2416c', fontWeight: 800 }}>{correct ? 'Correct' : answers[index] == null ? 'Unanswered' : 'Review'}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', fontWeight: 750 }}>{formatTime(results.questionTimes[index])}</td></tr>; })}</tbody>
         </table>
       </div>
@@ -169,8 +169,8 @@ export default function GMATSimulation() {
     <div style={{ width: '100%', maxWidth: 820 }}>
       <div style={{ ...card, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
-          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#5b46e0' }}>{question.section}</div><div style={{ fontSize: 11, color: '#9098b5', marginTop: 3 }}>Question {currentQuestion + 1} of {QUESTIONS.length} · {Object.keys(answers).length} answered</div></div>
-          <div style={{ textAlign: 'right' }}><div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5' }}>TIME LEFT</div><div style={{ fontSize: 22, fontWeight: 900, color: timeLeft < 300 ? '#d33f72' : '#5b46e0' }}>{formatTime(timeLeft)}</div></div>
+          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#5b46e0' }}>{question.section}</div><div style={{ fontSize: 12, color: '#9098b5', marginTop: 3 }}>Question {currentQuestion + 1} of {QUESTIONS.length} · {Object.keys(answers).length} answered</div></div>
+          <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5' }}>TIME LEFT</div><div style={{ fontSize: 22, fontWeight: 900, color: timeLeft < 300 ? '#d33f72' : '#5b46e0' }}>{formatTime(timeLeft)}</div></div>
         </div>
         <div style={{ height: 7, background: '#e7dcc7', borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}><div style={{ width: `${((currentQuestion + 1) / QUESTIONS.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg,#5b46e0,#b899fb)' }} /></div>
         {question.stimulus && <div style={{ background: '#f6f1e8', borderRadius: 13, padding: 15, fontSize: 13.5, color: '#3d4865', lineHeight: 1.6, marginBottom: 16 }}>{question.stimulus}</div>}
@@ -180,7 +180,7 @@ export default function GMATSimulation() {
           <button onClick={() => goToQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0} style={{ background: '#fff', border: '1px solid #e7dcc7', color: '#5b46e0', borderRadius: 11, padding: '9px 13px', fontSize: 12.5, fontWeight: 800, cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer', opacity: currentQuestion === 0 ? .45 : 1, fontFamily: 'inherit' }}>← Previous</button>
           {currentQuestion < QUESTIONS.length - 1 ? <button onClick={() => goToQuestion(currentQuestion + 1)} style={primaryButton}>Next →</button> : <button onClick={finish} style={{ ...primaryButton, background: 'linear-gradient(135deg,#15935f,#3fdca9)' }}>Finish &amp; see results</button>}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1eadd' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#5b46e0' : answers[index] != null ? '#79d4b4' : '#e7dcc7'}`, background: index === currentQuestion ? '#eeeaff' : answers[index] != null ? '#effbf6' : '#fff', color: '#4d5875', fontSize: 10.5, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1eadd' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#5b46e0' : answers[index] != null ? '#79d4b4' : '#e7dcc7'}`, background: index === currentQuestion ? '#eeeaff' : answers[index] != null ? '#effbf6' : '#fff', color: '#4d5875', fontSize: 12, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
       </div>
     </div>
   );

@@ -133,7 +133,7 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
     }
     raw = question
       ? `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${question}`
-      : 'I still need your answers to the earlier complementary checklist before I can finalize scoring. I will not repeat questions you have already answered.';
+      : `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>Upload your CV or paste your background and I'll extract the remaining details automatically — that's the fastest way to finalize your score.`;
     finalized = {
       ...finalized,
       raw,

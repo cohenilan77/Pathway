@@ -263,7 +263,7 @@ function DocumentDepositoryPage({ documents = [], setCandTab, send, archiveDocum
                 })}
               </div>
               <table className="pw-depository-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ color: '#6b7392', fontSize: 11, letterSpacing: '.7px' }}>
+                <thead><tr style={{ color: '#6b7392', fontSize: 12, letterSpacing: '.7px' }}>
                   <th style={{ textAlign: 'left', padding: '14px 20px', borderBottom: '1px solid #f1eadd' }}>NAME</th>
                   <th style={{ textAlign: 'center', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>CHOOSE</th>
                   <th style={{ textAlign: 'left', padding: '14px 10px', borderBottom: '1px solid #f1eadd' }}>STATUS</th>
@@ -444,7 +444,7 @@ function UndergradCard({ title, children, action }) {
   return (
     <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'flex-start', marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', textTransform: 'uppercase' }}>{title}</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', textTransform: 'uppercase' }}>{title}</div>
         {action}
       </div>
       {children}
@@ -533,7 +533,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   if (phase === 'idle' || phase === 'loading' || phase === 'error') {
     return (
       <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
-        <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>{title}</div>
+        <div style={{ fontFamily: "'Newsreader',serif", fontSize: 22, fontWeight: 700, color: '#16233f', marginBottom: 6 }}>{title}</div>
         <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginBottom: 18 }}>
           20 original questions · {testType === 'sat' ? '28' : '20'} minutes · new AI-generated session every time
         </div>
@@ -551,7 +551,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
         <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe7d4', boxShadow: '0 18px 40px rgba(60,72,130,.06)', padding: 28 }}>
           <div className="pw-test-result-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(180px,.8fr) 1.5fr', gap: 28, alignItems: 'center' }}>
             <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px' }}>ESTIMATED {testType.toUpperCase()} SCORE</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px' }}>ESTIMATED {testType.toUpperCase()} SCORE</div>
               <div style={{ fontSize: 54, fontWeight: 900, color: '#16233f', lineHeight: 1.1 }}>{result.estimatedScore}</div>
               <div style={{ fontSize: 12, color: '#9098b5' }}>Scale {result.scale}</div>
             </div>
@@ -576,7 +576,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
               const correct = selected === question.correctIndex;
               return (
                 <div key={question.id} style={{ border: `1px solid ${correct ? '#b7ead8' : '#f2c6d5'}`, background: correct ? '#f2fcf8' : '#fff7fa', borderRadius: 14, padding: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: correct ? '#168c68' : '#c2416c', marginBottom: 6 }}>QUESTION {index + 1} · {correct ? 'CORRECT' : 'REVIEW'}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: correct ? '#168c68' : '#c2416c', marginBottom: 6 }}>QUESTION {index + 1} · {correct ? 'CORRECT' : 'REVIEW'}</div>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f', marginBottom: 8 }}>{question.prompt}</div>
                   <div style={{ fontSize: 12.5, color: '#33405e', marginBottom: 4 }}>Your answer: {selected == null ? 'Unanswered' : `${String.fromCharCode(65 + selected)}. ${question.options[selected]}`}</div>
                   {!correct && <div style={{ fontSize: 12.5, color: '#168c68', marginBottom: 4 }}>Correct answer: {String.fromCharCode(65 + question.correctIndex)}. {question.options[question.correctIndex]}</div>}
@@ -597,7 +597,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14, marginBottom: 14 }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#16233f' }}>{question.section} · {question.domain}</div>
-            <div style={{ fontSize: 11, color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{question.difficulty} · Question {currentQuestion + 1} of {questions.length}</div>
+            <div style={{ fontSize: 12, color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{question.difficulty} · Question {currentQuestion + 1} of {questions.length}</div>
           </div>
           <div style={{ fontSize: 20, fontWeight: 900, color: timeLeft < 120 ? '#e0457a' : '#16233f' }}>{formatTime(timeLeft)}</div>
         </div>
@@ -628,12 +628,12 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
 
       <div style={{ background: '#faf7f2', borderRadius: 18, border: '1px solid #e7eaf3', padding: 16, position: 'sticky', top: 12 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: '#16233f', marginBottom: 4 }}>{answeredCount} / {questions.length} answered</div>
-        <div style={{ fontSize: 11, color: '#9098b5', marginBottom: 12 }}>{Object.values(flagged).filter(Boolean).length} flagged for review</div>
+        <div style={{ fontSize: 12, color: '#9098b5', marginBottom: 12 }}>{Object.values(flagged).filter(Boolean).length} flagged for review</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6, marginBottom: 14 }}>
           {questions.map((item, index) => {
             const active = index === currentQuestion;
             const answered = answers[index] != null;
-            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#16233f' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eef1f7' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
+            return <button key={item.id} onClick={() => setCurrentQuestion(index)} style={{ width: 32, height: 32, borderRadius: 8, border: `1.5px solid ${active ? '#16233f' : flagged[index] ? '#e5a238' : answered ? '#6fd4b1' : '#e7dcc7'}`, background: active ? '#eef1f7' : answered ? '#effbf6' : '#fff', color: '#33405e', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>{index + 1}</button>;
           })}
         </div>
         <button onClick={submitTest} style={{ ...primaryButtonStyle, width: '100%', padding: '10px 12px' }}>Submit Test</button>
@@ -693,7 +693,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
     return (
       <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
         <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
-          <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
+          <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#16233f', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
           <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: 0 }}>For Grade 9-10, the priority is grades, interests, activities, leadership, and a stronger profile foundation.</p>
         </UndergradCard>
       </div>
@@ -728,7 +728,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       {type === 'universities' && (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 34, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>University List</h1>
+            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#16233f', margin: '0 0 8px' }}>University List</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
               {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
             </p>
@@ -750,7 +750,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                   <div key={tierLabel} style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, borderRadius: 18, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tierConfig.border}` }}>
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tierConfig.accent, flexShrink: 0 }} />
-                      <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()} SCHOOLS</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()} SCHOOLS</span>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -780,7 +780,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                   {school.selectivityLabel && (() => {
                                     const badge = SELECTIVITY_BADGES[school.selectivityLabel] || SELECTIVITY_BADGES.Competitive;
                                     return (
-                                      <span style={{ fontSize: 10.5, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
+                                      <span style={{ fontSize: 12, fontWeight: 800, color: badge.color, background: badge.bg, border: `1px solid ${badge.border}`, borderRadius: 999, padding: '3px 8px' }}>
                                         {displaySelectivityLabel(school.selectivityLabel)}
                                       </span>
                                     );
@@ -795,7 +795,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                 {school.avgSAT != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgSAT}</div>
-                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
                                   </div>
                                 )}
                                 {(() => {
@@ -805,20 +805,20 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                       <div style={{ fontSize: 13, fontWeight: 700, color: ar != null ? '#33405e' : '#c0c8e0' }}>
                                         {ar != null ? `${ar}%` : '—'}
                                       </div>
-                                      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT</div>
+                                      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT</div>
                                     </div>
                                   );
                                 })()}
                                 {school.avgGPA != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
-                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
                                   </div>
                                 )}
                                 {school.fit != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 20, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
-                                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
                                   </div>
                                 )}
                                 <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>
@@ -954,8 +954,8 @@ export default function CandidatePortal(props) {
           <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#141b34', strokeWidth: '2', strokeLinecap: 'round' }}><path d="M3 6h18M3 12h18M3 18h18" /></svg>
         </button>
         <div>
-          <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 19, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#a38b4a', marginTop: 2 }}>PRIVATE OFFICE</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 19, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#a38b4a', marginTop: 2 }}>PRIVATE OFFICE</div>
         </div>
       </div>
 
@@ -972,8 +972,8 @@ export default function CandidatePortal(props) {
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M2 9.5 6 2.5 10 9.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>Pathway</div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#9098b5', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
+              <div style={{ fontFamily: "'Newsreader',serif", fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>Pathway</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#9098b5', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
             </div>
           </div>
           <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.55 }}>
@@ -994,7 +994,7 @@ export default function CandidatePortal(props) {
           <svg viewBox="0 0 24 24" width="15" height="15" style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fill: 'none', stroke: '#9098b5', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}><path d="M6 9l6 6 6-6" /></svg>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#9098b5', margin: '22px 12px 10px' }}>MENU</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#9098b5', margin: '22px 12px 10px' }}>MENU</div>
 
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1030,7 +1030,7 @@ export default function CandidatePortal(props) {
         <div style={{ marginTop: 'auto' }}>
           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
             <div style={{ position: 'relative' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
                 <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1.2 7.3 4.5 10.8 5 8.3 7.3 9 10.8 6 9l-3 1.8.7-3.5L1.2 5l3.5-.5L6 1.2Z" fill="#5b46e0" /></svg>
                 {PLAN_LABELS[plan] || 'AI'}
               </div>
@@ -1049,7 +1049,7 @@ export default function CandidatePortal(props) {
             <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-              <div style={{ fontSize: 11.5, color: '#9098b5', fontWeight: 500 }}>Candidate</div>
+              <div style={{ fontSize: 12, color: '#9098b5', fontWeight: 500 }}>Candidate</div>
             </div>
             <button onClick={handleSignOut} title="Sign out" style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392', flexShrink: 0 }}>
               <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
@@ -1064,7 +1064,7 @@ export default function CandidatePortal(props) {
         {/* top bar */}
         <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 36px', borderBottom: '1px solid #f1eadd', background: 'rgba(250,247,242,.92)', backdropFilter: 'blur(14px)', flexShrink: 0 }}>
           <div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 23, fontWeight: 700, color: '#141b34', letterSpacing: '-.01em' }}>Good {tod}, {first}</div>
+            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 23, fontWeight: 700, color: '#141b34', letterSpacing: '-.01em' }}>Good {tod}, {first}</div>
             <div style={{ fontSize: 13, color: '#6b7392', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
           </div>
           <div className="pw-candidate-top-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

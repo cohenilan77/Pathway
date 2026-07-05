@@ -223,7 +223,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Your Journey</h3>
             {!profile?.category && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#9285e4', background: '#ede9fb', padding: '3px 9px', borderRadius: 8 }}>Unlocks Community</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#9285e4', background: '#ede9fb', padding: '3px 9px', borderRadius: 8 }}>Unlocks Community</span>
             )}
           </div>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Select your application type. This unlocks Community and tailors your advisor.</p>
@@ -280,7 +280,7 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Details</h3>
             {requiresOAuthDetails && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#9285e4', background: '#f1eadd', padding: '3px 9px', borderRadius: 8 }}>Required</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#9285e4', background: '#f1eadd', padding: '3px 9px', borderRadius: 8 }}>Required</span>
             )}
           </div>
           <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>

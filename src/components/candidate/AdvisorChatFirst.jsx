@@ -147,8 +147,8 @@ function RealtimeAnalysisPanel({ scores, profile, programs, isUndergrad, setCand
       {taskList.length > 0 && (
         <div style={{ marginTop: 26, borderTop: '1px solid #eef1f6', paddingTop: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#8a93a3' }}>YOUR TASKS</div>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#8a93a3' }}>YOUR TASKS</div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#16233f', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {taskList.map((text) => {
@@ -190,7 +190,7 @@ function ThinkingLine({ message }) {
 function CardShell({ label, labelColor = '#b8902f', children }) {
   return (
     <div style={{ marginLeft: 42, maxWidth: 640, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 16, padding: '16px 18px', boxShadow: '0 10px 26px rgba(22,35,63,.07)', animation: 'pwFade .3s ease' }}>
-      <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.8px', color: labelColor, marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.8px', color: labelColor, marginBottom: 10 }}>{label}</div>
       {children}
     </div>
   );
@@ -218,7 +218,7 @@ function ReadinessCard({ scores, profile }) {
         {shown.map(d => (
           <div key={d.key}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#2a3447' }}>{d.title}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#2a3447' }}>{d.title}</span>
               <span style={{ fontSize: d.status === 'incomplete' ? 10.5 : 11.5, fontWeight: 800, color: d.status === 'incomplete' ? '#9aa3b5' : '#16233f' }}>{d.status === 'incomplete' ? 'Incomplete' : d.value}</span>
             </div>
             <div style={{ height: 5, borderRadius: 3, background: '#eef1f7', overflow: 'hidden' }}>
@@ -292,13 +292,13 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                     <div style={{ fontSize: 13.5, fontWeight: 800, color: '#16233f' }}>{program.name}</div>
-                    <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#ffffffb8', color: meta.color, border: `1px solid ${meta.border}` }}>{meta.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#ffffffb8', color: meta.color, border: `1px solid ${meta.border}` }}>{meta.label}</span>
                     {program.selectivityLabel && (
-                      <span style={{ fontSize: 10, color: '#7a8295', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#ffffff9c', border: '1px solid #d7ddec' }}>{program.selectivityLabel}</span>
+                      <span style={{ fontSize: 12, color: '#7a8295', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#ffffff9c', border: '1px solid #d7ddec' }}>{program.selectivityLabel}</span>
                     )}
                   </div>
                   {(program.fitExplanation || program.notes) && (
-                    <div style={{ fontSize: 11.5, color: '#5f6885', lineHeight: 1.45, marginTop: 5 }}>{program.fitExplanation || program.notes}</div>
+                    <div style={{ fontSize: 12, color: '#5f6885', lineHeight: 1.45, marginTop: 5 }}>{program.fitExplanation || program.notes}</div>
                   )}
                 </div>
                 {Number.isFinite(Number(program.fitIndex ?? program.fit)) && (
@@ -310,10 +310,10 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
               </div>
               {(drivers.length || risks.length || gaps.length || actions.length) > 0 && (
                 <div style={{ marginLeft: 31, marginTop: 9, display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 6 }}>
-                  {drivers.length > 0 && <div style={{ fontSize: 10.5, color: '#16875c', lineHeight: 1.4 }}><b>Drivers:</b> {drivers.join(' · ')}</div>}
-                  {risks.length > 0 && <div style={{ fontSize: 10.5, color: '#b44b57', lineHeight: 1.4 }}><b>Risks:</b> {risks.join(' · ')}</div>}
-                  {gaps.length > 0 && <div style={{ fontSize: 10.5, color: '#8a6717', lineHeight: 1.4 }}><b>Evidence gaps:</b> {gaps.join(' · ')}</div>}
-                  {actions.length > 0 && <div style={{ fontSize: 10.5, color: '#16233f', lineHeight: 1.4 }}><b>Next actions:</b> {actions.join(' · ')}</div>}
+                  {drivers.length > 0 && <div style={{ fontSize: 12, color: '#16875c', lineHeight: 1.4 }}><b>Drivers:</b> {drivers.join(' · ')}</div>}
+                  {risks.length > 0 && <div style={{ fontSize: 12, color: '#b44b57', lineHeight: 1.4 }}><b>Risks:</b> {risks.join(' · ')}</div>}
+                  {gaps.length > 0 && <div style={{ fontSize: 12, color: '#8a6717', lineHeight: 1.4 }}><b>Evidence gaps:</b> {gaps.join(' · ')}</div>}
+                  {actions.length > 0 && <div style={{ fontSize: 12, color: '#16233f', lineHeight: 1.4 }}><b>Next actions:</b> {actions.join(' · ')}</div>}
                 </div>
               )}
             </div>
@@ -554,7 +554,7 @@ export default function AdvisorChatFirst({
             {showNarrativeCTA && (
               <div style={{ marginLeft: 42, maxWidth: 640, background: '#16233f', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: 'pwFade .3s ease' }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
                   <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
                 </div>
                 <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
@@ -596,7 +596,7 @@ export default function AdvisorChatFirst({
         {lastParsed && !busy && (
           <div style={{ padding: '10px 24px 0', borderTop: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
             <div style={{ maxWidth: 780, margin: '0 auto' }}>
-              <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 8 }}>QUICK REPLY</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#b8902f', marginBottom: 8 }}>QUICK REPLY</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                 {lastParsed.options.map(opt => (
                   <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
@@ -666,7 +666,7 @@ export default function AdvisorChatFirst({
               </div>
             )}
 
-            <div style={{ margin: '8px 0 10px', textAlign: 'center', fontSize: 11, color: '#9aa3b5', fontWeight: 500 }}>
+            <div style={{ margin: '8px 0 10px', textAlign: 'center', fontSize: 12, color: '#9aa3b5', fontWeight: 500 }}>
               Confidential consultation active. End-to-end encrypted.
             </div>
           </div>

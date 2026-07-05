@@ -59,7 +59,7 @@ function Avatar({ id, name, initials, size = 38 }) {
 
 function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGroup }) {
   const sectionHeader = {
-    fontSize: '11px',
+    fontSize: '12px',
     fontWeight: 850,
     letterSpacing: '.75px',
     color: '#5b46e0',
@@ -114,7 +114,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
             <span style={{
               background: active ? '#5b46e0' : '#ece6dc',
               color: active ? '#fff' : '#4e5872',
-              fontSize: '10.5px',
+              fontSize: '12px',
               fontWeight: 750,
               borderRadius: 999,
               padding: '2px 7px',
@@ -239,7 +239,7 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
                   <span style={{ fontSize: '12px', fontWeight: 800, color: '#202a44' }}>
                     {msg.userName || 'User'}
                   </span>
-                  <span style={{ fontSize: '10.5px', color: '#929ab0' }}>
+                  <span style={{ fontSize: '12px', color: '#929ab0' }}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -336,7 +336,7 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
       flexDirection: 'column',
     }}>
       <div style={{ padding: '16px 15px', borderBottom: '1px solid #e9e1d6', background: '#faf7f2' }}>
-        <div style={{ fontSize: '11px', fontWeight: 850, letterSpacing: '.75px', color: '#5b46e0', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '12px', fontWeight: 850, letterSpacing: '.75px', color: '#5b46e0', textTransform: 'uppercase' }}>
           Candidate community
         </div>
         <div style={{ fontSize: '13px', fontWeight: 700, color: '#313b57', marginTop: 5 }}>
@@ -381,7 +381,7 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
                     border: '1px solid #5b46e0',
                     borderRadius: 8,
                     padding: '8px 5px',
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 750,
                     cursor: loading ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
@@ -397,7 +397,7 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
                     border: connected ? '1px solid #169b62' : '1px solid #6d55df',
                     borderRadius: 8,
                     padding: '8px 5px',
-                    fontSize: '11.5px',
+                    fontSize: '12px',
                     fontWeight: 800,
                     cursor: 'pointer',
                     fontFamily: 'inherit',

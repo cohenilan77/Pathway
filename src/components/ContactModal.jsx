@@ -95,7 +95,7 @@ export default function ContactModal({ onClose, profile }) {
               background: 'linear-gradient(90deg,#cbab5e,#f4da90)',
               borderRadius: 4,
               padding: '3px 10px',
-              fontSize: 11, fontWeight: 700, letterSpacing: '1.2px',
+              fontSize: 12, fontWeight: 700, letterSpacing: '1.2px',
               color: '#42320a', marginBottom: 12,
               fontFamily: "'Public Sans',sans-serif",
               textTransform: 'uppercase',
@@ -293,7 +293,7 @@ export default function ContactModal({ onClose, profile }) {
           <span
             style={{
               fontFamily: "'Public Sans',sans-serif",
-              fontSize: 11, color: '#adb5c7',
+              fontSize: 12, color: '#adb5c7',
               letterSpacing: '.4px',
             }}
           >

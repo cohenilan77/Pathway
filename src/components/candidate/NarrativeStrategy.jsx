@@ -13,7 +13,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
         boxShadow: on ? `0 18px 40px ${kind === 'pivot' ? 'rgba(255,122,61,.22)' : 'rgba(105,91,255,.24)'}` : '0 18px 40px rgba(60,72,130,.06)',
       },
       badge: {
-        display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11,
+        display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12,
         fontWeight: 800, letterSpacing: '.5px', padding: '6px 12px', borderRadius: 9,
         background: kind === 'pivot' ? '#fff1e8' : '#f1eadd',
         color: kind === 'pivot' ? '#e18854' : '#9285e4',
@@ -38,7 +38,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: '24px 34px 64px' }}>
-        <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#5b46e0', marginBottom: 10 }}>STEP 5 · BEFORE YOU WRITE</div>
         <h1 style={{ fontSize: 36, lineHeight: 1.1, fontWeight: 800, color: '#141b34', margin: '0 0 14px', letterSpacing: '-.6px' }}>
           Choose Your Narrative
         </h1>
@@ -131,7 +131,7 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ flex: 1, minWidth: 280, position: 'relative' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#ffd76a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#ffd76a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
               {narrative === 'upgrade' ? (
                 <>
                   <h3 style={{ fontSize: 21, fontWeight: 800, color: '#faf7f2', margin: '0 0 6px', letterSpacing: '-.3px' }}>Upgrade · Deepen the Trajectory</h3>

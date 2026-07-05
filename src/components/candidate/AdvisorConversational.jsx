@@ -163,9 +163,9 @@ function StageBar({ STEPS, stepIdx, futureStages, strength, stageLabel, verified
               }}>
                 <StageIcon state={state} />
                 <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginTop: 7 }}>{name}</span>
-                <span style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.35, marginTop: 2 }}>{sub}</span>
+                <span style={{ fontSize: 12, color: MUTED, lineHeight: 1.35, marginTop: 2 }}>{sub}</span>
                 {state === 'future' && (
-                  <span style={{ marginTop: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '.06em', color: '#c08a1a', background: '#fff8ea', borderRadius: 999, padding: '2px 8px' }}>FUTURE</span>
+                  <span style={{ marginTop: 6, fontSize: 12, fontWeight: 700, letterSpacing: '.04em', color: '#c08a1a', background: '#fff8ea', borderRadius: 999, padding: '2px 8px' }}>FUTURE</span>
                 )}
               </div>
             );
@@ -276,11 +276,11 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
           style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: '14px 16px 14px 12px', cursor: 'pointer', font: 'inherit', textAlign: 'left', minHeight: 44 }}
         >
           <span style={{ fontSize: 14.5, fontWeight: 700, color: INK }}>{program.name}</span>
-          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.04em', borderRadius: 999, padding: '3px 9px', color: c.fg, background: c.bg }}>{program.tierLabel}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.04em', borderRadius: 999, padding: '3px 9px', color: c.fg, background: c.bg }}>{program.tierLabel}</span>
           {fit != null && <span style={{ fontSize: 13, color: MUTED }}>Fit index {fit}%</span>}
           <span style={{ flex: 1 }} />
           {chosen && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 700, color: VIOLET, animation: pending ? 'adv2Pop .45s ease' : 'none' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, fontWeight: 700, color: VIOLET, animation: pending ? 'adv2Pop .45s ease' : 'none' }}>
               <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" fill={VIOLET} /><path d="M4.4 7.2 6.2 9l3.2-4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
               In portfolio
             </span>
@@ -295,19 +295,19 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
               <div className="pw-adv2-stats-grid" style={{ marginBottom: 12 }}>
                 {fit != null && (
                   <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Fit score</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', color: MUTED_2, textTransform: 'uppercase' }}>Fit score</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>{fit}%</div>
                   </div>
                 )}
                 {hasAdmitRate && (
                   <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Admit rate</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', color: MUTED_2, textTransform: 'uppercase' }}>Admit rate</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>~{Math.round(program.admitRate)}%</div>
                   </div>
                 )}
                 {program.selectivityLabel && (
                   <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
-                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Selectivity</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', color: MUTED_2, textTransform: 'uppercase' }}>Selectivity</div>
                     <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>{program.selectivityLabel}</div>
                   </div>
                 )}
@@ -322,7 +322,7 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
             </div>
             {(drivers.length > 0 || risks.length > 0 || gaps.length > 0) && (
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase', marginBottom: 7 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.05em', color: MUTED_2, textTransform: 'uppercase', marginBottom: 7 }}>
                   {risks.length > 0 ? 'Risk drivers' : 'Fit drivers'}
                 </div>
                 {[...risks, ...(risks.length ? [] : drivers), ...gaps].map((r, i) => (
@@ -384,6 +384,10 @@ export default function AdvisorConversational({
   const gradeNumber = undergradGradeNumber(profile);
   const futureStages = isUndergrad && gradeNumber && gradeNumber <= 10 ? new Set(['Essays', 'Applications']) : new Set();
   const stageLabel = STEPS[Math.min(stepIdx, STEPS.length - 1)] || 'Profile';
+
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const firstName = String(authUser?.name || profile?.name || '').trim().split(/\s+/)[0] || '';
 
   const normalizedPrograms = useMemo(() => normalizeProgramList(programs) || [], [programs]);
   const hasPrograms = normalizedPrograms.length > 0;
@@ -486,12 +490,18 @@ export default function AdvisorConversational({
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
 
   return (
-    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg,${CREAM} 0%,${CREAM_2} 100%)`, fontFamily: "'Public Sans',system-ui,sans-serif", color: BODY }}>
+    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg,${CREAM} 0%,${CREAM_2} 100%)`, fontFamily: "'Albert Sans','Public Sans',system-ui,sans-serif", color: BODY }}>
       <div style={{ width: 'min(720px,100%)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 20px', boxSizing: 'border-box', alignSelf: 'center' }}>
 
         <StageBar STEPS={STEPS} stepIdx={stepIdx} futureStages={futureStages} strength={strength} stageLabel={stageLabel} verifiedLabel={verifiedLabel} />
 
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 4px 12px', display: 'flex', flexDirection: 'column', gap: 26 }}>
+          <div style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px' }}>
+            <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
+            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 23, fontWeight: 500, color: INK, letterSpacing: '-.01em', lineHeight: 1.3 }}>
+              {greeting}{firstName ? `, ${firstName}` : ''} — here’s where you stand.
+            </div>
+          </div>
           {visibleChat.map((m, i) => {
             const isAi = m.role === 'ai';
             const ghost = chipLog.find(g => g.anchor === i + 1);
@@ -503,7 +513,7 @@ export default function AdvisorConversational({
                   {isAi ? (
                     <div style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px' }}>
                       <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
-                      <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{renderFormattedText(parsed ? parsed.mainText : m.text)}</div>
+                      <div style={{ fontSize: 15, lineHeight: 1.65, color: BODY }}>{renderFormattedText(parsed ? parsed.mainText : m.text)}</div>
                       {parsed && (
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                           {parsed.options.map((opt) => (
@@ -522,7 +532,7 @@ export default function AdvisorConversational({
                     </div>
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <div style={{ maxWidth: '78%', background: PERI, color: '#fff', fontSize: 14, lineHeight: 1.55, padding: '11px 16px', borderRadius: '18px 18px 5px 18px', boxShadow: '0 4px 14px rgba(148,153,251,.3)', whiteSpace: 'pre-wrap' }}>
+                      <div style={{ maxWidth: '78%', background: PERI, color: '#fff', fontSize: 14.5, lineHeight: 1.55, padding: '11px 16px', borderRadius: '18px 18px 5px 18px', boxShadow: '0 4px 14px rgba(148,153,251,.3)', whiteSpace: 'pre-wrap' }}>
                         {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
                       </div>
                     </div>
@@ -589,7 +599,7 @@ export default function AdvisorConversational({
           {markNotes.map(note => (
             <div key={note.id} style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px', animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
               <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
-              <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{note.text}</div>
+              <div style={{ fontSize: 15, lineHeight: 1.65, color: BODY }}>{note.text}</div>
             </div>
           ))}
 
@@ -606,7 +616,7 @@ export default function AdvisorConversational({
               disabled={busy}
               placeholder="Ask your advisor anything…"
               aria-label="Message your advisor"
-              style={{ flex: 1, border: 'none', outline: 'none', background: 'none', font: 'inherit', fontSize: 14, color: INK, minWidth: 60 }}
+              style={{ flex: 1, border: 'none', outline: 'none', background: 'none', font: 'inherit', fontSize: 14.5, color: INK, minWidth: 60 }}
             />
             {!cvText ? (
               <button

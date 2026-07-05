@@ -40,7 +40,7 @@ function Card({ children, style }) {
 }
 
 function CardLabel({ children }) {
-  return <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
+  return <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
 }
 
 function bucketPrograms(programs = []) {
@@ -63,7 +63,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
       <div style={{ maxWidth: 980, margin: '0 auto 18px', padding: '20px 24px', borderRadius: 16, background: 'linear-gradient(135deg,#ffffff,#fff8ea)', border: '1px solid #efe7d4', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
-        <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 6 }}>CANDIDATE DASHBOARD</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#b8902f', marginBottom: 6 }}>CANDIDATE DASHBOARD</div>
         <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: '#16233f', lineHeight: 1.08 }}>Your private office, at a glance.</div>
         <div style={{ marginTop: 7, fontSize: 13.5, color: '#6b7392', lineHeight: 1.55 }}>A quick read on your current readiness, latest tasks, and where your portfolio is headed next.</div>
       </div>
@@ -73,7 +73,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         <Card style={{ display: 'flex', alignItems: 'center', gap: 22, gridColumn: '1 / -1', background: 'linear-gradient(135deg,#fffdf7,#f9f4e6)' }}>
           <ScoreRing value={overall} />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '1px', color: '#b8902f', textTransform: 'uppercase', marginBottom: 6 }}>{scoreLabel}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#b8902f', textTransform: 'uppercase', marginBottom: 6 }}>{scoreLabel}</div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 28, fontWeight: 800, color: '#16233f', marginBottom: 10 }}>
               {overall != null ? `${overall} / 100` : 'Not analyzed yet'}
             </div>
