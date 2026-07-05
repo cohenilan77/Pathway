@@ -28,7 +28,7 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>,
   },
   {
-    key: 'advisor', label: 'Advisor NEW UI',
+    key: 'advisor', label: 'Advisor',
     icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg>,
   },
   {
@@ -1084,19 +1084,7 @@ export default function CandidatePortal(props) {
         </div>
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
-        {(candTab === 'advisor' || candTab === 'studentProfile') && (
-          <div style={{
-            padding: 60,
-            margin: 40,
-            borderRadius: 24,
-            background: '#19c08a',
-            color: 'white',
-            fontSize: 32,
-            fontWeight: 900
-          }}>
-            STAGING PROOF — CandidatePortal advisor route is live — commit diagnostic
-          </div>
-        )}
+        {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
