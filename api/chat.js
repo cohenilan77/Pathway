@@ -1039,7 +1039,7 @@ export default async function handler(req, res) {
     // target state, never show another request to name/lock schools.
     const asksForTargetsAgain = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i.test(String(raw || ''));
     if (Array.isArray(chosenSchools) && chosenSchools.length && asksForTargetsAgain) {
-      raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
+      raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
     }
 
     // Candidate-facts gates are deterministic, but only at the scoring boundary.

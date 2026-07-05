@@ -12,6 +12,14 @@ import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { calculateCandidateOverall } from '../lib/candidate-kpi-schemas.js';
 import { OPENING_PATH_OPTIONS, resolveOpeningPathChoice } from '../lib/onboarding.js';
+import {
+  needsGraduateDegree,
+  resolveGraduateDegreeChoice,
+  GRADUATE_DEGREE_PROMPT,
+  GRADUATE_DEGREE_OTHER_PROMPT,
+  computeStageAdvancement,
+  explainIfTooEarly,
+} from '../lib/candidate-stage-flow.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
@@ -56,6 +64,14 @@ function buildInitialChat(language) {
 
 const INITIAL_CHAT = buildInitialChat('English');
 const DATA_BLOCK_TAGS = 'PROFILE|SCORES|STRENGTHS|WEAKNESSES|PROGRAMS|CHOSEN_SCHOOLS|INSIGHTS|ESSAY|INTERVIEW_RESULT|TASKS';
+
+// Candidates created through the current opening flow always carry one of these
+// categories. Anything else (or a missing category) is a legacy/unknown profile
+// for which the modern stage-order guardrails do not apply.
+const MODERN_CANDIDATE_CATEGORIES = new Set(['Undergraduate', 'Graduate', 'Postgraduate / Doctoral', 'Personal Development']);
+function isLegacyCandidateCategory(profile) {
+  return !MODERN_CANDIDATE_CATEGORIES.has(String(profile?.category || '').trim());
+}
 
 // Stage context for AI engagement
 function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, lastChatTime, weaknesses) {
@@ -107,29 +123,9 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
   };
 }
 
-// Stage progression triggers
-function getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed) {
-  const lc = displayText.toLowerCase();
-
-  if (isUndergrad) {
-    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Roadmap
-    if (stepIdx === 1 && (lc.includes('activities') || lc.includes('roadmap'))) return 2; // Roadmap → Activities
-    if (stepIdx === 2 && (lc.includes('university') || parsed.programs)) return 3; // Activities → Universities
-    if (stepIdx === 3 && (lc.includes('sat') || lc.includes('act') || lc.includes('testing') || lc.includes('standardized') || parsed.scores?.testScore)) return 4; // Universities → Testing
-    if (stepIdx === 4 && (lc.includes('essay') || parsed.essay)) return 5; // Testing → Essays
-    if (stepIdx === 5 && (lc.includes('application') || lc.includes('submit'))) return 6; // Essays → Applications
-  } else {
-    if (stepIdx === 0 && parsed.profile?.category) return 1; // Profile → Recommender
-    if (stepIdx === 2 && parsed.programs) return 3; // Analysis → Programs
-    if (stepIdx === 3 && (parsed.chosenSchools || lc.includes('narrative') || lc.includes('your story'))) return 4; // Programs → Narrative (choosing schools starts the narrative step)
-    if (stepIdx === 4 && (lc.includes('cv') || lc.includes('resume'))) return 5; // Narrative → CV
-    if (stepIdx === 5 && (lc.includes('essay') || parsed.essay)) return 6; // CV → Essay
-    if (stepIdx === 6 && (lc.includes('interview') || lc.includes('mock'))) return 7; // Essay → Interview
-    if (stepIdx === 7 && parsed.interviewResult) return 8; // Interview → Result
-  }
-
-  return null; // No advancement
-}
+// Stage progression is enforced by lib/candidate-stage-flow.js
+// (computeStageAdvancement), which keeps the required order and prevents a later
+// stage from starting before its prerequisite.
 
 // Build AI system context based on student stage for better guidance
 function buildAISystemContext(stage) {
@@ -754,19 +750,58 @@ export default function App() {
   const send = useCallback(async (text, requestExtras = {}) => {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
+
+    // Graduate degree sub-choice. Once the candidate has picked the Graduate
+    // opening path we still need the exact degree before the agent proceeds.
+    // Whatever they click or type next IS that degree, so this must run before
+    // the opening-path resolver (otherwise "MBA" would be re-read as a category).
+    const awaitingGraduateDegree = needsGraduateDegree(profile);
+    let graduateDegreeProfile = null;
+    if (awaitingGraduateDegree) {
+      const choice = resolveGraduateDegreeChoice(raw_t);
+      if (choice?.other) {
+        // Keep the normal input open and ask for the exact degree or field.
+        setChat(prev => [
+          ...prev,
+          { role: 'user', channel: 'web', text: raw_t },
+          { role: 'ai', channel: 'web', text: GRADUATE_DEGREE_OTHER_PROMPT },
+        ]);
+        setInput('');
+        return;
+      }
+      if (choice) {
+        graduateDegreeProfile = { ...(profile || {}), category: 'Graduate', degree: choice.degree };
+      }
+    }
+
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
     const requestsFirstProgramList = isSchoolListRequest(raw_t) && !(Array.isArray(programs) && programs.length);
 
     // Persist the four-way opening choice before the request leaves the browser.
     // The request must carry this same profile immediately; React state updates
     // alone would arrive one render too late and derail the server-side cycle.
-    const openingPath = resolveOpeningPathChoice(raw_t);
+    const openingPath = awaitingGraduateDegree ? null : resolveOpeningPathChoice(raw_t);
     let requestProfile = profile;
-    if (openingPath) {
+    if (graduateDegreeProfile) {
+      requestProfile = graduateDegreeProfile;
+      setProfile(requestProfile);
+      setStepIdx(0);
+    } else if (openingPath) {
       requestProfile = { ...(profile || {}), ...openingPath };
       setProfile(requestProfile);
       setStepIdx(0);
       if (openingPath.category === 'Undergraduate') setCandTab('studentProfile');
+      // Graduate needs a specific degree next. Show the degree bubbles
+      // deterministically (input stays open) instead of calling the model.
+      if (needsGraduateDegree(requestProfile)) {
+        setChat(prev => [
+          ...prev,
+          { role: 'user', channel: 'web', text: raw_t },
+          { role: 'ai', channel: 'web', text: GRADUATE_DEGREE_PROMPT },
+        ]);
+        setInput('');
+        return;
+      }
     }
 
     // Saving selected targets is a deterministic workspace action and must not
@@ -808,7 +843,16 @@ export default function App() {
 
     try {
       const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
-      const systemContext = buildAISystemContext(stage);
+      let systemContext = buildAISystemContext(stage);
+      // Stage guardrail: if the candidate reaches for a later stage before its
+      // prerequisite, tell the agent to explain the current required next step
+      // instead of skipping ahead. The agent still owns the wording.
+      if (!isLegacyCandidateCategory(requestProfile) && requestProfile?.category !== 'Undergraduate') {
+        const tooEarly = explainIfTooEarly({ scores, programs, chosenSchools, narrative, cvUnlocked: stepIdx >= (STEPS.indexOf('CV')) }, t);
+        if (tooEarly) {
+          systemContext += `\n\nSTAGE GUARDRAIL: The candidate is asking to jump ahead. Do not start that later stage yet. In your own words, explain the current required next step: ${tooEarly}`;
+        }
+      }
       const res = await fetch('/api/advisor', {
         method: 'POST',
         headers: {
@@ -923,8 +967,20 @@ export default function App() {
           displayText += '\n\nType "next" and we\'ll start shaping your narrative.';
         }
 
-        // Auto-advance stepper based on stage-aware triggers
-        const nextStep = getStageAdvancementTrigger(stepIdx, isUndergrad, displayText, parsed);
+        // Auto-advance the stepper within the required stage order. The reply
+        // text can influence wording, but a later stage never starts before its
+        // prerequisite (e.g. CV waits for the narrative stage to begin).
+        const nextStep = computeStageAdvancement({
+          stepIdx,
+          isUndergrad,
+          steps: isUndergrad ? UNDERGRAD_STEPS : STEPS,
+          aiText: displayText,
+          userText: t,
+          parsed,
+          chosenSchools: parsed.chosenSchools || chosenSchools,
+          narrative,
+          cvText,
+        });
         if (nextStep !== null) {
           setStepIdx(prev => Math.max(prev, nextStep));
         }
@@ -945,7 +1001,7 @@ export default function App() {
     } finally {
       setBusy(false);
     }
-  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, chosenSchools, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
+  }, [input, chat, busy, aiConfig, plan, scores, profile, programs, chosenSchools, narrative, cvText, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
 
   // Sends a silent idle check-in to the AI without showing a user message in chat.
   // Only the AI response appears.
@@ -1147,7 +1203,7 @@ export default function App() {
     const confirmed = [...new Set((Array.isArray(schools) ? schools : []).map(name => String(name || '').trim()).filter(Boolean))];
     if (!confirmed.length) return;
     const userText = `I confirm these target schools: ${confirmed.join(' | ')}.`;
-    const aiText = `Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
+    const aiText = `Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
     setChosenSchools(confirmed);
     setStepIdx(prev => Math.max(prev, 4));
     setCandTab('advisor');

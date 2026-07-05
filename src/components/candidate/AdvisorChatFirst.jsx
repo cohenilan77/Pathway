@@ -18,7 +18,7 @@ import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
 const OPTIONS_PATTERN = /→\s*(.+)$/;
 const TARGET_SELECTION_LOOP = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i;
-const NARRATIVE_START = "Your targets are locked in. Now let's shape your story. What's the specific moment or experience that convinced you this is the right path?";
+const NARRATIVE_START = "Your targets are locked in. Now let's shape your Narrative & Strategy. What's the specific moment or experience that convinced you this is the right path?";
 
 // Ring circumference for r=50 (design uses 2·π·50 ≈ 314 for the dash array).
 const RING_CIRC = 314;
