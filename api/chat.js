@@ -330,7 +330,7 @@ Whenever you emit a STRENGTHS/WEAKNESSES update (Graduate/Postgraduate/Personal 
 
 STEP 1 — PATHWAY CATEGORY
 Begin every new conversation by presenting the four pathway categories and asking the user to select one:
-"Welcome! Let's start with where you are in your journey. Which best describes you? → Undergraduate | Graduate | Postgraduate / Doctoral | Personal Development"
+"Welcome — I’m glad you’re here. We’ll take this one clear step at a time. Which path best describes you? → Undergraduate | Graduate | PhD | Personal Development"
 
 Branch on their selection:
 
@@ -1044,11 +1044,17 @@ export default async function handler(req, res) {
       raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your story. ${N1_QUESTION}`;
     }
 
-    // Candidate-facts gates are deterministic: missing evidence cannot silently
+    // Candidate-facts gates are deterministic, but only at the scoring boundary.
+    // During onboarding the model must remain free to run the staged discovery
+    // cycle (program type, format, name, grade, etc.) without being interrupted
+    // by an early upload/completeness prompt.
+    const attemptsScoring = /<(?:SCORES|PROGRAMS)>/i.test(String(raw || ''));
+
+    // Missing evidence cannot silently
     // become a low score, and programs cannot appear before facts + school-path
     // choice are complete. Persist completeness in PROFILE so askedFields remains
     // stable across turns and the advisor never repeats a complementary checklist.
-    if (!candidateFacts.readyForScoring) {
+    if (attemptsScoring && !candidateFacts.readyForScoring) {
       // Drop PROFILE too: the deterministic completeness block we prepend below
       // is authoritative here, so the model's own PROFILE must not double up.
       const modelReply = stripStructuredBlocks(raw, ['SCORES', 'PROGRAMS', 'PROFILE']);
@@ -1089,7 +1095,7 @@ export default async function handler(req, res) {
       } else {
         raw = modelReply;
       }
-    } else if (!candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
+    } else if (attemptsScoring && !candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
       raw = stripStructuredBlocks(raw, ['PROGRAMS']);
       if (!isIdleCheckin && !/specific schools|want recommendations/i.test(raw)) {
         raw = `${raw}\n\nDo you already have specific schools, or do you want recommendations?`.trim();

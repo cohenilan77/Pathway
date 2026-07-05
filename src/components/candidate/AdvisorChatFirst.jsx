@@ -304,7 +304,7 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
                 {Number.isFinite(Number(program.fitIndex ?? program.fit)) && (
                   <div style={{ textAlign: 'center', flexShrink: 0 }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color: meta.color, lineHeight: 1 }}>{Math.round(Number(program.fitIndex ?? program.fit))}%</div>
-                    <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: '.45px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.45px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
                   </div>
                 )}
               </div>

@@ -10,6 +10,7 @@ import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { applyDeterministicKpiToResponse, buildDeterministicAdvisorContext } from '../lib/deterministic-kpi-response.js';
 import { buildCandidateFacts, buildComplementaryQuestion, stripStructuredBlocks } from '../lib/candidate-facts.js';
 import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidate-state.js';
+import { responseAttemptsScoring } from '../lib/onboarding.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -50,6 +51,7 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
 }
 
 async function finalizeKpiResponse(response, candidateState, candidateId) {
+  const attemptsScoring = responseAttemptsScoring(response);
   let finalized = applyDeterministicKpiToResponse(response, { candidateState });
   const mergedProfile = { ...(candidateState?.profile || {}), ...(finalized?.statePatch?.profile || {}) };
   const candidateFacts = buildCandidateFacts({
@@ -98,6 +100,22 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
     profileCompleteness: candidateFacts.profileCompleteness,
   };
   nextStatePatch.profile = persistedProfile;
+
+  // Staging's discovery cycle works because completeness checks wait until the
+  // advisor actually tries to score or recommend programs. Preserve the warm,
+  // one-question-at-a-time onboarding conversation before that boundary.
+  if (!attemptsScoring) {
+    return {
+      ...finalized,
+      statePatch: nextStatePatch,
+      metadata: {
+        ...(finalized?.metadata || {}),
+        candidateFactsReady: candidateFacts.readyForScoring,
+        programsReady: candidateFacts.readyForPrograms,
+        discoveryCycleActive: true,
+      },
+    };
+  }
 
   if (shouldRequestProfileUpload({ ...candidateState, profile: persistedProfile })) {
     delete nextStatePatch.scores;
