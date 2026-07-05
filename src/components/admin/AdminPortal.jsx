@@ -7,6 +7,7 @@ import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NotificationBell from '../NotificationBell.jsx';
 import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
 import AgentsTab from './AgentsTab.jsx';
+import CandidateControlTower from './CandidateControlTower.jsx';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
 
@@ -916,6 +917,10 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <NavIcon><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></NavIcon>
             Candidates
           </button>
+          <button onClick={() => setAdminView('controlTower')} style={sideStyle(adminView === 'controlTower')}>
+            <NavIcon><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></NavIcon>
+            Control Tower
+          </button>
           {canManageUsers && (
             <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
               <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
@@ -1007,6 +1012,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             {adminView === 'session' && 'Logs'}
             {adminView === 'liveChat' && chatT(chatLanguage, 'liveChat')}
             {adminView === 'dashboard' && 'Dashboard'}
+            {adminView === 'controlTower' && 'Candidate Control Tower'}
             {adminView === 'marketing' && 'Marketing'}
             {adminView === 'engagement' && 'Engagement'}
             {adminView === 'agents' && 'Agents'}
@@ -2354,6 +2360,25 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                 </div>
               )}
             </div>
+          )}
+
+          {/* ── CANDIDATE CONTROL TOWER (general, all candidate types) ── */}
+          {adminView === 'controlTower' && (
+            <CandidateControlTower
+              candidates={candidateUsers.map(u => ({
+                id: u.id,
+                name: u.name || u.email || 'Candidate',
+                category: u.category || 'Undergraduate',
+                stage: stepsFor(u.category)[u.stepIdx || 0] || 'Profile',
+                nextAction: u.nextAction || null,
+                lastActiveAt: u.lastActive ? new Date(u.lastActive).getTime() : (u.updatedAt ? new Date(u.updatedAt).getTime() : null),
+                assignedConsultantId: u.consultantId || null,
+                scores: u.scores || null,
+                undergrad: u.undergrad || null,
+              }))}
+              viewer={{ role: portalRole, id: authUser?.id, assignedCandidateIds: candidateUsers.map(u => u.id) }}
+              onAlertAction={(alert, action) => showToast(`Alert "${alert.reason}" ${action === 'resolve' ? 'resolved' : action === 'snooze' ? 'snoozed' : 'dismissed'}.`)}
+            />
           )}
 
           {/* ── SETTINGS ── */}

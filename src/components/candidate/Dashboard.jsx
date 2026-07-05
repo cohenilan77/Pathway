@@ -1,6 +1,44 @@
 import React from 'react';
+import { miniCalendar } from '../../../lib/undergrad/candidate-view.js';
 
 const MILESTONE_PLACEHOLDERS = ['Document review', 'Essay deadline', 'Interview prep', 'Application target'];
+
+function fmtDay(date) {
+  if (!date) return '—';
+  const d = new Date(date);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Undergrad Dashboard mini calendar (Part 1). Reads the stored engine state and
+// opens the full Tracker on click. Undergraduate candidates only.
+function UndergradMiniCalendar({ undergrad, setCandTab }) {
+  const mini = miniCalendar(undergrad || {}, Date.now());
+  const cells = [
+    { label: 'Today', value: mini.counts.today },
+    { label: 'This week', value: mini.counts.thisWeek },
+    { label: 'Overdue', value: mini.counts.overdue, tone: mini.counts.overdue ? '#e0556b' : '#141b34' },
+    { label: 'Next deadline', value: mini.nextDeadline ? fmtDay(mini.nextDeadline.date) : 'None' },
+    { label: 'Next check-in', value: mini.nextConsultantCheckIn ? fmtDay(mini.nextConsultantCheckIn.date) : 'None' },
+  ];
+  return (
+    <div onClick={() => setCandTab?.('ugTracker')} role="button" tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') setCandTab?.('ugTracker'); }}
+      style={{ background: '#fff', borderRadius: 22, border: '1px solid #f1eadd', boxShadow: '0 1px 2px rgba(20,27,52,.04),0 10px 30px rgba(20,27,52,.05)', padding: 24, gridColumn: '1 / -1', cursor: 'pointer' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase' }}>Roadmap calendar</div>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#5b46e0' }}>Open tracker →</span>
+      </div>
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {cells.map(c => (
+          <div key={c.label} style={{ flex: 1, minWidth: 110, background: '#faf7f2', borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', textTransform: 'uppercase' }}>{c.label}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: c.tone || '#141b34', marginTop: 4 }}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function ScoreRing({ value }) {
   const pct = Math.max(0, Math.min(100, value ?? 0));
@@ -51,7 +89,7 @@ function bucketPrograms(programs = []) {
   };
 }
 
-export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, programs }) {
+export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, programs, undergrad }) {
   const overall = scores?.overall;
   const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
   const steps = STEPS || [];
@@ -63,6 +101,8 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 28px 32px' }}>
       <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
+
+        {isUndergrad && <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />}
 
         {/* Score card */}
         <Card style={{ display: 'flex', alignItems: 'center', gap: 24, gridColumn: '1 / -1' }}>

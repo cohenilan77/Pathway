@@ -12,7 +12,8 @@ export const TRACK_CONFIG = {
     nav: [
       ['dashboard', 'Dashboard', 'dashboard'],
       ['studentProfile', 'Advisor', 'advisor'],
-      ['roadmap', 'Roadmap', 'analysis'],
+      ['ugRoadmap', 'Roadmap', 'analysis'],
+      ['ugTracker', 'Tracker / Calendar', 'documentDepository'],
       ['activities', 'Activities', 'documents'],
       ['universities', 'University List', 'analysis'],
       ['testing', 'Testing', 'documentDepository'],

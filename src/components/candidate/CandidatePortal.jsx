@@ -6,6 +6,8 @@ import Documents from './Documents.jsx';
 import Community from './Community.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
+import UndergradRoadmap from './UndergradRoadmap.jsx';
+import UndergradTracker from './UndergradTracker.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
@@ -18,7 +20,7 @@ const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' 
 const PLAN_ACCESS = {
   free: new Set(['dashboard', 'advisor', 'settings']),
   ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
-    'studentProfile', 'roadmap', 'activities', 'universities', 'testing', 'essays', 'applications']),
+    'studentProfile', 'roadmap', 'ugRoadmap', 'ugTracker', 'activities', 'universities', 'testing', 'essays', 'applications']),
   ai_strategy: null, // null = all tabs
 };
 
@@ -68,6 +70,8 @@ ICON_BY_KEY.universities = ICON_BY_KEY.analysis;
 ICON_BY_KEY.testing = ICON_BY_KEY.documentDepository;
 ICON_BY_KEY.essays = ICON_BY_KEY.documents;
 ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
+ICON_BY_KEY.ugRoadmap = ICON_BY_KEY.analysis;
+ICON_BY_KEY.ugTracker = ICON_BY_KEY.documentDepository;
 
 function navFromConfig(config, hasChatAccess) {
   let items = Array.isArray(config?.nav) && config.nav.length
@@ -930,7 +934,7 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', ugTracker: 'Tracker / Calendar', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
     analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
@@ -1074,6 +1078,8 @@ export default function CandidatePortal(props) {
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
+        {candTab === 'ugRoadmap' && isUndergrad && <UndergradRoadmap {...props} />}
+        {candTab === 'ugTracker' && isUndergrad && <UndergradTracker {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
         {candTab === 'documents' && <Documents {...props} />}
         {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}

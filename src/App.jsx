@@ -20,6 +20,9 @@ import {
   computeStageAdvancement,
   explainIfTooEarly,
 } from '../lib/candidate-stage-flow.js';
+import { processUndergradInput } from '../lib/undergrad/engine.js';
+import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
+import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
@@ -396,6 +399,9 @@ export default function App() {
   const [documents, setDocuments] = useState([]);
   const [interviews, setInterviews] = useState({});
   const [insights, setInsights] = useState(null);
+  // Undergrad Candidate-Building Engine state (roadmap/tasks/calendar/reminders/
+  // alerts/progress/notes/log). Undergraduate candidates only.
+  const [undergrad, setUndergrad] = useState(null);
   const [override, setOverride] = useState(0);
   const [showCvModal, setShowCvModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -519,6 +525,7 @@ export default function App() {
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
+        setUndergrad(data?.undergrad || null);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
 
         // Detect if student is stuck and needs nudge
@@ -588,12 +595,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -718,7 +725,7 @@ export default function App() {
     setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
-    setInsights(null); setNarrative(null); setOverride(0);
+    setInsights(null); setNarrative(null); setUndergrad(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
         method: 'POST',
@@ -995,6 +1002,30 @@ export default function App() {
           setStepIdx(prev => Math.max(prev, nextStep));
         }
 
+        // Undergrad Candidate-Building Engine (Part 3). Turn this turn's advice +
+        // scores into structured, stored roadmap/tasks/calendar/reminders. Runs
+        // for Undergraduate candidates ONLY — graduate/PhD/personal-development
+        // flow is untouched. Functional update keeps it out of the send() deps.
+        if (isUndergrad) {
+          const candidateId = auth?.user?.id || sessionId;
+          const s = parsed.scores || {};
+          const ugScores = parsed.scores ? {
+            academics: s.academic, testing: s.testScore, activities: s.activities,
+            leadership: s.leadership, awards: s.awards, volunteering: s.volunteering,
+            research: s.research, majorFit: s.goalClarity, profileDepth: s.uniqueness ?? s.potential,
+          } : undefined;
+          setUndergrad(prev => processUndergradInput(prev, {
+            candidateId,
+            message: t,
+            advice: displayText,
+            scores: ugScores,
+            grade: requestProfile?.grade,
+            targetCountry: requestProfile?.destination || requestProfile?.countries,
+            targetMajor: requestProfile?.intendedMajor || requestProfile?.major || requestProfile?.subjects,
+            now: Date.now(),
+          }).state);
+        }
+
         setChat(prev => {
           const previousAi = [...prev].reverse().find(message => message.role === 'ai');
           return previousAi?.text === displayText
@@ -1226,6 +1257,41 @@ export default function App() {
     });
   }, []);
 
+  // Undergrad engine candidate-side actions (mark task/roadmap item done,
+  // acknowledge a reminder, rebuild the roadmap). All persist via `undergrad`.
+  const setUndergradTaskStatus = useCallback((id, status, kind = 'task') => {
+    setUndergrad(prev => {
+      const s = ensureUndergradState(prev);
+      const now = Date.now();
+      if (kind === 'roadmap') {
+        return { ...s, roadmap: s.roadmap.map(it => (it.id === id ? { ...it, status, updatedAt: now } : it)) };
+      }
+      if (status === 'done') return completeTask(s, id, now);
+      return { ...s, tasks: s.tasks.map(t => (t.id === id ? { ...t, status, updatedAt: now, lastUpdateAt: now } : t)) };
+    });
+  }, []);
+
+  const acknowledgeReminder = useCallback((id) => {
+    setUndergrad(prev => {
+      const s = ensureUndergradState(prev);
+      return { ...s, reminders: s.reminders.map(r => (r.id === id ? { ...r, status: 'acknowledged', updatedAt: Date.now() } : r)) };
+    });
+  }, []);
+
+  const regenerateRoadmap = useCallback(() => {
+    setUndergrad(prev => {
+      const s = ensureUndergradState(prev, auth?.user?.id || sessionId);
+      return syncRoadmap(s, {
+        candidateId: s.candidateId,
+        profile: s.profile,
+        grade: profile?.grade,
+        targetCountry: profile?.destination || profile?.countries,
+        targetMajor: profile?.intendedMajor || profile?.major || profile?.subjects,
+        now: Date.now(),
+      });
+    });
+  }, [auth?.user?.id, sessionId, profile]);
+
   const sharedProps = {
     screen, role, setRole,
     showPw, setShowPw,
@@ -1236,6 +1302,7 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
+    undergrad, setUndergradTaskStatus, acknowledgeReminder, regenerateRoadmap,
     sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
     currentConfig, currentTrack,
