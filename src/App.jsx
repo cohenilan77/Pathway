@@ -755,7 +755,12 @@ export default function App() {
     // opening path we still need the exact degree before the agent proceeds.
     // Whatever they click or type next IS that degree, so this must run before
     // the opening-path resolver (otherwise "MBA" would be re-read as a category).
-    const awaitingGraduateDegree = needsGraduateDegree(profile);
+    // Only capture when we actually just asked (the last advisor message is the
+    // degree prompt); otherwise a placeholder degree from an older session would
+    // swallow unrelated answers like a narrative reply.
+    const lastAiText = [...chat].reverse().find(m => m.role === 'ai')?.text || '';
+    const awaitingGraduateDegree = needsGraduateDegree(profile)
+      && (lastAiText === GRADUATE_DEGREE_PROMPT || lastAiText === GRADUATE_DEGREE_OTHER_PROMPT);
     let graduateDegreeProfile = null;
     if (awaitingGraduateDegree) {
       const choice = resolveGraduateDegreeChoice(raw_t);

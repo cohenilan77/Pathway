@@ -18,6 +18,14 @@ test('App wires the graduate degree sub-choice before the opening-path resolver'
   assert.ok(degreeIdx > -1 && openingIdx > -1 && degreeIdx < openingIdx, 'degree capture must precede opening-path resolution');
 });
 
+test('degree capture only fires right after the degree prompt was asked', () => {
+  // Regression: a placeholder degree from an older session must not swallow
+  // unrelated messages (e.g. a narrative reply). Capture is gated on the last
+  // advisor message being the degree prompt.
+  assert.match(appSrc, /const lastAiText = \[\.\.\.chat\]\.reverse\(\)\.find\(m => m\.role === 'ai'\)\?\.text/);
+  assert.match(appSrc, /awaitingGraduateDegree = needsGraduateDegree\(profile\)\s*\n\s*&& \(lastAiText === GRADUATE_DEGREE_PROMPT \|\| lastAiText === GRADUATE_DEGREE_OTHER_PROMPT\)/);
+});
+
 test('App shows the graduate degree bubbles after the Graduate opening choice', () => {
   assert.match(appSrc, /if \(needsGraduateDegree\(requestProfile\)\) \{/);
   assert.match(appSrc, /text: GRADUATE_DEGREE_PROMPT/);
