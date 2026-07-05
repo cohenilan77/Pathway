@@ -32,7 +32,7 @@ const BODY = '#33405e';
 const MUTED = '#6b7392';
 const MUTED_2 = '#9098b5';
 const VIOLET = '#5b46e0';
-const GOLD = '#b8902f';
+const GOLD = '#5b46e0';
 const PERI = 'linear-gradient(135deg,#94b3fb,#b899fb)';
 const HAIRLINE = 'linear-gradient(180deg,#94b3fb,#b899fb)';
 
@@ -526,23 +526,35 @@ export default function AdvisorConversational({
   };
 
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
+  const journeyStages = ['Profile', 'Matching', 'Strategy', 'Essays', 'Audit'];
+  const journeyStageIndex = stepIdx <= 2 ? 0 : stepIdx === 3 ? 1 : stepIdx <= 5 ? 2 : stepIdx <= 7 ? 3 : 4;
 
   return (
-    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg,${CREAM} 0%,${CREAM_2} 100%)`, fontFamily: "'Albert Sans','Public Sans',system-ui,sans-serif", color: BODY }}>
+    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: "'Albert Sans',system-ui,sans-serif", color: BODY }}>
 
-      {/* Numbered stage stepper */}
-      <div style={{ flex: 'none', padding: '16px 28px 12px', borderBottom: `1px solid ${BORDER}`, background: 'rgba(255,255,255,.5)' }}>
-        <Stepper STEPS={STEPS} stepIdx={stepIdx} futureStages={futureStages} />
+      {/* Compact ambient status bar from the supplied HTML. */}
+      <div style={{ flex: 'none', width: 'min(720px,100%)', alignSelf: 'center', padding: '6px 20px 0', boxSizing: 'border-box' }}>
+        <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,.72)', border: `1px solid ${BORDER}`, borderRadius: 14, padding: '9px 14px', boxShadow: '0 1px 2px rgba(20,27,52,.03)' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>Stage {journeyStageIndex + 1} of 5</span>
+          <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: VIOLET }}>{journeyStages[journeyStageIndex]}</span>
+          <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
+          <span style={{ fontSize: 12.5, color: MUTED }}>{normalizedPrograms.length} schools verified</span>
+          <span style={{ flex: 1 }} />
+          <span style={{ width: 20, height: 20, borderRadius: '50%', background: `conic-gradient(${VIOLET} ${Math.max(0, Math.min(100, fitIndex || 0)) * 3.6}deg,#ece5d8 0)`, WebkitMask: 'radial-gradient(closest-side,transparent 62%,#000 66%)', mask: 'radial-gradient(closest-side,transparent 62%,#000 66%)' }} />
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{Math.round(fitIndex || 0)}%</span>
+          <span style={{ fontSize: 12, color: MUTED_2 }}>profile</span>
+        </div>
       </div>
 
-      {/* Two-column: conversation + Real-time Analysis rail */}
-      <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', overflow: 'hidden' }}>
+      {/* The HTML uses a single centered conversation column. */}
+      <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0,720px)', justifyContent: 'center', overflow: 'hidden', width: '100%' }}>
 
         {/* Conversation column */}
         <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
           {/* Header — advisor avatar + stage title */}
-          <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '20px 28px 6px' }}>
+          <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '20px 20px 6px' }}>
             <AdvisorAvatar />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 600, color: INK, letterSpacing: '-.01em', lineHeight: 1.15 }}>{headerTitle}</div>
@@ -554,7 +566,7 @@ export default function AdvisorConversational({
           </div>
 
           {/* Message stream */}
-          <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 28px 12px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px 12px', display: 'flex', flexDirection: 'column', gap: 24 }}>
             {visibleChat.map((m, i) => {
               const isAi = m.role === 'ai';
               const ghost = chipLog.find(g => g.anchor === i + 1);
@@ -660,7 +672,7 @@ export default function AdvisorConversational({
           </div>
 
           {/* Composer */}
-          <div style={{ flex: 'none', padding: '6px 28px 18px' }}>
+          <div style={{ flex: 'none', padding: '6px 20px 18px' }}>
             <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: `1px solid ${BORDER_2}`, borderRadius: 20, padding: '8px 8px 8px 18px', boxShadow: '0 2px 6px rgba(20,27,52,.05),0 12px 32px rgba(20,27,52,.06)' }}>
               <input
                 ref={inputRef}
@@ -724,8 +736,6 @@ export default function AdvisorConversational({
           </div>
         </section>
 
-        {/* Real-time Analysis rail */}
-        <AnalysisRail scores={scores} gauges={gauges} fitIndex={fitIndex} hasScores={hasScores} />
       </div>
     </div>
   );

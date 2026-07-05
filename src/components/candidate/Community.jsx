@@ -616,7 +616,7 @@ export default function Community(props) {
   }
 
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', background: '#eef1fc' }}>
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', background: '#f6f1e8' }}>
       <CommunityLeftPanel
         groups={groups}
         personalChats={personalChats}

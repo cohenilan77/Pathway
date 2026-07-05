@@ -1171,11 +1171,11 @@ export default function App() {
   };
 
   return (
-    <div style={{ fontFamily: "'Public Sans',system-ui,sans-serif", color: '#1c2433', minHeight: '100vh', background: '#eef1fc' }}>
+    <div style={{ fontFamily: screen === 'candidate' ? "'Albert Sans',system-ui,sans-serif" : "'Public Sans',system-ui,sans-serif", color: screen === 'candidate' ? '#33405e' : '#1c2433', minHeight: '100vh', background: screen === 'candidate' ? 'linear-gradient(180deg,#faf7f2 0%,#f6f1e8 100%)' : '#eef1fc' }}>
       {toast && (
         <div style={{
           position: 'fixed', left: '50%', bottom: 28, transform: 'translateX(-50%)',
-          background: '#16233f', color: '#fff', padding: '12px 22px', borderRadius: 10,
+          background: screen === 'candidate' ? '#141b34' : '#16233f', color: '#fff', padding: '12px 22px', borderRadius: 10,
           fontSize: 14, fontWeight: 600, boxShadow: '0 12px 30px rgba(15,26,48,.32)',
           zIndex: 9999, animation: 'pwFade .25s ease', whiteSpace: 'nowrap',
         }}>
@@ -1188,7 +1188,7 @@ export default function App() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,.6)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
           <div style={{ background: '#fff', borderRadius: 18, padding: 36, width: '100%', maxWidth: 620, boxShadow: '0 24px 60px rgba(15,26,48,.28)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 26, fontWeight: 700, color: '#16233f', margin: 0 }}>Upload Your Profile</h2>
+              <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 600, color: '#141b34', margin: 0 }}>Upload Your Profile</h2>
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
@@ -1197,7 +1197,7 @@ export default function App() {
 
             {/* File upload row */}
             <label style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f4f6fb', border: '1.5px dashed #c5cde0', borderRadius: 10, padding: '11px 16px', cursor: 'pointer', marginBottom: 12, fontSize: 13, color: '#6b7280', fontWeight: 600, fontFamily: 'inherit' }}>
-              <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#16233f', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
+              <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: '#5b46e0', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round', flexShrink: 0 }}>
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
               </svg>
               {cvFileTextDraft
@@ -1260,7 +1260,7 @@ export default function App() {
             <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{(cvFileTextDraft + ' ' + cvDraft + ' ' + cvExtra).trim().split(/\s+/).filter(Boolean).length} words across all sources</span>
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
-              <button onClick={submitCv} disabled={!cvFileTextDraft.trim() && !cvDraft.trim() && !cvExtra.trim()} style={{ background: '#16233f', border: 'none', borderRadius: 9, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5 }}>
+              <button onClick={submitCv} disabled={!cvFileTextDraft.trim() && !cvDraft.trim() && !cvExtra.trim()} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 999, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5, boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>
                 Analyze →
               </button>
             </div>

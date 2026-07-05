@@ -56,7 +56,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
     <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#faf6ec' }}>
       <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#fffdf7', borderRadius: 24, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
-        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #efe5cf', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#eef1fc' }}>
+        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #efe5cf', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#f6f1e8' }}>
           <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e1e6f5' }}>
             {currentConfig?.docLabel && (
               <div style={{ fontSize: 12, color: '#7e86a5', lineHeight: 1.5, marginBottom: 14 }}>
