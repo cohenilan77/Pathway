@@ -25,13 +25,13 @@ const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please up
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
 const WELCOME_MESSAGE = {
-  English: "Welcome to your Pathway Private Office. I'm your Lead Admissions Strategist — here to craft the narrative that gets you in.\n\nLet's start with where you are in your journey. Which best describes you? → Undergraduate | Graduate | Postgraduate / Doctoral | Personal Development",
-  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones — aquí para construir la narrativa que te abrirá las puertas.\n\nEmpecemos por saber en qué etapa de tu camino estás. ¿Cuál te describe mejor? → Pregrado | Posgrado | Posgrado / Doctorado | Desarrollo Personal",
-  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים — כאן כדי לבנות את הסיפור שיכניס אותך.\n\nנתחיל בלברר באיזה שלב במסע שלך אתה נמצא. מה הכי מתאר אותך? → תואר ראשון | תואר שני | לימודים מתקדמים / דוקטורט | התפתחות אישית",
-  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك — هنا لصياغة القصة التي ستضمن قبولك.\n\nلنبدأ بمعرفة أين أنت في رحلتك. ما الذي يصفك أكثر؟ → بكالوريوس | دراسات عليا | دراسات عليا / دكتوراه | تطوير شخصي",
-  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师——在这里为您打造能助您成功录取的故事。\n\n让我们先了解您目前的阶段。以下哪项最符合您的情况？ → 本科 | 研究生 | 研究生／博士 | 个人发展",
-  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions — ici pour construire le récit qui vous fera accepter.\n\nCommençons par savoir où vous en êtes dans votre parcours. Qu'est-ce qui vous décrit le mieux ? → Licence | Master | Doctorat / Postdoctorat | Développement Personnel",
-  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões — aqui para construir a narrativa que vai garantir a sua aceitação.\n\nVamos começar por saber em que fase da sua jornada está. O que melhor o descreve? → Graduação | Mestrado | Pós-graduação / Doutorado | Desenvolvimento Pessoal",
+  English: "Welcome to your Pathway Private Office. I am your Lead Admissions Strategist. We are not just filling out forms — we are engineering a narrative that top-tier institutions cannot ignore.\n\nTo begin our calibration: what path are we formalizing today? → MBA | Masters | PhD | Undergrad",
+  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones. No solo llenamos formularios — construimos una narrativa que las mejores instituciones no pueden ignorar.\n\nPara comenzar nuestra calibración: ¿qué camino estamos formalizando hoy? → MBA | Máster | Doctorado | Pregrado",
+  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים. אנחנו לא רק ממלאים טפסים — אנחנו בונים סיפור שמוסדות מובילים לא יכולים להתעלם ממנו.\n\nכדי להתחיל את הכיול: איזה מסלול אנחנו מגבשים היום? → MBA | תואר שני | דוקטורט | תואר ראשון",
+  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك. نحن لا نملأ النماذج فحسب — بل نصنع قصة لا تستطيع أرقى المؤسسات تجاهلها.\n\nلنبدأ المعايرة: ما المسار الذي نصيغه اليوم؟ → MBA | ماجستير | دكتوراه | بكالوريوس",
+  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师。我们不只是填写表格——我们在打造顶尖院校无法忽视的故事。\n\n让我们开始校准：今天我们要规划哪条路径？ → MBA | 硕士 | 博士 | 本科",
+  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions. Nous ne remplissons pas de simples formulaires — nous construisons un récit que les meilleures institutions ne peuvent ignorer.\n\nPour commencer notre calibrage : quel parcours formalisons-nous aujourd'hui ? → MBA | Master | Doctorat | Licence",
+  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões. Não preenchemos apenas formulários — construímos uma narrativa que as melhores instituições não podem ignorar.\n\nPara começar a nossa calibração: que caminho estamos a formalizar hoje? → MBA | Mestrado | Doutorado | Graduação",
 };
 
 function buildInitialChat(language) {
@@ -740,11 +740,25 @@ export default function App() {
     if (!raw_t || busy) return;
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
 
-    const selectingUndergrad = /^undergraduate$/i.test(raw_t);
-    if (selectingUndergrad) {
-      setProfile(prev => ({ ...(prev || {}), category: 'Undergraduate', degree: 'Undergraduate' }));
+    // Deterministic path selection from the opening question. Maps the visible
+    // chips (MBA · Masters · PhD · Undergrad, plus legacy labels) to a category
+    // and degree so the schema, stepper, and analysis rail react immediately
+    // instead of waiting on the model to infer the track.
+    const pathChoice = /^(mba|masters?|master's|ph\.?d|doctoral|doctorate|postgraduate|undergrad(uate)?|bachelor|graduate|personal development)\b/i.test(raw_t)
+      ? raw_t.trim()
+      : null;
+    if (pathChoice) {
+      const lc = pathChoice.toLowerCase();
+      let category = 'Graduate';
+      let degree = 'Graduate';
+      if (/undergrad|bachelor/.test(lc)) { category = 'Undergraduate'; degree = 'Undergraduate'; }
+      else if (/mba/.test(lc)) { category = 'MBA'; degree = 'MBA'; }
+      else if (/ph\.?d|doctoral|doctorate|postgraduate/.test(lc)) { category = 'Postgraduate / Doctoral'; degree = 'PhD'; }
+      else if (/personal development/.test(lc)) { category = 'Personal Development'; degree = 'Personal Development'; }
+      else if (/master/.test(lc)) { category = 'Graduate'; degree = "Master's"; }
+      setProfile(prev => ({ ...(prev || {}), category, degree }));
       setStepIdx(0);
-      setCandTab('studentProfile');
+      if (category === 'Undergraduate') setCandTab('studentProfile');
     }
 
     // Saving selected targets is a deterministic workspace action and must not
@@ -1191,6 +1205,34 @@ export default function App() {
                 : 'Upload PDF or Word (.docx) under 3 MB'}
               <input type="file" accept=".txt,.rtf,.pdf,.docx" onChange={handleFileUpload} style={{ display: 'none' }} />
             </label>
+
+            {/* Extracted file text — shown so the candidate can see and edit what
+                was parsed from the upload before submitting. */}
+            {cvFileTextDraft && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#2fa876' }}>
+                    ✓ EXTRACTED FROM FILE{cvFileDraft?.name ? ` · ${cvFileDraft.name}` : ''}
+                  </div>
+                  <button
+                    onClick={() => { setCvFileTextDraft(''); setCvFileDraft(null); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}
+                  >
+                    Remove file
+                  </button>
+                </div>
+                <textarea
+                  value={cvFileTextDraft}
+                  onChange={e => setCvFileTextDraft(e.target.value)}
+                  aria-label="Extracted CV text"
+                  placeholder="Text extracted from your file appears here…"
+                  style={{ width: '100%', height: 180, border: '1px solid #cfe6dc', background: '#f6fbf8', borderRadius: 10, padding: '14px 16px', fontSize: 13.5, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+                />
+                <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 6 }}>
+                  Review the extracted text above. You can edit it before analyzing.
+                </div>
+              </div>
+            )}
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>PASTED CV / PROFILE TEXT</div>

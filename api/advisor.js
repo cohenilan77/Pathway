@@ -119,7 +119,7 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
   } else if (!candidateFacts.readyForScoring) {
     delete nextStatePatch.scores;
     delete nextStatePatch.programs;
-    let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['SCORES', 'PROGRAMS']);
+    let raw = stripStructuredBlocks(finalized?.raw || finalized?.message || '', ['SCORES', 'PROGRAMS', 'PROFILE']);
     const question = buildComplementaryQuestion(candidateFacts);
     if (question) {
       persistedProfile.profileCompleteness = {
@@ -131,9 +131,13 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       };
       nextStatePatch.profile = persistedProfile;
     }
-    raw = question
-      ? `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${question}`
-      : `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>Upload your CV or paste your background and I'll extract the remaining details automatically — that's the fastest way to finalize your score.`;
+    // No dead-ends: prefer the deterministic complementary question, else keep
+    // the model's own conversational reply, and only fall back to an upload
+    // invitation when there is genuinely nothing to show.
+    const forwardText = question
+      || (raw && raw.trim().length > 24 ? raw.trim() : '')
+      || "Upload your CV or paste your background and I'll extract the remaining details automatically — that's the fastest way to finalize your score.";
+    raw = `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${forwardText}`;
     finalized = {
       ...finalized,
       raw,

@@ -1049,9 +1049,13 @@ export default async function handler(req, res) {
     // choice are complete. Persist completeness in PROFILE so askedFields remains
     // stable across turns and the advisor never repeats a complementary checklist.
     if (!candidateFacts.readyForScoring) {
-      raw = stripStructuredBlocks(raw, ['SCORES', 'PROGRAMS']);
+      // Drop PROFILE too: the deterministic completeness block we prepend below
+      // is authoritative here, so the model's own PROFILE must not double up.
+      const modelReply = stripStructuredBlocks(raw, ['SCORES', 'PROGRAMS', 'PROFILE']);
       const complementaryQuestion = buildComplementaryQuestion(candidateFacts);
-      if (complementaryQuestion && !isIdleCheckin) {
+      if (!isIdleCheckin) {
+        // Persist completeness on every not-ready turn so askedFields stays
+        // stable and the advisor never dead-ends by re-asking the same list.
         const askedFields = [...new Set([
           ...(candidateFacts.profileCompleteness?.askedFields || []),
           ...(candidateFacts.nextMissingFields || []),
@@ -1075,9 +1079,15 @@ export default async function handler(req, res) {
           },
           profileCompleteness: { ...candidateFacts.profileCompleteness, askedFields },
         };
-        raw = `<PROFILE>${JSON.stringify(profileUpdate)}</PROFILE>${complementaryQuestion}`;
-      } else if (!isIdleCheckin) {
-        raw = 'I still need your answers to the earlier complementary checklist before I can finalize scoring. I will not repeat questions you have already answered.';
+        // Never emit the old dead-end line. Prefer the deterministic
+        // complementary question; otherwise keep the model's own reply; and
+        // only if there is nothing useful, invite the candidate to share more.
+        const forwardText = complementaryQuestion
+          || (modelReply && modelReply.length > 24 ? modelReply : '')
+          || "Tell me a bit more about your background, or upload your CV, and I'll extract the details and finalize your score.";
+        raw = `<PROFILE>${JSON.stringify(profileUpdate)}</PROFILE>${forwardText}`;
+      } else {
+        raw = modelReply;
       }
     } else if (!candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
       raw = stripStructuredBlocks(raw, ['PROGRAMS']);
