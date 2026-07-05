@@ -465,10 +465,6 @@ export default function AdvisorChatFirst({
   const showPrograms = hasPrograms && (!chosenSchools?.length || needsSelectionRecovery);
 
   return (
-    <>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999999, background: '#0000ff', color: '#fff', fontFamily: 'monospace', fontWeight: 900, fontSize: 28, padding: '14px 20px', textAlign: 'center' }}>
-        ACTIVE: AdvisorChatFirst
-      </div>
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
       <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #e7eaf3', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', position: 'relative' }}>
 
@@ -697,6 +693,5 @@ export default function AdvisorChatFirst({
         )}
       </div>
     </div>
-    </>
   );
 }

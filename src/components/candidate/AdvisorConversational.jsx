@@ -396,10 +396,6 @@ export default function AdvisorConversational({
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
 
   return (
-    <>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999999, background: '#ff0000', color: '#fff', fontFamily: 'monospace', fontWeight: 900, fontSize: 28, padding: '14px 20px', textAlign: 'center' }}>
-        ACTIVE: AdvisorConversational
-      </div>
     <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg,${CREAM} 0%,${CREAM_2} 100%)`, fontFamily: "'Public Sans',system-ui,sans-serif", color: BODY }}>
       <div style={{ width: 'min(720px,100%)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 20px', boxSizing: 'border-box', alignSelf: 'center' }}>
 
@@ -550,6 +546,5 @@ export default function AdvisorConversational({
         </div>
       </div>
     </div>
-    </>
   );
 }
