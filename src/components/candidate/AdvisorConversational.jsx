@@ -16,6 +16,16 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 
+const OPTIONS_PATTERN = /→\s*(.+)$/;
+
+function parseOptions(text) {
+  const match = OPTIONS_PATTERN.exec(text || '');
+  if (!match) return null;
+  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+  if (options.length < 2) return null;
+  return { mainText: text.slice(0, match.index).trim(), options };
+}
+
 const CREAM = '#faf7f2';
 const CREAM_2 = '#f6f1e8';
 const BORDER = '#f1eadd';
@@ -486,13 +496,29 @@ export default function AdvisorConversational({
             const isAi = m.role === 'ai';
             const ghost = chipLog.find(g => g.anchor === i + 1);
             const milestone = milestones.find(ms => ms.anchor === i + 1);
+            const parsed = isAi ? parseOptions(m.text) : null;
             return (
               <React.Fragment key={i}>
                 <div style={{ animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
                   {isAi ? (
                     <div style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px' }}>
                       <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
-                      <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{renderFormattedText(m.text)}</div>
+                      <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{renderFormattedText(parsed ? parsed.mainText : m.text)}</div>
+                      {parsed && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                          {parsed.options.map((opt) => (
+                            <button
+                              key={opt}
+                              onClick={() => send(opt)}
+                              disabled={busy}
+                              className="pw-adv2-btn"
+                              style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 600, color: BODY, cursor: busy ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                            >
+                              {opt}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
