@@ -88,8 +88,8 @@ function navFromConfig(config, hasChatAccess) {
 
 function navStyle(active) {
   return active
-    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 12, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }
-    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 12, fontSize: 13.5, fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' };
+    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }
+    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 12, fontSize: 14, fontWeight: 500, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' };
 }
 
 function buildCandidateAlerts({ documents = [], chat = [], tasks = [], completedTasks = [], plan }) {
@@ -975,14 +975,14 @@ export default function CandidatePortal(props) {
             value={language}
             onChange={e => setLanguage(e.target.value)}
             aria-label="Chat language"
-            style={{ width: '100%', appearance: 'none', border: '1px solid #f1eadd', borderRadius: 12, padding: '9px 13px', fontSize: 13, fontWeight: 500, color: '#33405e', background: 'rgba(255,255,255,.7)', fontFamily: 'inherit', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', appearance: 'none', border: '1px solid #f1eadd', borderRadius: 12, padding: '9px 13px', fontSize: 14, fontWeight: 500, color: '#33405e', background: 'rgba(255,255,255,.7)', fontFamily: 'inherit', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' }}
           >
             {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
           </select>
           <svg viewBox="0 0 24 24" width="15" height="15" style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fill: 'none', stroke: '#9098b5', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}><path d="M6 9l6 6 6-6" /></svg>
         </div>
 
-        <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.11em', color: '#9098b5', padding: '0 12px 8px', marginTop: 16 }}>MENU</div>
+        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: '.11em', color: '#9098b5', padding: '0 12px 8px', marginTop: 16 }}>MENU</div>
 
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -1017,26 +1017,26 @@ export default function CandidatePortal(props) {
         <div style={{ marginTop: 'auto' }}>
           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
             <div style={{ position: 'relative' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
                 <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1.2 7.3 4.5 10.8 5 8.3 7.3 9 10.8 6 9l-3 1.8.7-3.5L1.2 5l3.5-.5L6 1.2Z" fill="#5b46e0" /></svg>
                 {PLAN_LABELS[plan] || 'AI'}
               </div>
               {plan !== 'ai_strategy' ? (
                 <>
-                  <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5, marginBottom: 11 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
-                  <button onClick={handleUpgrade} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.4)', cursor: 'pointer' }}>Upgrade plan</button>
+                  <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5, marginBottom: 11 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
+                  <button onClick={handleUpgrade} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.4)', cursor: 'pointer' }}>Upgrade plan</button>
                 </>
               ) : (
-                <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5 }}>You have full access, including your dedicated strategist.</div>
+                <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5 }}>You have full access, including your dedicated strategist.</div>
               )}
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '10px 10px', borderRadius: 16, background: 'rgba(255,255,255,.7)', border: '1px solid #f1eadd' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-              <div style={{ fontSize: 12, color: '#9098b5', fontWeight: 500 }}>Candidate</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+              <div style={{ fontSize: 14, color: '#9098b5', fontWeight: 500 }}>Candidate</div>
             </div>
             <button onClick={handleSignOut} title="Sign out" style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392', flexShrink: 0 }}>
               <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>

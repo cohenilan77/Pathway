@@ -519,6 +519,7 @@ export default function AdvisorConversational({
 
   const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: narrative ?? profile?.narrative }) : [];
   const [chipLog, setChipLog] = useState([]);
+  const [statusExpanded, setStatusExpanded] = useState(false);
   const handleChip = (label, msg) => {
     setChipLog(log => [...log, { id: `chip-${Date.now()}`, anchor: visibleChat.length, options: chips.map(c => c.label), picked: label }]);
     send(msg);
@@ -532,26 +533,50 @@ export default function AdvisorConversational({
   return (
     <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: "'Albert Sans',system-ui,sans-serif", color: BODY }}>
 
-      {/* Compact ambient status bar from the supplied HTML. */}
-      <div style={{ flex: 'none', width: 'min(720px,100%)', alignSelf: 'center', padding: '6px 20px 0', boxSizing: 'border-box' }}>
-        <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,.72)', border: `1px solid ${BORDER}`, borderRadius: 14, padding: '9px 14px', boxShadow: '0 1px 2px rgba(20,27,52,.03)' }}>
+      {/* Expandable ambient status bar from the supplied HTML. */}
+      <div className="pw-advisor-status" style={{ flex: 'none', width: 'min(820px,calc(100% - 56px))', alignSelf: 'flex-start', marginLeft: 28, paddingTop: 6, boxSizing: 'border-box' }}>
+        <button
+          type="button"
+          onClick={() => setStatusExpanded(open => !open)}
+          aria-expanded={statusExpanded}
+          aria-controls="candidate-journey-stages"
+          style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,.72)', border: `1px solid ${BORDER}`, borderRadius: 14, padding: '10px 14px', boxShadow: '0 1px 2px rgba(20,27,52,.03)', cursor: 'pointer', font: 'inherit', textAlign: 'left', color: BODY }}
+        >
           <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>Stage {journeyStageIndex + 1} of 5</span>
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
           <span style={{ fontSize: 12.5, fontWeight: 600, color: VIOLET }}>{journeyStages[journeyStageIndex]}</span>
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
-          <span style={{ fontSize: 12.5, color: MUTED }}>{normalizedPrograms.length} schools verified</span>
+          <span className="pw-status-schools" style={{ fontSize: 12.5, color: MUTED }}>{normalizedPrograms.length} schools verified</span>
           <span style={{ flex: 1 }} />
           <span style={{ width: 20, height: 20, borderRadius: '50%', background: `conic-gradient(${VIOLET} ${Math.max(0, Math.min(100, fitIndex || 0)) * 3.6}deg,#ece5d8 0)`, WebkitMask: 'radial-gradient(closest-side,transparent 62%,#000 66%)', mask: 'radial-gradient(closest-side,transparent 62%,#000 66%)' }} />
           <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{Math.round(fitIndex || 0)}%</span>
-          <span style={{ fontSize: 12, color: MUTED_2 }}>profile</span>
-        </div>
+          <span className="pw-status-profile-label" style={{ fontSize: 12, color: MUTED_2 }}>profile</span>
+          <span aria-hidden="true" style={{ display: 'inline-flex', marginLeft: 2, transform: `rotate(${statusExpanded ? 180 : 0}deg)`, transition: 'transform .2s ease' }}>
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#9098b5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </span>
+        </button>
+        {statusExpanded && (
+          <div id="candidate-journey-stages" className="pw-adv2-stage-grid" style={{ marginTop: 8, animation: reduceMotion ? 'none' : 'adv2In .22s ease both' }}>
+            {journeyStages.map((stageName, index) => {
+              const done = index < journeyStageIndex;
+              const current = index === journeyStageIndex;
+              return (
+                <div key={stageName} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minHeight: 88, background: 'rgba(255,255,255,.72)', borderRadius: 14, padding: 12, border: current ? '1px solid #b899fb' : `1px solid ${BORDER}`, boxShadow: current ? '0 4px 14px rgba(148,153,251,.18)' : 'none' }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: done ? '#e9f9f1' : current ? PERI : CREAM_2, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: done ? '#19c08a' : current ? '#fff' : MUTED_2, fontSize: 12, fontWeight: 700 }}>{done ? '✓' : index + 1}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: INK, marginTop: 7 }}>{stageName}</span>
+                  <span style={{ fontSize: 12, color: MUTED, lineHeight: 1.35, marginTop: 2 }}>{done ? 'Complete' : current ? 'You are here' : 'Locked'}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* The HTML uses a single centered conversation column. */}
-      <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0,720px)', justifyContent: 'center', overflow: 'hidden', width: '100%' }}>
+      {/* Keep the conversation near the content edge instead of floating centrally. */}
+      <div className="pw-advisor-grid pw-advisor-workspace" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: 'minmax(0,820px)', justifyContent: 'start', overflow: 'hidden', width: 'min(820px,calc(100% - 56px))', marginLeft: 28 }}>
 
         {/* Conversation column */}
-        <section style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <section className="pw-advisor-conversation" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
           {/* Header — advisor avatar + stage title */}
           <div style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 14, padding: '20px 20px 6px' }}>

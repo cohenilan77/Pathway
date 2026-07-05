@@ -11,6 +11,7 @@ import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { calculateCandidateOverall } from '../lib/candidate-kpi-schemas.js';
+import { OPENING_PATH_OPTIONS, resolveOpeningPathChoice } from '../lib/onboarding.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -25,17 +26,31 @@ const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please up
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
 
 const WELCOME_MESSAGE = {
-  English: "Welcome to your Pathway Private Office. I am your Lead Admissions Strategist. We are not just filling out forms — we are engineering a narrative that top-tier institutions cannot ignore.\n\nTo begin our calibration: what path are we formalizing today? → MBA | Masters | PhD | Undergrad",
-  Spanish: "Bienvenido a tu Oficina Privada Pathway. Soy tu Estratega Principal de Admisiones. No solo llenamos formularios — construimos una narrativa que las mejores instituciones no pueden ignorar.\n\nPara comenzar nuestra calibración: ¿qué camino estamos formalizando hoy? → MBA | Máster | Doctorado | Pregrado",
-  Hebrew: "ברוכים הבאים ללשכה הפרטית שלך ב-Pathway. אני האסטרטג הראשי שלך לקבלה ללימודים. אנחנו לא רק ממלאים טפסים — אנחנו בונים סיפור שמוסדות מובילים לא יכולים להתעלם ממנו.\n\nכדי להתחיל את הכיול: איזה מסלול אנחנו מגבשים היום? → MBA | תואר שני | דוקטורט | תואר ראשון",
-  Arabic: "مرحبًا بك في مكتبك الخاص في Pathway. أنا كبير استراتيجيي القبول لديك. نحن لا نملأ النماذج فحسب — بل نصنع قصة لا تستطيع أرقى المؤسسات تجاهلها.\n\nلنبدأ المعايرة: ما المسار الذي نصيغه اليوم؟ → MBA | ماجستير | دكتوراه | بكالوريوس",
-  Chinese: "欢迎来到您的 Pathway 私人办公室。我是您的首席招生策略师。我们不只是填写表格——我们在打造顶尖院校无法忽视的故事。\n\n让我们开始校准：今天我们要规划哪条路径？ → MBA | 硕士 | 博士 | 本科",
-  French: "Bienvenue dans votre Bureau Privé Pathway. Je suis votre Stratège Principal en Admissions. Nous ne remplissons pas de simples formulaires — nous construisons un récit que les meilleures institutions ne peuvent ignorer.\n\nPour commencer notre calibrage : quel parcours formalisons-nous aujourd'hui ? → MBA | Master | Doctorat | Licence",
-  Portuguese: "Bem-vindo ao seu Escritório Privado Pathway. Sou o seu Estrategista Principal de Admissões. Não preenchemos apenas formulários — construímos uma narrativa que as melhores instituições não podem ignorar.\n\nPara começar a nossa calibração: que caminho estamos a formalizar hoje? → MBA | Mestrado | Doutorado | Graduação",
+  English: "Welcome — I’m glad you’re here. We’ll take this one clear step at a time.",
+  Spanish: "Bienvenido — me alegra que estés aquí. Avanzaremos paso a paso, con claridad.",
+  Hebrew: "ברוכים הבאים — שמח שאתם כאן. נתקדם יחד, צעד ברור בכל פעם.",
+  Arabic: "مرحبًا — يسعدني أنك هنا. سنتقدم معًا بخطوة واضحة في كل مرة.",
+  Chinese: "欢迎你——很高兴你来到这里。我们会一步一步，清晰地向前推进。",
+  French: "Bienvenue — je suis ravi de vous accueillir. Nous avancerons clairement, une étape à la fois.",
+  Portuguese: "Bem-vindo — fico feliz que esteja aqui. Vamos avançar com clareza, um passo de cada vez.",
+};
+
+const PATH_QUESTION = {
+  English: 'Which path best describes you?',
+  Spanish: '¿Qué camino te describe mejor?',
+  Hebrew: 'איזה מסלול מתאר אתכם בצורה הטובה ביותר?',
+  Arabic: 'أي مسار يصفك بشكل أفضل؟',
+  Chinese: '哪条路径最符合你的情况？',
+  French: 'Quel parcours vous correspond le mieux ?',
+  Portuguese: 'Qual caminho descreve melhor você?',
 };
 
 function buildInitialChat(language) {
-  return [{ role: 'ai', channel: 'web', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English }];
+  const options = OPENING_PATH_OPTIONS.join(' | ');
+  return [
+    { role: 'ai', channel: 'web', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English },
+    { role: 'ai', channel: 'web', text: `${PATH_QUESTION[language] || PATH_QUESTION.English} → ${options}` },
+  ];
 }
 
 const INITIAL_CHAT = buildInitialChat('English');
@@ -740,25 +755,16 @@ export default function App() {
     if (!raw_t || busy) return;
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
 
-    // Deterministic path selection from the opening question. Maps the visible
-    // chips (MBA · Masters · PhD · Undergrad, plus legacy labels) to a category
-    // and degree so the schema, stepper, and analysis rail react immediately
-    // instead of waiting on the model to infer the track.
-    const pathChoice = /^(mba|masters?|master's|ph\.?d|doctoral|doctorate|postgraduate|undergrad(uate)?|bachelor|graduate|personal development)\b/i.test(raw_t)
-      ? raw_t.trim()
-      : null;
-    if (pathChoice) {
-      const lc = pathChoice.toLowerCase();
-      let category = 'Graduate';
-      let degree = 'Graduate';
-      if (/undergrad|bachelor/.test(lc)) { category = 'Undergraduate'; degree = 'Undergraduate'; }
-      else if (/mba/.test(lc)) { category = 'MBA'; degree = 'MBA'; }
-      else if (/ph\.?d|doctoral|doctorate|postgraduate/.test(lc)) { category = 'Postgraduate / Doctoral'; degree = 'PhD'; }
-      else if (/personal development/.test(lc)) { category = 'Personal Development'; degree = 'Personal Development'; }
-      else if (/master/.test(lc)) { category = 'Graduate'; degree = "Master's"; }
-      setProfile(prev => ({ ...(prev || {}), category, degree }));
+    // Persist the four-way opening choice before the request leaves the browser.
+    // The request must carry this same profile immediately; React state updates
+    // alone would arrive one render too late and derail the server-side cycle.
+    const openingPath = resolveOpeningPathChoice(raw_t);
+    let requestProfile = profile;
+    if (openingPath) {
+      requestProfile = { ...(profile || {}), ...openingPath };
+      setProfile(requestProfile);
       setStepIdx(0);
-      if (category === 'Undergraduate') setCandTab('studentProfile');
+      if (openingPath.category === 'Undergraduate') setCandTab('studentProfile');
     }
 
     // Saving selected targets is a deterministic workspace action and must not
@@ -793,7 +799,7 @@ export default function App() {
     setBusy(true);
 
     try {
-      const stage = buildStageContext(stepIdx, profile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
+      const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       const systemContext = buildAISystemContext(stage);
       const res = await fetch('/api/advisor', {
         method: 'POST',
@@ -808,7 +814,7 @@ export default function App() {
           aiConfig,
           language,
           conversationId: sessionId,
-          profile,
+          profile: requestProfile,
           scores,
           programs: normalizeProgramList(programs) || programs,
           chosenSchools,
@@ -816,7 +822,7 @@ export default function App() {
           systemContext,
           ...requestExtras,
           candidateState: {
-            profile, scores, programs, chosenSchools, narrative, documents, essays, interviews,
+            profile: requestProfile, scores, programs, chosenSchools, narrative, documents, essays, interviews,
             ...(requestExtras.profileSources ? { profileSources: requestExtras.profileSources } : {}),
           },
         }),
@@ -838,12 +844,12 @@ export default function App() {
         if (!parsed.insights && typedPatch.insights) parsed.insights = typedPatch.insights;
         if (!parsed.essay && typedPatch.essays) parsed.essay = Object.entries(typedPatch.essays).map(([school, value]) => ({ school, ...value }))[0];
         if (!parsed.interviewResult && typedPatch.interviews) parsed.interviewResult = Object.values(typedPatch.interviews)[0];
-        const category = parsed.profile?.category || profile?.category;
+        const category = parsed.profile?.category || requestProfile?.category;
         const isUndergrad = category === 'Undergraduate';
         if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
         if (parsed.profile) setProfile(parsed.profile);
         if (parsed.scores) {
-          const overall = weightedOverallScore(parsed.scores, parsed.profile || profile);
+          const overall = weightedOverallScore(parsed.scores, parsed.profile || requestProfile);
           setScores({ ...parsed.scores, overall });
           setOverride(overall);
           setStepIdx(prev => Math.max(prev, isUndergrad ? 1 : 2));
@@ -901,7 +907,7 @@ export default function App() {
           }));
           setStepIdx(prev => Math.max(prev, 8));
         }
-        let displayText = safeVisibleReply(raw, parsed, profile);
+        let displayText = safeVisibleReply(raw, parsed, requestProfile);
         // Safety net: if the model confirmed chosen schools without asking a
         // follow-up question, the flow would dead-end. Hand the candidate the
         // next move so the journey always continues.
@@ -1235,7 +1241,7 @@ export default function App() {
             )}
 
             <div style={{ position: 'relative', marginBottom: 6 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>PASTED CV / PROFILE TEXT</div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 8 }}>PASTED CV / PROFILE TEXT</div>
               <textarea
                 value={cvDraft}
                 onChange={e => setCvDraft(e.target.value)}
@@ -1245,7 +1251,7 @@ export default function App() {
             </div>
 
             <div style={{ borderTop: '1px dashed #d7ddec', margin: '14px 0 14px', padding: '14px 0 0' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 4 }}>ADDITIONAL BACKGROUND DUMP <span style={{ color: '#b6bdcd', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9aa3b5', marginBottom: 4 }}>ADDITIONAL BACKGROUND DUMP <span style={{ color: '#b6bdcd', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
               <div style={{ fontSize: 12, color: '#8a93a3', marginBottom: 8, lineHeight: 1.5 }}>
                 Use this for honors, awards, major achievements, goals, recommenders, or context missing from the CV.
               </div>
