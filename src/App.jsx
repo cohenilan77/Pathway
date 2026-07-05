@@ -829,12 +829,10 @@ export default function App() {
     // first school-list request from later post-portfolio continuation.
     const t = raw_t;
 
-    // Confirming target schools is a deterministic journey step: move the
-    // stage to Narrative immediately on the action itself, without waiting
-    // for (or depending on) the model's reply.
-    if (isTargetSelection && !isLegacyCandidateCategory(profile)) {
-      setStepIdx(prev => Math.max(prev, 4));
-    }
+    // Do NOT advance to Narrative just because the message text looks like a
+    // target selection. The move to Narrative is gated on chosenSchools being
+    // saved — handled deterministically by confirmTargetSchools() and by the
+    // parsed <CHOSEN_SCHOOLS> handling below.
 
     const userMsg = { role: 'user', channel: 'web', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
@@ -933,7 +931,14 @@ export default function App() {
             setStepIdx(prev => Math.max(prev, 3));
           }
         }
-        if (parsed.chosenSchools) setChosenSchools(parsed.chosenSchools);
+        if (parsed.chosenSchools) {
+          setChosenSchools(parsed.chosenSchools);
+          // Saving target schools is the only gate into Narrative. Advance the
+          // stepper once chosenSchools actually exists, never on message text.
+          if (!isUndergrad && Array.isArray(parsed.chosenSchools) && parsed.chosenSchools.length) {
+            setStepIdx(prev => Math.max(prev, STEPS.indexOf('Narrative')));
+          }
+        }
         if (parsed.insights) setInsights(parsed.insights);
         if (parsed.essay && parsed.essay.school) {
           const essayName = safeDocBaseName(parsed.essay.school ? `Essay - ${parsed.essay.school}` : titleFromText(parsed.essay.text, 'Essay Draft'), 'Essay Draft');
