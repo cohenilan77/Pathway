@@ -1,11 +1,8 @@
 /*
- * Conversation-first AI Advisor — design-to-code implementation of
- * "AI Advisor.dc.html" (Claude Design project, chats/chat1.md). Single
- * full-height conversation column, ambient stage/status bar, interactive
- * school cards with tier colors + numbered choose buttons, ghosted chip
- * history, and a shimmering tool-status line. Gated behind
- * VITE_ADAPTIVE_GRAD in Advisor.jsx — flag off renders the existing
- * AdvisorChatFirst/legacy layout, byte-for-byte unchanged.
+ * Conversation-first AI Advisor — design-to-code implementation of the
+ * "AI Advisor" design. Single full-height conversation column, ambient
+ * stage/status bar, interactive school cards with tier colors + numbered
+ * choose buttons, ghosted chip history, and a one-line tool-status row.
  *
  * Every number here comes from real props (scores, programs, chosenSchools,
  * cvText) — nothing is mocked. Program tier colors/labels and admit-rate
@@ -17,7 +14,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
-import { longRunningStatus } from '../../lib/longRunningAdvisorStatus.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 
 const CREAM = '#faf7f2';
@@ -170,9 +166,19 @@ function StageBar({ STEPS, stepIdx, futureStages, strength, stageLabel, verified
   );
 }
 
-// Live tool-status line — replaces typing dots. Message content and elapsed
-// time come from the real send() call in progress; longRunningStatus is the
-// same status-copy function already driving LongRunningAdvisorStatus.
+// Live tool-status line — animated dots and a short status on one row.
+// Driven purely by the real busy state; the in-flight user message only picks
+// which short label to show. Stays visible until the assistant reply arrives.
+function shortStatusLabel(message, elapsed) {
+  if (elapsed >= 60) return 'Almost done';
+  const text = String(message || '');
+  if (/\b(cv|resume|résumé|file|document|transcript|upload)\b/i.test(text)) return 'Reading CV';
+  if (/\b(school|schools|program|programs|university|universities|portfolio|match)\b/i.test(text)) return 'Checking schools';
+  if (/\b(score|scores|fit|profile|readiness|competitive)\b/i.test(text)) return 'Scoring profile';
+  if (elapsed >= 30) return 'Reviewing fit';
+  return 'Still working';
+}
+
 function ToolStatusLine({ busy, message }) {
   const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
@@ -183,12 +189,14 @@ function ToolStatusLine({ busy, message }) {
     return () => clearInterval(iv);
   }, [busy]);
   if (!busy) return null;
-  const status = longRunningStatus(elapsed, message);
-  const isFileScan = /\b(cv|resume|résumé|file|document|transcript)\b/i.test(String(message || ''));
-  const label = status?.title || (isFileScan ? 'Scanning your file and extracting profile facts…' : 'One moment — thinking through your profile…');
+  const label = shortStatusLabel(message, elapsed);
   return (
-    <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: 9, paddingLeft: 18 }}>
-      <span style={{ width: 7, height: 7, borderRadius: '50%', background: PERI, animation: 'adv2Pulse 1.4s ease-in-out infinite', flexShrink: 0 }} />
+    <div role="status" aria-live="polite" style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 18, whiteSpace: 'nowrap' }}>
+      <span aria-hidden="true" style={{ display: 'inline-flex', gap: 3, flexShrink: 0 }}>
+        {[0, 1, 2].map(i => (
+          <span key={i} style={{ width: 5, height: 5, borderRadius: '50%', background: PERI, animation: 'adv2Pulse 1.2s ease-in-out infinite', animationDelay: `${i * 0.18}s` }} />
+        ))}
+      </span>
       <span style={{ fontSize: 13, background: `linear-gradient(90deg,${MUTED} 35%,#b899fb 50%,${MUTED} 65%)`, backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent', animation: 'adv2Shimmer 1.8s linear infinite' }}>{label}</span>
     </div>
   );
@@ -273,6 +281,28 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
         </button>
         {open && (
           <div style={{ borderTop: `1px solid ${BORDER}`, padding: 16, animation: 'adv2In .25s ease both' }}>
+            {(fit != null || hasAdmitRate || program.selectivityLabel) && (
+              <div className="pw-adv2-stats-grid" style={{ marginBottom: 12 }}>
+                {fit != null && (
+                  <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Fit score</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>{fit}%</div>
+                  </div>
+                )}
+                {hasAdmitRate && (
+                  <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Admit rate</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>~{Math.round(program.admitRate)}%</div>
+                  </div>
+                )}
+                {program.selectivityLabel && (
+                  <div style={{ background: CREAM, borderRadius: 12, padding: '10px 12px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.07em', color: MUTED_2, textTransform: 'uppercase' }}>Selectivity</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 3 }}>{program.selectivityLabel}</div>
+                  </div>
+                )}
+              </div>
+            )}
             {(program.fitExplanation || program.notes) && (
               <div style={{ fontSize: 13, lineHeight: 1.55, color: BODY, marginBottom: 12 }}>{program.fitExplanation || program.notes}</div>
             )}
@@ -296,6 +326,23 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
             {locked && (
               <div style={{ marginTop: 14, fontSize: 13, color: MUTED, lineHeight: 1.55 }}>Upload your CV to unlock a verified estimate for this school.</div>
             )}
+            {!locked && (
+              <div style={{ marginTop: 14, display: 'flex', gap: 8 }}>
+                <button
+                  className="pw-adv2-btn"
+                  onClick={() => onChoose(program.name, { note: true })}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 600, cursor: 'pointer', minHeight: 38,
+                    ...(isChosen
+                      ? { border: 'none', background: PERI, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.4)', animation: 'adv2Pop .45s ease' }
+                      : { border: '1px solid #b899fb', background: '#fff', color: VIOLET }),
+                  }}
+                >
+                  {isChosen && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.5 5 9l4.5-6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                  {isChosen ? 'Marked as target' : 'Mark as target'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -305,7 +352,7 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
 
 export default function AdvisorConversational({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
-  setShowCvModal, cvText, chosenSchools, setChosenSchools, confirmTargetSchools, authUser,
+  setShowCvModal, cvText, narrative, chosenSchools, setChosenSchools, confirmTargetSchools, authUser,
 }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -332,7 +379,7 @@ export default function AdvisorConversational({
   const hasPrograms = normalizedPrograms.length > 0;
   const verifiedLabel = chosenSchools?.length
     ? `${chosenSchools.length} target${chosenSchools.length === 1 ? '' : 's'} confirmed`
-    : hasPrograms ? `${normalizedPrograms.length} schools matched` : null;
+    : hasPrograms ? `${normalizedPrograms.length} school${normalizedPrograms.length === 1 ? '' : 's'} verified` : null;
 
   const strength = scores?.overall != null
     ? Math.max(0, Math.min(100, Math.round(scores.overall)))
@@ -343,16 +390,49 @@ export default function AdvisorConversational({
   // toggles the real chosenSchools array — same write-through, no new state.
   const [picks, setPicks] = useState([]);
   const [justMarked, setJustMarked] = useState(null);
+  const [markNotes, setMarkNotes] = useState([]);
   const isConfirmed = !!chosenSchools?.length;
 
-  const handleChoose = (name) => {
+  // Local advisor note after "Mark as target" — display-only copy computed
+  // from the real marked set; the write still goes through picks/chosenSchools.
+  const pushMarkNote = (name, markedNames) => {
+    const byName = new Map(normalizedPrograms.map(p => [p.name, p]));
+    const counts = { target: 0, safe: 0, reach: 0 };
+    markedNames.forEach(n => {
+      const color = byName.get(n)?.tierColor;
+      if (color === 'yellow') counts.target += 1;
+      else if (color === 'green') counts.safe += 1;
+      else counts.reach += 1;
+    });
+    const label = (n, singular, plural) => (n === 1 ? `one ${singular}` : n === 2 ? `two ${plural}` : `${n} ${plural}`);
+    const parts = [];
+    if (counts.target) parts.push(label(counts.target, 'target', 'targets'));
+    if (counts.safe) parts.push(label(counts.safe, 'safe', 'safes'));
+    if (counts.reach) parts.push(label(counts.reach, 'reach', 'reaches'));
+    const shape = parts.join(', ').replace(/, ([^,]*)$/, ' and $1');
+    const coda = counts.target >= 1 && counts.reach >= 1 && counts.safe >= 1
+      ? ' That’s the balanced shape we were aiming for.'
+      : counts.target === 0
+        ? ' Balance it with a target next.'
+        : counts.reach === 0
+          ? ' A reach alongside would round it out.'
+          : '';
+    setMarkNotes(notes => [...notes, { id: `mark-${Date.now()}`, text: `${name} marked as a target — that gives you ${shape} in your portfolio.${coda}` }]);
+  };
+
+  const handleChoose = (name, { note = false } = {}) => {
     if (isConfirmed) {
-      const next = chosenSchools.includes(name) ? chosenSchools.filter(n => n !== name) : [...chosenSchools, name];
+      const adding = !chosenSchools.includes(name);
+      const next = adding ? [...chosenSchools, name] : chosenSchools.filter(n => n !== name);
       setChosenSchools(next);
       setJustMarked(name);
+      if (note && adding) pushMarkNote(name, next);
       return;
     }
-    setPicks(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
+    const adding = !picks.includes(name);
+    const next = adding ? [...picks, name] : picks.filter(n => n !== name);
+    setPicks(next);
+    if (note && adding) pushMarkNote(name, next);
   };
 
   const confirmPicks = () => {
@@ -368,7 +448,7 @@ export default function AdvisorConversational({
   const prevChosen = useRef(chosenSchools?.length || 0);
   useEffect(() => {
     if (!!cvText && !prevCv.current) {
-      setMilestones(m => [...m, { id: `cv-${Date.now()}`, anchor: visibleChat.length, text: 'CV received — your estimates just got sharper' }]);
+      setMilestones(m => [...m, { id: `cv-${Date.now()}`, anchor: visibleChat.length, text: 'CV received — estimates are sharper' }]);
     }
     prevCv.current = !!cvText;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -385,7 +465,7 @@ export default function AdvisorConversational({
   // Suggestion chips — regenerate from fresh state after every turn. Tapping
   // one freezes the set actually shown into chipLog (ghosted afterwards) and
   // sends the message; only the live set below the composer is interactive.
-  const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: profile?.narrative }) : [];
+  const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: narrative ?? profile?.narrative }) : [];
   const [chipLog, setChipLog] = useState([]);
   const handleChip = (label, msg) => {
     setChipLog(log => [...log, { id: `chip-${Date.now()}`, anchor: visibleChat.length, options: chips.map(c => c.label), picked: label }]);
@@ -396,10 +476,6 @@ export default function AdvisorConversational({
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
 
   return (
-    <>
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999999, background: '#ff0000', color: '#fff', fontFamily: 'monospace', fontWeight: 900, fontSize: 28, padding: '14px 20px', textAlign: 'center' }}>
-        ACTIVE: AdvisorConversational
-      </div>
     <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: `linear-gradient(180deg,${CREAM} 0%,${CREAM_2} 100%)`, fontFamily: "'Public Sans',system-ui,sans-serif", color: BODY }}>
       <div style={{ width: 'min(720px,100%)', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0 20px', boxSizing: 'border-box', alignSelf: 'center' }}>
 
@@ -484,6 +560,13 @@ export default function AdvisorConversational({
             </div>
           )}
 
+          {markNotes.map(note => (
+            <div key={note.id} style={{ position: 'relative', maxWidth: 660, padding: '2px 0 2px 18px', animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
+              <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
+              <div style={{ fontSize: 14.5, lineHeight: 1.65, color: BODY }}>{note.text}</div>
+            </div>
+          ))}
+
           <ToolStatusLine busy={busy} message={visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text} />
         </div>
 
@@ -550,6 +633,5 @@ export default function AdvisorConversational({
         </div>
       </div>
     </div>
-    </>
   );
 }
