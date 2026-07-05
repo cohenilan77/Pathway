@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "dev": "vite",
     "dev:api": "node dev-server.js",
     "headroom:proxy": "node scripts/headroom-proxy.js",

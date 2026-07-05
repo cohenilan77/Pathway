@@ -61,12 +61,14 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   assert.equal(facts.schoolChoice, 'specific');
 }
 
-// 3. Missing leadership is incomplete, asked once, and never inferred as a low score.
+// 3. Optional/non-matching gaps never become blocker questions; the one
+// consolidated follow-up is limited to matching-critical direction.
 {
   const base = {
     candidateType: 'MBA',
+    profileSources: { fileText: 'Manager with five years experience, a promotion, and 12% margin impact.' },
     profile: {
-      workYears: 5, careerProgression: 'Promoted once', achievementsImpact: 'Improved margin 12%',
+      category: 'Graduate', degree: 'MBA', workYears: 5, careerProgression: 'Promoted once', achievementsImpact: 'Improved margin 12%',
       gpa: 3.6, gmat: 710, whyMBA: 'MBA for a cross-functional transition',
       postMbaGoal: 'Move into product leadership',
     },
@@ -74,16 +76,16 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   const first = buildCandidateFacts(base);
   assert.ok(first.profileCompleteness.missingFields.includes('leadershipEvidence'));
   assert.ok(!first.profileCompleteness.confirmedAbsentFields.includes('leadershipEvidence'));
-  assert.match(buildComplementaryQuestion(first), /leadership/i);
+  assert.doesNotMatch(buildComplementaryQuestion(first), /leadership|recommender|exception/i);
+  assert.match(buildComplementaryQuestion(first), /geography|school path/i);
 
   const second = buildCandidateFacts({
     ...base,
-    messages: [{ role: 'ai', text: 'Please share one leadership example and outcome.' }],
+    profile: {
+      ...base.profile,
+      profileCompleteness: { askedFields: ['targetGeography', 'schoolChoice'] },
+    },
   });
-  assert.ok(second.profileCompleteness.askedFields.includes('leadershipEvidence'));
-  assert.ok(!second.nextMissingFields.includes('leadershipEvidence'));
-  // Asked-but-unanswered fields become follow-up tasks after one question;
-  // they cannot hold the candidate in a permanent completeness loop.
   assert.equal(second.readyForScoring, true);
   assert.equal(buildComplementaryQuestion(second), '');
 }

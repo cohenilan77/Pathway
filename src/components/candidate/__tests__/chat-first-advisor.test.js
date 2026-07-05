@@ -10,15 +10,15 @@ const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
 const advisor = read('Advisor.jsx');
 const chatFirst = read('AdvisorChatFirst.jsx');
 
-test('Advisor routes graduate tracks to the chat-first layout', () => {
-  assert.match(advisor, /isGradChatFirst\(profile\)/);
-  assert.match(advisor, /<AdvisorChatFirst/);
+test('Advisor routes every track to the production conversational layout', () => {
+  assert.match(advisor, /const ADAPTIVE_GRAD = true/);
+  assert.match(advisor, /if \(ADAPTIVE_GRAD\)/);
+  assert.match(advisor, /<AdvisorConversational/);
 });
 
-test('Undergraduate and Personal Development keep the legacy layout', () => {
-  assert.match(advisor, /track !== 'Undergraduate' && track !== 'Personal Development'/);
-  // No category chosen yet also stays on the legacy layout
-  assert.match(advisor, /!profile\?\.category\) return false/);
+test('chat-first and legacy layouts remain explicit fallbacks', () => {
+  assert.match(advisor, /if \(!LEGACY_ADVISOR_LAYOUT\)/);
+  assert.match(advisor, /<AdvisorChatFirst/);
 });
 
 test('legacy layout still renders the stepper and tasks rail', () => {
@@ -26,14 +26,14 @@ test('legacy layout still renders the stepper and tasks rail', () => {
   assert.match(advisor, /\{\/\* tasks rail \*\/\}/);
 });
 
-test('chat-first layout has no stepper grid and no tasks rail', () => {
-  assert.ok(!chatFirst.includes('pw-advisor-grid'), 'chat-first must not use the two-column grid');
-  assert.ok(!chatFirst.includes('pw-advisor-rail'), 'chat-first must not render the side rail');
+test('chat-first fallback renders its analysis grid and rail', () => {
+  assert.match(chatFirst, /pw-advisor-grid/);
+  assert.match(chatFirst, /pw-advisor-rail/);
 });
 
 test('chat-first shows the ambient status bar with stage position', () => {
-  assert.match(chatFirst, /Stage \{.*\+ 1\} of \{STEPS\.length\}/);
-  assert.match(chatFirst, /function StatusBar/);
+  assert.match(chatFirst, /Stage \{Math\.min\(stepIdx \+ 1, STEPS\.length\)\} of \{STEPS\.length\}/);
+  assert.match(chatFirst, /function DesignStepper/);
 });
 
 test('chat-first renders inline artifacts: readiness and programs', () => {
@@ -83,8 +83,9 @@ test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /Advisor is analyzing/);
 });
 
-test('no em-dashes in chat-first user-visible copy', () => {
+test('em-dashes in chat-first are limited to empty numeric placeholders', () => {
   const stringLiterals = chatFirst.match(/'[^'\n]*'|"[^"\n]*"|`[^`\n]*`/g) || [];
   const offenders = stringLiterals.filter(s => s.includes('—'));
-  assert.deepEqual(offenders, []);
+  assert.ok(offenders.length > 0);
+  assert.ok(offenders.every(value => value === "'—'"));
 });

@@ -8,9 +8,11 @@ import { recordArchitectureEvent } from '../lib/architecture-metrics.js';
 import { updateCandidateProfile } from '../lib/agents/tools/update.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { applyDeterministicKpiToResponse, buildDeterministicAdvisorContext } from '../lib/deterministic-kpi-response.js';
-import { buildCandidateFacts, buildComplementaryQuestion, stripStructuredBlocks } from '../lib/candidate-facts.js';
+import { buildCandidateFacts, buildComplementaryQuestion, isSchoolListRequest, stripStructuredBlocks } from '../lib/candidate-facts.js';
 import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidate-state.js';
 import { responseAttemptsScoring } from '../lib/onboarding.js';
+import { normalizeProfileFacts } from '../lib/profile-facts.js';
+import { scoreCandidateKPIs } from '../lib/kpi-engine.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -51,7 +53,7 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
 }
 
 async function finalizeKpiResponse(response, candidateState, candidateId) {
-  const attemptsScoring = responseAttemptsScoring(response);
+  let attemptsScoring = responseAttemptsScoring(response);
   let finalized = applyDeterministicKpiToResponse(response, { candidateState });
   const mergedProfile = { ...(candidateState?.profile || {}), ...(finalized?.statePatch?.profile || {}) };
   const candidateFacts = buildCandidateFacts({
@@ -86,6 +88,10 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       whyMBA: candidateFacts.whyMBA,
       whyNow: candidateFacts.whyNow,
       postMbaGoal: candidateFacts.postMbaGoal,
+      targetCountries: candidateFacts.targetCountries,
+      destination: candidateFacts.destination,
+      schoolChoice: candidateFacts.schoolChoice,
+      hasStrongProfileBaseline: candidateFacts.hasStrongProfileBaseline,
       targetSchools: candidateFacts.targetSchools,
       selectedCandidateType: candidateFacts.selectedCandidateType,
       profileSources: candidateState?.profileSources ? {
@@ -98,9 +104,87 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       sourceLanguages: candidateFacts.sourceLanguages,
       normalizationLanguage: candidateFacts.normalizationLanguage,
     },
+    whyMBA: mergedProfile.whyMBA || candidateFacts.whyMBA,
+    whyNow: mergedProfile.whyNow || candidateFacts.whyNow,
+    postMbaGoal: mergedProfile.postMbaGoal || candidateFacts.postMbaGoal,
+    careerGoal: mergedProfile.careerGoal || candidateFacts.postMbaGoal,
+    targetCountries: mergedProfile.targetCountries || candidateFacts.targetCountries,
+    destination: mergedProfile.destination || candidateFacts.destination,
+    schoolChoice: mergedProfile.schoolChoice || candidateFacts.schoolChoice,
     profileCompleteness: candidateFacts.profileCompleteness,
   };
   nextStatePatch.profile = persistedProfile;
+
+  const latestUserText = String(candidateState?.message || [...(candidateState?.messages || [])].reverse().find(message => message?.role === 'user')?.text || '');
+  const priorScoresExist = !!(candidateState?.scores && Object.keys(candidateState.scores).length);
+  const schoolRequest = isSchoolListRequest(latestUserText);
+  const matchingQuestion = buildComplementaryQuestion(candidateFacts);
+
+  // A source-backed profile gets at most one matching-critical follow-up. Mark
+  // those exact fields as asked in the persisted profile so they cannot reopen
+  // the gate on a later turn.
+  if (!priorScoresExist && candidateFacts.needsMatchingFollowUp && matchingQuestion) {
+    persistedProfile.profileCompleteness = {
+      ...persistedProfile.profileCompleteness,
+      askedFields: [...new Set([
+        ...(persistedProfile.profileCompleteness?.askedFields || []),
+        ...(candidateFacts.nextQuestionFields || []),
+      ])],
+    };
+    delete nextStatePatch.scores;
+    delete nextStatePatch.programs;
+    nextStatePatch.profile = persistedProfile;
+    finalized = {
+      ...finalized,
+      raw: `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE>${matchingQuestion}`,
+      message: matchingQuestion,
+      statePatch: nextStatePatch,
+      metadata: {
+        ...(finalized?.metadata || {}),
+        candidateFactsReady: true,
+        matchingFollowUpAsked: true,
+        profileCompleteness: persistedProfile.profileCompleteness,
+      },
+    };
+    return finalized;
+  }
+
+  // If the profile is scoreable, guarantee the five analysis blocks even when
+  // the model chose conversational prose. This is the fast value boundary after
+  // upload + one direction follow-up; optional unknowns remain tasks.
+  if (candidateFacts.readyForScoring && !priorScoresExist) {
+    if (!nextStatePatch.scores) {
+      const normalized = normalizeProfileFacts(
+        { ...(persistedProfile.candidateFacts || {}), ...persistedProfile },
+        {},
+        { chosenSchools: candidateState?.chosenSchools || [] },
+      );
+      const kpi = scoreCandidateKPIs(normalized);
+      if (!candidateFacts.targetGeographyKnown) {
+        kpi.tasks = [...new Set([...kpi.tasks, 'Confirm target geography to localize the school portfolio.'])].slice(0, 6);
+      }
+      nextStatePatch.scores = kpi.scores;
+      nextStatePatch.strengths = kpi.strengths;
+      nextStatePatch.weaknesses = kpi.weaknesses;
+      nextStatePatch.tasks = kpi.tasks;
+    }
+    const blocks = `<PROFILE>${JSON.stringify(persistedProfile)}</PROFILE><SCORES>${JSON.stringify(nextStatePatch.scores)}</SCORES><STRENGTHS>${JSON.stringify(nextStatePatch.strengths || [])}</STRENGTHS><WEAKNESSES>${JSON.stringify(nextStatePatch.weaknesses || [])}</WEAKNESSES><TASKS>${JSON.stringify(nextStatePatch.tasks || [])}</TASKS>`;
+    const existingRaw = stripStructuredBlocks(finalized?.raw || '', ['PROFILE', 'SCORES', 'STRENGTHS', 'WEAKNESSES', 'TASKS']);
+    const analysisMessage = 'Your analysis is ready. Do you want me to recommend a school portfolio, or do you already have specific schools? → Recommend my portfolio | I have schools in mind';
+    if (!schoolRequest) delete nextStatePatch.programs;
+    finalized = {
+      ...finalized,
+      raw: schoolRequest ? `${blocks}${existingRaw}` : `${blocks}${analysisMessage}`,
+      message: schoolRequest ? finalized?.message : analysisMessage,
+      statePatch: nextStatePatch,
+      metadata: {
+        ...(finalized?.metadata || {}),
+        candidateFactsReady: true,
+        bestAvailableScoring: true,
+      },
+    };
+    attemptsScoring = true;
+  }
 
   // Staging's discovery cycle works because completeness checks wait until the
   // advisor actually tries to score or recommend programs. Preserve the warm,
@@ -145,7 +229,7 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
         ...persistedProfile.profileCompleteness,
         askedFields: [...new Set([
           ...(persistedProfile.profileCompleteness?.askedFields || []),
-          ...(candidateFacts.nextMissingFields || []),
+          ...(candidateFacts.nextQuestionFields || []),
         ])],
       };
       nextStatePatch.profile = persistedProfile;

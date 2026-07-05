@@ -12,6 +12,7 @@ import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { calculateCandidateOverall } from '../lib/candidate-kpi-schemas.js';
 import { OPENING_PATH_OPTIONS, resolveOpeningPathChoice } from '../lib/onboarding.js';
+import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -754,6 +755,7 @@ export default function App() {
     const raw_t = (text != null ? text : input).trim();
     if (!raw_t || busy) return;
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
+    const requestsFirstProgramList = isSchoolListRequest(raw_t) && !(Array.isArray(programs) && programs.length);
 
     // Persist the four-way opening choice before the request leaves the browser.
     // The request must carry this same profile immediately; React state updates
@@ -770,16 +772,22 @@ export default function App() {
     // Saving selected targets is a deterministic workspace action and must not
     // be swallowed by plan gating. The server completes this handoff without
     // an AI call, then normal plan rules apply to later AI-guidance turns.
-    if (plan === 'free' && scores && !isTargetSelection) {
-      setChat(prev => [...prev, { role: 'user', channel: 'web', text: raw_t }, { role: 'ai', channel: 'web', text: PLAN_UPGRADE_MESSAGE }]);
+    if (plan === 'free' && scores && !isTargetSelection && !requestsFirstProgramList) {
+      setChat(prev => {
+        const previousAi = [...prev].reverse().find(message => message.role === 'ai');
+        return [
+          ...prev,
+          { role: 'user', channel: 'web', text: raw_t },
+          ...(previousAi?.text === PLAN_UPGRADE_MESSAGE ? [] : [{ role: 'ai', channel: 'web', text: PLAN_UPGRADE_MESSAGE }]),
+        ];
+      });
       setInput('');
       return;
     }
 
-    const NEXT_KEYWORDS = /^(next|continue|move on|proceed|next step|go on)[.!]*$/i;
-    const t = NEXT_KEYWORDS.test(raw_t)
-      ? 'Please advance to the next step of the pipeline and ask the appropriate next question.'
-      : raw_t;
+    // Preserve direct "next"/"continue" text so the server can distinguish a
+    // first school-list request from later post-portfolio continuation.
+    const t = raw_t;
 
     // Confirming target schools is a deterministic journey step: move the
     // stage to Narrative immediately on the action itself, without waiting
@@ -921,7 +929,12 @@ export default function App() {
           setStepIdx(prev => Math.max(prev, nextStep));
         }
 
-        setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
+        setChat(prev => {
+          const previousAi = [...prev].reverse().find(message => message.role === 'ai');
+          return previousAi?.text === displayText
+            ? prev
+            : [...prev, { role: 'ai', channel: 'web', text: displayText }];
+        });
       } else {
         setChat(baseChat);
         showToast('The Advisor is temporarily unavailable. Please try again.');
@@ -954,7 +967,12 @@ export default function App() {
       if (raw) {
         const parsed = parseBlocks(raw);
         const displayText = safeVisibleReply(raw, parsed, profile);
-        if (displayText) setChat(prev => [...prev, { role: 'ai', channel: 'web', text: displayText }]);
+        if (displayText) setChat(prev => {
+          const previousAi = [...prev].reverse().find(message => message.role === 'ai');
+          return previousAi?.text === displayText
+            ? prev
+            : [...prev, { role: 'ai', channel: 'web', text: displayText }];
+        });
       }
     } catch { /* silent — idle checkin failure must never break the UI */ } finally {
       setBusy(false);
