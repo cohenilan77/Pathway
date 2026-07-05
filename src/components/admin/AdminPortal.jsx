@@ -8,8 +8,23 @@ import NotificationBell from '../NotificationBell.jsx';
 import WhatsAppAiAdvisorToggle from '../../features/whatsappAiAdvisor/WhatsAppAiAdvisorToggle.jsx';
 import AgentsTab from './AgentsTab.jsx';
 import CandidateControlTower from './CandidateControlTower.jsx';
+import { buildEngagement, ENGAGEMENT_NOT_TRACKED } from '../../../lib/undergrad/engagement.js';
 
 const cardShell = { background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)' };
+
+async function copyToClipboard(text) {
+  try {
+    if (navigator?.clipboard?.writeText) { await navigator.clipboard.writeText(text); return true; }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch { return false; }
+}
 
 const sideStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 12,
@@ -109,40 +124,6 @@ const paidChannels = [
   { name: 'LinkedIn', spend: 3720, budget: 6000, color: '#eaa129' },
 ];
 
-const engagementKpis = [
-  { label: 'MEETINGS', value: 18, color: '#141b34' },
-  { label: 'CONSULTANT ACTIONS', value: 126, color: '#5b46e0' },
-  { label: 'NOTES', value: 43, color: '#19c08a' },
-  { label: 'FOLLOW-UPS', value: 21, color: '#eaa129' },
-  { label: 'WAITING', value: 9, color: '#e0457a' },
-];
-
-const consultantLeaderboard = [
-  { consultant: 'Jessica Cohen', candidates: 18, meetings: 7, actions: 42, notes: 15, response: '18m' },
-  { consultant: 'David Rosen', candidates: 14, meetings: 5, actions: 31, notes: 10, response: '24m' },
-  { consultant: 'Sarah Levy', candidates: 12, meetings: 4, actions: 28, notes: 9, response: '32m' },
-  { consultant: 'Michael Stein', candidates: 10, meetings: 2, actions: 25, notes: 9, response: '41m' },
-];
-
-const upcomingMeetings = [
-  { candidate: 'Adam G.', consultant: 'Jessica Cohen', date: 'Today, 14:30', status: 'Confirmed' },
-  { candidate: 'Galit S.', consultant: 'David Rosen', date: 'Today, 16:00', status: 'Prep Needed' },
-  { candidate: 'Noa L.', consultant: 'Sarah Levy', date: 'Tomorrow, 10:15', status: 'Confirmed' },
-];
-
-const followUpCandidates = [
-  { candidate: 'Adam G.', last: 'Essay draft reviewed', inactive: '3 days', priority: 'High' },
-  { candidate: 'Maya R.', last: 'Profile scores updated', inactive: '5 days', priority: 'Medium' },
-  { candidate: 'Daniel K.', last: 'Waiting on transcript', inactive: '7 days', priority: 'High' },
-  { candidate: 'Lior P.', last: 'University list opened', inactive: '4 days', priority: 'Medium' },
-];
-
-const activityFeed = [
-  { actor: 'Jessica', action: 'reviewed essay', target: 'Adam G.', time: '12 min ago' },
-  { actor: 'David', action: 'completed interview prep', target: 'Galit S.', time: '38 min ago' },
-  { actor: 'Sarah', action: 'met candidate', target: 'Noa L.', time: '1h ago' },
-  { actor: 'Michael', action: 'added notes', target: 'Daniel K.', time: '2h ago' },
-];
 
 function AdminMetricCard({ label, value, color = '#141b34', detail }) {
   return (
@@ -215,29 +196,6 @@ function BudgetBar({ value, max, color = '#5b46e0' }) {
       </div>
       <div style={{ height: 8, background: '#f1eadd', borderRadius: 6, overflow: 'hidden' }}>
         <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 6 }} />
-      </div>
-    </div>
-  );
-}
-
-function ActivityFeed({ items }) {
-  return (
-    <div style={{ ...cardShell, padding: 22 }}>
-      <SectionTitle eyebrow="RECENT ACTIVITY" title="Consultant Activity Feed" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {items.map((item, idx) => (
-          <div key={`${item.actor}-${idx}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ width: 34, height: 34, borderRadius: 11, background: idx % 2 ? '#fff8ea' : '#f1eadd', color: idx % 2 ? '#c77f0a' : '#5b46e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 12, flexShrink: 0 }}>
-              {item.actor.slice(0, 1)}
-            </span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.4 }}>
-                <b style={{ color: '#141b34' }}>{item.actor}</b> {item.action} <b style={{ color: '#141b34' }}>{item.target}</b>
-              </div>
-              <div style={{ fontSize: 11.5, color: '#9098b5', marginTop: 2 }}>{item.time}</div>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -349,6 +307,20 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const [ownPasswordBusy, setOwnPasswordBusy] = useState(false);
   const [kpiStatus, setKpiStatus] = useState(null);
   const [kpiBusy, setKpiBusy] = useState(false);
+
+  // Control Tower — dedicated per-candidate session fetch (kept separate from the
+  // Candidates-tab selection so the two views never collide).
+  const [towerUserId, setTowerUserId] = useState(null);
+  const [towerData, setTowerData] = useState(null);
+  const [towerLoading, setTowerLoading] = useState(false);
+
+  // Engagement tab filters.
+  const [engCandidate, setEngCandidate] = useState('');
+  const [engConsultant, setEngConsultant] = useState('');
+
+  // Live Chat AI summary (scoped to the selected candidate's real chat only).
+  const [liveChatSummary, setLiveChatSummary] = useState('');
+  const [liveChatSummarizing, setLiveChatSummarizing] = useState(false);
 
   const [usageData, setUsageData] = useState(null);
   const [usageLoading, setUsageLoading] = useState(false);
@@ -558,6 +530,53 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
     const interval = setInterval(fetchLiveChatMessages, 5000);
     return () => clearInterval(interval);
   }, [selectedUserId, adminView, fetchLiveChatMessages]);
+
+  // Control Tower: load the selected candidate's full session (incl. undergrad
+  // engine state) so the command center can render a real calendar + tasks.
+  useEffect(() => {
+    if (!towerUserId) { setTowerData(null); return; }
+    let cancelled = false;
+    setTowerLoading(true);
+    setTowerData(null);
+    fetch(`/api/admin-session?userId=${encodeURIComponent(towerUserId)}`, { headers: adminHeaders })
+      .then(r => r.json())
+      .then(d => { if (!cancelled) setTowerData(d); })
+      .catch(() => { if (!cancelled) showToast('Failed to load candidate command center.'); })
+      .finally(() => { if (!cancelled) setTowerLoading(false); });
+    return () => { cancelled = true; };
+  }, [towerUserId]);
+
+  // Reset the AI summary whenever the Live Chat candidate changes.
+  useEffect(() => { setLiveChatSummary(''); }, [selectedUserId]);
+
+  const summarizeLiveChat = async () => {
+    if (!selectedUserId || !liveChatMessages.length) { showToast('No messages to summarize yet.'); return; }
+    setLiveChatSummarizing(true);
+    try {
+      const chatForSummary = liveChatMessages.map(m => ({ role: m.senderRole === 'candidate' ? 'user' : 'assistant', text: m.text }));
+      const res = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...adminHeaders },
+        body: JSON.stringify({ chat: chatForSummary, candidateId: selectedUserId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (d.summary) setLiveChatSummary(d.summary);
+      else showToast('Could not generate summary.');
+    } catch { showToast('Summary failed.'); }
+    finally { setLiveChatSummarizing(false); }
+  };
+
+  const copyLiveChatTranscript = async () => {
+    if (!liveChatMessages.length) { showToast('No messages to copy.'); return; }
+    const roleLabel = { candidate: candidateName, consultant: 'Consultant', admin: 'Consultant', ai: 'AI Advisor' };
+    const text = liveChatMessages.map(m => `${roleLabel[m.senderRole] || m.senderRole}${m.sentAt ? ` (${new Date(m.sentAt).toLocaleString()})` : ''}:\n${m.text}`).join('\n\n');
+    showToast(await copyToClipboard(text) ? 'Chat copied to clipboard.' : 'Could not copy chat.');
+  };
+
+  const copyLiveChatSummary = async () => {
+    if (!liveChatSummary) { showToast('Generate a summary first.'); return; }
+    showToast(await copyToClipboard(liveChatSummary) ? 'Summary copied to clipboard.' : 'Could not copy summary.');
+  };
 
   const sendLiveChatMessage = async () => {
     const text = liveChatInput.trim();
@@ -887,6 +906,12 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const portalAlerts = canManageUsers
     ? buildAdminAlerts({ candidateUsers, consultantUsers, usageData, usageSettings })
     : buildConsultantAlerts({ candidateUsers });
+
+  // Real candidate–consultant relationship health (no mock engagement data).
+  const engagement = buildEngagement(candidateUsers, consultantUsers, {
+    candidateId: engCandidate || null,
+    consultantId: engConsultant || null,
+  });
   const topIconButtonStyle = {
     width: 42,
     height: 42,
@@ -1098,14 +1123,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   />
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
                     {[
-                      ['Consultant actions today', 126],
-                      ['Meetings today', 18],
-                      ['Notes written', 43],
-                      ['Need follow-up', 21],
-                    ].map(([label, value]) => (
+                      ['Healthy relationships', engagement.kpis.healthy, '#19c08a'],
+                      ['Needs attention', engagement.kpis.needsAttention, '#eaa129'],
+                      ['At risk', engagement.kpis.atRisk, '#e0457a'],
+                      ['Unread waiting', engagement.kpis.unreadWaiting, '#5b46e0'],
+                    ].map(([label, value, color]) => (
                       <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 14, padding: '13px 14px' }}>
                         <div style={{ fontSize: 10.5, fontWeight: 800, color: '#9098b5', letterSpacing: '.4px', marginBottom: 6 }}>{String(label).toUpperCase()}</div>
-                        <div style={{ fontSize: 23, fontWeight: 800, color: label === 'Need follow-up' ? '#e0457a' : '#141b34' }}>{value}</div>
+                        <div style={{ fontSize: 23, fontWeight: 800, color }}>{usersLoading ? '…' : value}</div>
                       </div>
                     ))}
                   </div>
@@ -1155,7 +1180,27 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                     </div>
                   </div>
                 </div>
-                <ActivityFeed items={activityFeed} />
+                <div style={{ ...cardShell, padding: 22 }}>
+                  <SectionTitle eyebrow="RELATIONSHIP HEALTH" title="Needs Attention" action={<button onClick={() => setAdminView('engagement')} style={{ ...btnGhost, padding: '7px 12px', fontSize: 12 }}>View all</button>} />
+                  {(() => {
+                    const needy = engagement.relationships.filter(r => r.healthStatus !== 'Healthy').slice(0, 5);
+                    if (!needy.length) return <div style={{ fontSize: 13, color: '#9098b5', padding: '8px 0' }}>All relationships are healthy.</div>;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {needy.map(r => (
+                          <button key={r.relationshipId} onClick={() => { setSelectedUserId(r.candidateId); setEngCandidate(r.candidateId); setAdminView('engagement'); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: r.healthStatus === 'At risk' ? '#e0457a' : '#eaa129' }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.candidateName}</div>
+                              <div style={{ fontSize: 11.5, color: '#9098b5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.nextAction}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
             </div>
           )}
@@ -1229,82 +1274,82 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
           {/* ── ENGAGEMENT ── */}
           {adminView === 'engagement' && canManageUsers && (
-            <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <div style={{ maxWidth: 1180, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ fontSize: 14, color: '#6b7392', marginTop: -8 }}>
-                Consultant productivity, meetings and candidate follow-up health.
+                Which candidate–consultant relationships are healthy, and which need action?
               </div>
 
+              {/* Filters */}
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                <select value={engCandidate} onChange={e => setEngCandidate(e.target.value)}
+                  style={{ minWidth: 200, border: '1.5px solid #e7dcc7', borderRadius: 11, padding: '10px 13px', fontSize: 13.5, fontWeight: 600, color: '#141b34', background: '#faf7f2', fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <option value="">All candidates</option>
+                  {candidateUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+                </select>
+                <select value={engConsultant} onChange={e => setEngConsultant(e.target.value)}
+                  style={{ minWidth: 200, border: '1.5px solid #e7dcc7', borderRadius: 11, padding: '10px 13px', fontSize: 13.5, fontWeight: 600, color: '#141b34', background: '#faf7f2', fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <option value="">All consultants</option>
+                  {consultantUsers.map(c => <option key={c.id} value={c.id}>{c.name || c.email}</option>)}
+                  <option value="unassigned">Unassigned</option>
+                </select>
+              </div>
+
+              {/* Real KPI cards */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 14 }}>
-                {engagementKpis.map(kpi => <AdminMetricCard key={kpi.label} {...kpi} />)}
+                <AdminMetricCard label="RELATIONSHIPS" value={engagement.kpis.tracked} color="#141b34" detail="candidate–consultant pairs" />
+                <AdminMetricCard label="HEALTHY" value={engagement.kpis.healthy} color="#19c08a" detail="active and on track" />
+                <AdminMetricCard label="NEEDS ATTENTION" value={engagement.kpis.needsAttention} color="#eaa129" detail="unread or slowing down" />
+                <AdminMetricCard label="AT RISK" value={engagement.kpis.atRisk} color="#e0457a" detail="inactive or unassigned" />
+                <AdminMetricCard label="UNREAD WAITING" value={engagement.kpis.unreadWaiting} color="#5b46e0" detail="messages awaiting reply" />
               </div>
 
+              {/* Relationship health cards */}
               <div>
-                <SectionTitle eyebrow="CONSULTANT PRODUCTIVITY" title="Leaderboard" />
-                <DataTable
-                  columns={[
-                    { key: 'consultant', label: 'CONSULTANT', width: '1.4fr', strong: true },
-                    { key: 'candidates', label: 'CANDIDATES' },
-                    { key: 'meetings', label: 'MEETINGS' },
-                    { key: 'actions', label: 'ACTIONS' },
-                    { key: 'notes', label: 'NOTES' },
-                    { key: 'response', label: 'AVG RESPONSE' },
-                  ]}
-                  rows={consultantLeaderboard}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-                <div>
-                  <SectionTitle eyebrow="CALENDAR" title="Upcoming Meetings" />
-                  <DataTable
-                    columns={[
-                      { key: 'candidate', label: 'CANDIDATE', strong: true },
-                      { key: 'consultant', label: 'CONSULTANT', width: '1.2fr' },
-                      { key: 'date', label: 'DATE', width: '1.2fr' },
-                      { key: 'status', label: 'STATUS', render: (value) => <StatusPill tone={value === 'Prep Needed' ? 'warn' : 'good'}>{value}</StatusPill> },
-                    ]}
-                    rows={upcomingMeetings}
-                  />
-                </div>
-
-                <div>
-                  <SectionTitle eyebrow="FOLLOW-UP QUEUE" title="Candidates Needing Follow-Up" />
-                  <DataTable
-                    columns={[
-                      { key: 'candidate', label: 'CANDIDATE', strong: true },
-                      { key: 'last', label: 'LAST ACTIVITY', width: '1.4fr' },
-                      { key: 'inactive', label: 'INACTIVE' },
-                      { key: 'priority', label: 'PRIORITY', render: (value) => <StatusPill tone={value === 'High' ? 'risk' : 'warn'}>{value}</StatusPill> },
-                    ]}
-                    rows={followUpCandidates}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '.8fr 1.2fr', gap: 18 }}>
-                <ActivityFeed items={[
-                  { actor: 'Jessica', action: 'completed meeting', target: 'Adam G.', time: '9 min ago' },
-                  { actor: 'David', action: 'reviewed essay', target: 'Galit S.', time: '28 min ago' },
-                  { actor: 'Sarah', action: 'approved CV', target: 'Noa L.', time: '54 min ago' },
-                  { actor: 'Michael', action: 'booked interview', target: 'Daniel K.', time: '1h ago' },
-                ]} />
-                <div style={{ ...cardShell, padding: 24 }}>
-                  <SectionTitle eyebrow="WORKFLOW" title="Engagement Rhythm" />
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                    {[
-                      ['Meeting completed', 18, '#3fdca9'],
-                      ['Essay reviewed', 27, '#5b46e0'],
-                      ['CV approved', 11, '#eaa129'],
-                      ['Interview booked', 9, '#e384a5'],
-                    ].map(([label, value, color]) => (
-                      <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 16, padding: 14 }}>
-                        <div style={{ width: 9, height: 9, borderRadius: '50%', background: color, marginBottom: 12 }} />
-                        <div style={{ fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>{value}</div>
-                        <div style={{ fontSize: 11.5, color: '#6b7392', marginTop: 7, lineHeight: 1.35, fontWeight: 700 }}>{label}</div>
-                      </div>
-                    ))}
+                <SectionTitle eyebrow="RELATIONSHIP HEALTH" title="Candidate ↔ Consultant" />
+                {engagement.relationships.length === 0 ? (
+                  <div style={{ ...cardShell, padding: 40, textAlign: 'center', color: '#9098b5', fontSize: 14 }}>No relationships match the current filters.</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+                    {engagement.relationships.map(rel => {
+                      const tone = rel.healthStatus === 'Healthy' ? { bg: '#eafff6', color: '#19c08a', border: '#aaeed1' }
+                        : rel.healthStatus === 'Needs attention' ? { bg: '#fff8ea', color: '#c77f0a', border: '#f5dfa6' }
+                        : { bg: '#fff1f6', color: '#e0457a', border: '#fbd3e2' };
+                      return (
+                        <div key={rel.relationshipId} style={{ ...cardShell, padding: 18, borderTop: `3px solid ${tone.color}` }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 12 }}>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{rel.candidateName}</div>
+                              <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>with {rel.consultantName}</div>
+                            </div>
+                            <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 800, padding: '4px 10px', borderRadius: 8, background: tone.bg, color: tone.color, border: `1px solid ${tone.border}` }}>{rel.healthStatus}</span>
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                            {[
+                              ['Last activity', rel.lastActivityAt ? formatDateTime(rel.lastActivityAt).split(',')[0] : 'None'],
+                              ['Chat messages', rel.chatActivity],
+                              ['Unread', rel.unreadMessages],
+                              ['Meetings', rel.meetingsStatus],
+                              ['Response speed', rel.responseSpeed],
+                              ['Follow-ups', rel.openFollowUps],
+                            ].map(([label, value]) => {
+                              const notTracked = value === ENGAGEMENT_NOT_TRACKED;
+                              return (
+                                <div key={label} style={{ background: '#f6f1e8', border: '1px solid #f1eadd', borderRadius: 11, padding: '8px 10px' }}>
+                                  <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.3px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
+                                  <div style={{ fontSize: notTracked ? 10.5 : 14, fontWeight: notTracked ? 600 : 800, color: notTracked ? '#aab2cc' : '#141b34', fontStyle: notTracked ? 'italic' : 'normal' }}>{value}</div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 12.5, color: '#5b46e0', fontWeight: 600, lineHeight: 1.4 }}>
+                            <span style={{ flexShrink: 0, fontWeight: 800 }}>Next ·</span>
+                            <span>{rel.nextAction}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
+                )}
               </div>
             </div>
           )}
@@ -1907,18 +1952,54 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           )}
 
           {/* ── LIVE CHAT ── */}
-          {adminView === 'liveChat' && !selectedUserId && (
-            <div dir={chatDir(chatLanguage)} style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
-              <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>{chatT(chatLanguage, 'noCandidateSelected')}</div>
-              <div style={{ fontSize: 13, color: '#aab2cc' }}>{chatT(chatLanguage, 'openCandidateFromList')}</div>
-            </div>
-          )}
-          {adminView === 'liveChat' && selectedUserId && (() => {
+          {adminView === 'liveChat' && (() => {
             const dir = chatDir(chatLanguage);
+            const selectedCandidate = candidateUsers.find(u => u.id === selectedUserId) || null;
+            const displayName = selectedCandidate?.name || selectedCandidate?.email || candidateName;
+            const lastMsg = liveChatMessages[liveChatMessages.length - 1];
             return (
-            <div dir={dir} style={{ maxWidth: 800 }}>
-              <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(chatLanguage, 'viewing')}: <bdi style={{ unicodeBidi: 'isolate' }}>{candidateName}</bdi></div>
-              <div style={{ ...cardShell, display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
+            <div dir={dir} style={{ maxWidth: 860 }}>
+              {/* Candidate picker + actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+                <select value={selectedUserId || ''} onChange={e => setSelectedUserId(e.target.value || null)}
+                  style={{ minWidth: 240, border: '1.5px solid #e7dcc7', borderRadius: 12, padding: '11px 14px', fontSize: 14, fontWeight: 600, color: '#141b34', background: '#faf7f2', fontFamily: 'inherit', cursor: 'pointer' }}>
+                  <option value="">Choose a candidate…</option>
+                  {sortedCandidateUsers.map(u => <option key={u.id} value={u.id}>{u.name || u.email}{u.unreadMessages ? ` (${u.unreadMessages})` : ''}</option>)}
+                </select>
+                {selectedUserId && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 'auto' }}>
+                    <button onClick={summarizeLiveChat} disabled={liveChatSummarizing || !liveChatMessages.length}
+                      style={{ ...btnPrimary, padding: '9px 14px', fontSize: 12.5, opacity: liveChatSummarizing || !liveChatMessages.length ? 0.55 : 1, cursor: liveChatSummarizing || !liveChatMessages.length ? 'not-allowed' : 'pointer' }}>
+                      {liveChatSummarizing ? 'Summarizing…' : 'Summarize with AI'}
+                    </button>
+                    <button onClick={copyLiveChatSummary} disabled={!liveChatSummary} style={{ ...btnGhost, padding: '9px 14px', fontSize: 12.5, opacity: liveChatSummary ? 1 : 0.55, cursor: liveChatSummary ? 'pointer' : 'not-allowed' }}>Copy summary</button>
+                    <button onClick={copyLiveChatTranscript} disabled={!liveChatMessages.length} style={{ ...btnGhost, padding: '9px 14px', fontSize: 12.5, opacity: liveChatMessages.length ? 1 : 0.55, cursor: liveChatMessages.length ? 'pointer' : 'not-allowed' }}>Copy chat</button>
+                  </div>
+                )}
+              </div>
+
+              {!selectedUserId ? (
+                <div style={{ background: '#faf7f2', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, color: '#6b7392', marginBottom: 8 }}>{chatT(chatLanguage, 'noCandidateSelected')}</div>
+                  <div style={{ fontSize: 13, color: '#aab2cc' }}>Choose a candidate above to view only their chat.</div>
+                </div>
+              ) : (<>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, fontSize: 12.5, color: '#9098b5', fontWeight: 600, marginBottom: 12, flexWrap: 'wrap', textAlign: dir === 'rtl' ? 'right' : 'left' }}>
+                <span>{chatT(chatLanguage, 'viewing')}: <bdi style={{ unicodeBidi: 'isolate', color: '#141b34', fontWeight: 800 }}>{displayName}</bdi></span>
+                <span>· {liveChatMessages.length} message{liveChatMessages.length === 1 ? '' : 's'}</span>
+                {lastMsg?.sentAt && <span>· last activity {formatChatDate(lastMsg.sentAt, chatLanguage)}</span>}
+              </div>
+
+              {(liveChatSummarizing || liveChatSummary) && (
+                <div style={{ ...cardShell, padding: 18, marginBottom: 14, borderLeft: '3px solid #7c6ef7' }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#7c6ef7', textTransform: 'uppercase', marginBottom: 8 }}>AI summary · {displayName}</div>
+                  {liveChatSummarizing && !liveChatSummary
+                    ? <div style={{ fontSize: 13, color: '#9098b5', fontStyle: 'italic' }}>Analyzing this candidate's chat…</div>
+                    : <div style={{ fontSize: 13.5, lineHeight: 1.7, color: '#33405e', whiteSpace: 'pre-wrap' }}>{renderFormattedText(liveChatSummary)}</div>}
+                </div>
+              )}
+
+              <div style={{ ...cardShell, display: 'flex', flexDirection: 'column', height: '60vh', minHeight: 340, maxHeight: 640, overflow: 'hidden' }}>
                 <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
                     {liveChatLoading && (
@@ -1976,6 +2057,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                   </div>
                 </div>
               </div>
+              </>)}
             </div>
             );
           })()}
@@ -2365,19 +2447,15 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
           {/* ── CANDIDATE CONTROL TOWER (general, all candidate types) ── */}
           {adminView === 'controlTower' && (
             <CandidateControlTower
-              candidates={candidateUsers.map(u => ({
+              candidates={sortedCandidateUsers.map(u => ({
                 id: u.id,
                 name: u.name || u.email || 'Candidate',
                 category: u.category || 'Undergraduate',
-                stage: stepsFor(u.category)[u.stepIdx || 0] || 'Profile',
-                nextAction: u.nextAction || null,
-                lastActiveAt: u.lastActive ? new Date(u.lastActive).getTime() : (u.updatedAt ? new Date(u.updatedAt).getTime() : null),
-                assignedConsultantId: u.consultantId || null,
-                scores: u.scores || null,
-                undergrad: u.undergrad || null,
               }))}
-              viewer={{ role: portalRole, id: authUser?.id, assignedCandidateIds: candidateUsers.map(u => u.id) }}
-              onAlertAction={(alert, action) => showToast(`Alert "${alert.reason}" ${action === 'resolve' ? 'resolved' : action === 'snooze' ? 'snoozed' : 'dismissed'}.`)}
+              selectedId={towerUserId}
+              onSelect={setTowerUserId}
+              detail={towerData}
+              loading={towerLoading}
             />
           )}
 

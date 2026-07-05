@@ -14,7 +14,6 @@ export const TRACK_CONFIG = {
       ['studentProfile', 'Advisor', 'advisor'],
       ['ugRoadmap', 'Roadmap', 'analysis'],
       ['ugTracker', 'Tracker / Calendar', 'documentDepository'],
-      ['activities', 'Activities', 'documents'],
       ['universities', 'University List', 'analysis'],
       ['testing', 'Testing', 'documentDepository'],
       ['essays', 'Essays', 'documents'],
