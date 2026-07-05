@@ -82,10 +82,10 @@ const fixedNow = new Date('2026-01-01T00:00:00Z');
   });
   assert.ok(second.profileCompleteness.askedFields.includes('leadershipEvidence'));
   assert.ok(!second.nextMissingFields.includes('leadershipEvidence'));
-  // Asked-but-unanswered fields are re-asked with fallback phrasing (offering
-  // CV upload) instead of dead-ending the conversation with an empty question.
-  assert.match(buildComplementaryQuestion(second), /leadership/i);
-  assert.match(buildComplementaryQuestion(second), /upload your cv/i);
+  // Asked-but-unanswered fields become follow-up tasks after one question;
+  // they cannot hold the candidate in a permanent completeness loop.
+  assert.equal(second.readyForScoring, true);
+  assert.equal(buildComplementaryQuestion(second), '');
 }
 
 // 4. MBA KPI cards are candidate-level only and match the required model.

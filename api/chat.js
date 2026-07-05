@@ -1079,6 +1079,7 @@ export default async function handler(req, res) {
             leadershipEvidence: candidateFacts.leadershipEvidence,
             achievementsImpact: candidateFacts.achievementsImpact,
             whyMBA: candidateFacts.whyMBA,
+            whyNow: candidateFacts.whyNow,
             postMbaGoal: candidateFacts.postMbaGoal,
             targetSchools: candidateFacts.targetSchools,
             selectedCandidateType: candidateFacts.selectedCandidateType,

@@ -84,6 +84,7 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       leadershipEvidence: candidateFacts.leadershipEvidence,
       achievementsImpact: candidateFacts.achievementsImpact,
       whyMBA: candidateFacts.whyMBA,
+      whyNow: candidateFacts.whyNow,
       postMbaGoal: candidateFacts.postMbaGoal,
       targetSchools: candidateFacts.targetSchools,
       selectedCandidateType: candidateFacts.selectedCandidateType,
