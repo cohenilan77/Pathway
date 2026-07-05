@@ -88,17 +88,17 @@ function navFromConfig(config, hasChatAccess) {
 
 function navStyle(active) {
   return active
-    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', borderRadius: 11, fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#fff', background: '#16233f', boxShadow: '0 10px 22px rgba(22,35,63,.22)' }
-    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#3a425a', background: 'transparent' };
+    ? { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }
+    : { position: 'relative', display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' };
 }
 function navIconStyle(active) {
   return active
-    ? { width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,.12)', color: '#fff' }
-    : { width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#5a6478' };
+    ? { width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,.16)', color: '#fff' }
+    : { width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#6b7392' };
 }
 function navDotStyle(active) {
   return active
-    ? { marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#f5c94c', boxShadow: '0 0 8px rgba(245,201,76,.8)' }
+    ? { marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#fff' }
     : { marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: 'transparent' };
 }
 
@@ -947,9 +947,9 @@ export default function CandidatePortal(props) {
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (
-    <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#faf6ec', fontFamily: "'Public Sans',system-ui,sans-serif", color: '#1c2433', WebkitFontSmoothing: 'antialiased' }}>
+    <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: '#faf7f2', fontFamily: "'Public Sans',system-ui,sans-serif", color: '#33405e', WebkitFontSmoothing: 'antialiased' }}>
       {/* Mobile top bar with hamburger */}
-      <div className="pw-mobile-bar" style={{ background: 'rgba(250,246,236,.96)', borderBottom: '1px solid #efe5cf', backdropFilter: 'blur(14px)' }}>
+      <div className="pw-mobile-bar" style={{ background: 'rgba(250,247,242,.96)', borderBottom: '1px solid #f1eadd', backdropFilter: 'blur(14px)' }}>
         <button className="pw-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle menu" aria-expanded={menuOpen}>
           <svg viewBox="0 0 24 24" width="22" height="22" style={{ fill: 'none', stroke: '#141b34', strokeWidth: '2', strokeLinecap: 'round' }}><path d="M3 6h18M3 12h18M3 18h18" /></svg>
         </button>
@@ -963,18 +963,20 @@ export default function CandidatePortal(props) {
       {menuOpen && <div className="pw-sidebar-backdrop" onClick={() => setMenuOpen(false)} />}
 
       {/* Sidebar */}
-      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 284, flexShrink: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '22px 18px', background: '#eef1fc', borderRight: '1px solid #e1e6f5', boxShadow: 'inset -1px 0 0 rgba(255,255,255,.55)' }}>
+      <div className={`pw-sidebar${menuOpen ? ' pw-sidebar-open' : ''}`} style={{ width: 284, flexShrink: 0, height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: '22px 18px', background: 'rgba(250,247,242,.9)', borderRight: '1px solid #f1eadd' }}>
 
         {/* brand */}
-        <div style={{ padding: '10px 12px 14px', borderRadius: 20, background: 'linear-gradient(180deg,#f7f9ff,#eef1fc)', border: '1px solid #e1e6f5', boxShadow: '0 14px 26px rgba(60,72,130,.06)' }}>
+        <div style={{ padding: '10px 12px 14px', borderRadius: 20, background: 'rgba(255,255,255,.6)', border: '1px solid #f1eadd', boxShadow: '0 14px 26px rgba(60,72,130,.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#16233f', boxShadow: '0 10px 18px rgba(22,35,63,.2)' }} />
+            <div style={{ width: 36, height: 36, borderRadius: 11, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 2px 8px rgba(91,70,224,.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M2 9.5 6 2.5 10 9.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
             <div>
-              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#16233f', lineHeight: 1 }}>Pathway</div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#8a93a3', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
+              <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 25, fontWeight: 800, color: '#141b34', lineHeight: 1 }}>Pathway</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', color: '#9098b5', marginTop: 4 }}>HIGH-TOUCH ADMISSIONS</div>
             </div>
           </div>
-          <div style={{ fontSize: 12, color: '#5a6478', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 12, color: '#6b7392', lineHeight: 1.55 }}>
             Candidate portal, matching, analysis, and documents share the same design language.
           </div>
         </div>
@@ -985,14 +987,14 @@ export default function CandidatePortal(props) {
             value={language}
             onChange={e => setLanguage(e.target.value)}
             aria-label="Chat language"
-            style={{ width: '100%', appearance: 'none', border: '1px solid #d7ddec', borderRadius: 10, padding: '11px 15px', fontSize: 13.5, fontWeight: 600, color: '#3a425a', background: '#fff', fontFamily: 'inherit', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' }}
+            style={{ width: '100%', appearance: 'none', border: '1px solid #f1eadd', borderRadius: 12, padding: '11px 15px', fontSize: 13.5, fontWeight: 600, color: '#33405e', background: 'rgba(255,255,255,.7)', fontFamily: 'inherit', cursor: 'pointer', outline: 'none', boxSizing: 'border-box' }}
           >
             {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang}</option>)}
           </select>
-          <svg viewBox="0 0 24 24" width="15" height="15" style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fill: 'none', stroke: '#9aa3c0', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}><path d="M6 9l6 6 6-6" /></svg>
+          <svg viewBox="0 0 24 24" width="15" height="15" style={{ position: 'absolute', right: 15, top: '50%', transform: 'translateY(-50%)', fill: 'none', stroke: '#9098b5', strokeWidth: '2.2', strokeLinecap: 'round', strokeLinejoin: 'round', pointerEvents: 'none' }}><path d="M6 9l6 6 6-6" /></svg>
         </div>
 
-        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#9aa3b5', margin: '22px 12px 10px' }}>MENU</div>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.2px', color: '#9098b5', margin: '22px 12px 10px' }}>MENU</div>
 
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1000,8 +1002,7 @@ export default function CandidatePortal(props) {
             const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
-              <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.4 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
-                {active && <span className="pw-nav-item-active-bar" />}
+              <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
                 <span style={navIconStyle(active)}>{item.icon}</span>
                 <span style={{ minWidth: 0, flex: 1 }}>
                   <span>{item.label}</span>
@@ -1018,8 +1019,8 @@ export default function CandidatePortal(props) {
         </div>
 
         {/* help */}
-        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 11, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#3a425a', background: '#f8fafc', borderTop: '1px solid #e1e6f5', borderBottom: '1px solid #e1e6f5' }}>
-          <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#5a6478' }}>
+        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' }}>
+          <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#6b7392' }}>
             <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
           </span>
           <span>Help</span>
@@ -1027,30 +1028,30 @@ export default function CandidatePortal(props) {
 
         {/* plan card + user */}
         <div style={{ marginTop: 'auto' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '18px', background: '#16233f', boxShadow: '0 16px 30px rgba(22,35,63,.28)' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
             <div style={{ position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
-                <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: '#f5c94c', stroke: 'none' }}><path d="M12 2l2.6 6.3L21 9l-5 4.4L17.5 21 12 17.3 6.5 21 8 13.4 3 9l6.4-.7L12 2Z" /></svg>
-                <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '.3px', color: '#9bb0d8' }}>Tier: {PLAN_LABELS[plan] || 'AI'}</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1.2 7.3 4.5 10.8 5 8.3 7.3 9 10.8 6 9l-3 1.8.7-3.5L1.2 5l3.5-.5L6 1.2Z" fill="#5b46e0" /></svg>
+                {PLAN_LABELS[plan] || 'AI'}
               </div>
               {plan !== 'ai_strategy' ? (
                 <>
-                  <div style={{ fontSize: 12.5, color: '#c6d2ea', lineHeight: 1.45, marginBottom: 12, fontWeight: 500 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
-                  <button onClick={handleUpgrade} style={{ width: '100%', background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: 11, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Upgrade to Elite Strategy</button>
+                  <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5, marginBottom: 11 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
+                  <button onClick={handleUpgrade} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.4)', cursor: 'pointer' }}>Upgrade plan</button>
                 </>
               ) : (
-                <div style={{ fontSize: 12.5, color: '#c6d2ea', lineHeight: 1.45, fontWeight: 500 }}>You have full access, including your dedicated strategist.</div>
+                <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5 }}>You have full access, including your dedicated strategist.</div>
               )}
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '10px 10px', borderRadius: 16, background: '#f8fafc', border: '1px solid #e1e6f5' }}>
-            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: '#16233f', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 6px 14px rgba(22,35,63,.3)' }}>{initials}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '10px 10px', borderRadius: 16, background: 'rgba(255,255,255,.7)', border: '1px solid #f1eadd' }}>
+            <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#16233f', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-              <div style={{ fontSize: 11.5, color: '#8a93a3', fontWeight: 500 }}>Candidate</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+              <div style={{ fontSize: 11.5, color: '#9098b5', fontWeight: 500 }}>Candidate</div>
             </div>
-            <button onClick={handleSignOut} title="Sign out" style={{ background: '#fff', border: '1px solid #d7ddec', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a6478', flexShrink: 0 }}>
+            <button onClick={handleSignOut} title="Sign out" style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 9, width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392', flexShrink: 0 }}>
               <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></svg>
             </button>
           </div>
@@ -1061,23 +1062,22 @@ export default function CandidatePortal(props) {
       <div className="pw-candidate-main" style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
 
         {/* top bar */}
-        <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '22px 36px', borderBottom: '1px solid #efe5cf', background: 'rgba(255,253,247,.92)', backdropFilter: 'blur(14px)', flexShrink: 0 }}>
+        <div className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, padding: '20px 36px', borderBottom: '1px solid #f1eadd', background: 'rgba(250,247,242,.92)', backdropFilter: 'blur(14px)', flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '1.2px', color: '#a38b4a', marginBottom: 6 }}>CANDIDATE PORTAL</div>
-            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 24, fontWeight: 700, color: '#16233f' }}>Good {tod}, {first}</div>
-            <div style={{ fontSize: 13.5, color: '#8a93a3', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
+            <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 23, fontWeight: 700, color: '#141b34', letterSpacing: '-.01em' }}>Good {tod}, {first}</div>
+            <div style={{ fontSize: 13, color: '#6b7392', fontWeight: 500, marginTop: 3 }}>{targetSummary || (tabLabels[candTab] === 'Advisor' ? "Let's keep your application moving forward." : tabLabels[candTab])}</div>
           </div>
           <div className="pw-candidate-top-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button onClick={handleHelp} title="Help" style={{ width: 42, height: 42, borderRadius: 10, border: '1px solid #d7ddec', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a6478' }}>
-              <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
+            <button onClick={handleHelp} title="Help" style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid #f1eadd', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392' }}>
+              <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
             </button>
             <NotificationBell
               alerts={candidateAlerts}
               storageKey={`pathway_candidate_alerts_${authUser?.id || authUser?.email || name}`}
               title="Candidate alerts"
             />
-            <button className="pw-new-session-button" onClick={resetSession} disabled={requiresOAuthDetails} title="New session" aria-label="New session" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#16233f', border: 'none', borderRadius: 10, padding: '0 16px', height: 42, fontSize: 13, fontWeight: 700, color: '#fff', cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
-              <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
+            <button className="pw-new-session-button" onClick={resetSession} disabled={requiresOAuthDetails} title="New session" aria-label="New session" style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #e7dcc7', borderRadius: 999, padding: '0 16px', height: 40, fontSize: 13, fontWeight: 600, color: '#33405e', cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
+              <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: '#5b46e0', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
               <span>New session</span>
             </button>
           </div>
