@@ -306,36 +306,13 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
 
         {/* Current progress */}
         <Card>
-          <CardLabel>{isUndergrad ? 'Current Journey Stage' : 'Current Progress'}</CardLabel>
+          <CardLabel>Current Progress</CardLabel>
           <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>Step {safeStepIdx + 1} of {steps.length || '–'}</div>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#5b46e0' }}>{steps[safeStepIdx] || '—'}</div>
           <div style={{ height: 8, background: '#eef1f7', borderRadius: 4, marginTop: 16, overflow: 'hidden' }}>
             <div style={{ width: `${steps.length ? ((safeStepIdx + 1) / steps.length) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,#94b3fb,#b899fb)' }} />
           </div>
         </Card>
-
-        {/* Calendar insight (undergrad) */}
-        {isUndergrad && <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />}
-
-        {isUndergrad && (
-          <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
-        )}
-
-        {isUndergrad && [
-          ['Top strengths', (strengths || []).slice(0, 3), '#2f9e78'],
-          ['Current risks', (weaknesses || []).slice(0, 3), '#e0556b'],
-          ['Next tasks', (tasks || []).slice(0, 3), '#5b46e0'],
-        ].map(([label, items, color]) => (
-          <Card key={label}>
-            <CardLabel>{label}</CardLabel>
-            {items.length ? items.map((item, index) => (
-              <div key={index} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, marginTop: 6, flexShrink: 0 }} />
-                <span>{typeof item === 'string' ? item : item?.header || item?.title}</span>
-              </div>
-            )) : <div style={{ fontSize: 13, color: '#9098b5' }}>Needs update</div>}
-          </Card>
-        ))}
 
         {/* Smart focus */}
         {!isUndergrad && <Card style={{ gridColumn: '1 / -1' }}>

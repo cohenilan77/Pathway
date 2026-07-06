@@ -22,7 +22,7 @@ const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' 
 const PLAN_ACCESS = {
   free: new Set(['dashboard', 'advisor', 'settings']),
   ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
-    'studentProfile', 'roadmap', 'ugRoadmap', 'ugTracker', 'activities', 'universities', 'testing', 'essays', 'applications']),
+    'studentProfile', 'ugProfile', 'roadmap', 'ugRoadmap', 'ugTracker', 'activities', 'universities', 'testing', 'essays', 'applications']),
   ai_strategy: null, // null = all tabs
 };
 
@@ -913,6 +913,88 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
   );
 }
 
+// Undergraduate "My Profile" tab — a read-first snapshot of who the student is
+// (grade, intended major, destination, readiness, strengths/focus), distinct
+// from the Advisor conversation. Undergraduate only; driven off data already in
+// props. Reuses existing design tokens — no new colors.
+function UndergradProfilePage({ profile = {}, scores = {}, strengths = [], weaknesses = [], setCandTab, authUser }) {
+  const name = authUser?.name || profile?.name || 'Your profile';
+  const initials = name.split(' ').filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || 'ME';
+  const grade = undergradGradeNumber(profile);
+  const major = profile.intendedMajor || profile.major || profile.subjects || '';
+  const destination = profile.destination || profile.countries || '';
+  const curriculum = profile.curriculum || profile.school || '';
+  const stage = undergradProfileStage(profile || {});
+  const stageLabel = ({
+    discovery: 'Just getting started',
+    exploratory: 'Exploring directions',
+    preliminary: 'Building the plan',
+    established: 'Strong momentum',
+    mature: 'Application-ready',
+  })[stage] || 'In progress';
+  const overall = scores?.overall;
+  const facts = [
+    ['Grade', grade ? `Grade ${grade}` : 'Not set yet'],
+    ['Intended major', major || 'Still exploring'],
+    ['Destination', destination || 'Open'],
+    ['Curriculum', curriculum || 'Not set yet'],
+  ];
+  const cardStyle = { background: '#fff', borderRadius: 22, border: '1px solid #f1eadd', boxShadow: '0 1px 2px rgba(20,27,52,.04),0 10px 30px rgba(20,27,52,.05)', padding: 24 };
+  const labelStyle = { fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' };
+  const columns = [
+    ['Top strengths', (strengths || []).slice(0, 4), '#2f9e78'],
+    ['Focus areas', (weaknesses || []).slice(0, 4), '#e0556b'],
+  ];
+  return (
+    <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 28px 36px' }}>
+      <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
+
+        <div style={{ ...cardStyle, gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6', display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 800, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', lineHeight: 1.15 }}>{name}</div>
+            <div style={{ fontSize: 13, color: '#6b7392', marginTop: 4 }}>{stageLabel}{grade ? ` · Grade ${grade}` : ''}</div>
+          </div>
+          <button onClick={() => setCandTab('studentProfile')} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>Update with Advisor →</button>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={labelStyle}>Snapshot</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {facts.map(([k, v]) => (
+              <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#9098b5' }}>{k}</span>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', textAlign: 'right' }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={labelStyle}>University Readiness</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 30, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>{overall != null ? `${overall} / 100` : 'Not analyzed yet'}</div>
+          <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55 }}>Built from your grades, activities, testing, and goals.</div>
+          <button onClick={() => setCandTab('dashboard')} style={{ marginTop: 14, background: '#fff', color: '#5b46e0', border: '1px solid #e0d9ef', borderRadius: 999, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>See your journey →</button>
+        </div>
+
+        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+
+        {columns.map(([label, items, color]) => (
+          <div key={label} style={cardStyle}>
+            <div style={labelStyle}>{label}</div>
+            {items.length ? items.map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, marginTop: 6, flexShrink: 0 }} />
+                <span>{typeof item === 'string' ? item : item?.header || item?.title}</span>
+              </div>
+            )) : <div style={{ fontSize: 13, color: '#9098b5' }}>Appears after your first analysis.</div>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function CandidatePortal(props) {
   const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
@@ -951,9 +1033,10 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', ugTracker: 'Tracker / Calendar', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', ugProfile: 'My Profile', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', ugTracker: 'Tracker / Calendar', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
+    ugProfile: 'Your profile at a glance.',
     analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
     activities: 'Shape the experiences that tell your story.', testing: 'Plan and track your test preparation.', essays: 'Draft and refine your strongest story.',
     applications: 'Keep every application moving.', documents: 'Timed practice with a full breakdown.', documentDepository: 'Everything your applications need.',
@@ -1008,7 +1091,7 @@ export default function CandidatePortal(props) {
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {navItems.map(item => {
-            const active = candTab === item.key || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
+            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -1093,6 +1176,7 @@ export default function CandidatePortal(props) {
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
+        {candTab === 'ugProfile' && isUndergrad && <UndergradProfilePage {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {candTab === 'ugRoadmap' && isUndergrad && <UndergradRoadmap {...props} />}
