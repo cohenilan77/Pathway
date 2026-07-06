@@ -6,6 +6,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { journeyStages } from '../../../lib/undergrad/candidate-view.js';
+import { undergradProfileStage } from '../../../lib/undergrad-profile.js';
 
 const STATUS_TONE = {
   Complete: { bg: '#eafdf6', color: '#119467' },
@@ -53,13 +54,14 @@ export default function UndergradRoadmap({ undergrad, scores, profile, programs,
   const [expanded, setExpanded] = useState(null);
   const overall = Math.round(stages.reduce((sum, s) => sum + s.progress, 0) / (stages.length || 1));
   const currentStage = stages.find(s => s.progress < 100) || stages[stages.length - 1];
+  const profileStage = undergradProfileStage(profile || {});
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
       {/* Hero */}
       <div style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', borderRadius: 22, border: '1px solid #e6e0f6', padding: '22px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your journey</div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>{profileStage} profile · living roadmap</div>
           <div style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 700, color: '#141b34', margin: '4px 0 6px' }}>You're in {currentStage?.label}</div>
           <div style={{ fontSize: 13.5, color: '#5f6885', fontWeight: 600 }}>Next · {currentStage?.nextAction}</div>
         </div>

@@ -14,6 +14,7 @@ import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
 import { getTrackConfig } from '../../trackConfig.js';
 import { estimatePracticeScore } from '../../lib/testScoring.js';
+import { undergradProfileStage } from '../../../lib/undergrad-profile.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -641,7 +642,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
   const [selectedSchools, setSelectedSchools] = React.useState([]);
   const [expandedSchools, setExpandedSchools] = React.useState({});
   const grade = undergradGradeNumber(profile);
-  const early = grade && grade <= 10;
+  const profileStage = undergradProfileStage(profile || {});
+  const early = profileStage === 'discovery' || profileStage === 'exploratory';
   const buckets = splitUniversities(programs || []);
 
   const SELECTIVITY_BADGES = {
@@ -675,20 +677,20 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       </div>
     ))
     : <div style={{ fontSize: 13.5, color: '#9098b5' }}>{empty}</div>;
-  const roadmap = [
-    ['Weekly Coaching', 'Quick updates on grades, activities, problems, ideas, and goals.'],
-    ['Monthly Review', 'Review academics, leadership, projects, testing, and readiness.'],
-    ['Semester Review', 'Upload report card and achievements; generate briefing, summary, agenda, and tasks.'],
-    ['Summer Planning', 'Build internships, volunteering, research, competitions, summer schools, or personal projects.'],
-    ['Annual Review', 'Reset strategy, competitiveness, roadmap, and next-year objectives.'],
-  ];
+  const stageRoadmaps = {
+    discovery: [['Academic habits', 'Build strong grades and subject habits.'], ['Activity exploration', 'Try activities and notice where curiosity becomes commitment.'], ['First spike', 'Turn one interest into a small project or contribution.'], ['Summer ideas', 'Explore age-appropriate programs, service, projects, or competitions.']],
+    exploratory: [['Academic direction', 'Strengthen core grades while identifying subject patterns.'], ['Activity depth', 'Deepen one activity with ownership and measurable progress.'], ['First spike', 'Build a project, competition, research, or service anchor.'], ['Summer plan', 'Choose one meaningful summer growth experience.']],
+    preliminary: [['Testing plan', 'Set SAT, ACT, AP, and language-test milestones.'], ['College list', 'Build a preliminary reach, target, and likely portfolio.'], ['Leadership impact', 'Turn participation into ownership and outcomes.'], ['Essay discovery', 'Collect stories, values, and moments for future essays.']],
+    application: [['Final list', 'Confirm the final application portfolio and requirements.'], ['Essays', 'Draft, review, and tailor personal and supplemental essays.'], ['Applications', 'Track deadlines, recommendations, transcripts, and submissions.'], ['Interviews', 'Prepare school-specific examples and questions.']],
+  };
+  const roadmap = stageRoadmaps[profileStage] || stageRoadmaps.discovery;
 
   if ((type === 'essays' || type === 'applications') && early) {
     return (
       <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px 28px' }}>
         <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
-          <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', margin: '0 0 8px' }}>This section will unlock later in your journey.</h2>
-          <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: 0 }}>For Grade 9-10, the priority is grades, interests, activities, leadership, and a stronger profile foundation.</p>
+          <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', margin: '0 0 8px' }}>{type === 'essays' ? 'Future essay preparation' : 'Future application preparation'}</h2>
+          <p style={{ fontSize: 14, color: '#6b7392', lineHeight: 1.6, margin: 0 }}>{type === 'essays' ? 'Capture meaningful moments, values, projects, and reflections now. These become strong essay material later.' : 'Build strong grades, activities, relationships, and an evolving university universe now; final deadlines come in Grade 12.'}</p>
         </UndergradCard>
       </div>
     );
@@ -708,7 +710,9 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       )}
 
       {type === 'activities' && (
-        <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18, maxWidth: 1100 }}>
+        <div style={{ maxWidth: 1100 }}>
+          <div style={{ marginBottom: 16, color: '#6b7392', fontSize: 13.5 }}>Stage: <b>{profileStage}</b> · Deepen one activity this month and record a concrete update.</div>
+          <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 18 }}>
           {['Planned', 'In Progress', 'Completed'].map((status, idx) => (
             <UndergradCard key={status} title={status}>
               {idx === 0 && list(tasks || [], 'Roadmap tasks will appear here.')}
@@ -716,15 +720,16 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
               {idx === 2 && list([], 'Mark roadmap tasks complete to build history.')}
             </UndergradCard>
           ))}
+          </div>
         </div>
       )}
 
       {type === 'universities' && (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>University List</h1>
+            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>{early ? 'Exploratory University Universe' : profileStage === 'preliminary' ? 'Preliminary University List' : 'University List'}</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
-              {programs?.length ? `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.` : 'Your university matches will appear here after your advisor learns more about your profile.'}
+              {programs?.length ? (early ? 'Reach, Target, and Likely are exploratory fit bands that will evolve with your profile.' : `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.`) : 'Your university matches will appear here after your advisor learns more about your profile.'}
             </p>
           </div>
 
@@ -848,7 +853,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
         <div style={{ maxWidth: 1000 }}>
           <div style={{ marginBottom: 24 }}>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Testing & Simulations</h1>
-            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>Choose a test to practice with timed simulations.</p>
+            <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>{early ? 'Testing awareness only: explore the future timeline without treating missing SAT or ACT scores as a weakness.' : profileStage === 'preliminary' ? 'Build an SAT, ACT, AP, or language-test plan with practice milestones.' : 'Confirm final testing status and score-submission strategy.'}</p>
           </div>
 
           {!selectedTest ? (

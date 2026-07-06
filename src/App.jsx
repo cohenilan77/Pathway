@@ -27,6 +27,7 @@ import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
 import { buildReturningCandidateMessage } from '../lib/returning-candidate.js';
+import { normalizeUndergradProfile, normalizeUndergradPrograms } from '../lib/undergrad-profile.js';
 import { upcomingTestDatesPromptLine } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -502,7 +503,8 @@ export default function App() {
         }
         const loadedChat = data?.chat?.length ? data.chat : INITIAL_CHAT;
         const loadedStepIdx = data?.stepIdx || 0;
-        const loadedProfile = data?.profile || null;
+        const rawLoadedProfile = data?.profile || null;
+        const loadedProfile = rawLoadedProfile?.category === 'Undergraduate' ? normalizeUndergradProfile(rawLoadedProfile) : rawLoadedProfile;
         const loadedScores = data?.scores || null;
         const loadedPrograms = normalizeProgramList(data?.programs) || null;
         const loadedStrengths = data?.strengths || null;
@@ -932,7 +934,10 @@ export default function App() {
         const category = parsed.profile?.category || requestProfile?.category;
         const isUndergrad = category === 'Undergraduate';
         if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
-        if (parsed.profile) setProfile(parsed.profile);
+        if (parsed.profile) {
+          parsed.profile = isUndergrad ? normalizeUndergradProfile({ ...requestProfile, ...parsed.profile, category: 'Undergraduate' }) : parsed.profile;
+          setProfile(parsed.profile);
+        }
         if (parsed.scores) {
           const overall = weightedOverallScore(parsed.scores, parsed.profile || requestProfile);
           setScores({ ...parsed.scores, overall });
@@ -949,7 +954,8 @@ export default function App() {
           setCompletedTasks({});
         }
         if (parsed.programs?.length) {
-          const normalizedPrograms = normalizeProgramList(parsed.programs) || [];
+          let normalizedPrograms = normalizeProgramList(parsed.programs) || [];
+          if (isUndergrad) normalizedPrograms = normalizeUndergradPrograms(normalizedPrograms, parsed.profile || requestProfile || {});
           parsed.programs = normalizedPrograms;
           setPrograms(normalizedPrograms);
           const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
@@ -1058,6 +1064,7 @@ export default function App() {
             grade: requestProfile?.grade,
             targetCountry: requestProfile?.destination || requestProfile?.countries,
             targetMajor: requestProfile?.intendedMajor || requestProfile?.major || requestProfile?.subjects,
+            profileSnapshot: parsed.profile || requestProfile,
             now: Date.now(),
           }).state);
         }

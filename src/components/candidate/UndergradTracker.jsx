@@ -35,10 +35,17 @@ export default function UndergradTracker({ undergrad, setUndergradTaskStatus, ac
   const entries = useMemo(() => toCalendarEntries({ tasks, calendar: state.calendar || [] }, { includeConsultant: false }), [tasks, state.calendar]);
   const groups = useMemo(() => groupSmartTasks(tasks, now), [tasks, now]);
   const hasCalendar = entries.length > 0;
+  const snapshots = state.profile?.monthlySnapshots || [];
+  const latestSnapshot = snapshots[snapshots.length - 1];
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
       <div style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', marginBottom: 14 }}>Tracker &amp; Calendar</div>
+
+      <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: '13px 15px', marginBottom: 14 }}>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0', textTransform: 'uppercase', letterSpacing: '.5px' }}>Monthly profile snapshot</div>
+        <div style={{ fontSize: 13.5, color: '#33405e', marginTop: 5 }}>{latestSnapshot ? `${latestSnapshot.month} · ${latestSnapshot.updates?.length || 0} updates · ${latestSnapshot.nextTasks?.length || 0} next tasks` : 'Your next advisor update will start a monthly history of grades, activities, projects, leadership, awards, testing, and preferences.'}</div>
+      </div>
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 18 }}>
         <Stat label="Today" value={mini.counts.today} />

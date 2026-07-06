@@ -558,13 +558,18 @@ UNDERGRAD ONBOARDING QUESTIONS — ask in this exact order unless the answer is 
 
 After each answer, emit an updated <PROFILE> block with everything known so far. Use the logged-in user's name if the conversation does not provide a student name; if no name is known, omit name rather than inventing a placeholder.
 
-INITIAL SNAPSHOT — after Question 12 is answered, do NOT produce only a university recommendation. Emit ALL of these blocks in the same response:
+INITIAL SNAPSHOT — after Question 13 (university style) is answered, emit ALL of these blocks in the same response:
 - <PROFILE> with grade, curriculum, grades/transcript status, subjects, intendedMajor, countries, activities, strongestActivity, leadership, awardsProjects, tests, universityStyle, pathwayType ("focused"|"exploring"|"partial"), category:"Undergraduate", degree:"Undergraduate".
 - <SCORES> calibrated as University Readiness Score. Weight academics, potential, leadership, volunteering/activity depth, uniqueness, goalClarity, narrative, and testScore according to grade. For Grade 9-10, do not punish missing SAT/ACT harshly.
 - <STRENGTHS> as academic strengths, activity strengths, and readiness advantages.
 - <WEAKNESSES> as current gaps, risk areas, and what must improve.
 - <TASKS> with 5-7 roadmap tasks generated from the gap/opportunity engine; every recommendation must become a specific task.
 - <PROGRAMS> with at least 10 undergraduate universities organized by tier: stretch = Reach, possible = Target, safe = Likely. For Grade 9-10, universities are exploratory and should reflect direction, not a final application list. Use avgSAT/avgACT and avgGPA only when relevant; never avgGMAT.
+MATURITY-SPECIFIC PROGRAM OUTPUT:
+- Grade 9 discovery and Grade 10 exploratory: set programGroup to "Exploratory undergraduate path", admissionStatus to "Exploratory", and profileStage to the student's derived stage on every program. These are an exploratory university universe, not a final list.
+- Grade 11 preliminary: set admissionStatus by tier to "Preliminary Reach", "Preliminary Target", or "Preliminary Likely", and profileStage to "preliminary".
+- Grade 12 application: use final Reach, Target, Likely, or Locked labels and profileStage "application".
+- For an exploring Grade 9-10 student without an intended major, infer a broad interest cluster from subjects, activities, and preferences. For Math plus USA plus Top ranked, span Applied Mathematics, Economics, Computer Science, Data Science, Engineering, and Business Analytics. Never require a final major.
 Visible text after the blocks must follow this exact two-part structure:
 Part 1 (1 sentence): Name the student's actual grade, their strongest subject or interest, and how many schools were matched with the Reach/Target/Likely breakdown. Use the student's real data. No generic phrases.
 Part 2 (1 sentence + chips): Look at TASKS[0] (the most important task you just generated). Ask ONE specific question that directly addresses that task. The chips must be concrete actions tied to that task, not generic options like "ask something else." If TASKS[0] is about competitions, offer relevant competition types. If it is about testing, use the upcoming SAT and ACT dates listed at the top of this prompt as chip options — never generate a past date. If it is about leadership, offer specific leadership opportunities. Never ask "What would you like to focus on first?" or any open-ended meta question. Always end with → Chip1 | Chip2 | Chip3 | Chip4
@@ -1100,6 +1105,25 @@ export default async function handler(req, res) {
         raw = modelReply;
       }
     } else if (attemptsScoring && !candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
+      if (candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate') {
+        console.log('[UndergradProgramsGate]', {
+          selectedCandidateType: candidateFacts.selectedCandidateType,
+          category: profile?.category,
+          grade: candidateFacts.grade || profile?.grade,
+          profileStage: candidateFacts.profileStage,
+          pathwayType: candidateFacts.pathwayType,
+          intendedMajor: candidateFacts.intendedMajor,
+          interestCluster: candidateFacts.interestCluster,
+          subjects: candidateFacts.subjects || candidateFacts.interests,
+          countries: candidateFacts.targetCountries || candidateFacts.countries || candidateFacts.destination,
+          schoolListRequested: candidateFacts.schoolListRequested,
+          readyForScoring: candidateFacts.readyForScoring,
+          readyForPrograms: candidateFacts.readyForPrograms,
+          programTypeKnown: candidateFacts.programTypeKnown,
+          missingFields: candidateFacts.profileCompleteness?.missingFields,
+          criticalMissingFields: candidateFacts.profileCompleteness?.criticalMissingFields,
+        });
+      }
       raw = stripStructuredBlocks(raw, ['PROGRAMS']);
       if (!isIdleCheckin && !/specific schools|want recommendations/i.test(raw)) {
         raw = `${raw}\n\nDo you already have specific schools, or do you want recommendations?`.trim();
