@@ -1,15 +1,22 @@
 /*
- * Candidate Control Tower — ONE general admin/consultant tab across all candidate
- * types (Undergraduate, Graduate, PhD, Personal Development). All aggregation is
- * done by the pure lib/undergrad/control-tower engine; this component only
- * renders. Undergraduate candidates contribute their full roadmap/task/calendar
- * engine state; other types contribute journey stage + pending next action.
+ * Candidate Control Tower — a premium, single-candidate command center for
+ * admins/consultants. Pick a candidate from the dropdown, then the whole screen
+ * scopes to them: a hero with stage / risk / next best action, big KPI cards,
+ * a real month calendar, and a smart task rail. All aggregation is done by the
+ * pure lib/undergrad/control-tower + calendar-view engines; this only renders.
  */
-import React, { useMemo, useState } from 'react';
-import { buildControlTower, candidateMonthlyReport } from '../../../lib/undergrad/control-tower.js';
+import React, { useMemo } from 'react';
+import { buildCandidateCommandCenter } from '../../../lib/undergrad/control-tower.js';
+import { toCalendarEntries, groupSmartTasks } from '../../../lib/undergrad/calendar-view.js';
+import CalendarBoard from '../shared/CalendarBoard.jsx';
+import SmartTaskRail from '../shared/SmartTaskRail.jsx';
 
-const SEV_COLOR = { critical: '#e0556b', high: '#c0392b', medium: '#c08a1a', low: '#5b46e0', info: '#6b7392' };
-const RISK_COLOR = { critical: '#e0556b', high: '#c08a1a', medium: '#5b46e0', low: '#19c08a' };
+const RISK_TONE = {
+  critical: { bg: '#fff1f4', color: '#e0556b', label: 'Critical risk' },
+  high: { bg: '#fff8ea', color: '#c08a1a', label: 'High risk' },
+  medium: { bg: '#eef1ff', color: '#5b46e0', label: 'Medium risk' },
+  low: { bg: '#eafdf6', color: '#119467', label: 'On track' },
+};
 
 function fmt(date) {
   if (!date) return '—';
@@ -17,229 +24,112 @@ function fmt(date) {
   return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 function ago(ms) {
-  if (!ms) return 'never';
+  if (!ms) return 'No activity yet';
   const days = Math.floor((Date.now() - ms) / 86400000);
-  return days <= 0 ? 'today' : `${days}d ago`;
+  return days <= 0 ? 'Active today' : `${days} day${days === 1 ? '' : 's'} ago`;
 }
 
-function Section({ title, count, children }) {
+function Kpi({ label, value, sub, tone }) {
   return (
-    <div style={{ background: '#fff', border: '1px solid #f1eadd', borderRadius: 16, padding: 18, marginBottom: 16 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 800, color: '#141b34', margin: 0 }}>{title}</h3>
-        {count != null && <span style={{ fontSize: 12, fontWeight: 800, color: '#5b46e0', background: '#f0edff', borderRadius: 8, padding: '2px 8px' }}>{count}</span>}
-      </div>
-      {children}
+    <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, padding: 18, boxShadow: '0 10px 26px rgba(22,35,63,.05)' }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 10 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 900, color: tone || '#141b34', lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 12, color: '#9098b5', marginTop: 8 }}>{sub}</div>}
     </div>
   );
 }
 
-function Chip({ children, color }) {
-  return <span style={{ fontSize: 11.5, fontWeight: 800, color: color || '#6b7392', background: '#f6f1e8', borderRadius: 7, padding: '2px 8px' }}>{children}</span>;
-}
+export default function CandidateControlTower({ candidates = [], selectedId, onSelect, detail, loading, now = Date.now() }) {
+  const cc = useMemo(() => {
+    if (!detail?.data) return null;
+    const d = detail.data;
+    return buildCandidateCommandCenter({
+      id: selectedId,
+      name: detail.user?.name || detail.user?.email || 'Candidate',
+      category: d.profile?.category || detail.user?.category || 'Undergraduate',
+      scores: d.scores || null,
+      undergrad: d.undergrad || null,
+      stage: d.stage || null,
+      nextAction: d.nextAction || null,
+      lastActiveAt: detail.user?.lastActiveAt || detail.user?.lastLoginAt || null,
+    }, { now });
+  }, [detail, selectedId, now]);
 
-function Empty({ children }) {
-  return <div style={{ fontSize: 12.5, color: '#9098b5' }}>{children}</div>;
-}
+  const entries = useMemo(() => cc ? toCalendarEntries({ tasks: cc.tasks, calendar: cc.calendar }, { includeConsultant: true }) : [], [cc]);
+  const groups = useMemo(() => cc ? groupSmartTasks(cc.tasks, now) : null, [cc, now]);
 
-export default function CandidateControlTower({ candidates = [], viewer = { role: 'admin' }, onAlertAction }) {
-  const now = Date.now();
-  const tower = useMemo(() => buildControlTower(candidates, { viewer, now }), [candidates, viewer]);
-  const [reportFor, setReportFor] = useState(null);
-
-  const report = useMemo(() => {
-    if (!reportFor) return null;
-    const cand = candidates.find(c => c.id === reportFor);
-    return cand ? candidateMonthlyReport(cand, { now }) : null;
-  }, [reportFor, candidates]);
-
-  const tp = tower.todaysPriorities;
+  const risk = RISK_TONE[cc?.riskLevel] || RISK_TONE.low;
+  const progress = cc ? (cc.overallScore != null ? `${cc.overallScore}` : `${cc.roadmapProgress}%`) : '—';
+  const progressSub = cc ? (cc.overallScore != null ? 'Readiness score' : `${cc.roadmapTotal} roadmap items`) : '';
 
   return (
-    <div style={{ padding: '8px 4px 40px' }}>
-      <div style={{ fontSize: 13, color: '#6b7392', marginBottom: 14 }}>
-        Tracking <b>{tower.candidateCount}</b> candidate{tower.candidateCount === 1 ? '' : 's'} across all tracks · {viewer.role === 'admin' ? 'all candidates' : 'your assigned candidates'}.
+    <div style={{ padding: '4px 4px 40px' }}>
+      {/* Candidate picker */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', textTransform: 'uppercase' }}>Candidate</div>
+        <select value={selectedId || ''} onChange={e => onSelect?.(e.target.value || null)}
+          style={{ minWidth: 280, border: '1.5px solid #e7dcc7', borderRadius: 12, padding: '11px 14px', fontSize: 14, fontWeight: 600, color: '#141b34', background: '#fffdf7', fontFamily: 'inherit', cursor: 'pointer' }}>
+          <option value="">Choose a candidate…</option>
+          {candidates.map(c => <option key={c.id} value={c.id}>{c.name}{c.category ? ` — ${c.category}` : ''}</option>)}
+        </select>
+        {loading && <span style={{ fontSize: 13, color: '#9098b5' }}>Loading…</span>}
       </div>
 
-      {/* 1 — Today's Priorities */}
-      <Section title="Today’s Priorities">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
-          {[
-            ['Overdue tasks', tp.overdueTasks, t => `${t.candidateName}: ${t.title}`],
-            ['Inactive candidates', tp.inactiveCandidates, t => `${t.candidateName} · ${ago(t.lastActiveAt)}`],
-            ['Urgent deadlines', tp.urgentDeadlines, t => `${t.candidateName}: ${t.title} (${fmt(t.date)})`],
-            ['Consultant reviews', tp.consultantReviews, t => `${t.candidateName}: ${t.title}`],
-            ['Ignored reminders', tp.ignoredReminders, t => `${t.candidateName}: ${t.title}`],
-          ].map(([label, list, render]) => (
-            <div key={label} style={{ background: '#faf7f2', borderRadius: 12, padding: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.4px', color: '#9098b5', textTransform: 'uppercase' }}>{label}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: list.length ? '#e0556b' : '#19c08a' }}>{list.length}</span>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {list.slice(0, 4).map((t, i) => <div key={i} style={{ fontSize: 12, color: '#3c4564' }}>{render(t)}</div>)}
-                {list.length === 0 && <Empty>All clear.</Empty>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* 2 — Candidate Risk Table */}
-      <Section title="Candidate Risk Table" count={tower.riskTable.length}>
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
-            <thead>
-              <tr style={{ textAlign: 'left', color: '#9098b5' }}>
-                {['Candidate', 'Type', 'Stage', 'Risk', 'Last active', 'Overdue', 'Next deadline', 'Weakest area', 'Recommended action'].map(h => (
-                  <th key={h} style={{ padding: '6px 10px', fontWeight: 700, whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tower.riskTable.map(r => (
-                <tr key={r.candidateId} style={{ borderTop: '1px solid #f1eadd' }}>
-                  <td style={{ padding: '8px 10px', fontWeight: 700, color: '#141b34' }}>{r.candidateName}</td>
-                  <td style={{ padding: '8px 10px' }}>{r.candidateType}</td>
-                  <td style={{ padding: '8px 10px' }}>{r.stage || '—'}</td>
-                  <td style={{ padding: '8px 10px' }}><Chip color={RISK_COLOR[r.riskLevel]}>{r.riskLevel}</Chip></td>
-                  <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>{ago(r.lastActiveAt)}</td>
-                  <td style={{ padding: '8px 10px', color: r.overdueTaskCount ? '#e0556b' : '#3c4564' }}>{r.overdueTaskCount}</td>
-                  <td style={{ padding: '8px 10px', whiteSpace: 'nowrap' }}>{r.nextDeadline ? `${fmt(r.nextDeadline.date)}` : '—'}</td>
-                  <td style={{ padding: '8px 10px' }}>{r.weakestArea || '—'}</td>
-                  <td style={{ padding: '8px 10px', color: '#6b7392' }}>{r.recommendedAction}</td>
-                </tr>
-              ))}
-              {tower.riskTable.length === 0 && <tr><td colSpan={9} style={{ padding: 12 }}><Empty>No candidates.</Empty></td></tr>}
-            </tbody>
-          </table>
-        </div>
-      </Section>
-
-      {/* 3 — Roadmap / Journey Monitor */}
-      <Section title="Roadmap / Journey Monitor" count={tower.journeyMonitor.length}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 10 }}>
-          {tower.journeyMonitor.map(j => (
-            <div key={j.candidateId} style={{ background: '#faf7f2', borderRadius: 12, padding: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>{j.candidateName} <Chip>{j.candidateType}</Chip></div>
-              {j.kind === 'roadmap' ? (
-                <div style={{ marginTop: 8 }}>
-                  <div style={{ height: 6, background: '#eee7d8', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ width: `${j.roadmapProgress}%`, height: '100%', background: 'linear-gradient(90deg,#94b3fb,#b899fb)' }} />
-                  </div>
-                  <div style={{ fontSize: 12, color: '#6b7392', marginTop: 5 }}>Roadmap {j.roadmapProgress}% · {j.roadmapTotal} items</div>
-                </div>
-              ) : (
-                <div style={{ fontSize: 12.5, color: '#6b7392', marginTop: 8 }}>Stage: <b>{j.stage || '—'}</b><br />Next: {j.pendingNextAction || '—'}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      </Section>
-
-      {/* 4 — Task + Calendar Tracker */}
-      <Section title="Task + Calendar Tracker" count={tower.taskCalendar.length}>
-        <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-          {tower.taskCalendar.slice(0, 120).map((e, i) => (
-            <div key={`${e.id}-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 4px', borderTop: i ? '1px solid #f6f1e8' : 'none', fontSize: 12.5 }}>
-              <span style={{ width: 52, flexShrink: 0, fontWeight: 800, color: '#141b34' }}>{fmt(e.date)}</span>
-              <Chip>{e.candidateType}</Chip>
-              <span style={{ flex: 1, color: '#3c4564' }}>{e.candidateName}: {e.title}</span>
-              <Chip>{e.type || e.status || e.source}</Chip>
-            </div>
-          ))}
-          {tower.taskCalendar.length === 0 && <Empty>No tasks or events yet.</Empty>}
-        </div>
-      </Section>
-
-      {/* 5 — Nagger Alerts */}
-      <Section title="Nagger Alerts" count={tower.alerts.filter(a => a.status === 'open').length}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {tower.alerts.map(a => (
-            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#faf7f2', borderRadius: 11, padding: '10px 12px', opacity: a.status === 'open' ? 1 : 0.55 }}>
-              <span style={{ width: 8, height: 8, borderRadius: '50%', background: SEV_COLOR[a.severity], flexShrink: 0 }} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>{a.candidateName} · {a.reason}</div>
-                <div style={{ fontSize: 12, color: '#6b7392' }}>{a.recommendedAction} · <Chip>{a.candidateType}</Chip> <Chip color={SEV_COLOR[a.severity]}>{a.severity}</Chip> {a.status !== 'open' && <Chip>{a.status}</Chip>}</div>
-              </div>
-              {a.status === 'open' && (
-                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                  {['dismiss', 'snooze', 'resolve'].map(action => (
-                    <button key={action} onClick={() => onAlertAction?.(a, action)} style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 8, padding: '5px 9px', fontSize: 11.5, fontWeight: 700, color: '#3c4564', cursor: 'pointer', fontFamily: 'inherit' }}>{action}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          {tower.alerts.length === 0 && <Empty>No alerts.</Empty>}
-        </div>
-      </Section>
-
-      {/* 6 — Profile Progress */}
-      <Section title="Profile Progress" count={tower.profileProgress.filter(p => Object.keys(p.latest || {}).length).length}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 10 }}>
-          {tower.profileProgress.filter(p => Object.keys(p.latest || {}).length).map(p => (
-            <div key={p.candidateId} style={{ background: '#faf7f2', borderRadius: 12, padding: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>{p.candidateName}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                {Object.entries(p.latest).filter(([k]) => k !== 'overall').slice(0, 8).map(([k, v]) => (
-                  <Chip key={k}>{k}: {v}</Chip>
-                ))}
-              </div>
-              <div style={{ fontSize: 11.5, color: '#9098b5', marginTop: 6 }}>{p.history.length} snapshot{p.history.length === 1 ? '' : 's'}</div>
-            </div>
-          ))}
-          {tower.profileProgress.every(p => !Object.keys(p.latest || {}).length) && <Empty>No score history yet.</Empty>}
-        </div>
-      </Section>
-
-      {/* 7 — Consultant Notes + Follow-ups */}
-      <Section title="Consultant Notes + Follow-ups" count={tower.notes.length}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {tower.notes.slice(0, 40).map((n, i) => (
-            <div key={`${n.id}-${i}`} style={{ background: '#faf7f2', borderRadius: 11, padding: '10px 12px' }}>
-              <div style={{ fontSize: 12.5, fontWeight: 700, color: '#141b34' }}>{n.candidateName} · <Chip>{n.kind}</Chip></div>
-              {n.body && <div style={{ fontSize: 12, color: '#3c4564', marginTop: 3 }}>{n.body}</div>}
-              {n.nextAction && <div style={{ fontSize: 12, color: '#5b46e0', marginTop: 3 }}>Next: {n.nextAction}{n.followUpDate ? ` · ${fmt(n.followUpDate)}` : ''}</div>}
-            </div>
-          ))}
-          {tower.notes.length === 0 && <Empty>No notes yet.</Empty>}
-        </div>
-      </Section>
-
-      {/* 8 — Monthly Report Generator */}
-      <Section title="Monthly Report Generator">
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: report ? 14 : 0 }}>
-          <select value={reportFor || ''} onChange={e => setReportFor(e.target.value || null)} style={{ border: '1.5px solid #f1eadd', borderRadius: 10, padding: '8px 12px', fontSize: 13, fontFamily: 'inherit', background: '#f6f1e8', color: '#3c4564' }}>
-            <option value="">Choose a candidate…</option>
-            {tower.riskTable.map(r => <option key={r.candidateId} value={r.candidateId}>{r.candidateName} ({r.candidateType})</option>)}
-          </select>
-        </div>
-        {report && (
-          <div style={{ background: '#faf7f2', borderRadius: 12, padding: 16 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>{report.candidateName} — Monthly Progress</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 10, marginBottom: 12 }}>
-              <Chip>Roadmap {report.roadmapProgress}%</Chip>
-              <Chip>Completed {report.completedCount}</Chip>
-              <Chip color={report.overdueCount ? '#e0556b' : undefined}>Overdue {report.overdueCount}</Chip>
-              <Chip>Notes {report.consultantNotes.length}</Chip>
-            </div>
-            {Object.keys(report.scoreChanges).length > 0 && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', textTransform: 'uppercase', marginBottom: 4 }}>Score changes</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {Object.entries(report.scoreChanges).map(([k, c]) => <Chip key={k} color={c.delta >= 0 ? '#19c08a' : '#e0556b'}>{k} {c.delta >= 0 ? '+' : ''}{c.delta}</Chip>)}
-                </div>
-              </div>
-            )}
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', textTransform: 'uppercase', marginBottom: 4 }}>Next month priorities</div>
-            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, color: '#3c4564' }}>
-              {report.nextMonthPriorities.map((p, i) => <li key={i}>{p.title} <span style={{ color: '#9098b5' }}>({p.area})</span></li>)}
-              {report.nextMonthPriorities.length === 0 && <li>On track — routine check-in.</li>}
-            </ul>
+      {!selectedId && (
+        <div style={{ background: '#fffdf7', border: '2px dashed #e7dcc7', borderRadius: 22, padding: '64px 24px', textAlign: 'center' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', margin: '0 auto 18px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg viewBox="0 0 24 24" width="26" height="26" style={{ fill: 'none', stroke: '#fff', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="4" /><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /></svg>
           </div>
-        )}
-      </Section>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 6 }}>Choose a candidate to open their command center</div>
+          <div style={{ fontSize: 13.5, color: '#9098b5', maxWidth: 420, margin: '0 auto' }}>You'll see their risk, progress, next best action, live calendar, and urgent tasks — all in one place.</div>
+        </div>
+      )}
+
+      {selectedId && loading && !cc && (
+        <div style={{ background: '#fffdf7', border: '1px dashed #e7dcc7', borderRadius: 20, padding: 48, textAlign: 'center', color: '#9098b5', fontSize: 14 }}>Loading candidate…</div>
+      )}
+
+      {selectedId && cc && (
+        <>
+          {/* Hero */}
+          <div style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6', borderRadius: 22, padding: '22px 24px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+                <div style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 700, color: '#141b34' }}>{cc.name}</div>
+                <span style={{ fontSize: 11.5, fontWeight: 800, padding: '4px 11px', borderRadius: 9, background: risk.bg, color: risk.color }}>{risk.label}</span>
+                {cc.stage && <span style={{ fontSize: 11.5, fontWeight: 700, padding: '4px 11px', borderRadius: 9, background: '#fff', color: '#5b46e0', border: '1px solid #e0d9ef' }}>{cc.stage}</span>}
+              </div>
+              <div style={{ fontSize: 13.5, color: '#5f6885', fontWeight: 600 }}>Next best action · {cc.nextAction}</div>
+            </div>
+          </div>
+
+          {/* KPI cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14, marginBottom: 18 }}>
+            <Kpi label="Risk" value={risk.label.replace(' risk', '')} tone={risk.color} sub={cc.overdueCount ? `${cc.overdueCount} overdue` : 'No overdue tasks'} />
+            <Kpi label="Progress" value={progress} sub={progressSub} />
+            <Kpi label="Urgent tasks" value={cc.urgentCount} tone={cc.urgentCount ? '#c08a1a' : '#141b34'} sub={cc.nextDeadline ? `Next · ${fmt(cc.nextDeadline.date)}` : 'No deadlines soon'} />
+            <Kpi label="Last activity" value={ago(cc.lastActiveAt)} sub={cc.openTaskCount ? `${cc.openTaskCount} open tasks` : 'All tasks clear'} />
+          </div>
+
+          {/* Calendar + smart rail */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.7fr) minmax(260px,1fr)', gap: 18, alignItems: 'start' }} className="pw-tower-grid">
+            <div>
+              {entries.length ? (
+                <CalendarBoard entries={entries} now={now} />
+              ) : (
+                <div style={{ background: '#fffdf7', border: '2px dashed #e7dcc7', borderRadius: 20, padding: '48px 24px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#6b7392', marginBottom: 6 }}>No calendar items yet</div>
+                  <div style={{ fontSize: 13, color: '#9098b5' }}>Deadlines, tests, and reviews will appear here once this candidate's roadmap is built.</div>
+                </div>
+              )}
+            </div>
+            <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 20, boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 18 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#141b34', marginBottom: 14 }}>Urgent tasks</div>
+              <SmartTaskRail groups={groups} now={now} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
