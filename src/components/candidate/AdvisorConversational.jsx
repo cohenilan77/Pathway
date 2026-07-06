@@ -12,6 +12,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
+import { needsProgramRecovery } from '../../../lib/program-ready-gate.js';
 
 const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
 const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
@@ -426,6 +427,8 @@ export default function AdvisorConversational({
 
   const normalizedPrograms = useMemo(() => normalizeProgramList(programs) || [], [programs]);
   const hasPrograms = normalizedPrograms.length > 0;
+  const latestAiText = [...visibleChat].reverse().find(message => message.role === 'ai')?.text || '';
+  const showProgramRecovery = isUndergrad && needsProgramRecovery(latestAiText, normalizedPrograms);
 
   // Real-time gauges — mapped from the live scores object across every track.
   const hasScores = !!scores && Object.keys(scores).some(k => Number.isFinite(Number(scores[k])));
@@ -685,6 +688,21 @@ export default function AdvisorConversational({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {showProgramRecovery && (
+              <div style={{ maxWidth: 640, marginLeft: 18, background: '#fffaf0', border: `1px solid ${BORDER_2}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 6px 18px rgba(20,27,52,.06)' }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>The list has not been generated yet.</div>
+                <button
+                  type="button"
+                  onClick={() => send('Generate my complete undergraduate university list now. I cannot see any schools in chat or University List.')}
+                  disabled={busy}
+                  className="pw-adv2-btn"
+                  style={{ marginTop: 10, border: 'none', borderRadius: 999, padding: '10px 16px', background: PERI, color: '#fff', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' }}
+                >
+                  Generate my school list
+                </button>
               </div>
             )}
 

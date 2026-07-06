@@ -25,7 +25,9 @@ import { normalizeUndergradAdvisorOutput } from '../lib/undergrad/advisor-output
 import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
 import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
-import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
+import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
+import { buildReturningCandidateMessage } from '../lib/returning-candidate.js';
+import { upcomingTestDatesPromptLine } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
@@ -506,7 +508,21 @@ export default function App() {
         const loadedStrengths = data?.strengths || null;
         const loadedEssays = data?.essays || {};
 
-        setChat(loadedChat);
+        const returnWelcomeKey = `pathway_return_welcome_${user?.id || data?.sessionId || 'candidate'}`;
+        const returnMessage = sessionStorage.getItem(returnWelcomeKey) ? null : buildReturningCandidateMessage({
+          user,
+          profile: loadedProfile,
+          scores: loadedScores,
+          programs: loadedPrograms,
+          chosenSchools: data?.chosenSchools,
+          narrative: data?.narrative,
+          cvText: data?.cvText,
+          essays: loadedEssays,
+          interviews: data?.interviews,
+          chat: loadedChat,
+        });
+        setChat(returnMessage ? [...loadedChat, { role: 'ai', channel: 'web', text: returnMessage }] : loadedChat);
+        if (returnMessage) sessionStorage.setItem(returnWelcomeKey, '1');
         setSessionId(data?.sessionId || createSessionId());
         setStepIdx(loadedStepIdx);
         setProfile(loadedProfile);
@@ -534,23 +550,6 @@ export default function App() {
           : loadedUndergrad);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
 
-        // Detect if student is stuck and needs nudge
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
-
-        if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
-          // Student has universities but hasn't discussed testing yet - add nudge
-          const nudgeMsg = {
-            role: 'ai',
-            channel: 'web',
-            text: (() => {
-              const { sat, act } = getUpcomingTestDates(3);
-              return `Welcome back! You've got a solid university list — next step is locking in your test plan. When are you thinking of sitting the SAT or ACT? → ${sat[0]} | ${act[0]} | ${sat[1]} | Not sure yet`;
-            })()
-          };
-          if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
-            setChat(prev => [...prev, nudgeMsg]);
-          }
-        }
       } catch {
         if (!cancelled) { setAuth(null); setScreen('login'); }
       }
@@ -712,12 +711,13 @@ export default function App() {
         keepalive: true,
       }).catch(() => {});
     }
+    if (auth?.user?.id) sessionStorage.removeItem(`pathway_return_welcome_${auth.user.id}`);
     setAuth(null);
     sessionStorage.removeItem('pathway_admin_secret');
     setAdminSecret('');
     setAuthError('');
     setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0);
-  }, [auth?.token, setAuth]);
+  }, [auth?.token, auth?.user?.id, setAuth]);
 
   const resetSession = useCallback(() => {
     const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
@@ -805,7 +805,7 @@ export default function App() {
         { role: 'ai', channel: 'web', text: 'Here’s your list again. You can review and select schools directly below.' },
       ]);
       setInput('');
-      setCandTab('studentProfile');
+      setCandTab('universities');
       return;
     }
 
@@ -924,7 +924,7 @@ export default function App() {
         if (!parsed.strengths && typedPatch.strengths) parsed.strengths = typedPatch.strengths;
         if (!parsed.weaknesses && typedPatch.weaknesses) parsed.weaknesses = typedPatch.weaknesses;
         if (!parsed.tasks && typedPatch.tasks) parsed.tasks = typedPatch.tasks;
-        if (!parsed.programs && typedPatch.programs) parsed.programs = typedPatch.programs;
+        if (!parsed.programs && typedPatch.programs) parsed.programs = normalizeProgramList(typedPatch.programs);
         if (!parsed.chosenSchools && typedPatch.chosenSchools) parsed.chosenSchools = typedPatch.chosenSchools;
         if (!parsed.insights && typedPatch.insights) parsed.insights = typedPatch.insights;
         if (!parsed.essay && typedPatch.essays) parsed.essay = Object.entries(typedPatch.essays).map(([school, value]) => ({ school, ...value }))[0];
@@ -948,8 +948,10 @@ export default function App() {
           setTasks(next);
           setCompletedTasks({});
         }
-        if (parsed.programs) {
-          setPrograms(parsed.programs);
+        if (parsed.programs?.length) {
+          const normalizedPrograms = normalizeProgramList(parsed.programs) || [];
+          parsed.programs = normalizedPrograms;
+          setPrograms(normalizedPrograms);
           const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
             || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);
           if (!isUndergrad && regeneratedProgramList) {
@@ -1004,6 +1006,12 @@ export default function App() {
           ? normalizeUndergradAdvisorOutput(parsed.undergradOutput || displayText, { message: t })
           : null;
         if (undergradOutput) displayText = undergradOutput.chatMessage;
+        displayText = gateProgramReadyReply({
+          text: displayText,
+          isUndergrad,
+          parsedPrograms: parsed.programs,
+          currentPrograms: programs,
+        });
         // Safety net: if the model confirmed chosen schools without asking a
         // follow-up question, the flow would dead-end. Hand the candidate the
         // next move so the journey always continues.
