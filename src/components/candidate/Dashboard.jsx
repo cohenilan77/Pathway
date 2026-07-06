@@ -80,14 +80,201 @@ function nextBestMove({ tasks, weaknesses, overall, isUndergrad }) {
   return { text: 'Keep building — review your roadmap and next steps.', tab: isUndergrad ? 'ugRoadmap' : 'advisor', cta: 'Open roadmap' };
 }
 
-export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, undergrad }) {
+// ── Undergraduate journey dashboard ─────────────────────────────────────────
+// Undergrad gets a trajectory-first shell: a horizontal stage map as the hero, a
+// "where you are -> projected" score, and grade-driven milestones. Graduate and
+// every other track keep the score-ring layout in Dashboard() untouched.
+
+function gradeNumber(profile) {
+  const m = String(profile?.grade || profile?.currentGrade || '').match(/\d{1,2}/);
+  return m ? Number(m[0]) : null;
+}
+
+// Milestones are keyed off the student's grade, so a 9th-grader and a 12th-grader
+// see a different, stage-appropriate set instead of the same static placeholders.
+function undergradMilestones(profile) {
+  const grade = gradeNumber(profile);
+  if (grade != null && grade <= 9) {
+    return [
+      { title: 'Build strong Grade 9 habits', detail: 'Your GPA starts now — aim for consistency across every core subject.' },
+      { title: 'Sample 2–3 activities', detail: 'Try clubs, sports, or projects to find what genuinely interests you.' },
+      { title: 'Start a curiosity log', detail: 'Collect the moments and interests that become essays later.' },
+    ];
+  }
+  if (grade === 10) {
+    return [
+      { title: 'Go deeper on one or two activities', detail: 'Shift from trying things to committing and taking initiative.' },
+      { title: 'Get familiar with the PSAT', detail: 'Learn the test format early so junior year stays calm.' },
+      { title: 'Add academic rigor', detail: 'Pick a stretch course to show an upward trajectory.' },
+    ];
+  }
+  if (grade === 11) {
+    return [
+      { title: 'Lock your SAT / ACT plan', detail: 'Sit your first official test and set a target score.' },
+      { title: 'Draft your university shortlist', detail: 'Build a balanced reach, target, and likely list.' },
+      { title: 'Step into a leadership role', detail: 'Turn participation into ownership with real impact.' },
+    ];
+  }
+  if (grade != null && grade >= 12) {
+    return [
+      { title: 'Finalize your university list', detail: 'Confirm where you are applying and lock every deadline.' },
+      { title: 'Polish your essays', detail: 'Complete your personal statement and each supplement.' },
+      { title: 'Submit on time', detail: 'Track required documents and hit every application deadline.' },
+    ];
+  }
+  return [
+    { title: 'Tell us your grade', detail: 'Share where you are in school so milestones match your year.' },
+    { title: 'Explore your interests', detail: 'Note the subjects and activities you enjoy most right now.' },
+    { title: 'Start your profile', detail: 'A quick analysis unlocks your personalized roadmap.' },
+  ];
+}
+
+function JourneyMap({ steps, currentIdx, setCandTab }) {
+  return (
+    <Card style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your journey</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 22, fontWeight: 700, color: '#141b34', marginTop: 6 }}>Foundation → Applications</div>
+        </div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#5b46e0' }}>Stage {Math.min(currentIdx + 1, steps.length)} of {steps.length}</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 4 }}>
+        {steps.map((label, i) => {
+          const state = i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'locked';
+          const dot = state === 'done'
+            ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: '2px solid transparent' }
+            : state === 'current'
+              ? { background: '#fff', color: '#5b46e0', border: '2px solid #5b46e0' }
+              : { background: '#eef1f7', color: '#9098b5', border: '2px solid #eef1f7' };
+          return (
+            <div key={label} style={{ flex: 1, minWidth: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative' }}>
+              {i > 0 && <div style={{ position: 'absolute', top: 16, right: '50%', width: '100%', height: 3, background: i <= currentIdx ? 'linear-gradient(90deg,#94b3fb,#b899fb)' : '#eef1f7' }} />}
+              <button onClick={() => setCandTab?.('ugRoadmap')} title={label} style={{ position: 'relative', width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', ...dot }}>
+                {state === 'done' ? '✓' : i + 1}
+              </button>
+              <div style={{ fontSize: 11.5, fontWeight: state === 'current' ? 800 : 600, color: state === 'locked' ? '#9098b5' : '#33405e', marginTop: 8, lineHeight: 1.25 }}>{label}</div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function TrajectoryScore({ scoreLabel, overall, profile }) {
+  const grade = gradeNumber(profile);
+  const yearsLeft = grade ? Math.max(0, 12 - grade) : 0;
+  // Illustrative trajectory: more runway (younger grades) closes more of the gap to 100.
+  const projected = overall == null ? null : Math.min(100, Math.round(overall + (100 - overall) * Math.min(1, yearsLeft / 4) * 0.6));
+  return (
+    <Card>
+      <CardLabel>{scoreLabel}</CardLabel>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#9098b5', letterSpacing: '.5px', textTransform: 'uppercase' }}>Where you are</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 700, color: '#141b34', lineHeight: 1 }}>{overall != null ? overall : '–'}</div>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#b899fb' }}>→</div>
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#7c6ef7', letterSpacing: '.5px', textTransform: 'uppercase' }}>Projected by senior year</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 700, color: '#5b46e0', lineHeight: 1 }}>{projected != null ? projected : '–'}</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginTop: 12 }}>
+        {overall == null
+          ? 'Start your profile analysis to see your trajectory.'
+          : grade
+            ? `Grade ${grade} today — this is where focused work can take you by senior year.`
+            : 'This is where focused work can take you by senior year.'}
+      </div>
+    </Card>
+  );
+}
+
+function MilestonesCard({ profile }) {
+  const grade = gradeNumber(profile);
+  const items = undergradMilestones(profile);
+  return (
+    <Card>
+      <CardLabel>{grade ? `Grade ${grade} milestones` : 'Milestones'}</CardLabel>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {items.map((m, i) => (
+          <div key={i} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+            <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, background: '#eef1f7', color: '#5b46e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{i + 1}</span>
+            <div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{m.title}</div>
+              <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, marginTop: 2 }}>{m.detail}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move, setCandTab, profile, strengths, weaknesses, tasks, undergrad }) {
+  const overall = scores?.overall;
+  return (
+    <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 28px 36px' }}>
+      <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
+
+        <JourneyMap steps={steps} currentIdx={currentIdx} setCandTab={setCandTab} />
+
+        <TrajectoryScore scoreLabel={scoreLabel} overall={overall} profile={profile} />
+
+        <Card style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your next best move</div>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 20, fontWeight: 700, color: '#141b34', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
+          <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>{move.cta} →</button>
+        </Card>
+
+        <MilestonesCard profile={profile} />
+
+        <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />
+
+        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+
+        {[
+          ['Top strengths', (strengths || []).slice(0, 3), '#2f9e78'],
+          ['Current risks', (weaknesses || []).slice(0, 3), '#e0556b'],
+          ['Next tasks', (tasks || []).slice(0, 3), '#5b46e0'],
+        ].map(([label, items, color]) => (
+          <Card key={label}>
+            <CardLabel>{label}</CardLabel>
+            {items.length ? items.map((item, index) => (
+              <div key={index} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, marginTop: 6, flexShrink: 0 }} />
+                <span>{typeof item === 'string' ? item : item?.header || item?.title}</span>
+              </div>
+            )) : <div style={{ fontSize: 13, color: '#9098b5' }}>Needs update</div>}
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, undergrad, currentTrack }) {
   const overall = scores?.overall;
   const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
   const steps = STEPS || [];
   const safeStepIdx = Math.min(stepIdx ?? 0, Math.max(steps.length - 1, 0));
-  const isUndergrad = profile?.category === 'Undergraduate';
+  const isUndergrad = currentTrack === 'Undergraduate' || profile?.category === 'Undergraduate';
   const move = nextBestMove({ tasks, weaknesses, overall, isUndergrad });
   const focusItems = (weaknesses || []).slice(0, 3);
+
+  // Undergraduate gets a distinct journey-first shell; every other track falls
+  // through to the score-ring layout below, which stays completely untouched.
+  if (isUndergrad) {
+    return (
+      <UndergradJourneyDashboard
+        steps={steps} currentIdx={safeStepIdx} scores={scores} scoreLabel={scoreLabel}
+        move={move} setCandTab={setCandTab} profile={profile}
+        strengths={strengths} weaknesses={weaknesses} tasks={tasks} undergrad={undergrad}
+      />
+    );
+  }
 
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 28px 36px' }}>
