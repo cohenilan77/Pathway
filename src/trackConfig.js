@@ -12,7 +12,7 @@ export const TRACK_CONFIG = {
     nav: [
       ['dashboard', 'Journey', 'dashboard'],
       ['studentProfile', 'Advisor', 'advisor'],
-      ['advisor', 'My Profile', 'advisor'],
+      ['ugProfile', 'My Profile', 'advisor'],
       ['testing', 'Practice', 'documentDepository'],
       ['ugRoadmap', 'My Plan', 'analysis'],
       ['universities', 'University List', 'analysis'],
