@@ -1,0 +1,78 @@
+name: One-time advisor chat hotfix
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply-hotfix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch advisor chat option and program rendering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              p = Path(path)
+              text = p.read_text()
+              if old not in text:
+                  raise SystemExit(f'Missing expected text in {path}: {old[:120]!r}')
+              text = text.replace(old, new, 1)
+              p.write_text(text)
+
+          advisor = 'src/components/candidate/AdvisorChatFirst.jsx'
+          chat_api = 'api/chat.js'
+
+          replace_once(
+              advisor,
+              "const OPTIONS_PATTERN = /→\\s*(.+)$/;",
+              "const OPTIONS_PATTERN = /→\\s*([\\s\\S]+)$/;\nconst OPTIONS_TRAILING_PROMPT = /\\s+(?:What should we work on next\\??|Inquire about your strategy…?)\\s*$/i;"
+          )
+
+          replace_once(
+              advisor,
+              "  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);\n  if (options.length < 2) return null;\n  return { mainText: text.slice(0, match.index).trim(), options };",
+              "  const optionText = match[1].replace(OPTIONS_TRAILING_PROMPT, '').trim();\n  const options = optionText\n    .split('|')\n    .map(o => o.replace(OPTIONS_TRAILING_PROMPT, '').trim())\n    .filter(Boolean);\n  if (options.length < 2) return null;\n  return { mainText: text.slice(0, match.index).trim(), options };"
+          )
+
+          replace_once(
+              advisor,
+              "                const showChipsHere = parsed && (!isLast || busy);",
+              "                const showChipsHere = parsed && !busy;"
+          )
+
+          replace_once(
+              advisor,
+              "  const showPrograms = hasPrograms && (!chosenSchools?.length || needsSelectionRecovery);",
+              "  const showPrograms = hasPrograms && (!narrative || !chosenSchools?.length || needsSelectionRecovery);"
+          )
+
+          replace_once(
+              chat_api,
+              "- Whenever you present a fixed set of choices (e.g. category, degree/program type, format, mode), end that line with \"→\" followed by the options separated by \" | \" exactly, e.g. \"→ Option A | Option B | Option C\" — this exact format is required so the app can render them as tappable choices. Never list choices any other way.",
+              "- Whenever you present a fixed set of choices (e.g. category, degree/program type, format, mode, curriculum, study country, activities, tests, school preferences), end that same sentence with \"→\" followed by the options separated by \" | \" exactly, e.g. \"→ Option A | Option B | Option C\" — this exact format is required so the app can render them as tappable choices. Never list choices as plain text, never put another question after the options, and never append \"What should we work on next?\" after an options line."
+          )
+
+          replace_once(
+              chat_api,
+              "Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the app with full formatting. Your reply text (after the block) must say ONLY: \"Your recommended programs are ready, you can see the full list right here and in the Analysis tab. Before we build your strategy, which 3-5 schools excite you most? Name them or select them from the list and we'll tailor everything around those programs.\"",
+              "Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the app with full formatting. You are forbidden to write this line unless the same response already includes a valid <PROGRAMS>[...]</PROGRAMS> block with at least 10 items. Your reply text (after the block) must say ONLY: \"Your recommended programs are ready — I’m showing the full list directly below and in the University List tab. Before we build your strategy, which 3-5 schools excite you most? Select them from the list below or name them here.\""
+          )
+          PY
+
+      - name: Remove one-time workflow and commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/one-time-advisor-chat-hotfix.yml
+          git add src/components/candidate/AdvisorChatFirst.jsx api/chat.js
+          git commit -m "Fix advisor chat options and program list rendering"
+          git push
