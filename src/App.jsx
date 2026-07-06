@@ -957,6 +957,10 @@ export default function App() {
           let normalizedPrograms = normalizeProgramList(parsed.programs) || [];
           if (isUndergrad) normalizedPrograms = normalizeUndergradPrograms(normalizedPrograms, parsed.profile || requestProfile || {});
           parsed.programs = normalizedPrograms;
+          // Verification log: confirms the advisor's <PROGRAMS> block was parsed
+          // into structured university data and dispatched into state, which the
+          // University List and Advisor panels then render.
+          console.log('[Pathway] recommended universities parsed from advisor:', normalizedPrograms.map(p => ({ name: p.name, tier: p.tier, fit: p.fitIndex ?? p.fit, location: p.location })));
           setPrograms(normalizedPrograms);
           const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
             || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);

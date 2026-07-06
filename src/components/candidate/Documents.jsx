@@ -11,7 +11,10 @@ const docNavStyle = (active) => ({
   boxShadow: active ? '0 10px 20px rgba(105,91,255,.32)' : 'none',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, saveEssayToDocuments, saveCvToDocuments, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig }) {
+export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, saveEssayToDocuments, saveCvToDocuments, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig, variant }) {
+  // Undergraduate "Essays & Documents" reuses this workspace but hides the
+  // graduate-only GMAT simulator. Default (graduate) behaviour is unchanged.
+  const isUndergradVariant = variant === 'undergrad';
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
 
@@ -50,7 +53,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
     { key: 'interview', label: 'Mock Interview', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg> },
     { key: 'gmat', label: 'GMAT', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 8h8M8 12h3M14 12h2M8 16h2M13 16h3" /></svg> },
     { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
-  ];
+  ].filter(item => !(isUndergradVariant && item.key === 'gmat'));
 
   return (
     <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#faf6ec' }}>
@@ -371,7 +374,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
             </div>
           )}
 
-          {docTab === 'gmat' && <GMATSimulation />}
+          {docTab === 'gmat' && !isUndergradVariant && <GMATSimulation />}
 
           {docTab === 'insights' && (
             <div style={{ width: '100%', maxWidth: 580 }}>

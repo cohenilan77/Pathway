@@ -213,11 +213,91 @@ function MilestonesCard({ profile }) {
   );
 }
 
-function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move, setCandTab, profile, strengths, weaknesses, tasks, undergrad }) {
+// Large, visual 0–100 candidate rating gauge — the focal point of the summary
+// card. The value is sourced live from scores.overall (the AI advisor's computed
+// competitiveness/readiness score); nothing is hardcoded, so it re-renders every
+// time the advisor runs a fresh analysis.
+function CandidateRatingGauge({ value, label }) {
+  const has = value != null && Number.isFinite(Number(value));
+  const pct = has ? Math.max(0, Math.min(100, Number(value))) : 0;
+  const r = 62;
+  const c = 2 * Math.PI * r;
+  const offset = c - (pct / 100) * c;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+      <svg viewBox="0 0 150 150" width="150" height="150">
+        <circle cx="75" cy="75" r={r} fill="none" stroke="#eef1f7" strokeWidth="13" />
+        <circle cx="75" cy="75" r={r} fill="none" stroke="url(#ratingGrad)" strokeWidth="13"
+          strokeDasharray={c} strokeDashoffset={has ? offset : c} strokeLinecap="round" transform="rotate(-90 75 75)"
+          style={{ transition: 'stroke-dashoffset .6s ease' }} />
+        <defs>
+          <linearGradient id="ratingGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#94b3fb" />
+            <stop offset="100%" stopColor="#b899fb" />
+          </linearGradient>
+        </defs>
+        <text x="75" y="78" textAnchor="middle" fontSize="40" fontWeight="800" fill="#141b34" fontFamily="inherit">{has ? Math.round(pct) : '–'}</text>
+        <text x="75" y="98" textAnchor="middle" fontSize="11" fontWeight="700" letterSpacing="1.2" fill="#9aa3b5" fontFamily="inherit">/ 100</text>
+      </svg>
+      <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>{label}</div>
+    </div>
+  );
+}
+
+// Hero candidate summary card. Every field is read straight from live profile /
+// scores state — any field that is missing is simply skipped, never mocked.
+function CandidateSummaryCard({ profile, scores, scoreLabel, chosenSchools, authUser, currentTrack }) {
+  const name = authUser?.name || profile?.name || 'Candidate';
+  const type = profile?.category || profile?.degreeType || profile?.pathwayType || currentTrack || 'Undergraduate';
+  const gpa = profile?.gpa || profile?.academic || profile?.grades;
+  const major = profile?.intendedMajor || profile?.major || profile?.subjects;
+  const grade = gradeNumber(profile);
+  const geography = profile?.targetCountries || profile?.countries || profile?.destination;
+  const tests = profile?.tests || profile?.testScore || profile?.sat || profile?.act || profile?.testingPlan;
+  const targets = Array.isArray(chosenSchools) ? chosenSchools.filter(Boolean) : [];
+
+  const facts = [
+    grade != null && ['Grade', `Grade ${grade}`],
+    gpa && ['GPA', String(gpa)],
+    major && ['Intended major', String(major)],
+    tests && ['Testing', String(tests)],
+    geography && ['Target geography', Array.isArray(geography) ? geography.join(', ') : String(geography)],
+    targets.length && ['Target schools', targets.slice(0, 3).join(', ') + (targets.length > 3 ? ` +${targets.length - 3}` : '')],
+  ].filter(Boolean);
+
+  return (
+    <Card style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, minWidth: 260 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 28, fontWeight: 700, color: '#141b34', lineHeight: 1.1 }}>{name}</div>
+          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.4px', color: '#5b46e0', background: '#eef1ff', border: '1px solid #e0e0fb', borderRadius: 999, padding: '4px 11px', textTransform: 'capitalize' }}>{type}</span>
+        </div>
+        <div style={{ fontSize: 12.5, color: '#9098b5', fontWeight: 600, marginBottom: 16 }}>{scoreLabel}</div>
+        {facts.length ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+            {facts.map(([label, val]) => (
+              <div key={label}>
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34', marginTop: 3, lineHeight: 1.35 }}>{val}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ fontSize: 13.5, color: '#9098b5', lineHeight: 1.55 }}>Chat with your advisor to build your profile — your details and rating will appear here.</div>
+        )}
+      </div>
+      <CandidateRatingGauge value={scores?.overall} label={scoreLabel} />
+    </Card>
+  );
+}
+
+function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move, setCandTab, profile, strengths, weaknesses, tasks, undergrad, chosenSchools, authUser, currentTrack }) {
   const overall = scores?.overall;
   return (
     <div className="pw-dashboard-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '8px 28px 36px' }}>
       <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
+
+        <CandidateSummaryCard profile={profile} scores={scores} scoreLabel={scoreLabel} chosenSchools={chosenSchools} authUser={authUser} currentTrack={currentTrack} />
 
         <JourneyMap steps={steps} currentIdx={currentIdx} setCandTab={setCandTab} />
 
@@ -255,7 +335,7 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
   );
 }
 
-export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, undergrad, currentTrack }) {
+export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, undergrad, currentTrack, chosenSchools, authUser }) {
   const overall = scores?.overall;
   const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
   const steps = STEPS || [];
@@ -272,6 +352,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         steps={steps} currentIdx={safeStepIdx} scores={scores} scoreLabel={scoreLabel}
         move={move} setCandTab={setCandTab} profile={profile}
         strengths={strengths} weaknesses={weaknesses} tasks={tasks} undergrad={undergrad}
+        chosenSchools={chosenSchools} authUser={authUser} currentTrack={currentTrack}
       />
     );
   }
