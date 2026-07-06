@@ -131,7 +131,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         {isUndergrad && <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />}
 
         {isUndergrad && (
-          <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+          <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} profile={profile} /></div>
         )}
 
         {isUndergrad && [

@@ -16,6 +16,7 @@ import NotificationBell from '../NotificationBell.jsx';
 import { getTrackConfig } from '../../trackConfig.js';
 import { estimatePracticeScore } from '../../lib/testScoring.js';
 import { undergradProfileStage } from '../../../lib/undergrad-profile.js';
+import { hasUndergradBaseline } from '../../../lib/undergrad-programs.js';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -638,7 +639,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId }) {
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, busy, authToken, sessionId }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
   const [selectedSchools, setSelectedSchools] = React.useState([]);
   const [expandedSchools, setExpandedSchools] = React.useState({});
@@ -646,6 +647,13 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
   const profileStage = undergradProfileStage(profile || {});
   const early = profileStage === 'discovery' || profileStage === 'exploratory';
   const buckets = splitUniversities(programs || []);
+  const baselineReady = hasUndergradBaseline(profile || {});
+  const [autoBuildRequested, setAutoBuildRequested] = React.useState(false);
+  React.useEffect(() => {
+    if (type !== 'universities' || programs?.length || !baselineReady || busy || autoBuildRequested) return;
+    setAutoBuildRequested(true);
+    send?.('Build and save my preliminary undergraduate university list now from my current profile. Include PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS.');
+  }, [type, programs?.length, baselineReady, busy, autoBuildRequested, send]);
 
   const SELECTIVITY_BADGES = {
     'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
@@ -728,13 +736,13 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
       {type === 'universities' && (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>{early ? 'Exploratory University Universe' : profileStage === 'preliminary' ? 'Preliminary University List' : 'University List'}</h1>
+            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>{early ? 'Preliminary University List' : profileStage === 'preliminary' ? 'Preliminary University List' : 'University List'}</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
-              {programs?.length ? (early ? 'Reach, Target, and Likely are exploratory fit bands that will evolve with your profile.' : `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.`) : 'Your university matches will appear here after your advisor learns more about your profile.'}
+              {programs?.length ? (early ? 'Exploratory list based on current GPA, interests, activities, and growth potential. This updates as your profile develops.' : `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.`) : baselineReady ? 'Your preliminary university list has not been saved yet.' : 'Complete the profile basics to build your university list.'}
             </p>
           </div>
 
-          <UndergradKpiPanel scores={scores || {}} />
+          <UndergradKpiPanel scores={scores || {}} profile={profile} />
           <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, margin: '14px 0 18px' }}>
             <UndergradCard title="Strengths">
               {list((strengths || []).slice(0, 5), 'Strengths will appear after your readiness snapshot.')}
@@ -746,6 +754,9 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <button onClick={() => send?.('Regenerate my preliminary undergraduate university list from my latest profile. Include updated PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS.')} disabled={busy} style={{ background: '#fff', color: '#141b34', border: '1px solid #d8cdb4', borderRadius: 999, padding: '9px 15px', fontSize: 12.5, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Regenerate from latest profile</button>
+              </div>
               {orderedUniversityBuckets(programs || []).map(([tierLabel, schools]) => {
                 const tierColors = {
                   Reach: { accent: '#e384a5', bg: '#fff1f6', border: '#ffd3e3' },
@@ -854,8 +865,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             </div>
           ) : (
             <div style={{ background: '#f4f6fb', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
-              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Your profile is ready for an exploratory university universe.</div>
-              <button onClick={() => send?.('Generate my undergraduate university list now. Include PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS. Do not reply with school names unless PROGRAMS is emitted.')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Build my list now</button>
+              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>{baselineReady ? 'Your preliminary university list has not been saved yet.' : 'Complete your profile basics first.'}</div>
+              {baselineReady && <button onClick={() => send?.('Build and save my preliminary undergraduate university list now from my current profile. Include PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS.')} disabled={busy} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Build Preliminary University List</button>}
             </div>
           )}
         </div>

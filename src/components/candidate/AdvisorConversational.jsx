@@ -565,11 +565,11 @@ export default function AdvisorConversational({
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
           <span style={{ fontSize: 12.5, fontWeight: 600, color: VIOLET }}>{journeyStages[journeyStageIndex]}</span>
           <span style={{ width: 3, height: 3, borderRadius: '50%', background: '#c9c0ae' }} />
-          <span className="pw-status-schools" style={{ fontSize: 12.5, color: MUTED }}>{normalizedPrograms.length} schools verified</span>
+          <span className="pw-status-schools" style={{ fontSize: 12.5, color: MUTED }}>{isUndergrad ? (normalizedPrograms.length ? `${normalizedPrograms.length} preliminary schools` : 'List not built yet') : `${normalizedPrograms.length} schools verified`}</span>
           <span style={{ flex: 1 }} />
           <span style={{ width: 20, height: 20, borderRadius: '50%', background: `conic-gradient(${VIOLET} ${Math.max(0, Math.min(100, fitIndex || 0)) * 3.6}deg,#ece5d8 0)`, WebkitMask: 'radial-gradient(closest-side,transparent 62%,#000 66%)', mask: 'radial-gradient(closest-side,transparent 62%,#000 66%)' }} />
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{Math.round(fitIndex || 0)}%</span>
-          <span className="pw-status-profile-label" style={{ fontSize: 12, color: MUTED_2 }}>profile</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: INK }}>{fitIndex == null ? '' : `${Math.round(fitIndex)}%`}</span>
+          <span className="pw-status-profile-label" style={{ fontSize: 12, color: MUTED_2 }}>{isUndergrad ? (fitIndex == null ? 'Preliminary readiness pending' : 'preliminary readiness') : 'profile'}</span>
           <span aria-hidden="true" style={{ display: 'inline-flex', marginLeft: 2, transform: `rotate(${statusExpanded ? 180 : 0}deg)`, transition: 'transform .2s ease' }}>
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="#9098b5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </span>
@@ -705,7 +705,7 @@ export default function AdvisorConversational({
               </div>
             )}
 
-            {isUndergrad && hasScores && <UndergradKpiPanel scores={scores} compact />}
+            {isUndergrad && hasScores && <UndergradKpiPanel scores={scores} profile={profile} compact />}
 
             {showProgramRecovery && (
               <div style={{ maxWidth: 640, marginLeft: 18, background: '#fffaf0', border: `1px solid ${BORDER_2}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 6px 18px rgba(20,27,52,.06)' }}>

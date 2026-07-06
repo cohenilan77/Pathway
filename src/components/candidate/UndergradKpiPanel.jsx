@@ -15,12 +15,12 @@ function scoreFor(scores, keys) {
   return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
 }
 
-export default function UndergradKpiPanel({ scores = {}, compact = false }) {
+export default function UndergradKpiPanel({ scores = {}, compact = false, profile = {} }) {
   const overall = scores?.overall != null && scores?.overall !== '' && Number.isFinite(Number(scores.overall)) ? Math.round(Number(scores.overall)) : null;
   return (
     <section style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, padding: compact ? 14 : 18, boxShadow: '0 10px 28px rgba(22,35,63,.05)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase' }}>Undergraduate readiness</div>
+        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase' }}>{profile?.readinessLabel || 'Preliminary Readiness'}</div>
         <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>Overall: {overall == null ? 'Needs update' : `${overall}%`}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compact ? 2 : 4},minmax(0,1fr))`, gap: 8 }} className="pw-undergrad-kpi-grid">

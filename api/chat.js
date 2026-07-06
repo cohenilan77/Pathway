@@ -20,6 +20,8 @@ import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { buildCandidateFacts, buildComplementaryQuestion, candidateFactsPrompt, isSchoolListRequest, stripStructuredBlocks } from '../lib/candidate-facts.js';
+import { hasUndergradBaseline } from '../lib/undergrad-programs.js';
+import { ensureUndergradFallbackRaw } from '../lib/undergrad-fallback.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -1068,6 +1070,8 @@ export default async function handler(req, res) {
     // cycle (program type, format, name, grade, etc.) without being interrupted
     // by an early upload/completeness prompt.
     const attemptsScoring = /<(?:SCORES|PROGRAMS)>/i.test(String(raw || ''));
+    const isUndergraduate = candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate';
+    const undergradHasBaseline = isUndergraduate && hasUndergradBaseline({ ...(profile || {}), ...candidateFacts, category: 'Undergraduate' });
 
     // Missing evidence cannot silently
     // become a low score, and programs cannot appear before facts + school-path
@@ -1119,7 +1123,7 @@ export default async function handler(req, res) {
       } else {
         raw = modelReply;
       }
-    } else if (attemptsScoring && !candidateFacts.readyForPrograms && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
+    } else if (attemptsScoring && !candidateFacts.readyForPrograms && !undergradHasBaseline && /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || ''))) {
       if (candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate') {
         console.log('[UndergradProgramsGate]', {
           selectedCandidateType: candidateFacts.selectedCandidateType,
@@ -1145,8 +1149,25 @@ export default async function handler(req, res) {
       }
     }
 
-    const isUndergraduate = candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate';
     if (isUndergraduate) {
+      console.log('[UNDERGRAD_PROGRAM_GATE]', {
+        isUndergrad: true,
+        hasBaseline: undergradHasBaseline,
+        readyForPrograms: candidateFacts.readyForPrograms,
+        rawHasPrograms: /<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i.test(String(raw || '')),
+        programsInRequest: Array.isArray(programs) ? programs.length : 0,
+        grade: candidateFacts.grade,
+        curriculum: candidateFacts.curriculum,
+        gpa: candidateFacts.gpa,
+        academic: candidateFacts.academic,
+        subjects: candidateFacts.subjects || candidateFacts.interests,
+        countries: candidateFacts.countries || candidateFacts.targetCountries || candidateFacts.destination,
+        activities: candidateFacts.activities,
+        strongestActivity: candidateFacts.strongestActivity,
+        leadership: candidateFacts.leadership || candidateFacts.leadershipEvidence,
+        schoolListRequested: candidateFacts.schoolListRequested,
+      });
+      raw = ensureUndergradFallbackRaw({ raw, profile, candidateFacts, scores, programs });
       const count = parsedProgramsCount(raw);
       const hasProgramsBlock = count >= 10;
       const visibleMentionsSchools = visibleMentionsUndergradSchools(raw);
