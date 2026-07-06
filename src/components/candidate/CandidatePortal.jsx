@@ -8,6 +8,7 @@ import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import UndergradRoadmap from './UndergradRoadmap.jsx';
 import UndergradTracker from './UndergradTracker.jsx';
+import UndergradKpiPanel from './UndergradKpiPanel.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
@@ -733,6 +734,16 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             </p>
           </div>
 
+          <UndergradKpiPanel scores={scores || {}} />
+          <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, margin: '14px 0 18px' }}>
+            <UndergradCard title="Strengths">
+              {list((strengths || []).slice(0, 5), 'Strengths will appear after your readiness snapshot.')}
+            </UndergradCard>
+            <UndergradCard title="Weaknesses / Risks">
+              {list((weaknesses || []).slice(0, 5), 'Risks will appear after your readiness snapshot.')}
+            </UndergradCard>
+          </div>
+
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {orderedUniversityBuckets(programs || []).map(([tierLabel, schools]) => {
@@ -843,7 +854,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             </div>
           ) : (
             <div style={{ background: '#f4f6fb', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
-              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Schools will appear here as your advisor learns more about your profile and goals.</div>
+              <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Your profile is ready for an exploratory university universe.</div>
+              <button onClick={() => send?.('Generate my undergraduate university list now. Include PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS. Do not reply with school names unless PROGRAMS is emitted.')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Build my list now</button>
             </div>
           )}
         </div>

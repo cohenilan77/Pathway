@@ -133,6 +133,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
         busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
         cvText={cvText} narrative={narrative}
         chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
+        setCandTab={setCandTab}
         authUser={authUser}
       />
     );

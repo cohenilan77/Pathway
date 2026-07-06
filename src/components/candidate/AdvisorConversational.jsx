@@ -13,6 +13,7 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import { needsProgramRecovery } from '../../../lib/program-ready-gate.js';
+import UndergradKpiPanel from './UndergradKpiPanel.jsx';
 
 const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
 const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
@@ -401,7 +402,7 @@ const STAGE_TITLES = {
 
 export default function AdvisorConversational({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
-  setShowCvModal, cvText, narrative, chosenSchools, setChosenSchools, confirmTargetSchools, authUser,
+  setShowCvModal, cvText, narrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser,
 }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -532,6 +533,19 @@ export default function AdvisorConversational({
   };
 
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
+  const handleInlineOption = (option) => {
+    const directTabs = {
+      'View University List': 'universities',
+      'View Roadmap': 'ugRoadmap',
+      'Improve Activities': 'activities',
+      'View Testing': 'testing',
+    };
+    if (isUndergrad && directTabs[option]) {
+      setCandTab?.(directTabs[option]);
+      return;
+    }
+    send(option === 'Monthly Update' ? 'Start my short monthly profile update.' : option);
+  };
   const journeyStages = ['Profile', 'Matching', 'Strategy', 'Essays', 'Audit'];
   const journeyStageIndex = stepIdx <= 2 ? 0 : stepIdx === 3 ? 1 : stepIdx <= 5 ? 2 : stepIdx <= 7 ? 3 : 4;
 
@@ -614,7 +628,7 @@ export default function AdvisorConversational({
                             {parsed.options.map((opt) => (
                               <button
                                 key={opt}
-                                onClick={() => send(opt)}
+                                onClick={() => handleInlineOption(opt)}
                                 disabled={busy}
                                 className="pw-adv2-btn"
                                 style={{ background: '#fff', border: '1.5px solid #d8cdb4', borderRadius: 12, padding: '9px 18px', fontSize: 14, fontWeight: 700, color: INK, cursor: busy ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
@@ -690,6 +704,8 @@ export default function AdvisorConversational({
                 )}
               </div>
             )}
+
+            {isUndergrad && hasScores && <UndergradKpiPanel scores={scores} compact />}
 
             {showProgramRecovery && (
               <div style={{ maxWidth: 640, marginLeft: 18, background: '#fffaf0', border: `1px solid ${BORDER_2}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 6px 18px rgba(20,27,52,.06)' }}>
