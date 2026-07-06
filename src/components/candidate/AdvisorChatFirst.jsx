@@ -16,7 +16,8 @@ import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
-const OPTIONS_PATTERN = /→\s*(.+)$/;
+const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
+const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
 const TARGET_SELECTION_LOOP = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i;
 const NARRATIVE_START = "Your targets are locked in. Now let's shape your Narrative & Strategy. What's the specific moment or experience that convinced you this is the right path?";
 
@@ -28,7 +29,11 @@ const RING_COLORS = ['#141b34', '#5b46e0', '#aebde6'];
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
   if (!match) return null;
-  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+  const optionText = match[1].replace(OPTIONS_TRAILING_PROMPT, '').trim();
+  const options = optionText
+    .split('|')
+    .map(o => o.replace(OPTIONS_TRAILING_PROMPT, '').trim())
+    .filter(Boolean);
   if (options.length < 2) return null;
   return { mainText: text.slice(0, match.index).trim(), options };
 }
@@ -462,7 +467,7 @@ export default function AdvisorChatFirst({
   // Reopen the existing list in place, pre-checked, so they can recover without
   // restarting or losing profile/analysis data.
   const needsSelectionRecovery = hasPrograms && chosenSchools?.length > 0 && TARGET_SELECTION_LOOP.test(lastAiText);
-  const showPrograms = hasPrograms && (!chosenSchools?.length || needsSelectionRecovery);
+  const showPrograms = hasPrograms && (!narrative || !chosenSchools?.length || needsSelectionRecovery);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
@@ -499,7 +504,7 @@ export default function AdvisorChatFirst({
                 const isLast = i === visibleChat.length - 1;
                 const visibleText = isLast && chosenSchools?.length && TARGET_SELECTION_LOOP.test(m.text || '') && !needsSelectionRecovery ? NARRATIVE_START : m.text;
                 const parsed = parseOptions(visibleText);
-                const showChipsHere = parsed && (!isLast || busy);
+                const showChipsHere = parsed && !busy;
                 const showAvatar = i === 0 || visibleChat[i - 1].role !== 'ai';
                 const delay = Math.min(i * 0.03, 0.3);
                 return (
