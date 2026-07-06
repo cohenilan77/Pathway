@@ -1008,7 +1008,7 @@ export default function CandidatePortal(props) {
         {/* nav — cosmetic pass — see commit for scope */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {navItems.map(item => {
-            const active = candTab === item.key || (item.key === 'studentProfile' && candTab === 'advisor') || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
+            const active = candTab === item.key || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
