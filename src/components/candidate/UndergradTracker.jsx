@@ -78,7 +78,7 @@ export default function UndergradTracker({ undergrad, setUndergradTaskStatus, ac
                   <button onClick={() => setUndergradTaskStatus?.(t.id, isDone ? 'todo' : 'done', 'task')} aria-label="toggle"
                     style={{ marginTop: 1, width: 18, height: 18, borderRadius: 5, flexShrink: 0, cursor: 'pointer', border: isDone ? 'none' : '1px solid #cbbfea', background: isDone ? '#141b34' : '#fff' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: isDone ? '#9098b5' : '#2a3447', textDecoration: isDone ? 'line-through' : 'none' }}>{t.title}</div>
+                    <div title={t.description || t.title} style={{ fontSize: 13.5, fontWeight: 600, color: isDone ? '#9098b5' : '#2a3447', textDecoration: isDone ? 'line-through' : 'none' }}>{t.header || t.title}</div>
                     <div style={{ fontSize: 11.5, color: overdue ? '#e0556b' : '#9098b5', marginTop: 2 }}>{t.area} · due {fmt(t.deadline)}{overdue ? ' · overdue' : ''}</div>
                   </div>
                 </div>
@@ -96,7 +96,7 @@ export default function UndergradTracker({ undergrad, setUndergradTaskStatus, ac
                   <div style={{ fontSize: 12, fontWeight: 800, color: '#141b34' }}>{fmt(e.date)}</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 600, color: '#2a3447' }}>{e.title}</div>
+                  <div title={e.title} style={{ fontSize: 13.5, fontWeight: 600, color: '#2a3447', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.title}</div>
                   <div style={{ fontSize: 11.5, color: '#9098b5', marginTop: 2 }}>{TYPE_LABEL[e.type] || e.type} · {e.area}</div>
                 </div>
               </div>

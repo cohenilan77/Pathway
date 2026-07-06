@@ -20,7 +20,8 @@ import {
   computeStageAdvancement,
   explainIfTooEarly,
 } from '../lib/candidate-stage-flow.js';
-import { processUndergradInput } from '../lib/undergrad/engine.js';
+import { processUndergradInput, runScheduledNagger } from '../lib/undergrad/engine.js';
+import { normalizeUndergradAdvisorOutput } from '../lib/undergrad/advisor-output.js';
 import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
 import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
@@ -525,11 +526,14 @@ export default function App() {
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
-        setUndergrad(data?.undergrad || null);
+        const isUndergrad = loadedProfile?.category === 'Undergraduate';
+        const loadedUndergrad = data?.undergrad || null;
+        setUndergrad(isUndergrad && loadedUndergrad
+          ? runScheduledNagger(loadedUndergrad, { candidateId: user?.id, candidateName: user?.name, now: Date.now() }).state
+          : loadedUndergrad);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
 
         // Detect if student is stuck and needs nudge
-        const isUndergrad = loadedProfile?.category === 'Undergraduate';
         const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
 
         if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
@@ -977,6 +981,10 @@ export default function App() {
           setStepIdx(prev => Math.max(prev, 8));
         }
         let displayText = safeVisibleReply(raw, parsed, requestProfile);
+        const undergradOutput = isUndergrad
+          ? normalizeUndergradAdvisorOutput(parsed.undergradOutput || displayText, { message: t })
+          : null;
+        if (undergradOutput) displayText = undergradOutput.chatMessage;
         // Safety net: if the model confirmed chosen schools without asking a
         // follow-up question, the flow would dead-end. Hand the candidate the
         // next move so the journey always continues.
@@ -1018,6 +1026,7 @@ export default function App() {
             candidateId,
             message: t,
             advice: displayText,
+            advisorOutput: undergradOutput,
             scores: ugScores,
             grade: requestProfile?.grade,
             targetCountry: requestProfile?.destination || requestProfile?.countries,
@@ -1266,8 +1275,10 @@ export default function App() {
       if (kind === 'roadmap') {
         return { ...s, roadmap: s.roadmap.map(it => (it.id === id ? { ...it, status, updatedAt: now } : it)) };
       }
-      if (status === 'done') return completeTask(s, id, now);
-      return { ...s, tasks: s.tasks.map(t => (t.id === id ? { ...t, status, updatedAt: now, lastUpdateAt: now } : t)) };
+      const updated = status === 'done'
+        ? completeTask(s, id, now)
+        : { ...s, tasks: s.tasks.map(t => (t.id === id ? { ...t, status, updatedAt: now, lastUpdateAt: now } : t)) };
+      return runScheduledNagger(updated, { candidateId: updated.candidateId, now }).state;
     });
   }, []);
 
