@@ -13,12 +13,14 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 
-const OPTIONS_PATTERN = /→\s*(.+)$/;
+const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
+const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
 
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
   if (!match) return null;
-  const options = match[1].split('|').map(o => o.trim()).filter(Boolean);
+  const optionText = match[1].replace(OPTIONS_TRAILING_PROMPT, '').trim();
+  const options = optionText.split('|').map(o => o.replace(OPTIONS_TRAILING_PROMPT, '').trim()).filter(Boolean);
   if (options.length < 2) return null;
   return { mainText: text.slice(0, match.index).trim(), options };
 }

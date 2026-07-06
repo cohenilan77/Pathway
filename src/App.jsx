@@ -37,6 +37,7 @@ export const PLANS = {
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please upgrade in Settings to continue with AI guidance, or choose AI + Strategy to add Live Chat with your consultant.";
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
+const PROGRAM_LIST_RECOVERY = /\b(?:show(?: me)? (?:the )?(?:programs?|school list|university list|list)|where (?:is|are) (?:the )?(?:programs?|school list|university list|list)|i (?:do not|don't|cannot|can't) see (?:the )?(?:programs?|schools?|list|matches))\b/i;
 
 const WELCOME_MESSAGE = {
   English: "Welcome — I’m glad you’re here. We’ll take this one clear step at a time.",
@@ -791,7 +792,22 @@ export default function App() {
     }
 
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
-    const requestsFirstProgramList = isSchoolListRequest(raw_t) && !(Array.isArray(programs) && programs.length);
+    const isProgramRecovery = PROGRAM_LIST_RECOVERY.test(raw_t);
+    const hasSavedPrograms = Array.isArray(programs) && programs.length > 0;
+    const requestsFirstProgramList = (isSchoolListRequest(raw_t) || isProgramRecovery) && !hasSavedPrograms;
+
+    // A saved list is already the source of truth for both the inline card and
+    // University List. Recover it locally instead of asking the model to claim
+    // it generated something that the candidate still cannot see.
+    if (isProgramRecovery && hasSavedPrograms) {
+      setChat(prev => [...prev,
+        { role: 'user', channel: 'web', text: raw_t },
+        { role: 'ai', channel: 'web', text: 'Here’s your list again. You can review and select schools directly below.' },
+      ]);
+      setInput('');
+      setCandTab('studentProfile');
+      return;
+    }
 
     // Persist the four-way opening choice before the request leaves the browser.
     // The request must carry this same profile immediately; React state updates
@@ -858,6 +874,9 @@ export default function App() {
     try {
       const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       let systemContext = buildAISystemContext(stage);
+      if (requestsFirstProgramList) {
+        systemContext += '\n\nPROGRAM LIST RECOVERY: The candidate explicitly asked to see the missing list. This response MUST include a valid <PROGRAMS>[...]</PROGRAMS> block with at least 10 items. Do not say the list is ready, live, or in a tab unless that block is present in this same response.';
+      }
       // Stage guardrail: if the candidate reaches for a later stage before its
       // prerequisite, tell the agent to explain the current required next step
       // instead of skipping ahead. The agent still owns the wording.

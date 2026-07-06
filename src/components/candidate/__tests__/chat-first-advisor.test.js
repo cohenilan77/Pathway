@@ -9,6 +9,7 @@ const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
 
 const advisor = read('Advisor.jsx');
 const chatFirst = read('AdvisorChatFirst.jsx');
+const conversational = read('AdvisorConversational.jsx');
 
 test('Advisor routes every track to the production conversational layout', () => {
   assert.match(advisor, /const ADAPTIVE_GRAD = true/);
@@ -52,11 +53,10 @@ test('program selection writes through shared state and advances the journey', (
   assert.ok(!chatFirst.includes('send(`I\'d like to move forward with:'), 'checkbox confirmation must not depend on an AI request');
 });
 
-test('confirmed targets remove old program artifacts so the narrative question stays visible', () => {
+test('program artifacts remain visible through school selection and recovery', () => {
   assert.match(chatFirst, /const needsSelectionRecovery = hasPrograms/);
-  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
+  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!narrative \|\| !chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
   assert.match(chatFirst, /\{showPrograms && \(/);
-  assert.ok(!chatFirst.includes('{hasPrograms && (\n              <ProgramsCard'), 'confirmed targets must not leave the program card below the latest chat reply');
 });
 
 test('old stuck sessions reopen the saved list without restarting', () => {
@@ -81,6 +81,12 @@ test('confirmed targets continue narrative instead of asking for names again', (
 test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /function contextualChips/);
   assert.match(chatFirst, /Advisor is analyzing/);
+});
+
+test('production conversational advisor parses multiline fixed choices inline', () => {
+  assert.match(conversational, /const OPTIONS_PATTERN = \/→\\s\*\(\[\\s\\S\]\+\)\$\//);
+  assert.match(conversational, /OPTIONS_TRAILING_PROMPT/);
+  assert.match(conversational, /parsed\.options\.map/);
 });
 
 test('em-dashes in chat-first are limited to empty numeric placeholders', () => {
