@@ -26,7 +26,8 @@ import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
 import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
-import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
+import { buildReturningCandidateMessage } from '../lib/returning-candidate.js';
+import { upcomingTestDatesPromptLine } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
 
@@ -507,7 +508,21 @@ export default function App() {
         const loadedStrengths = data?.strengths || null;
         const loadedEssays = data?.essays || {};
 
-        setChat(loadedChat);
+        const returnWelcomeKey = `pathway_return_welcome_${user?.id || data?.sessionId || 'candidate'}`;
+        const returnMessage = sessionStorage.getItem(returnWelcomeKey) ? null : buildReturningCandidateMessage({
+          user,
+          profile: loadedProfile,
+          scores: loadedScores,
+          programs: loadedPrograms,
+          chosenSchools: data?.chosenSchools,
+          narrative: data?.narrative,
+          cvText: data?.cvText,
+          essays: loadedEssays,
+          interviews: data?.interviews,
+          chat: loadedChat,
+        });
+        setChat(returnMessage ? [...loadedChat, { role: 'ai', channel: 'web', text: returnMessage }] : loadedChat);
+        if (returnMessage) sessionStorage.setItem(returnWelcomeKey, '1');
         setSessionId(data?.sessionId || createSessionId());
         setStepIdx(loadedStepIdx);
         setProfile(loadedProfile);
@@ -535,23 +550,6 @@ export default function App() {
           : loadedUndergrad);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
 
-        // Detect if student is stuck and needs nudge
-        const stage = buildStageContext(loadedStepIdx, loadedProfile, loadedScores, loadedPrograms, loadedEssays, data?.tasks, loadedStrengths, loadedChat[0]?.timestamp, data?.weaknesses);
-
-        if (isUndergrad && loadedStepIdx === 3 && loadedPrograms?.length > 0 && !loadedScores?.testScore && loadedChat.length > 10) {
-          // Student has universities but hasn't discussed testing yet - add nudge
-          const nudgeMsg = {
-            role: 'ai',
-            channel: 'web',
-            text: (() => {
-              const { sat, act } = getUpcomingTestDates(3);
-              return `Welcome back! You've got a solid university list — next step is locking in your test plan. When are you thinking of sitting the SAT or ACT? → ${sat[0]} | ${act[0]} | ${sat[1]} | Not sure yet`;
-            })()
-          };
-          if (!loadedChat.find(m => m.text?.includes('Welcome back'))) {
-            setChat(prev => [...prev, nudgeMsg]);
-          }
-        }
       } catch {
         if (!cancelled) { setAuth(null); setScreen('login'); }
       }
@@ -713,12 +711,13 @@ export default function App() {
         keepalive: true,
       }).catch(() => {});
     }
+    if (auth?.user?.id) sessionStorage.removeItem(`pathway_return_welcome_${auth.user.id}`);
     setAuth(null);
     sessionStorage.removeItem('pathway_admin_secret');
     setAdminSecret('');
     setAuthError('');
     setScreen('login'); setCandTab('advisor'); window.scrollTo(0, 0);
-  }, [auth?.token, setAuth]);
+  }, [auth?.token, auth?.user?.id, setAuth]);
 
   const resetSession = useCallback(() => {
     const confirmed = window.confirm('Start a new session? This will clear your chat, profile, scores, school matches, documents, tasks, essays, and saved analysis.');
