@@ -25,6 +25,7 @@ import { normalizeUndergradAdvisorOutput } from '../lib/undergrad/advisor-output
 import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
 import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
+import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
 import { upcomingTestDatesPromptLine, getUpcomingTestDates } from './lib/testDates.js';
 import { DEFAULT_STEPS as STEPS, UNDERGRAD_STEPS, TRACK_CONFIG, getTrackConfig, resolveTrack } from './trackConfig.js';
 export { STEPS, UNDERGRAD_STEPS, TRACK_CONFIG };
@@ -805,7 +806,7 @@ export default function App() {
         { role: 'ai', channel: 'web', text: 'Here’s your list again. You can review and select schools directly below.' },
       ]);
       setInput('');
-      setCandTab('studentProfile');
+      setCandTab('universities');
       return;
     }
 
@@ -924,7 +925,7 @@ export default function App() {
         if (!parsed.strengths && typedPatch.strengths) parsed.strengths = typedPatch.strengths;
         if (!parsed.weaknesses && typedPatch.weaknesses) parsed.weaknesses = typedPatch.weaknesses;
         if (!parsed.tasks && typedPatch.tasks) parsed.tasks = typedPatch.tasks;
-        if (!parsed.programs && typedPatch.programs) parsed.programs = typedPatch.programs;
+        if (!parsed.programs && typedPatch.programs) parsed.programs = normalizeProgramList(typedPatch.programs);
         if (!parsed.chosenSchools && typedPatch.chosenSchools) parsed.chosenSchools = typedPatch.chosenSchools;
         if (!parsed.insights && typedPatch.insights) parsed.insights = typedPatch.insights;
         if (!parsed.essay && typedPatch.essays) parsed.essay = Object.entries(typedPatch.essays).map(([school, value]) => ({ school, ...value }))[0];
@@ -948,8 +949,10 @@ export default function App() {
           setTasks(next);
           setCompletedTasks({});
         }
-        if (parsed.programs) {
-          setPrograms(parsed.programs);
+        if (parsed.programs?.length) {
+          const normalizedPrograms = normalizeProgramList(parsed.programs) || [];
+          parsed.programs = normalizedPrograms;
+          setPrograms(normalizedPrograms);
           const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
             || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);
           if (!isUndergrad && regeneratedProgramList) {
@@ -1004,6 +1007,12 @@ export default function App() {
           ? normalizeUndergradAdvisorOutput(parsed.undergradOutput || displayText, { message: t })
           : null;
         if (undergradOutput) displayText = undergradOutput.chatMessage;
+        displayText = gateProgramReadyReply({
+          text: displayText,
+          isUndergrad,
+          parsedPrograms: parsed.programs,
+          currentPrograms: programs,
+        });
         // Safety net: if the model confirmed chosen schools without asking a
         // follow-up question, the flow would dead-end. Hand the candidate the
         // next move so the journey always continues.

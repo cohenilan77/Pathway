@@ -89,6 +89,12 @@ test('production conversational advisor parses multiline fixed choices inline', 
   assert.match(conversational, /parsed\.options\.map/);
 });
 
+test('production advisor renders a missing-program recovery card', () => {
+  assert.match(conversational, /needsProgramRecovery/);
+  assert.match(conversational, /The list has not been generated yet/);
+  assert.match(conversational, /Generate my school list/);
+});
+
 test('em-dashes in chat-first are limited to empty numeric placeholders', () => {
   const stringLiterals = chatFirst.match(/'[^'\n]*'|"[^"\n]*"|`[^`\n]*`/g) || [];
   const offenders = stringLiterals.filter(s => s.includes('—'));

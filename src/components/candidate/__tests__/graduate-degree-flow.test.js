@@ -67,4 +67,6 @@ test('saved program-list recovery is local and missing lists force generation', 
   assert.match(appSrc, /PROGRAM_LIST_RECOVERY/);
   assert.match(appSrc, /isProgramRecovery && hasSavedPrograms/);
   assert.match(appSrc, /PROGRAM LIST RECOVERY:[\s\S]*MUST include a valid <PROGRAMS>/);
+  assert.match(appSrc, /setCandTab\('universities'\)/);
+  assert.match(appSrc, /gateProgramReadyReply/);
 });
