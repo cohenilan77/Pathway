@@ -10,6 +10,7 @@ const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
 const advisor = read('Advisor.jsx');
 const chatFirst = read('AdvisorChatFirst.jsx');
 const conversational = read('AdvisorConversational.jsx');
+const kpiPanel = read('UndergradKpiPanel.jsx');
 
 test('Advisor routes every track to the production conversational layout', () => {
   assert.match(advisor, /const ADAPTIVE_GRAD = true/);
@@ -93,6 +94,15 @@ test('production advisor renders a missing-program recovery card', () => {
   assert.match(conversational, /needsProgramRecovery/);
   assert.match(conversational, /The list has not been generated yet/);
   assert.match(conversational, /Generate my school list/);
+});
+
+test('undergrad advisor exposes state-driven KPI and tab navigation', () => {
+  assert.match(conversational, /<UndergradKpiPanel/);
+  assert.match(conversational, /'View University List': 'universities'/);
+  for (const label of ['Academic Base', 'Subject Direction', 'Activity Depth', 'Leadership', 'Testing Readiness', 'Initiative / Projects', 'Consistency / Momentum']) {
+    assert.ok(kpiPanel.includes(label));
+  }
+  assert.match(kpiPanel, /Needs update/);
 });
 
 test('em-dashes in chat-first are limited to empty numeric placeholders', () => {

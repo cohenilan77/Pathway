@@ -531,7 +531,7 @@ After the closing question is answered, end the interview:
 This is a long-term Grade 9-12 counseling journey. Never use STEP 2 through STEP 8 above for this category.
 
 RESPONSE RULES FOR ALL UNDERGRADUATE MESSAGES (mandatory, no exceptions):
-1. Keep every visible reply to 1-2 short sentences maximum. Never write long paragraphs.
+1. Keep every visible reply to ONE short sentence maximum plus tappable chips. Never write long paragraphs.
 2. Never use hyphens or dashes in your text. Use plain words instead.
 3. Ask exactly ONE question per message.
 4. Every message must end with "→" and 3-5 pipe-separated options so the UI renders tappable chips. Always include a relevant "Other" option. Example: "What grade are you in? → Grade 9 | Grade 10 | Grade 11 | Grade 12 | Other"
@@ -539,26 +539,22 @@ RESPONSE RULES FOR ALL UNDERGRADUATE MESSAGES (mandatory, no exceptions):
 6. Never confirm or echo back what the student just said. Move forward immediately with the next question.
 7. SCHOOL LIST STATE GATE: Never say programs or a list are ready, mention the University List tab, ask the student to choose 3-5 schools, or ask them to select from a list unless this exact response contains a valid <PROGRAMS>[...]</PROGRAMS> block with at least 10 schools. "Recommend my portfolio", "show programs", "show list", "I don't see", "where is the list", and equivalent recovery requests MUST emit that block in the same response. Do not ask the student to pick schools before emitting it.
 
-UNDERGRAD ONBOARDING QUESTIONS — ask in this exact order unless the answer is already clearly known:
+UNDERGRAD ONBOARDING QUESTIONS — maximum 10 intake turns. Ask in this exact order unless the answer is already known:
 1. What grade are you in? → Grade 9 | Grade 10 | Grade 11 | Grade 12
 2. Which curriculum are you studying? → IB | A-Level | AP / US High School | Israeli | French | Other
-3. Upload your latest transcript, or enter your grades manually.
+3. What is your current GPA or grade range? → Enter GPA | Mostly A grades | Mostly B grades | Upload transcript | Other
 4. Which subjects do you enjoy most? → Math | Economics | Business | Computer Science | Science | Humanities | Arts | Not sure
 5. Do you have a sense of what you want to study at university, or still figuring it out? → I have a clear direction | Still exploring | A couple of ideas | Not sure yet
    Store the answer as pathwayType: "focused" (clear direction), "exploring" (still figuring out), or "partial" (a couple of ideas). This shapes every future question.
-6. If pathwayType is "focused" or "partial": What field or subject? → Business | Economics | Finance | Engineering | Computer Science | Medicine | Law | Psychology | Design | Architecture | Politics | Other
-   If pathwayType is "exploring": skip this question and move directly to Q7.
-7. Which countries interest you? → USA | UK | Canada | Europe | Australia | Israel | Open
-8. What do you currently do outside school? → Sports | Music | Arts | Clubs | Coding | Volunteering | Research | Competitions | Work | Nothing yet
-9. What is your strongest activity today?
-10. Have you had any leadership role? → None | Team Captain | Club Leader | Founder | Student Council | Other
-11. Any awards, competitions, projects or certificates? Upload or enter manually.
-12. Have you taken or are you planning to take any standardized tests? → SAT | ACT | PSAT | AP | TOEFL | IELTS | None yet
-13. What kind of university excites you? → Top ranked | Entrepreneurial | Big campus | Big city | Research | Creative | International | Not sure
+6. Which countries interest you? → USA | UK | Canada | Europe | Australia | Israel | Open
+7. What do you currently do outside school? → Sports | Music | Arts | Clubs | Coding | Volunteering | Research | Competitions | Work | Nothing yet
+8. What is your strongest activity or project today? → Describe it | Upload evidence | Nothing yet | Other
+9. What leadership, award, competition, or project evidence do you have? → Leadership role | Award or competition | Project | None yet | Other
+10. What is your testing status and preferred university style? → None yet and Top ranked | Testing planned and Research | Testing underway and Entrepreneurial | Other
 
 After each answer, emit an updated <PROFILE> block with everything known so far. Use the logged-in user's name if the conversation does not provide a student name; if no name is known, omit name rather than inventing a placeholder.
 
-INITIAL SNAPSHOT — after Question 13 (university style) is answered, emit ALL of these blocks in the same response:
+INITIAL SNAPSHOT — immediately after Question 10 is answered, stop intake and emit ALL of these blocks in the same response:
 - <PROFILE> with grade, curriculum, grades/transcript status, subjects, intendedMajor, countries, activities, strongestActivity, leadership, awardsProjects, tests, universityStyle, pathwayType ("focused"|"exploring"|"partial"), category:"Undergraduate", degree:"Undergraduate".
 - <SCORES> calibrated as University Readiness Score. Weight academics, potential, leadership, volunteering/activity depth, uniqueness, goalClarity, narrative, and testScore according to grade. For Grade 9-10, do not punish missing SAT/ACT harshly.
 - <STRENGTHS> as academic strengths, activity strengths, and readiness advantages.
@@ -570,9 +566,8 @@ MATURITY-SPECIFIC PROGRAM OUTPUT:
 - Grade 11 preliminary: set admissionStatus by tier to "Preliminary Reach", "Preliminary Target", or "Preliminary Likely", and profileStage to "preliminary".
 - Grade 12 application: use final Reach, Target, Likely, or Locked labels and profileStage "application".
 - For an exploring Grade 9-10 student without an intended major, infer a broad interest cluster from subjects, activities, and preferences. For Math plus USA plus Top ranked, span Applied Mathematics, Economics, Computer Science, Data Science, Engineering, and Business Analytics. Never require a final major.
-Visible text after the blocks must follow this exact two-part structure:
-Part 1 (1 sentence): Name the student's actual grade, their strongest subject or interest, and how many schools were matched with the Reach/Target/Likely breakdown. Use the student's real data. No generic phrases.
-Part 2 (1 sentence + chips): Look at TASKS[0] (the most important task you just generated). Ask ONE specific question that directly addresses that task. The chips must be concrete actions tied to that task, not generic options like "ask something else." If TASKS[0] is about competitions, offer relevant competition types. If it is about testing, use the upcoming SAT and ACT dates listed at the top of this prompt as chip options — never generate a past date. If it is about leadership, offer specific leadership opportunities. Never ask "What would you like to focus on first?" or any open-ended meta question. Always end with → Chip1 | Chip2 | Chip3 | Chip4
+Visible text after the blocks must be exactly one short sentence plus these navigation chips: "Your profile is ready with a KPI snapshot, strengths, weaknesses, roadmap, and exploratory university list. → View University List | View Roadmap | Improve Activities | Monthly Update"
+After the initial snapshot, stop the intake loop. Do not ask SAT planning questions in Advisor unless the student explicitly chooses Testing or asks about testing. Do not ask project coaching questions unless they explicitly choose Activities or ask about a project. Chat is a command surface; direct the student to tabs.
 
 LONG-TERM JOURNEY MODES:
 - Weekly coaching: ask for one short update on achievements, activities, problems, ideas, or goals; update PROFILE/TASKS when useful.
@@ -727,6 +722,26 @@ function buildVerifiedScoringSection(profile, scores, programs) {
   if (!lines.length) return '';
 
   return `\n\n==SERVER-VERIFIED SCORING (AUTHORITATIVE — DO NOT RECOMPUTE)==\nThese values were computed deterministically from the candidate's actual GPA/test score vs. each school's stated median — not by you. For any of these exact school names appearing in a PROGRAMS or CHOSEN_SCHOOLS block this turn, use this exact tier, fit, unlockConditions, and exceptionFlag verbatim. Do not adjust, inflate, or recompute them.\n${lines.join('\n')}`;
+}
+
+function parsedProgramsCount(raw) {
+  const match = String(raw || '').match(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/i);
+  if (!match) return 0;
+  try {
+    const parsed = JSON.parse(match[1].trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+    const normalized = normalizeProgramList(parsed);
+    return Array.isArray(normalized) ? normalized.length : 0;
+  } catch { return 0; }
+}
+
+function visibleMentionsUndergradSchools(raw) {
+  const visible = stripStructuredBlocks(raw, ['PROFILE', 'SCORES', 'STRENGTHS', 'WEAKNESSES', 'TASKS', 'PROGRAMS', 'CHOSEN_SCHOOLS', 'INSIGHTS', 'ESSAY', 'INTERVIEW_RESULT']);
+  return /matched\s+\d+|\d+[- ]school\s+portfolio|portfolio\s+spans|realistic\s+reaches|reach(?:es)?[,/ ]+targets?[,/ ]+(?:and\s+)?likel(?:y|ies)|\b(?:MIT|Stanford|Carnegie Mellon|CMU|Berkeley|Harvard|Yale|Princeton|Cornell|UCLA|Georgia Tech)\b/i.test(visible);
+}
+
+function undergradRecoveryRaw(raw) {
+  const blocks = [...String(raw || '').matchAll(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|CHOSEN_SCHOOLS|INSIGHTS)>([\s\S]*?)<\/\1>/gi)].map(match => match[0]);
+  return `${blocks.join('')}I still need to generate and save the actual university list. → Build my list now | View Roadmap | Monthly Update`;
 }
 
 // Infers which pipeline "feature" the candidate is currently in, based on the most
@@ -1128,6 +1143,24 @@ export default async function handler(req, res) {
       if (!isIdleCheckin && !/specific schools|want recommendations/i.test(raw)) {
         raw = `${raw}\n\nDo you already have specific schools, or do you want recommendations?`.trim();
       }
+    }
+
+    const isUndergraduate = candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate';
+    if (isUndergraduate) {
+      const count = parsedProgramsCount(raw);
+      const hasProgramsBlock = count >= 10;
+      const visibleMentionsSchools = visibleMentionsUndergradSchools(raw);
+      console.log('[UG_PROGRAM_SAVE_CHECK]', {
+        hasProgramsBlock,
+        parsedProgramsCount: count,
+        programsInStateCount: Array.isArray(programs) ? programs.length : 0,
+        visibleMentionsSchools,
+        selectedCandidateType: candidateFacts.selectedCandidateType,
+        profileStage: candidateFacts.profileStage,
+        readyForPrograms: candidateFacts.readyForPrograms,
+        schoolListRequested: candidateFacts.schoolListRequested,
+      });
+      if (visibleMentionsSchools && !hasProgramsBlock) raw = undergradRecoveryRaw(raw);
     }
 
     const usageWarning = '⚠️ You are approaching the AI usage limit for this period. Some features may be limited.';

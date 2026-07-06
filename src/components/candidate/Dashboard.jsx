@@ -1,5 +1,6 @@
 import React from 'react';
 import { miniCalendar } from '../../../lib/undergrad/candidate-view.js';
+import UndergradKpiPanel from './UndergradKpiPanel.jsx';
 
 function fmtDay(date) {
   if (!date) return '—';
@@ -129,8 +130,28 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         {/* Calendar insight (undergrad) */}
         {isUndergrad && <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />}
 
+        {isUndergrad && (
+          <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+        )}
+
+        {isUndergrad && [
+          ['Top strengths', (strengths || []).slice(0, 3), '#2f9e78'],
+          ['Current risks', (weaknesses || []).slice(0, 3), '#e0556b'],
+          ['Next tasks', (tasks || []).slice(0, 3), '#5b46e0'],
+        ].map(([label, items, color]) => (
+          <Card key={label}>
+            <CardLabel>{label}</CardLabel>
+            {items.length ? items.map((item, index) => (
+              <div key={index} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, marginTop: 6, flexShrink: 0 }} />
+                <span>{typeof item === 'string' ? item : item?.header || item?.title}</span>
+              </div>
+            )) : <div style={{ fontSize: 13, color: '#9098b5' }}>Needs update</div>}
+          </Card>
+        ))}
+
         {/* Smart focus */}
-        <Card style={isUndergrad ? {} : { gridColumn: '1 / -1' }}>
+        {!isUndergrad && <Card style={{ gridColumn: '1 / -1' }}>
           <CardLabel>Smart focus</CardLabel>
           {focusItems.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
@@ -153,7 +174,7 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
           ) : (
             <div style={{ fontSize: 13.5, color: '#9098b5' }}>Your focus areas appear here after your first analysis.</div>
           )}
-        </Card>
+        </Card>}
       </div>
     </div>
   );

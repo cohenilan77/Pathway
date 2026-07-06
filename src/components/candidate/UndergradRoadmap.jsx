@@ -49,7 +49,7 @@ function StageCard({ stage, index, expanded, onToggle }) {
   );
 }
 
-export default function UndergradRoadmap({ undergrad, scores, profile, programs, documents, regenerateRoadmap, busy }) {
+export default function UndergradRoadmap({ undergrad, scores, profile, programs, documents, weaknesses, regenerateRoadmap, busy }) {
   const stages = useMemo(() => journeyStages({ undergrad, scores, profile, programs, documents }), [undergrad, scores, profile, programs, documents]);
   const [expanded, setExpanded] = useState(null);
   const overall = Math.round(stages.reduce((sum, s) => sum + s.progress, 0) / (stages.length || 1));
@@ -74,6 +74,15 @@ export default function UndergradRoadmap({ undergrad, scores, profile, programs,
           {busy ? 'Updating…' : 'Rebuild roadmap'}
         </button>
       </div>
+
+      {(weaknesses || []).length > 0 && (
+        <div style={{ background: '#fff8ea', border: '1px solid #f1ddae', borderRadius: 16, padding: '14px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#a97510', textTransform: 'uppercase', letterSpacing: '.5px' }}>Roadmap priorities from current risks</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
+            {(weaknesses || []).slice(0, 3).map((item, index) => <span key={index} style={{ background: '#fff', borderRadius: 999, padding: '7px 11px', fontSize: 12.5, color: '#6b5317' }}>{typeof item === 'string' ? item : item?.title || item?.name}</span>)}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {stages.map((stage, i) => (
