@@ -401,7 +401,7 @@ const STAGE_TITLES = {
 };
 
 export default function AdvisorConversational({
-  STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, programs,
+  STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setProfile, programs,
   setShowCvModal, cvText, narrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser,
 }) {
   const scrollRef = useRef(null);
@@ -533,6 +533,20 @@ export default function AdvisorConversational({
   };
 
   const handleKey = (e) => { if (e.key === 'Enter' && input.trim()) send(); };
+
+  // Derived from the chat itself (every AI message that carried option chips
+  // is one question asked) rather than a separate counter, so it survives
+  // reloads and never drifts from the visible conversation. From the 7th
+  // question on, an "End for now" exit is appended to the latest question's
+  // options so the student can stop without abandoning their progress —
+  // everything collected so far is already auto-saved after every turn.
+  const questionCount = visibleChat.filter(m => m.role === 'ai' && parseOptions(m.text)).length;
+  const showEndForNow = questionCount >= 7;
+  const handleEndChat = () => {
+    setProfile?.(prev => ({ ...(prev || {}), profileCompleted: true }));
+    setCandTab?.('dashboard');
+  };
+
   const handleInlineOption = (option) => {
     const directTabs = {
       'View University List': 'universities',
@@ -636,6 +650,16 @@ export default function AdvisorConversational({
                                 {opt}
                               </button>
                             ))}
+                            {showEndForNow && i === visibleChat.length - 1 && (
+                              <button
+                                onClick={handleEndChat}
+                                disabled={busy}
+                                className="pw-adv2-btn"
+                                style={{ background: '#f4f5f8', border: '1.5px solid #dde0e8', borderRadius: 12, padding: '9px 18px', fontSize: 14, fontWeight: 700, color: MUTED_2, cursor: busy ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap' }}
+                              >
+                                End for now
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

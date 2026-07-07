@@ -49,7 +49,7 @@ const AiAvatar = () => (
   </div>
 );
 
-export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, cvText }) {
+export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, sendIdleCheckin, busy, scores, profile, setProfile, programs, setShowCvModal, setCandTab, narrative, setNarrative, tasks, completedTasks, setCompletedTasks, authUser, chosenSchools, setChosenSchools, reopenProgramSelection, confirmTargetSchools, cvText }) {
   const messagesEndRef = useRef(null);
   const chatScrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -130,7 +130,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
     return (
       <AdvisorConversational
         STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
-        busy={busy} scores={scores} profile={profile} programs={programs} setShowCvModal={setShowCvModal}
+        busy={busy} scores={scores} profile={profile} setProfile={setProfile} programs={programs} setShowCvModal={setShowCvModal}
         cvText={cvText} narrative={narrative}
         chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
         setCandTab={setCandTab}
