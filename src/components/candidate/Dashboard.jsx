@@ -41,7 +41,7 @@ function UndergradMiniCalendar({ undergrad, setCandTab }) {
   ];
   return (
     <Card style={{ cursor: 'pointer' }}>
-      <div onClick={() => setCandTab?.('ugTracker')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setCandTab?.('ugTracker'); }}>
+      <div onClick={() => setCandTab?.('calendar')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setCandTab?.('calendar'); }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase' }}>Calendar</div>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: '#5b46e0' }}>Open →</span>
@@ -74,7 +74,7 @@ function CardLabel({ children }) {
 
 // The single most useful next move, derived from real data only.
 function nextBestMove({ tasks, weaknesses, overall, isUndergrad }) {
-  if (tasks && tasks.length) return { text: tasks[0], tab: isUndergrad ? 'ugTracker' : 'advisor', cta: 'Open tracker' };
+  if (tasks && tasks.length) return { text: tasks[0], tab: isUndergrad ? 'calendar' : 'advisor', cta: 'Open tracker' };
   if (overall == null) return { text: 'Start your profile analysis with the advisor.', tab: isUndergrad ? 'studentProfile' : 'advisor', cta: 'Talk to advisor' };
   if (weaknesses && weaknesses.length) return { text: `Close a key gap: ${weaknesses[0]}`, tab: isUndergrad ? 'studentProfile' : 'advisor', cta: 'Work on it' };
   return { text: 'Keep building — review your roadmap and next steps.', tab: isUndergrad ? 'ugRoadmap' : 'advisor', cta: 'Open roadmap' };

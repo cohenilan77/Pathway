@@ -12,11 +12,10 @@ export const TRACK_CONFIG = {
     nav: [
       ['dashboard', 'Dashboard', 'dashboard'],
       ['studentProfile', 'Advisor', 'advisor'],
-      ['ugProfile', 'My Profile', 'advisor'],
-      ['testing', 'Practice', 'documentDepository'],
+      ['documents', 'Documents', 'documentDepository'],
       ['ugRoadmap', 'Roadmap', 'analysis'],
-      ['essayDocs', 'Essays & Documents', 'documents'],
-      ['ugTracker', 'Calendar / Deadlines', 'documentDepository'],
+      ['testing', 'Practice', 'documentDepository'],
+      ['calendar', 'Calendar', 'documentDepository'],
       ['settings', 'Settings', 'settings'],
     ],
     kpis: [

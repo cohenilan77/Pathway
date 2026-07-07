@@ -3,7 +3,6 @@ import Dashboard from './Dashboard.jsx';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
-import EssayDocuments from './EssayDocuments.jsx';
 import Community from './Community.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
@@ -23,7 +22,7 @@ const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' 
 const PLAN_ACCESS = {
   free: new Set(['dashboard', 'advisor', 'settings']),
   ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
-    'studentProfile', 'ugProfile', 'roadmap', 'ugRoadmap', 'ugTracker', 'activities', 'universities', 'testing', 'essays', 'essayDocs', 'applications']),
+    'studentProfile', 'roadmap', 'ugRoadmap', 'calendar', 'activities', 'universities', 'testing', 'essays', 'applications']),
   ai_strategy: null, // null = all tabs
 };
 
@@ -74,8 +73,7 @@ ICON_BY_KEY.testing = ICON_BY_KEY.documentDepository;
 ICON_BY_KEY.essays = ICON_BY_KEY.documents;
 ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
 ICON_BY_KEY.ugRoadmap = ICON_BY_KEY.analysis;
-ICON_BY_KEY.ugTracker = ICON_BY_KEY.documentDepository;
-ICON_BY_KEY.essayDocs = ICON_BY_KEY.documents;
+ICON_BY_KEY.calendar = ICON_BY_KEY.documentDepository;
 
 function navFromConfig(config, hasChatAccess) {
   let items = Array.isArray(config?.nav) && config.nav.length
@@ -1035,16 +1033,19 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', ugProfile: 'My Profile', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', ugTracker: 'Calendar / Deadlines', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', essayDocs: 'Essays & Documents', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
-    ugProfile: 'Your profile at a glance.',
     analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
     activities: 'Shape the experiences that tell your story.', testing: 'Plan and track your test preparation.', essays: 'Draft and refine your strongest story.',
-    essayDocs: 'Draft essays, get AI feedback, and manage your documents.', ugTracker: 'Every deadline and milestone in one place.',
+    calendar: 'Every deadline and milestone in one place.',
     applications: 'Keep every application moving.', documents: 'Timed practice with a full breakdown.', documentDepository: 'Everything your applications need.',
     community: 'Learn from candidates on the same path.', settings: 'Manage your account and plan.', chat: 'Talk to a human strategist.',
   };
+  // Undergrad repurposes the shared 'documents' key for the file-repository view
+  // (grad uses it for the Simulation workspace), so its header text is resolved
+  // separately instead of colliding in the tabLabels/tabSubtitles maps above.
+  const isUndergradDocsTab = candTab === 'documents' && isUndergrad;
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
@@ -1160,8 +1161,8 @@ export default function CandidatePortal(props) {
         {/* top bar */}
         <header className="pw-candidate-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '18px 28px 12px', flexShrink: 0 }}>
           <div>
-            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 23, fontWeight: 600, color: '#141b34', letterSpacing: '-.01em' }}>{['dashboard', 'advisor', 'studentProfile'].includes(candTab) ? `Good ${tod}, ${first}` : tabLabels[candTab]}</div>
-            <div style={{ fontSize: 13, color: '#6b7392', fontWeight: 400, marginTop: 2 }}>{targetSummary || tabSubtitles[candTab] || tabLabels[candTab]}</div>
+            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 23, fontWeight: 600, color: '#141b34', letterSpacing: '-.01em' }}>{['dashboard', 'advisor', 'studentProfile'].includes(candTab) ? `Good ${tod}, ${first}` : (isUndergradDocsTab ? 'Documents' : tabLabels[candTab])}</div>
+            <div style={{ fontSize: 13, color: '#6b7392', fontWeight: 400, marginTop: 2 }}>{targetSummary || (isUndergradDocsTab ? 'Your essays, CV, and every uploaded file in one place.' : tabSubtitles[candTab]) || tabLabels[candTab]}</div>
           </div>
           <div className="pw-candidate-top-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button onClick={handleHelp} title="Help" style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #f1eadd', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7392' }}>
@@ -1181,15 +1182,14 @@ export default function CandidatePortal(props) {
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
-        {candTab === 'ugProfile' && isUndergrad && <UndergradProfilePage {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
         {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {candTab === 'ugRoadmap' && isUndergrad && <UndergradRoadmap {...props} />}
-        {candTab === 'ugTracker' && isUndergrad && <UndergradTracker {...props} />}
+        {candTab === 'calendar' && isUndergrad && <UndergradTracker {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
-        {candTab === 'essayDocs' && isUndergrad && <EssayDocuments {...props} />}
-        {candTab === 'documents' && <Documents {...props} />}
-        {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+        {candTab === 'documents' && isUndergrad && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+        {candTab === 'documents' && !isUndergrad && <Documents {...props} />}
+        {candTab === 'documentDepository' && !isUndergrad && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'community' && <Community {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
