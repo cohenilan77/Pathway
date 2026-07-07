@@ -9,15 +9,18 @@ export const TRACK_CONFIG = {
     scoreLabel: 'University Readiness',
     steps: UNDERGRAD_STEPS,
     docLabel: 'Roadmap, activities, testing, essays, applications',
+    // Consolidated to 5 main tabs (Dashboard, Advisor, Workspace, Community,
+    // Live Chat — Live Chat is auto-injected by navFromConfig). Every old
+    // feature (University List, Documents, Roadmap, Practice, Calendar) is
+    // re-homed inside the Workspace tab, not deleted — see WorkspaceHub in
+    // CandidatePortal.jsx. Settings/Help/Notifications/Profile moved to the
+    // top-right header, so 'settings' is intentionally not a nav entry here
+    // (it stays a valid candTab, just reached via the header icon).
     nav: [
       ['dashboard', 'Dashboard', 'dashboard'],
       ['studentProfile', 'Advisor', 'advisor'],
-      ['universityList', 'University List', 'universities'],
-      ['documents', 'Documents', 'documentDepository'],
-      ['ugRoadmap', 'Roadmap', 'analysis'],
-      ['testing', 'Practice', 'documentDepository'],
-      ['calendar', 'Calendar', 'documentDepository'],
-      ['settings', 'Settings', 'settings'],
+      ['workspace', 'Workspace', 'workspace'],
+      ['community', 'Community', 'community'],
     ],
     kpis: [
       ['academic', 'Academic', 'Grades, subject strength, and academic consistency.'],

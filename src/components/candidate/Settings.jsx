@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import WhatsAppOptIn from './WhatsAppOptIn';
 import TelegramOptIn from './TelegramOptIn';
 
-const PLAN_DETAILS = [
+export const PLAN_DETAILS = [
   {
     key: 'free',
     label: 'Free',

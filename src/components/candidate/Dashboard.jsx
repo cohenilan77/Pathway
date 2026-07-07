@@ -312,7 +312,10 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
         <Card style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your next best move</div>
           <div style={{ fontFamily: "'Newsreader',serif", fontSize: 20, fontWeight: 700, color: '#141b34', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
-          <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>{move.cta} →</button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>{move.cta} →</button>
+            <button onClick={() => setCandTab('chat')} title="Talk to a human strategist" style={{ background: '#fff', color: '#5b46e0', border: '1px solid #e0d9ef', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Talk to Human</button>
+          </div>
         </Card>
 
         <MilestonesCard profile={profile} />

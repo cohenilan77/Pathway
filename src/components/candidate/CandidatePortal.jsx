@@ -3,12 +3,15 @@ import Dashboard from './Dashboard.jsx';
 import Advisor from './Advisor.jsx';
 import Analysis from './Analysis.jsx';
 import Documents from './Documents.jsx';
-import Community from './Community.jsx';
 import Settings from './Settings.jsx';
 import Chat from './Chat.jsx';
 import UndergradRoadmap from './UndergradRoadmap.jsx';
 import UndergradTracker from './UndergradTracker.jsx';
 import UndergradKpiPanel from './UndergradKpiPanel.jsx';
+import EssayDocuments from './EssayDocuments.jsx';
+import WorkspaceHub from './WorkspaceHub.jsx';
+import CommunityHub from './CommunityHub.jsx';
+import LiveChatHub from './LiveChatHub.jsx';
 import HelpModal from './HelpModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
@@ -25,7 +28,7 @@ const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' 
 const PLAN_ACCESS = {
   free: new Set(['dashboard', 'advisor', 'settings']),
   ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
-    'studentProfile', 'roadmap', 'ugRoadmap', 'calendar', 'activities', 'universities', 'universityList', 'testing', 'essays', 'applications']),
+    'studentProfile', 'roadmap', 'ugRoadmap', 'calendar', 'activities', 'universities', 'universityList', 'testing', 'essays', 'applications', 'workspace']),
   ai_strategy: null, // null = all tabs
 };
 
@@ -77,6 +80,7 @@ ICON_BY_KEY.essays = ICON_BY_KEY.documents;
 ICON_BY_KEY.applications = ICON_BY_KEY.documentDepository;
 ICON_BY_KEY.ugRoadmap = ICON_BY_KEY.analysis;
 ICON_BY_KEY.calendar = ICON_BY_KEY.documentDepository;
+ICON_BY_KEY.workspace = <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M3 9h18M8 4v5" /></svg>;
 
 function navFromConfig(config, hasChatAccess) {
   let items = Array.isArray(config?.nav) && config.nav.length
@@ -1078,6 +1082,7 @@ export default function CandidatePortal(props) {
   const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const handleHelp = () => { setShowHelp(true); setMenuOpen(false); };
   const handleUpgrade = () => { setCandTab('settings'); setMenuOpen(false); };
@@ -1100,7 +1105,10 @@ export default function CandidatePortal(props) {
       showToast(`Upgrade to ${needed} to unlock this feature.`);
       return;
     }
-    setCandTab(key);
+    // "Workspace" is a nav grouping, not a page of its own — land on its
+    // default sub-tab (WorkspaceHub keeps the horizontal sub-nav highlighted
+    // correctly from there via workspaceActiveKey).
+    setCandTab(key === 'workspace' ? 'universities' : key);
     setMenuOpen(false);
   };
 
@@ -1112,9 +1120,10 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', workspace: 'Workspace', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
+    workspace: 'Everything you\'ve built, in one place.',
     analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', universityList: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
     activities: 'Shape the experiences that tell your story.', testing: 'Plan and track your test preparation.', essays: 'Draft and refine your strongest story.',
     calendar: 'Every deadline and milestone in one place.',
@@ -1128,6 +1137,23 @@ export default function CandidatePortal(props) {
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
+  // Undergrad's "Workspace" nav tab is a grouping, not a page of its own — it
+  // re-homes every old candidate-facing output page (Analysis, Schools,
+  // Roadmap, Activities, Testing, Essays, Documents, Applications) behind one
+  // shared horizontal sub-nav (WorkspaceHub) instead of deleting any of them.
+  const WORKSPACE_TAB_KEYS = ['analysis', 'universities', 'universityList', 'ugRoadmap', 'activities', 'testing', 'essays', 'applications', 'documents'];
+  const WORKSPACE_DEFAULT_TAB = 'universities';
+  const WORKSPACE_TABS = [
+    ['analysis', 'Analysis'],
+    ['universities', 'Schools'],
+    ['ugRoadmap', 'Roadmap'],
+    ['activities', 'Activities'],
+    ['testing', 'Testing'],
+    ['essays', 'Essays'],
+    ['documents', 'Documents'],
+    ['applications', 'Applications'],
+  ];
+  const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab) ? (candTab === 'universityList' ? 'universities' : candTab) : WORKSPACE_DEFAULT_TAB;
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   return (
@@ -1176,7 +1202,7 @@ export default function CandidatePortal(props) {
           {navItems.map(item => {
             const active = candTab === item.key
               || (item.key === 'studentProfile' && candTab === 'advisor')
-              || (item.key === 'universityList' && isUndergrad && (candTab === 'universities' || candTab === 'analysis'));
+              || (item.key === 'workspace' && isUndergrad && WORKSPACE_TAB_KEYS.includes(candTab));
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -1194,15 +1220,19 @@ export default function CandidatePortal(props) {
           })}
         </div>
 
-        {/* help */}
-        <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' }}>
-          <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#6b7392' }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
-          </span>
-          <span>Help</span>
-        </button>
+        {/* help — Undergrad moves Help to the top-right header instead */}
+        {!isUndergrad && (
+          <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' }}>
+            <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#6b7392' }}>
+              <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
+            </span>
+            <span>Help</span>
+          </button>
+        )}
 
-        {/* plan card + user */}
+        {/* plan card + user — Undergrad moves these into the header Profile
+            menu instead, so the sidebar stays just the 5 nav tabs */}
+        {!isUndergrad && (
         <div style={{ marginTop: 'auto' }}>
           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
             <div style={{ position: 'relative' }}>
@@ -1232,6 +1262,7 @@ export default function CandidatePortal(props) {
             </button>
           </div>
         </div>
+        )}
       </aside>
 
       {/* Main */}
@@ -1252,6 +1283,40 @@ export default function CandidatePortal(props) {
               storageKey={`pathway_candidate_alerts_${authUser?.id || authUser?.email || name}`}
               title="Candidate alerts"
             />
+            {isUndergrad && (
+              <button onClick={() => handleNavClick('settings')} title="Settings" aria-label="Settings" style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #f1eadd', background: candTab === 'settings' ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: candTab === 'settings' ? '#fff' : '#6b7392' }}>
+                <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
+              </button>
+            )}
+            {isUndergrad && (
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setProfileMenuOpen(o => !o)} title="Account" aria-label="Account menu" aria-expanded={profileMenuOpen} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 800, boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>
+                  {initials}
+                </button>
+                {profileMenuOpen && (
+                  <>
+                    <div onClick={() => setProfileMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                    <div style={{ position: 'absolute', top: 44, right: 0, width: 260, background: '#fff', border: '1px solid #f1eadd', borderRadius: 16, boxShadow: '0 18px 40px rgba(20,27,52,.14)', padding: 14, zIndex: 21 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#fff' }}>{initials}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                          <div style={{ fontSize: 12, color: '#9098b5' }}>{PLAN_LABELS[plan] || 'AI'}</div>
+                        </div>
+                      </div>
+                      {plan !== 'ai_strategy' && (
+                        <div style={{ background: '#f7f5ff', border: '1px solid #e6e0f6', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                          <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.5, marginBottom: 9 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
+                          <button onClick={() => { handleUpgrade(); setProfileMenuOpen(false); }} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '8px 0', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', cursor: 'pointer' }}>Upgrade plan</button>
+                        </div>
+                      )}
+                      <button onClick={() => { handleNavClick('settings'); setProfileMenuOpen(false); }} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 10, padding: '9px 8px', fontSize: 13.5, fontWeight: 600, color: '#33405e', cursor: 'pointer', fontFamily: 'inherit' }}>Account &amp; billing</button>
+                      <button onClick={() => { setProfileMenuOpen(false); handleSignOut(); }} style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', borderRadius: 10, padding: '9px 8px', fontSize: 13.5, fontWeight: 600, color: '#c2416c', cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             <button className="pw-new-session-button" onClick={resetSession} disabled={requiresOAuthDetails} title="New session" aria-label="New session" style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1px solid #e7dcc7', borderRadius: 999, padding: '9px 16px', height: 36, fontSize: 13, fontWeight: 600, color: '#33405e', cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>
               <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: '#5b46e0', strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
               <span>New session</span>
@@ -1262,16 +1327,32 @@ export default function CandidatePortal(props) {
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
-        {(candTab === 'universityList' || candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
-        {candTab === 'ugRoadmap' && isUndergrad && <UndergradRoadmap {...props} />}
+
+        {/* Workspace — the re-homed destination for every old Undergrad output
+            page. Nothing here is new/rebuilt: same components, same props,
+            just presented behind one shared horizontal sub-nav. */}
+        {isUndergrad && WORKSPACE_TAB_KEYS.includes(candTab) && (
+          <WorkspaceHub tabs={WORKSPACE_TABS} activeKey={workspaceActiveKey} onSelect={setCandTab}>
+            {candTab === 'analysis' && <UndergradProfilePage {...props} />}
+            {(candTab === 'universities' || candTab === 'universityList') && <UndergradJourneyPage type="universities" {...props} />}
+            {candTab === 'ugRoadmap' && <UndergradRoadmap {...props} />}
+            {candTab === 'activities' && <UndergradJourneyPage type="activities" {...props} />}
+            {candTab === 'testing' && <UndergradJourneyPage type="testing" {...props} />}
+            {candTab === 'essays' && <EssayDocuments {...props} />}
+            {candTab === 'documents' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+            {candTab === 'applications' && <UndergradJourneyPage type="applications" {...props} />}
+          </WorkspaceHub>
+        )}
+
+        {/* Calendar stays a Dashboard deep-link (its mini-calendar card opens
+            this full tracker), not a Workspace tab, per the migration map. */}
         {candTab === 'calendar' && isUndergrad && <UndergradTracker {...props} />}
-        {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
-        {candTab === 'documents' && isUndergrad && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+
         {candTab === 'documents' && !isUndergrad && <Documents {...props} />}
         {candTab === 'documentDepository' && !isUndergrad && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
-        {candTab === 'community' && <Community {...props} />}
+        {candTab === 'community' && <CommunityHub {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
-        {candTab === 'chat' && hasChatAccess && <Chat {...props} />}
+        {candTab === 'chat' && hasChatAccess && (isUndergrad ? <LiveChatHub {...props} /> : <Chat {...props} />)}
       </div>
 
       {showHelp && <HelpModal authToken={authToken} sessionId={sessionId} onClose={() => setShowHelp(false)} />}
