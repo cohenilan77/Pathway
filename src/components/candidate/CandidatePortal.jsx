@@ -16,6 +16,9 @@ import NotificationBell from '../NotificationBell.jsx';
 import { getTrackConfig } from '../../trackConfig.js';
 import { estimatePracticeScore } from '../../lib/testScoring.js';
 import { undergradProfileStage } from '../../../lib/undergrad-profile.js';
+import { undergradGradeConfig } from '../../../lib/undergrad/profile-temperature.js';
+
+const UNDERGRAD_DISCLAIMER = 'This is coaching guidance, not an admissions guarantee.';
 
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
@@ -323,6 +326,34 @@ function orderedUniversityBuckets(programs = []) {
   return order
     .map(label => [label, buckets[label] || []])
     .filter(([, schools]) => schools.length);
+}
+
+// Grade 9-10 must never see Reach/Target/Likely admissions bands — they see
+// inspiration/exploration groupings instead. Grade 11-12 keep the real
+// shortlist/application-portfolio categories (Grade 11 adds an "Explore"
+// band; Grade 12 keeps "Locked" for confirmed applications).
+function undergradListBuckets(programs = [], grade) {
+  if (grade === 9) {
+    return programs.length ? [['Schools to Explore', programs]] : [];
+  }
+  if (grade === 10) {
+    const buckets = {
+      'Strong Interest Fit': programs.filter(p => p.tier === 'safe' || (p.fit ?? 0) > 80),
+      'Possible Future Fit': programs.filter(p => p.tier === 'possible' || ((p.fit ?? 0) >= 50 && (p.fit ?? 0) <= 80)),
+      'Worth Exploring': programs.filter(p => p.tier === 'stretch' || p.tier === 'locked' || (p.fit ?? 0) < 50),
+    };
+    return ['Strong Interest Fit', 'Possible Future Fit', 'Worth Exploring']
+      .map(label => [label, buckets[label]])
+      .filter(([, schools]) => schools.length);
+  }
+  if (grade === 11) {
+    const base = splitUniversities(programs);
+    const buckets = { Reach: base.Reach, Target: base.Target, Likely: base.Likely, Explore: base.Locked };
+    return ['Reach', 'Target', 'Likely', 'Explore']
+      .map(label => [label, buckets[label] || []])
+      .filter(([, schools]) => schools.length);
+  }
+  return orderedUniversityBuckets(programs);
 }
 
 function intendedMajor(profile = {}) {
@@ -740,16 +771,24 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
         </div>
       )}
 
-      {type === 'universities' && (
+      {type === 'universities' && (() => {
+        const listConfig = undergradGradeConfig(profile);
+        const listBuckets = undergradListBuckets(programs || [], grade);
+        return (
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ marginBottom: 24 }}>
-            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>{early ? 'Exploratory University Universe' : profileStage === 'preliminary' ? 'Preliminary University List' : 'University List'}</h1>
+            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>{listConfig.universityListTitle}</h1>
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>
-              {programs?.length ? (early ? 'Reach, Target, and Likely are exploratory fit bands that will evolve with your profile.' : `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.`) : 'Ask your advisor for university recommendations — your Reach, Target, and Likely matches will appear here.'}
+              {programs?.length
+                ? (early
+                  ? (grade === 9 ? 'An inspiration-only list to help you explore possible majors and countries — not a prediction of admission.' : 'Soft exploratory categories that will evolve as your profile grows — not a prediction of admission.')
+                  : `${selectedSchools.length} school${selectedSchools.length !== 1 ? 's' : ''} selected · Tap to select your target list.`)
+                : (early ? 'Ask your advisor for schools to explore — your inspiration list will appear here.' : 'Ask your advisor for university recommendations — your Reach, Target, and Likely matches will appear here.')}
             </p>
+            <p style={{ fontSize: 12.5, color: '#9098b5', margin: '10px 0 0', fontStyle: 'italic' }}>{UNDERGRAD_DISCLAIMER}</p>
           </div>
 
-          <UndergradKpiPanel scores={scores || {}} />
+          <UndergradKpiPanel scores={scores || {}} profile={profile || {}} />
           <div className="pw-undergrad-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, margin: '14px 0 18px' }}>
             <UndergradCard title="Strengths">
               {list((strengths || []).slice(0, 5), 'Strengths will appear after your readiness snapshot.')}
@@ -780,21 +819,26 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
 
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {orderedUniversityBuckets(programs || []).map(([tierLabel, schools]) => {
+              {listBuckets.map(([tierLabel, schools]) => {
                 const tierColors = {
                   Reach: { accent: '#e384a5', bg: '#fff1f6', border: '#ffd3e3' },
                   Target: { accent: '#eaa129', bg: '#fff8ea', border: '#ffe3a8' },
                   Likely: { accent: '#3fdca9', bg: '#eafdf6', border: '#a9eed1' },
                   Locked: { accent: '#9098b5', bg: '#f4f5f8', border: '#dde0e8' },
+                  Explore: { accent: '#9098b5', bg: '#f4f5f8', border: '#dde0e8' },
+                  'Schools to Explore': { accent: '#7c6ef7', bg: '#f7f0ff', border: '#e6e0f6' },
+                  'Strong Interest Fit': { accent: '#3fdca9', bg: '#eafdf6', border: '#a9eed1' },
+                  'Possible Future Fit': { accent: '#eaa129', bg: '#fff8ea', border: '#ffe3a8' },
+                  'Worth Exploring': { accent: '#7c6ef7', bg: '#f7f0ff', border: '#e6e0f6' },
                 };
-                const tierConfig = tierColors[tierLabel];
+                const tierConfig = tierColors[tierLabel] || tierColors.Explore;
                 if (!schools.length) return null;
 
                 return (
                   <div key={tierLabel} style={{ background: tierConfig.bg, border: `1px solid ${tierConfig.border}`, borderRadius: 18, overflow: 'hidden' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tierConfig.border}` }}>
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tierConfig.accent, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()} SCHOOLS</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: tierConfig.accent }}>{tierLabel.toUpperCase()}{['Reach', 'Target', 'Likely', 'Locked', 'Explore'].includes(tierLabel) ? ' SCHOOLS' : ''}</span>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -836,13 +880,13 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                               </div>
 
                               <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
-                                {school.avgSAT != null && (
+                                {!early && school.avgSAT != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgSAT}</div>
                                     <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG SAT</div>
                                   </div>
                                 )}
-                                {(() => {
+                                {!early && (() => {
                                   const ar = school.admitRate ?? school.acceptanceRate;
                                   return (
                                     <div style={{ textAlign: 'center' }}>
@@ -853,7 +897,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                     </div>
                                   );
                                 })()}
-                                {school.avgGPA != null && (
+                                {!early && school.avgGPA != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
                                     <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
@@ -862,7 +906,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                 {school.fit != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 20, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>{school.fit}%</div>
-                                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT</div>
+                                    <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>{early ? 'EXPLORATION FIT' : 'FIT'}</div>
                                   </div>
                                 )}
                                 <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tierConfig.accent, lineHeight: 1 }}>
@@ -893,7 +937,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {type === 'testing' && (
         <div style={{ maxWidth: 1000 }}>
@@ -1011,7 +1056,7 @@ function UndergradProfilePage({ profile = {}, scores = {}, strengths = [], weakn
           <button onClick={() => setCandTab('dashboard')} style={{ marginTop: 14, background: '#fff', color: '#5b46e0', border: '1px solid #e0d9ef', borderRadius: 999, padding: '9px 16px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>See your journey →</button>
         </div>
 
-        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} profile={profile || {}} /></div>
 
         {columns.map(([label, items, color]) => (
           <div key={label} style={cardStyle}>

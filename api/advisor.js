@@ -159,7 +159,7 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
         {},
         { chosenSchools: candidateState?.chosenSchools || [] },
       );
-      const kpi = scoreCandidateKPIs(normalized);
+      const kpi = scoreCandidateKPIs(normalized, { ...(persistedProfile.candidateFacts || {}), ...persistedProfile });
       if (!candidateFacts.targetGeographyKnown) {
         kpi.tasks = [...new Set([...kpi.tasks, 'Confirm target geography to localize the school portfolio.'])].slice(0, 6);
       }

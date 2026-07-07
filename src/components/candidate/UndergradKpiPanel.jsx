@@ -1,6 +1,29 @@
 import React from 'react';
+import { undergradGradeNumber } from '../../../lib/undergrad-profile.js';
 
-const ITEMS = [
+const DEVELOPMENT_ITEMS = [
+  ['Academic Foundation', ['academicFoundation']],
+  ['Curiosity & Interests', ['curiosityInterests']],
+  ['Activity Exploration', ['activityExploration']],
+  ['Initiative & Habits', ['initiativeHabits']],
+  ['Direction Fit', ['directionFit']],
+  ['Testing Awareness', ['testingAwareness']],
+  ['Narrative Seeds', ['narrativeSeeds']],
+  ['Profile Completeness', ['profileCompleteness']],
+];
+
+const ADMISSIONS_ITEMS = [
+  ['Academic Strength', ['academicStrength']],
+  ['Testing', ['testing']],
+  ['Activities Impact', ['activitiesImpact']],
+  ['Leadership', ['leadership']],
+  ['Major Fit', ['majorFit']],
+  ['University Portfolio', ['universityPortfolio']],
+  ['Essays / Narrative', ['essaysNarrative']],
+  ['Execution Readiness', ['executionReadiness']],
+];
+
+const LEGACY_ITEMS = [
   ['Academic Base', ['academic']],
   ['Subject Direction', ['goalClarity']],
   ['Activity Depth', ['activities']],
@@ -15,8 +38,19 @@ function scoreFor(scores, keys) {
   return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : null;
 }
 
-export default function UndergradKpiPanel({ scores = {}, compact = false }) {
+function itemsFor(profile, scores) {
+  const grade = undergradGradeNumber(profile || {});
+  if (grade === 9 || grade === 10) return DEVELOPMENT_ITEMS;
+  if (grade === 11 || grade === 12) return ADMISSIONS_ITEMS;
+  // Unknown grade: prefer whichever dimension set the scores actually carry.
+  if (DEVELOPMENT_ITEMS.some(([, keys]) => scores?.[keys[0]] != null)) return DEVELOPMENT_ITEMS;
+  if (ADMISSIONS_ITEMS.some(([, keys]) => scores?.[keys[0]] != null)) return ADMISSIONS_ITEMS;
+  return LEGACY_ITEMS;
+}
+
+export default function UndergradKpiPanel({ scores = {}, profile = {}, compact = false }) {
   const overall = scores?.overall != null && scores?.overall !== '' && Number.isFinite(Number(scores.overall)) ? Math.round(Number(scores.overall)) : null;
+  const items = itemsFor(profile, scores);
   return (
     <section style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, padding: compact ? 14 : 18, boxShadow: '0 10px 28px rgba(22,35,63,.05)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
@@ -24,7 +58,7 @@ export default function UndergradKpiPanel({ scores = {}, compact = false }) {
         <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>Overall: {overall == null ? 'Needs update' : `${overall}%`}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${compact ? 2 : 4},minmax(0,1fr))`, gap: 8 }} className="pw-undergrad-kpi-grid">
-        {ITEMS.map(([label, keys]) => {
+        {items.map(([label, keys]) => {
           const value = scoreFor(scores, keys);
           return (
             <div key={label} style={{ background: '#faf7f2', borderRadius: 11, padding: '10px 11px', minWidth: 0 }}>
