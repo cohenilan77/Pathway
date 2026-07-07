@@ -916,7 +916,15 @@ export default async function handler(req, res) {
     const lockedTargetsContext = Array.isArray(chosenSchools) && chosenSchools.length
       ? `\n\nLOCKED TARGET SCHOOLS (authoritative current state): ${chosenSchools.join(' | ')}. The candidate already selected and confirmed these schools using the app. Never ask them to name, choose, narrow, or lock target schools again. Continue from the current Narrative question.`
       : '';
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + lockedTargetsContext + idleContext;
+    // Raw app state as authoritative context, alongside the distilled
+    // candidateFacts above — so answers the candidate gave through the chat
+    // (grade, subjects, activities) are always visible to the model even
+    // when a fact never made it into the distilled extraction. Never claim
+    // there is no access to the candidate's profile while this is present.
+    const candidateDataContext = (profile && Object.keys(profile).length)
+      ? `\n\nCANDIDATE PROFILE DATA (authoritative, sent by the app on this turn):\n${JSON.stringify({ profile, scores: scores || undefined, chosenSchools: (Array.isArray(chosenSchools) && chosenSchools.length) ? chosenSchools : undefined }, null, 2)}`
+      : '';
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + candidateDataContext + lockedTargetsContext + idleContext;
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
