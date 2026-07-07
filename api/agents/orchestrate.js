@@ -67,6 +67,11 @@ export default async function handler(req, res) {
       text: response.result?.text || '',
       toolUses: response.result?.toolUses || [],
       usage: response.result?.usage || null,
+      // Only ever set by the Undergraduate deterministic path today (e.g. the
+      // stage tracker's lastTopics bookkeeping); every other agent's result
+      // has no statePatch field, so this stays undefined for them exactly as
+      // before this field was added.
+      statePatch: response.result?.statePatch || null,
       latencyMs: response.latencyMs,
       architecture: 'hybrid',
     });
