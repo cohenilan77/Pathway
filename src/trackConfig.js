@@ -10,13 +10,13 @@ export const TRACK_CONFIG = {
     steps: UNDERGRAD_STEPS,
     docLabel: 'Roadmap, activities, testing, essays, applications',
     nav: [
-      ['dashboard', 'Journey', 'dashboard'],
+      ['dashboard', 'Dashboard', 'dashboard'],
       ['studentProfile', 'Advisor', 'advisor'],
       ['ugProfile', 'My Profile', 'advisor'],
       ['testing', 'Practice', 'documentDepository'],
-      ['ugRoadmap', 'My Plan', 'analysis'],
-      ['universities', 'University List', 'analysis'],
-      ['essays', 'Essays', 'documents'],
+      ['ugRoadmap', 'Roadmap', 'analysis'],
+      ['essayDocs', 'Essays & Documents', 'documents'],
+      ['ugTracker', 'Calendar / Deadlines', 'documentDepository'],
       ['settings', 'Settings', 'settings'],
     ],
     kpis: [
