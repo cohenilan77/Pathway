@@ -724,7 +724,7 @@ function buildVerifiedScoringSection(profile, scores, programs) {
   return `\n\n==SERVER-VERIFIED SCORING (AUTHORITATIVE — DO NOT RECOMPUTE)==\nThese values were computed deterministically from the candidate's actual GPA/test score vs. each school's stated median — not by you. For any of these exact school names appearing in a PROGRAMS or CHOSEN_SCHOOLS block this turn, use this exact tier, fit, unlockConditions, and exceptionFlag verbatim. Do not adjust, inflate, or recompute them.\n${lines.join('\n')}`;
 }
 
-function parsedProgramsCount(raw) {
+export function parsedProgramsCount(raw) {
   const match = String(raw || '').match(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/i);
   if (!match) return 0;
   try {
@@ -742,6 +742,25 @@ function visibleMentionsUndergradSchools(raw) {
 function undergradRecoveryRaw(raw) {
   const blocks = [...String(raw || '').matchAll(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|CHOSEN_SCHOOLS|INSIGHTS)>([\s\S]*?)<\/\1>/gi)].map(match => match[0]);
   return `${blocks.join('')}I still need to generate and save the actual university list. → Build my list now | View Roadmap | Monthly Update`;
+}
+
+// Track-agnostic counterpart of the two undergrad-only helpers above. This
+// module's own system prompt instructs the model to say specific phrases
+// like "...in the University List tab" or "...is live in the Analysis tab"
+// only when a valid PROGRAMS block accompanies them (STEP 4 BRANCH B/C) —
+// but that instruction is prompt text, not a code-enforced contract, so a
+// malformed/omitted PROGRAMS block (bad JSON, truncation) can still leave
+// the confirmation sentence in place. Narrower than the undergrad regex
+// (which also matches bare school names) to avoid false positives on
+// unrelated short confirmations that don't claim the list is ready/live.
+export function visibleClaimsProgramListReady(raw) {
+  const visible = stripStructuredBlocks(raw, ['PROFILE', 'SCORES', 'STRENGTHS', 'WEAKNESSES', 'TASKS', 'PROGRAMS', 'CHOSEN_SCHOOLS', 'INSIGHTS', 'ESSAY', 'INTERVIEW_RESULT']);
+  return /(?:university|program|school)\s+list\s+tab|(?:is|are)\s+live\s+in\s+the\s+\w+\s+tab|showing\s+(?:the\s+)?full\s+list\s+(?:directly\s+)?below/i.test(visible);
+}
+
+export function programListRecoveryRaw(raw) {
+  const blocks = [...String(raw || '').matchAll(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|CHOSEN_SCHOOLS|INSIGHTS)>([\s\S]*?)<\/\1>/gi)].map(match => match[0]);
+  return `${blocks.join('')}I wasn't able to generate your program list this turn — let me try again. → Generate my program list now`;
 }
 
 // Infers which pipeline "feature" the candidate is currently in, based on the most
@@ -1169,6 +1188,17 @@ export default async function handler(req, res) {
         schoolListRequested: candidateFacts.schoolListRequested,
       });
       if (visibleMentionsSchools && !hasProgramsBlock) raw = undergradRecoveryRaw(raw);
+    } else {
+      // Non-Undergrad tracks (Graduate/MBA/PhD/Personal Development) had no
+      // equivalent safety net: the model can claim "it's live in the
+      // University List tab" per its own prompt instructions (STEP 4 BRANCH
+      // B/C) even when its <PROGRAMS> block was malformed or omitted this
+      // turn, and nothing downstream caught it — the candidate saw a false
+      // confirmation with an empty Chat/Analysis tab. Uses a count-of-zero
+      // threshold rather than undergrad's >=10 minimum since Branch A (named
+      // schools) has no fixed minimum count.
+      const claimsReady = visibleClaimsProgramListReady(raw);
+      if (claimsReady && parsedProgramsCount(raw) === 0) raw = programListRecoveryRaw(raw);
     }
 
     const usageWarning = '⚠️ You are approaching the AI usage limit for this period. Some features may be limited.';
