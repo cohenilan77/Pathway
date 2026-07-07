@@ -22,7 +22,7 @@ const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' 
 const PLAN_ACCESS = {
   free: new Set(['dashboard', 'advisor', 'settings']),
   ai: new Set(['dashboard', 'advisor', 'analysis', 'documents', 'documentDepository', 'community', 'settings',
-    'studentProfile', 'roadmap', 'ugRoadmap', 'calendar', 'activities', 'universities', 'testing', 'essays', 'applications']),
+    'studentProfile', 'roadmap', 'ugRoadmap', 'calendar', 'activities', 'universities', 'universityList', 'testing', 'essays', 'applications']),
   ai_strategy: null, // null = all tabs
 };
 
@@ -638,9 +638,9 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId }) {
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId, chosenSchools, setChosenSchools }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
-  const [selectedSchools, setSelectedSchools] = React.useState([]);
+  const selectedSchools = chosenSchools || [];
   const [expandedSchools, setExpandedSchools] = React.useState({});
   const grade = undergradGradeNumber(profile);
   const profileStage = undergradProfileStage(profile || {});
@@ -661,10 +661,25 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
     return 'Accessible';
   };
 
+  // Persists directly to the real chosenSchools candidate state (same field the
+  // graduate flow saves), so add/remove survives navigation and refresh. Unlike
+  // grad's Analysis, this never advances stepIdx or messages the advisor —
+  // undergrad's journey is stage-based, not step-gated.
   const toggleSchool = (schoolName) => {
-    setSelectedSchools(prev =>
-      prev.includes(schoolName) ? prev.filter(s => s !== schoolName) : [...prev, schoolName]
-    );
+    setChosenSchools?.(prev => {
+      const list = prev || [];
+      return list.includes(schoolName) ? list.filter(s => s !== schoolName) : [...list, schoolName];
+    });
+  };
+
+  const moveSchool = (index, delta) => {
+    setChosenSchools?.(prev => {
+      const list = [...(prev || [])];
+      const target = index + delta;
+      if (target < 0 || target >= list.length) return list;
+      [list[index], list[target]] = [list[target], list[index]];
+      return list;
+    });
   };
 
   const toggleExpanded = (schoolName) => {
@@ -743,6 +758,25 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
               {list((weaknesses || []).slice(0, 5), 'Risks will appear after your readiness snapshot.')}
             </UndergradCard>
           </div>
+
+          {selectedSchools.length > 0 && (
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase', marginBottom: 10 }}>Your target list ({selectedSchools.length})</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {selectedSchools.map((name, i) => (
+                  <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 12, padding: '10px 14px' }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 700, color: '#141b34', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i + 1}. {name}</span>
+                    <button onClick={() => moveSchool(i, -1)} disabled={i === 0} aria-label={`Move ${name} up`}
+                      style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid #e7dcc7', background: '#fff', color: '#141b34', fontSize: 12, cursor: i === 0 ? 'default' : 'pointer', opacity: i === 0 ? 0.35 : 1, fontFamily: 'inherit' }}>↑</button>
+                    <button onClick={() => moveSchool(i, 1)} disabled={i === selectedSchools.length - 1} aria-label={`Move ${name} down`}
+                      style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid #e7dcc7', background: '#fff', color: '#141b34', fontSize: 12, cursor: i === selectedSchools.length - 1 ? 'default' : 'pointer', opacity: i === selectedSchools.length - 1 ? 0.35 : 1, fontFamily: 'inherit' }}>↓</button>
+                    <button onClick={() => toggleSchool(name)} aria-label={`Remove ${name}`}
+                      style={{ border: '1px solid #f2c6d5', borderRadius: 8, background: '#fff7fa', color: '#c2416c', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 10px' }}>Remove</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {programs?.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -1033,10 +1067,10 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
-    analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
+    analysis: 'Where your profile stands today.', universities: 'Build a balanced university list.', universityList: 'Build a balanced university list.', roadmap: 'Your application plan at a glance.',
     activities: 'Shape the experiences that tell your story.', testing: 'Plan and track your test preparation.', essays: 'Draft and refine your strongest story.',
     calendar: 'Every deadline and milestone in one place.',
     applications: 'Keep every application moving.', documents: 'Timed practice with a full breakdown.', documentDepository: 'Everything your applications need.',
@@ -1096,8 +1130,8 @@ export default function CandidatePortal(props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
           {navItems.map(item => {
             const active = candTab === item.key
-              || (item.key === 'studentProfile' && ['advisor', 'universities'].includes(candTab))
-              || (item.key === 'universities' && candTab === 'analysis' && isUndergrad);
+              || (item.key === 'studentProfile' && candTab === 'advisor')
+              || (item.key === 'universityList' && isUndergrad && (candTab === 'universities' || candTab === 'analysis'));
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -1183,7 +1217,7 @@ export default function CandidatePortal(props) {
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
         {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
-        {(candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
+        {(candTab === 'universityList' || candTab === 'universities' || (candTab === 'analysis' && isUndergrad)) && isUndergrad && <UndergradJourneyPage type="universities" {...props} />}
         {candTab === 'ugRoadmap' && isUndergrad && <UndergradRoadmap {...props} />}
         {candTab === 'calendar' && isUndergrad && <UndergradTracker {...props} />}
         {['roadmap', 'activities', 'testing', 'essays', 'applications'].includes(candTab) && isUndergrad && <UndergradJourneyPage type={candTab} {...props} />}
