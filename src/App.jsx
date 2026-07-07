@@ -882,13 +882,15 @@ export default function App() {
       // Stage guardrail: if the candidate reaches for a later stage before its
       // prerequisite, tell the agent to explain the current required next step
       // instead of skipping ahead. The agent still owns the wording.
-      if (!isLegacyCandidateCategory(requestProfile) && requestProfile?.category !== 'Undergraduate') {
+      const isUndergrad = requestProfile?.category === 'Undergraduate';
+      if (!isLegacyCandidateCategory(requestProfile) && !isUndergrad) {
         const tooEarly = explainIfTooEarly({ scores, programs, chosenSchools, narrative, cvUnlocked: stepIdx >= (STEPS.indexOf('CV')) }, t);
         if (tooEarly) {
           systemContext += `\n\nSTAGE GUARDRAIL: The candidate is asking to jump ahead. Do not start that later stage yet. In your own words, explain the current required next step: ${tooEarly}`;
         }
       }
-      const res = await fetch('/api/advisor', {
+
+      const callAdvisor = () => fetch('/api/advisor', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -914,8 +916,47 @@ export default function App() {
           },
         }),
       });
+
+      // Undergraduate candidates route through the multi-agent coordinator
+      // (requires an authenticated session — /api/agents/orchestrate 401s
+      // without one). Every other track keeps hitting /api/advisor unchanged.
+      let usedOrchestrate = isUndergrad && !!auth?.token;
+      let res = usedOrchestrate
+        ? await fetch('/api/agents/orchestrate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${auth.token}`,
+            },
+            body: JSON.stringify({
+              message: t,
+              candidateId: auth?.user?.id || sessionId,
+              conversationHistory: newChat,
+              extra: {
+                profile: requestProfile,
+                scores,
+                programs: normalizeProgramList(programs) || programs,
+                chosenSchools,
+                stage,
+                systemContext,
+                ...requestExtras,
+              },
+            }),
+          })
+        : await callAdvisor();
+
+      // Multi-agent architecture disabled server-side (admin forced legacy
+      // mode) — fall back to the legacy advisor instead of throwing.
+      if (usedOrchestrate && res.status === 409) {
+        usedOrchestrate = false;
+        res = await callAdvisor();
+      }
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
+      // /api/agents/orchestrate returns { text }, not { raw }/{ reply } — adapt
+      // it into the same shape the rest of this pipeline (parseBlocks etc.) expects.
+      if (usedOrchestrate) data.raw = data.text || '';
       const raw = data.raw || data.reply || '';
 
       if (raw) {
