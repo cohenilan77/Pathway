@@ -1,6 +1,9 @@
 import React from 'react';
 import { miniCalendar } from '../../../lib/undergrad/candidate-view.js';
+import { undergradScoreLabel } from '../../../lib/undergrad/profile-temperature.js';
 import UndergradKpiPanel from './UndergradKpiPanel.jsx';
+
+const UNDERGRAD_HELPER_TEXT = 'This is not an admissions chance. It measures how strong your profile is becoming for your stage.';
 
 function fmtDay(date) {
   if (!date) return '—';
@@ -301,7 +304,10 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
 
         <JourneyMap steps={steps} currentIdx={currentIdx} setCandTab={setCandTab} />
 
-        <TrajectoryScore scoreLabel={scoreLabel} overall={overall} profile={profile} />
+        <div>
+          <TrajectoryScore scoreLabel={scoreLabel} overall={overall} profile={profile} />
+          <div style={{ fontSize: 12, color: '#9098b5', lineHeight: 1.5, marginTop: 8, padding: '0 4px' }}>{UNDERGRAD_HELPER_TEXT}</div>
+        </div>
 
         <Card style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your next best move</div>
@@ -313,7 +319,7 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
 
         <UndergradMiniCalendar undergrad={undergrad} setCandTab={setCandTab} />
 
-        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} /></div>
+        <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} profile={profile || {}} /></div>
 
         {[
           ['Top strengths', (strengths || []).slice(0, 3), '#2f9e78'],
@@ -337,10 +343,10 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
 
 export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks, setCandTab, resetSession, requiresOAuthDetails, profile, strengths, weaknesses, undergrad, currentTrack, chosenSchools, authUser }) {
   const overall = scores?.overall;
-  const scoreLabel = currentConfig?.scoreLabel || 'Competitiveness Score';
+  const isUndergrad = currentTrack === 'Undergraduate' || profile?.category === 'Undergraduate';
+  const scoreLabel = isUndergrad ? (scores?.label || undergradScoreLabel(profile || {})) : (currentConfig?.scoreLabel || 'Competitiveness Score');
   const steps = STEPS || [];
   const safeStepIdx = Math.min(stepIdx ?? 0, Math.max(steps.length - 1, 0));
-  const isUndergrad = currentTrack === 'Undergraduate' || profile?.category === 'Undergraduate';
   const move = nextBestMove({ tasks, weaknesses, overall, isUndergrad });
   const focusItems = (weaknesses || []).slice(0, 3);
 
