@@ -122,6 +122,9 @@ function buildStageContext(stepIdx, profile, scores, programs, essays, tasks, st
     topTask: Array.isArray(tasks) && tasks.length > 0 ? tasks[0] : null,
     topWeakness: Array.isArray(weaknesses) && weaknesses.length > 0 ? weaknesses[0] : null,
     lowestScoreKey,
+    scoreWeights,
+    scores: scores || null,
+    kpis: getTrackConfig(profile).kpis || [],
     overallScore: scores?.overall ?? null,
     pathwayType: profile?.pathwayType || null,
 
@@ -214,6 +217,46 @@ NEXT FOCUS: Partially-decided student. Ask about testing plans. ${upcomingTestDa
       systemContext += `
 
 NEXT FOCUS: Still collecting profile. Continue onboarding questions. Ask about the next missing piece: ${!stage.hasActivities ? 'activities and extracurriculars' : !stage.hasTestingScore ? `testing plans — ${upcomingTestDatesPromptLine()} Use only these future dates, never past ones` : 'goals and university preferences'}.`;
+    }
+  } else if (stage.hasProfile && stage.hasScores) {
+    // Graduate, MBA, Postgraduate/Doctoral, Personal Development: probe every
+    // KPI dimension that is missing or sitting at a low, unconfirmed score.
+    // Each track has its own kpis list (trackConfig.js), so the labels and
+    // descriptions below always match the dimensions actually in play —
+    // never a hardcoded MBA-specific name.
+    const kpiLookup = new Map((stage.kpis || []).map(([key, label, description]) => [key, { label, description }]));
+    const missingGaps = [];
+    const lowGaps = [];
+    for (const key of Object.keys(stage.scoreWeights || {})) {
+      const info = kpiLookup.get(key);
+      if (!info) continue;
+      const value = stage.scores ? stage.scores[key] : undefined;
+      if (value === undefined || value === null) {
+        missingGaps.push({ key, ...info });
+      } else if (typeof value === 'number' && value <= 50) {
+        lowGaps.push({ key, ...info, value });
+      }
+    }
+    if (missingGaps.length || lowGaps.length) {
+      // Missing data blocks scoring outright, so it always wins the turn's
+      // focus over a low-but-present score. lowestScoreKey (already computed
+      // in buildStageContext) breaks ties within whichever tier has entries.
+      const isMissing = missingGaps.length > 0;
+      const pool = isMissing ? missingGaps : lowGaps;
+      const focusGap = pool.find(g => g.key === stage.lowestScoreKey) || pool[0];
+      const remaining = [...missingGaps, ...lowGaps].filter(g => g.key !== focusGap.key).map(g => g.label);
+
+      systemContext += isMissing
+        ? `
+
+NEXT FOCUS: The "${focusGap.label}" dimension (${focusGap.description}) has no score yet. Ask ONE direct, specific question to fill this gap before moving on.`
+        : `
+
+NEXT FOCUS: The "${focusGap.label}" dimension (${focusGap.description}) is currently scored at ${focusGap.value}/100. Explicitly confirm this with the candidate — surface the current value and ask them to confirm or correct it — rather than accepting it silently.`;
+
+      if (remaining.length) {
+        systemContext += ` Other dimensions still needing a missing-data question or score confirmation (address these on later turns, one at a time): ${remaining.join(', ')}.`;
+      }
     }
   }
 
