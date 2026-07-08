@@ -1269,9 +1269,9 @@ export default function CandidatePortal(props) {
     ['universities', 'Schools'],
     ['ugRoadmap', 'Roadmap'],
     ['testing', 'Testing'],
+    ['documents', 'Documents'],
     ['essays', 'Essays'],
     ['applications', 'Applications'],
-    ['documents', 'Documents'],
   ];
   const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab)
     ? (['universityList', 'analysis', 'activities'].includes(candTab) ? 'universities' : candTab)
