@@ -15,6 +15,7 @@ import { getTrackConfig } from '../../trackConfig.js';
 import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
+import { deriveNarrativeProgress } from '../../lib/narrativeProgress.js';
 
 const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
 const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
@@ -354,7 +355,7 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
 
 // Stage-aware suggestions under the input. Chips only inject a user message;
 // they never navigate or mutate state directly.
-function contextualChips({ scores, programs, chosenSchools, narrative }) {
+function contextualChips({ scores, programs, chosenSchools, narrative, narrativeQnAComplete }) {
   if (!scores) {
     return [
       { label: 'Continue analysis', msg: 'Continue my analysis.' },
@@ -376,6 +377,9 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
     ];
   }
   if (!narrative) {
+    // N1-N4 aren't answered yet: don't offer a chip that skips ahead to
+    // "the next narrative question" before the candidate has answered this one.
+    if (!narrativeQnAComplete) return [];
     return [
       { label: 'Continue narrative', msg: `Continue with the next narrative question using my confirmed target schools: ${(chosenSchools || []).join(' | ')}.` },
       { label: 'Improve my odds', msg: 'What would most improve my odds at my target schools?' },
@@ -448,9 +452,14 @@ export default function AdvisorChatFirst({
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];
   const lastAiText = lastAiMsg?.text || '';
   const latestUserText = visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
-  const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
+  // The deterministic message that opens N1 never contains the "Narrative
+  // Strategy tab" phrase, so a plain string-match against it never fires.
+  // Derive readiness from state instead: schools confirmed, no narrative
+  // chosen yet, and the candidate has actually answered N1-N4.
+  const { narrativeQnAComplete } = deriveNarrativeProgress(visibleChat, NARRATIVE_START);
+  const showNarrativeCTA = !busy && !narrative && chosenSchools?.length > 0 && narrativeQnAComplete;
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
-  const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative }) : [];
+  const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative, narrativeQnAComplete }) : [];
 
   const isUndergrad = profile?.category === 'Undergraduate';
   const gradeNumber = undergradGradeNumber(profile);

@@ -3,9 +3,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { deriveNarrativeProgress } from '../../../lib/narrativeProgress.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
+
+// Mirrors the NARRATIVE_START constant in AdvisorChatFirst.jsx (the exact
+// deterministic message confirmTargetSchools() injects in App.jsx).
+const NARRATIVE_START = "Your targets are locked in. Now let's shape your Narrative & Strategy. What's the specific moment or experience that convinced you this is the right path?";
 
 const advisor = read('Advisor.jsx');
 const chatFirst = read('AdvisorChatFirst.jsx');
@@ -82,6 +87,45 @@ test('confirmed targets continue narrative instead of asking for names again', (
 test('chat-first has contextual chips and the analyzing state', () => {
   assert.match(chatFirst, /function contextualChips/);
   assert.match(chatFirst, /Advisor is analyzing/);
+});
+
+test('narrative CTA is state-based, not a string match on the AI reply', () => {
+  assert.ok(!chatFirst.includes("lastAiText.includes('Narrative Strategy tab')"), 'CTA must not gate on a literal phrase the deterministic N1 message never contains');
+  assert.match(chatFirst, /import \{ deriveNarrativeProgress \} from '\.\.\/\.\.\/lib\/narrativeProgress\.js'/);
+  assert.match(chatFirst, /const \{ narrativeQnAComplete \} = deriveNarrativeProgress\(visibleChat, NARRATIVE_START\)/);
+  assert.match(chatFirst, /const showNarrativeCTA = !busy && !narrative && chosenSchools\?\.length > 0 && narrativeQnAComplete/);
+});
+
+test('"Continue narrative" chip cannot fire before N1-N4 are answered', () => {
+  assert.match(chatFirst, /if \(!narrativeQnAComplete\) return \[\];/);
+  assert.match(chatFirst, /narrativeQnAComplete \}\)/);
+});
+
+test('deriveNarrativeProgress: CTA readiness right after confirmTargetSchools (0/4 answered)', () => {
+  const chatRightAfterConfirm = [
+    { role: 'user', text: 'I confirm these target schools: Wharton | INSEAD.' },
+    { role: 'ai', text: NARRATIVE_START },
+  ];
+  const { narrativeAnswerCount, narrativeQnAComplete } = deriveNarrativeProgress(chatRightAfterConfirm, NARRATIVE_START);
+  assert.equal(narrativeAnswerCount, 0);
+  assert.equal(narrativeQnAComplete, false);
+});
+
+test('deriveNarrativeProgress: complete once N1-N4 are all answered', () => {
+  const chatAfterFourAnswers = [
+    { role: 'user', text: 'I confirm these target schools: Wharton | INSEAD.' },
+    { role: 'ai', text: NARRATIVE_START },
+    { role: 'user', text: 'Answer to N1.' },
+    { role: 'ai', text: 'N2 question text.' },
+    { role: 'user', text: 'Answer to N2.' },
+    { role: 'ai', text: 'N3 question text.' },
+    { role: 'user', text: 'Answer to N3.' },
+    { role: 'ai', text: 'N4 question text.' },
+    { role: 'user', text: 'Answer to N4.' },
+  ];
+  const { narrativeAnswerCount, narrativeQnAComplete } = deriveNarrativeProgress(chatAfterFourAnswers, NARRATIVE_START);
+  assert.equal(narrativeAnswerCount, 4);
+  assert.equal(narrativeQnAComplete, true);
 });
 
 test('production conversational advisor parses multiline fixed choices inline', () => {
