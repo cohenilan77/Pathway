@@ -673,7 +673,7 @@ function TestingSimulationCard({ title, testType, authToken, sessionId }) {
   );
 }
 
-function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId, chosenSchools, setChosenSchools, undergrad }) {
+function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, tasks, programs, setCandTab, send, authToken, sessionId, chosenSchools, setChosenSchools }) {
   const [selectedTest, setSelectedTest] = React.useState(null);
   const selectedSchools = chosenSchools || [];
   const [expandedSchools, setExpandedSchools] = React.useState({});
@@ -951,42 +951,8 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
             <p style={{ fontSize: 13.5, color: '#6b7392', margin: 0, fontWeight: 500 }}>{early ? 'Testing awareness only: explore the future timeline without treating missing SAT or ACT scores as a weakness.' : profileStage === 'preliminary' ? 'Build an SAT, ACT, AP, or language-test plan with practice milestones.' : 'Confirm final testing status and score-submission strategy.'}</p>
           </div>
 
-          {(() => {
-            const plan = undergrad?.testingPlan;
-            if (!plan) return null;
-            const STATUS_LABEL = { not_started: 'Not started', in_progress: 'In progress', complete: 'Complete' };
-            return (
-              <UndergradCard title="Testing plan">
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 22, marginBottom: plan.studyPlan.length || plan.testDates.length ? 16 : 0 }}>
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>STATUS</div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{STATUS_LABEL[plan.status] || 'Not started'}</div>
-                  </div>
-                  {plan.targetScore && (
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>TARGET SCORE</div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{plan.targetScore}</div>
-                    </div>
-                  )}
-                  {plan.nextStep && (
-                    <div style={{ flex: 1, minWidth: 200 }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 4 }}>NEXT STEP</div>
-                      <div style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.5 }}>{plan.nextStep}</div>
-                    </div>
-                  )}
-                </div>
-                {plan.testDates.length > 0 && (
-                  <div style={{ fontSize: 13, color: '#33405e', marginBottom: plan.studyPlan.length ? 10 : 0 }}>
-                    <b>Test dates:</b> {plan.testDates.join(', ')}
-                  </div>
-                )}
-                {plan.studyPlan.length > 0 && list(plan.studyPlan, '')}
-              </UndergradCard>
-            );
-          })()}
-
           {!selectedTest ? (
-            <div className="pw-test-picker" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24, marginTop: 20 }}>
+            <div className="pw-test-picker" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 18, marginBottom: 24 }}>
               <button onClick={() => setSelectedTest('sat')} style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 16, padding: 24, cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s ease', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#5b46e0'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(22,35,63,.12)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#f1eadd'; e.currentTarget.style.boxShadow = '0 18px 40px rgba(60,72,130,.06)'; }}>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#141b34', marginBottom: 6 }}>SAT Simulation</div>
                 <div style={{ fontSize: 13.5, color: '#6b7392', marginBottom: 16 }}>28 minutes · 20 questions</div>
@@ -1015,71 +981,17 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
         </div>
       )}
 
-      {type === 'essays' && !early && (
-        <UndergradCard title="Essays">
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>Essay preparation</div>
+      {(type === 'essays' || type === 'applications') && !early && (
+        <UndergradCard title={type === 'essays' ? 'Essays' : 'Applications'}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>{type === 'essays' ? 'Essay preparation' : 'Application mode'}</div>
           <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>
-            Use this space for personal statement, supplements, and school-specific drafts.
+            {type === 'essays' ? 'Use this space for personal statement, supplements, and school-specific drafts.' : 'Track deadlines, recommendations, transcripts, interviews, and final decisions.'}
           </div>
           <button onClick={() => setCandTab('studentProfile')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.32)' }}>
             Work with counselor
           </button>
         </UndergradCard>
       )}
-
-      {type === 'applications' && !early && (() => {
-        const applications = undergrad?.applications || [];
-        const SUBMISSION_LABEL = { not_started: 'Not started', in_progress: 'In progress', submitted: 'Submitted' };
-        if (!applications.length) {
-          return (
-            <UndergradCard title="Applications">
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#141b34', marginBottom: 8 }}>No applications started yet</div>
-              <div style={{ fontSize: 13.5, color: '#6b7392', lineHeight: 1.6, marginBottom: 16 }}>Once you have a target school, deadlines, checklist, and recommendation status will appear here.</div>
-              <button onClick={() => setCandTab('studentProfile')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 13, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.32)' }}>
-                Work with counselor
-              </button>
-            </UndergradCard>
-          );
-        }
-        return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {applications.map(app => (
-              <UndergradCard key={app.id} title={app.schoolName}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34' }}>{app.schoolName}</div>
-                  <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#5b46e0', background: '#f7f0ff', border: '1px solid #e6e0f6', borderRadius: 999, padding: '4px 10px' }}>
-                    {SUBMISSION_LABEL[app.submissionStatus] || 'Not started'}
-                  </span>
-                </div>
-                {app.deadlines.length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>DEADLINES</div>
-                    {app.deadlines.map((d, i) => (
-                      <div key={i} style={{ fontSize: 13.5, color: '#33405e', marginBottom: 4 }}>{d.label}: <b>{d.date}</b></div>
-                    ))}
-                  </div>
-                )}
-                {app.checklist.length > 0 && (
-                  <div style={{ marginBottom: 12 }}>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>CHECKLIST</div>
-                    {app.checklist.map((c, i) => (
-                      <div key={i} style={{ fontSize: 13.5, color: c.status === 'done' ? '#9098b5' : '#33405e', textDecoration: c.status === 'done' ? 'line-through' : 'none', marginBottom: 4 }}>{c.label}</div>
-                    ))}
-                  </div>
-                )}
-                {app.recommendations.length > 0 && (
-                  <div>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', marginBottom: 6 }}>RECOMMENDATIONS</div>
-                    {app.recommendations.map((r, i) => (
-                      <div key={i} style={{ fontSize: 13.5, color: '#33405e', marginBottom: 4 }}>{r.name}: {r.status}</div>
-                    ))}
-                  </div>
-                )}
-              </UndergradCard>
-            ))}
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -1166,35 +1078,6 @@ function UndergradProfilePage({ profile = {}, scores = {}, strengths = [], weakn
   );
 }
 
-// Schools tab (the calm, single-page "readiness snapshot + school list + fit
-// notes + next improvements" section from the Workplace spec). Composes the
-// existing readiness snapshot (UndergradProfilePage) and Reach/Target/Likely
-// school list (UndergradJourneyPage type="universities") rather than
-// duplicating either, and adds a small "Next improvements" list, which did
-// not exist before, built from the student's current top weakness and task.
-function UndergradSchoolsPage(props) {
-  const { weaknesses = [], tasks = [] } = props;
-  const improvements = [...(weaknesses || []).slice(0, 2), ...(tasks || []).slice(0, 1)].filter(Boolean).slice(0, 3);
-  return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-      <UndergradProfilePage {...props} />
-      {improvements.length > 0 && (
-        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 28px 4px' }}>
-          <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 22 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase', marginBottom: 12 }}>Improve your chances</div>
-            <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {improvements.map((item, i) => (
-                <li key={i} style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.5 }}>{typeof item === 'string' ? item : item?.header || item?.title}</li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
-      <UndergradJourneyPage type="universities" {...props} />
-    </div>
-  );
-}
-
 export default function CandidatePortal(props) {
   const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
   const [showHelp, setShowHelp] = useState(false);
@@ -1254,28 +1137,23 @@ export default function CandidatePortal(props) {
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
   const navItems = navFromConfig(trackConfig, hasChatAccess);
-  // Undergrad's "Workspace" nav tab is a grouping, not a page of its own — a
-  // calm student workspace with exactly six sections: Schools, Roadmap,
-  // Testing, Essays, Applications, Documents. 'universities' stays the
-  // internal key for Schools (Advisor.jsx, AdvisorChatFirst.jsx, and
-  // AdvisorConversational.jsx already navigate here) — only the visible tab
-  // set and labels changed. 'analysis' (readiness snapshot) now renders
-  // inside Schools instead of as its own tab; 'activities' stays reachable
-  // (e.g. the Advisor's "Improve Activities" suggestion chip) but is no
-  // longer its own visible tab — it renders inside Schools too.
+  // Undergrad's "Workspace" nav tab is a grouping, not a page of its own — it
+  // re-homes every old candidate-facing output page (Analysis, Schools,
+  // Roadmap, Activities, Testing, Essays, Documents, Applications) behind one
+  // shared horizontal sub-nav (WorkspaceHub) instead of deleting any of them.
   const WORKSPACE_TAB_KEYS = ['analysis', 'universities', 'universityList', 'ugRoadmap', 'activities', 'testing', 'essays', 'applications', 'documents'];
   const WORKSPACE_DEFAULT_TAB = 'universities';
   const WORKSPACE_TABS = [
+    ['analysis', 'Analysis'],
     ['universities', 'Schools'],
     ['ugRoadmap', 'Roadmap'],
+    ['activities', 'Activities'],
     ['testing', 'Testing'],
     ['essays', 'Essays'],
-    ['applications', 'Applications'],
     ['documents', 'Documents'],
+    ['applications', 'Applications'],
   ];
-  const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab)
-    ? (['universityList', 'analysis', 'activities'].includes(candTab) ? 'universities' : candTab)
-    : WORKSPACE_DEFAULT_TAB;
+  const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab) ? (candTab === 'universityList' ? 'universities' : candTab) : WORKSPACE_DEFAULT_TAB;
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   // Sidebar plan/upgrade card. Grad/MBA/PhD/Personal Development render this
@@ -1380,8 +1258,9 @@ export default function CandidatePortal(props) {
           </button>
         )}
 
-        {/* plan card + user — Undergrad moves these into the header Profile
-            menu instead, so the sidebar stays just the 5 nav tabs */}
+        {/* plan card + user — Undergrad shows its own plan card above (right
+            below the nav items) and moves the user info into the header
+            Profile menu instead. */}
         {!isUndergrad && (
         <div style={{ marginTop: 'auto' }}>
           {renderPlanCard()}
@@ -1468,7 +1347,8 @@ export default function CandidatePortal(props) {
             just presented behind one shared horizontal sub-nav. */}
         {isUndergrad && WORKSPACE_TAB_KEYS.includes(candTab) && (
           <WorkspaceHub tabs={WORKSPACE_TABS} activeKey={workspaceActiveKey} onSelect={setCandTab}>
-            {['analysis', 'universities', 'universityList'].includes(candTab) && <UndergradSchoolsPage {...props} />}
+            {candTab === 'analysis' && <UndergradProfilePage {...props} />}
+            {(candTab === 'universities' || candTab === 'universityList') && <UndergradJourneyPage type="universities" {...props} />}
             {candTab === 'ugRoadmap' && <UndergradRoadmap {...props} />}
             {candTab === 'activities' && <UndergradJourneyPage type="activities" {...props} />}
             {candTab === 'testing' && <UndergradJourneyPage type="testing" {...props} />}
