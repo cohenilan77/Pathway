@@ -26,14 +26,13 @@ const UNDERGRAD_DISCLAIMER = 'This is coaching guidance, not an admissions guara
 // Per-track rollout flag for the Workspace-consolidation rebuild (Analysis /
 // Simulation / Documents re-homed under one "Workspace" nav item, mirroring
 // Undergraduate's existing layout). Undergraduate is unconditionally
-// consolidated already (unrelated to this flag). Empty/unset by default —
-// every other track keeps its current, unchanged sidebar until a track key
-// ('mba' | 'graduate' | 'phd' | 'personal') is explicitly added to this
-// comma-separated env var and the app is rebuilt/redeployed. This is a
-// build-time flag (Vite env var), not a runtime toggle — flipping a track on
-// requires a deliberate redeploy, never happens automatically.
+// consolidated already (unrelated to this flag). Defaults to all four
+// tracks ON. An env var (comma-separated track keys: 'mba' | 'graduate' |
+// 'phd' | 'personal') can still override this list if a narrower rollout is
+// ever needed again — set VITE_CONSOLIDATED_WORKSPACE_TRACKS to override.
+const DEFAULT_CONSOLIDATED_WORKSPACE_TRACKS = 'mba,graduate,phd,personal';
 const CONSOLIDATED_WORKSPACE_TRACKS = new Set(
-  String(import.meta.env?.VITE_CONSOLIDATED_WORKSPACE_TRACKS || '')
+  String(import.meta.env?.VITE_CONSOLIDATED_WORKSPACE_TRACKS || DEFAULT_CONSOLIDATED_WORKSPACE_TRACKS)
     .split(',').map(s => s.trim()).filter(Boolean),
 );
 
