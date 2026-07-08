@@ -1278,6 +1278,29 @@ export default function CandidatePortal(props) {
     : WORKSPACE_DEFAULT_TAB;
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
+  // Sidebar plan/upgrade card. Grad/MBA/PhD/Personal Development render this
+  // at the bottom of the sidebar (with the user info card, near marginTop:
+  // 'auto'); Undergrad instead renders it right below the nav items (whose
+  // last item is Live Chat) — see the two call sites below.
+  const renderPlanCard = () => (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
+      <div style={{ position: 'relative' }}>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1.2 7.3 4.5 10.8 5 8.3 7.3 9 10.8 6 9l-3 1.8.7-3.5L1.2 5l3.5-.5L6 1.2Z" fill="#5b46e0" /></svg>
+          {PLAN_LABELS[plan] || 'AI'}
+        </div>
+        {plan !== 'ai_strategy' ? (
+          <>
+            <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5, marginBottom: 11 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
+            <button onClick={handleUpgrade} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.4)', cursor: 'pointer' }}>Upgrade plan</button>
+          </>
+        ) : (
+          <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5 }}>You have full access, including your dedicated strategist.</div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'linear-gradient(180deg,#faf7f2 0%,#f6f1e8 100%)', fontFamily: "'Albert Sans',system-ui,sans-serif", color: '#33405e', WebkitFontSmoothing: 'antialiased' }}>
       {/* Mobile top bar with hamburger */}
@@ -1342,6 +1365,11 @@ export default function CandidatePortal(props) {
           })}
         </div>
 
+        {/* Undergrad shows the plan/upgrade card directly below the nav
+            items (Live Chat is the last one) instead of at the sidebar
+            bottom — see renderPlanCard() above. */}
+        {isUndergrad && <div style={{ marginTop: 14 }}>{renderPlanCard()}</div>}
+
         {/* help — Undergrad moves Help to the top-right header instead */}
         {!isUndergrad && (
           <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' }}>
@@ -1356,22 +1384,7 @@ export default function CandidatePortal(props) {
             menu instead, so the sidebar stays just the 5 nav tabs */}
         {!isUndergrad && (
         <div style={{ marginTop: 'auto' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 14px', background: 'linear-gradient(135deg,rgba(148,179,251,.28),rgba(184,153,251,.32))', border: '1px solid rgba(184,153,251,.35)' }}>
-            <div style={{ position: 'relative' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 700, letterSpacing: '.08em', color: '#5b46e0', background: 'rgba(255,255,255,.75)', borderRadius: 999, padding: '3px 9px', marginBottom: 8 }}>
-                <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M6 1.2 7.3 4.5 10.8 5 8.3 7.3 9 10.8 6 9l-3 1.8.7-3.5L1.2 5l3.5-.5L6 1.2Z" fill="#5b46e0" /></svg>
-                {PLAN_LABELS[plan] || 'AI'}
-              </div>
-              {plan !== 'ai_strategy' ? (
-                <>
-                  <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5, marginBottom: 11 }}>Unlock a dedicated strategist &amp; unlimited reviews.</div>
-                  <button onClick={handleUpgrade} style={{ width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, color: '#fff', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', boxShadow: '0 3px 10px rgba(148,153,251,.4)', cursor: 'pointer' }}>Upgrade plan</button>
-                </>
-              ) : (
-                <div style={{ fontSize: 14, color: '#33405e', lineHeight: 1.5 }}>You have full access, including your dedicated strategist.</div>
-              )}
-            </div>
-          </div>
+          {renderPlanCard()}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 16, padding: '10px 10px', borderRadius: 16, background: 'rgba(255,255,255,.7)', border: '1px solid #f1eadd' }}>
             <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#fff', boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>{initials}</div>
