@@ -7,6 +7,45 @@
 import React, { useMemo, useState } from 'react';
 import { journeyStages } from '../../../lib/undergrad/candidate-view.js';
 import { undergradProfileStage } from '../../../lib/undergrad-profile.js';
+import { DAY_MS } from '../../../lib/undergrad/constants.js';
+
+// Buckets open tasks into the time windows the Workplace spec asks for
+// (this week / next 30 days / this semester), separate from the six macro
+// journey stages below, which track breadth of progress rather than timing.
+function bucketByWindow(tasks = [], now = Date.now()) {
+  const weekEnd = now + 7 * DAY_MS;
+  const monthEnd = now + 30 * DAY_MS;
+  const thisWeek = [];
+  const next30Days = [];
+  const thisSemester = [];
+  for (const t of (tasks || [])) {
+    if (!t || t.status === 'done' || t.status === 'cancelled') continue;
+    const dl = t.deadline ? new Date(t.deadline).getTime() : null;
+    if (dl != null && !Number.isNaN(dl) && dl <= weekEnd) thisWeek.push(t);
+    else if (dl != null && !Number.isNaN(dl) && dl <= monthEnd) next30Days.push(t);
+    else thisSemester.push(t);
+  }
+  return { thisWeek, next30Days, thisSemester };
+}
+
+function TaskRow({ task }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.45, marginBottom: 8 }}>
+      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#5b46e0', marginTop: 6, flexShrink: 0 }} />
+      <span style={{ flex: 1 }}>{task.header || task.title}</span>
+      {task.deadline && <span style={{ fontSize: 11.5, color: '#9098b5', fontWeight: 700, flexShrink: 0 }}>{task.deadline}</span>}
+    </div>
+  );
+}
+
+function TimeWindowCard({ title, tasks, empty }) {
+  return (
+    <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 20 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase', marginBottom: 12 }}>{title}</div>
+      {tasks.length ? tasks.slice(0, 6).map(t => <TaskRow key={t.id} task={t} />) : <div style={{ fontSize: 13, color: '#9098b5' }}>{empty}</div>}
+    </div>
+  );
+}
 
 const STATUS_TONE = {
   Complete: { bg: '#eafdf6', color: '#119467' },
@@ -55,6 +94,9 @@ export default function UndergradRoadmap({ undergrad, scores, profile, programs,
   const overall = Math.round(stages.reduce((sum, s) => sum + s.progress, 0) / (stages.length || 1));
   const currentStage = stages.find(s => s.progress < 100) || stages[stages.length - 1];
   const profileStage = undergradProfileStage(profile || {});
+  const windows = useMemo(() => bucketByWindow(undergrad?.tasks), [undergrad]);
+  const nextBestAction = windows.thisWeek[0] || windows.next30Days[0] || windows.thisSemester[0] || null;
+  const progressLog = (undergrad?.log || []).slice(-5).reverse();
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
@@ -84,11 +126,38 @@ export default function UndergradRoadmap({ undergrad, scores, profile, programs,
         </div>
       )}
 
+      {nextBestAction && (
+        <div style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6', borderRadius: 16, padding: '14px 18px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase', marginBottom: 4 }}>Next best action</div>
+          <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{nextBestAction.header || nextBestAction.title}</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 14, marginBottom: 16 }}>
+        <TimeWindowCard title="This week" tasks={windows.thisWeek} empty="Nothing due this week." />
+        <TimeWindowCard title="Next 30 days" tasks={windows.next30Days} empty="Nothing due in the next 30 days." />
+        <TimeWindowCard title="This semester" tasks={windows.thisSemester} empty="No open items further out." />
+      </div>
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {stages.map((stage, i) => (
           <StageCard key={stage.key} stage={stage} index={i} expanded={expanded === stage.key} onToggle={() => setExpanded(e => e === stage.key ? null : stage.key)} />
         ))}
       </div>
+
+      {progressLog.length > 0 && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 10 }}>Progress log</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {progressLog.map(entry => (
+              <div key={entry.id} style={{ fontSize: 12.5, color: '#6b7392', display: 'flex', gap: 10 }}>
+                <span style={{ color: '#9098b5', flexShrink: 0 }}>{new Date(entry.at).toLocaleDateString()}</span>
+                <span>{(entry.event || '').replace(/_/g, ' ')}{entry.payload?.title ? `: ${entry.payload.title}` : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
