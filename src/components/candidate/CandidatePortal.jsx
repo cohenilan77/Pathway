@@ -23,6 +23,20 @@ import { undergradGradeConfig } from '../../../lib/undergrad/profile-temperature
 
 const UNDERGRAD_DISCLAIMER = 'This is coaching guidance, not an admissions guarantee.';
 
+// Per-track rollout flag for the Workspace-consolidation rebuild (Analysis /
+// Simulation / Documents re-homed under one "Workspace" nav item, mirroring
+// Undergraduate's existing layout). Undergraduate is unconditionally
+// consolidated already (unrelated to this flag). Empty/unset by default —
+// every other track keeps its current, unchanged sidebar until a track key
+// ('mba' | 'graduate' | 'phd' | 'personal') is explicitly added to this
+// comma-separated env var and the app is rebuilt/redeployed. This is a
+// build-time flag (Vite env var), not a runtime toggle — flipping a track on
+// requires a deliberate redeploy, never happens automatically.
+const CONSOLIDATED_WORKSPACE_TRACKS = new Set(
+  String(import.meta.env?.VITE_CONSOLIDATED_WORKSPACE_TRACKS || '')
+    .split(',').map(s => s.trim()).filter(Boolean),
+);
+
 const PLAN_LABELS = { free: 'Free plan', ai: 'AI', ai_strategy: 'AI + Strategy' };
 
 const PLAN_ACCESS = {
@@ -1224,8 +1238,14 @@ export default function CandidatePortal(props) {
     }
     // "Workspace" is a nav grouping, not a page of its own — land on its
     // default sub-tab (WorkspaceHub keeps the horizontal sub-nav highlighted
-    // correctly from there via workspaceActiveKey).
-    setCandTab(key === 'workspace' ? 'universities' : key);
+    // correctly from there via workspaceActiveKey/gradWorkspaceActiveKey).
+    // Referencing isUndergrad/trackConfig here is safe even though they're
+    // declared later in this function body: this closure only ever runs on
+    // a later click event, by which time the whole component has already
+    // finished its first render and every const below is initialized.
+    setCandTab(key !== 'workspace' ? key : (isUndergrad
+      ? 'universities'
+      : 'analysis'));
     setMenuOpen(false);
   };
 
@@ -1237,6 +1257,12 @@ export default function CandidatePortal(props) {
 
   const trackConfig = getTrackConfig(profile || {});
   const isUndergrad = trackConfig.key === 'undergraduate';
+  // Undergrad is unconditionally consolidated already; the other 4 tracks
+  // only get the new Workspace-consolidated layout once their track key is
+  // in CONSOLIDATED_WORKSPACE_TRACKS (empty by default — see that const's
+  // comment). useConsolidatedLayout is the single switch every layout-only
+  // (not content-routing) isUndergrad check below is generalized to.
+  const useConsolidatedLayout = isUndergrad || CONSOLIDATED_WORKSPACE_TRACKS.has(trackConfig.key);
   const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', workspace: 'Workspace', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
@@ -1253,7 +1279,11 @@ export default function CandidatePortal(props) {
   const isUndergradDocsTab = candTab === 'documents' && isUndergrad;
   const targetSummary = chosenSchools?.length ? `Targets: ${chosenSchools.slice(0, 2).join(', ')}${chosenSchools.length > 2 ? ` +${chosenSchools.length - 2}` : ''}` : '';
   const hasChatAccess = true;
-  const navItems = navFromConfig(trackConfig, hasChatAccess);
+  // trackConfig.nav is now defined for every track (Step 2), but a track only
+  // gets it when useConsolidatedLayout is true for that track — otherwise
+  // navFromConfig falls back to its legacy per-page NAV_ITEMS default, same
+  // as before this rebuild, byte-for-byte.
+  const navItems = navFromConfig(useConsolidatedLayout ? trackConfig : { ...trackConfig, nav: undefined }, hasChatAccess);
   // Undergrad's "Workspace" nav tab is a grouping, not a page of its own — a
   // calm student workspace with exactly six sections: Schools, Roadmap,
   // Testing, Essays, Applications, Documents. 'universities' stays the
@@ -1276,6 +1306,21 @@ export default function CandidatePortal(props) {
   const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab)
     ? (['universityList', 'analysis', 'activities'].includes(candTab) ? 'universities' : candTab)
     : WORKSPACE_DEFAULT_TAB;
+
+  // Grad/MBA/PhD/Personal Development Workspace consolidation (only active
+  // per-track when useConsolidatedLayout is true — see that const). Re-homes
+  // the same three pages these tracks already had as top-level tabs
+  // (Analysis, Simulation, Documents) behind one Workspace sub-nav, same
+  // components/props/candTab keys, nothing renamed or merged.
+  const GRAD_WORKSPACE_TAB_KEYS = ['analysis', 'documents', 'documentDepository'];
+  const GRAD_WORKSPACE_DEFAULT_TAB = 'analysis';
+  const GRAD_WORKSPACE_TABS = [
+    ['analysis', 'Analysis'],
+    ['documents', 'Simulation'],
+    ['documentDepository', 'Documents'],
+  ];
+  const gradWorkspaceActiveKey = GRAD_WORKSPACE_TAB_KEYS.includes(candTab) ? candTab : GRAD_WORKSPACE_DEFAULT_TAB;
+
   const candidateAlerts = buildCandidateAlerts({ documents, chat, tasks, completedTasks, plan: authUser?.plan || plan });
 
   // Sidebar plan/upgrade card. Grad/MBA/PhD/Personal Development render this
@@ -1347,7 +1392,8 @@ export default function CandidatePortal(props) {
           {navItems.map(item => {
             const active = candTab === item.key
               || (item.key === 'studentProfile' && candTab === 'advisor')
-              || (item.key === 'workspace' && isUndergrad && WORKSPACE_TAB_KEYS.includes(candTab));
+              || (item.key === 'workspace' && isUndergrad && WORKSPACE_TAB_KEYS.includes(candTab))
+              || (item.key === 'workspace' && !isUndergrad && GRAD_WORKSPACE_TAB_KEYS.includes(candTab));
             const locked = (requiresOAuthDetails && item.key !== 'settings') || isPlanLocked(item.key);
             return (
               <button key={item.key} className="pw-nav-item" onClick={() => handleNavClick(item.key)} style={{ ...navStyle(active), opacity: locked ? 0.45 : 1, cursor: locked ? 'not-allowed' : 'pointer' }}>
@@ -1368,10 +1414,10 @@ export default function CandidatePortal(props) {
         {/* Undergrad shows the plan/upgrade card directly below the nav
             items (Live Chat is the last one) instead of at the sidebar
             bottom — see renderPlanCard() above. */}
-        {isUndergrad && <div style={{ marginTop: 14 }}>{renderPlanCard()}</div>}
+        {useConsolidatedLayout && <div style={{ marginTop: 14 }}>{renderPlanCard()}</div>}
 
-        {/* help — Undergrad moves Help to the top-right header instead */}
-        {!isUndergrad && (
+        {/* help — consolidated-layout tracks move Help to the top-right header instead */}
+        {!useConsolidatedLayout && (
           <button onClick={handleHelp} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 15px', marginTop: 10, borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%', textAlign: 'left', border: 'none', fontFamily: 'inherit', color: '#6b7392', background: 'transparent' }}>
             <span style={{ width: 30, height: 30, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'transparent', color: '#6b7392' }}>
               <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 4.9.5c0 1.7-2.4 2-2.4 3.5M12 17h.01" /></svg>
@@ -1380,9 +1426,9 @@ export default function CandidatePortal(props) {
           </button>
         )}
 
-        {/* plan card + user — Undergrad moves these into the header Profile
-            menu instead, so the sidebar stays just the 5 nav tabs */}
-        {!isUndergrad && (
+        {/* plan card + user — consolidated-layout tracks move these into the
+            header Profile menu instead, so the sidebar stays just the nav tabs */}
+        {!useConsolidatedLayout && (
         <div style={{ marginTop: 'auto' }}>
           {renderPlanCard()}
 
@@ -1418,12 +1464,12 @@ export default function CandidatePortal(props) {
               storageKey={`pathway_candidate_alerts_${authUser?.id || authUser?.email || name}`}
               title="Candidate alerts"
             />
-            {isUndergrad && (
+            {useConsolidatedLayout && (
               <button onClick={() => handleNavClick('settings')} title="Settings" aria-label="Settings" style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #f1eadd', background: candTab === 'settings' ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: candTab === 'settings' ? '#fff' : '#6b7392' }}>
                 <svg viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.9', strokeLinecap: 'round', strokeLinejoin: 'round' }}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4l-.33-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 11 4.6V4.5a2 2 0 0 1 4 0v.09A1.65 1.65 0 0 0 18 6l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 11v.09a2 2 0 0 1 0 3.82Z" /></svg>
               </button>
             )}
-            {isUndergrad && (
+            {useConsolidatedLayout && (
               <div style={{ position: 'relative' }}>
                 <button onClick={() => setProfileMenuOpen(o => !o)} title="Account" aria-label="Account menu" aria-expanded={profileMenuOpen} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#fff', fontSize: 13, fontWeight: 800, boxShadow: '0 3px 10px rgba(148,153,251,.35)' }}>
                   {initials}
@@ -1461,7 +1507,7 @@ export default function CandidatePortal(props) {
 
         {candTab === 'dashboard' && <Dashboard {...props} />}
         {(candTab === 'advisor' || candTab === 'studentProfile') && <Advisor {...props} />}
-        {candTab === 'analysis' && !isUndergrad && <Analysis {...props} />}
+        {candTab === 'analysis' && !isUndergrad && !useConsolidatedLayout && <Analysis {...props} />}
 
         {/* Workspace — the re-homed destination for every old Undergrad output
             page. Nothing here is new/rebuilt: same components, same props,
@@ -1478,12 +1524,25 @@ export default function CandidatePortal(props) {
           </WorkspaceHub>
         )}
 
+        {/* Grad/MBA/PhD/Personal Development Workspace consolidation — only
+            when useConsolidatedLayout is on for this track. Same three
+            components/props these tracks already render standalone below,
+            just presented behind one shared horizontal sub-nav, mirroring
+            the Undergrad block above. */}
+        {!isUndergrad && useConsolidatedLayout && GRAD_WORKSPACE_TAB_KEYS.includes(candTab) && (
+          <WorkspaceHub tabs={GRAD_WORKSPACE_TABS} activeKey={gradWorkspaceActiveKey} onSelect={setCandTab}>
+            {candTab === 'analysis' && <Analysis {...props} />}
+            {candTab === 'documents' && <Documents {...props} />}
+            {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+          </WorkspaceHub>
+        )}
+
         {/* Calendar stays a Dashboard deep-link (its mini-calendar card opens
             this full tracker), not a Workspace tab, per the migration map. */}
         {candTab === 'calendar' && isUndergrad && <UndergradTracker {...props} />}
 
-        {candTab === 'documents' && !isUndergrad && <Documents {...props} />}
-        {candTab === 'documentDepository' && !isUndergrad && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+        {candTab === 'documents' && !isUndergrad && !useConsolidatedLayout && <Documents {...props} />}
+        {candTab === 'documentDepository' && !isUndergrad && !useConsolidatedLayout && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
         {candTab === 'community' && <CommunityHub {...props} />}
         {candTab === 'settings' && <Settings {...props} />}
         {candTab === 'chat' && hasChatAccess && (isUndergrad ? <LiveChatHub {...props} /> : <Chat {...props} />)}

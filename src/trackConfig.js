@@ -56,6 +56,19 @@ export const TRACK_CONFIG = {
   MBA: {
     key: 'mba',
     scoreLabel: 'MBA Competitiveness',
+    // Consolidated nav (Dashboard, Advisor, Workspace, Community — Live Chat
+    // is auto-injected by navFromConfig), mirroring Undergraduate's shape.
+    // Analysis, Simulation, and Documents (file vault) re-home inside the
+    // Workspace tab instead of being deleted — see the CandidatePortal.jsx
+    // Workspace block. Only takes effect when the CONSOLIDATED_WORKSPACE_TRACKS
+    // flag includes 'mba' (see CandidatePortal.jsx); default is the legacy
+    // per-page sidebar, unchanged.
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['workspace', 'Workspace', 'workspace'],
+      ['community', 'Community', 'community'],
+    ],
     steps: DEFAULT_STEPS,
     docLabel: 'CV, essays, recommendations, interview prep',
     kpis: [
@@ -92,6 +105,13 @@ export const TRACK_CONFIG = {
   Graduate: {
     key: 'graduate',
     scoreLabel: 'Competitiveness Score',
+    // See MBA's nav comment above — same consolidated shape, same flag gate.
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['workspace', 'Workspace', 'workspace'],
+      ['community', 'Community', 'community'],
+    ],
     steps: DEFAULT_STEPS,
     docLabel: 'CV, essays, SOP, recommendations',
     kpis: [
@@ -120,6 +140,13 @@ export const TRACK_CONFIG = {
   'Postgraduate / Doctoral': {
     key: 'phd',
     scoreLabel: 'Research Readiness',
+    // See MBA's nav comment above — same consolidated shape, same flag gate.
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['workspace', 'Workspace', 'workspace'],
+      ['community', 'Community', 'community'],
+    ],
     steps: ['Profile', 'Academic Depth', 'Research Experience', 'Research Direction', 'Supervisor Fit', 'Proposal', 'Writing Sample', 'Recommendations', 'Interview'],
     docLabel: 'Research proposal, writing sample, CV, papers',
     kpis: [
@@ -148,6 +175,13 @@ export const TRACK_CONFIG = {
   'Personal Development': {
     key: 'personal',
     scoreLabel: 'Growth Score',
+    // See MBA's nav comment above — same consolidated shape, same flag gate.
+    nav: [
+      ['dashboard', 'Dashboard', 'dashboard'],
+      ['advisor', 'Advisor', 'advisor'],
+      ['workspace', 'Workspace', 'workspace'],
+      ['community', 'Community', 'community'],
+    ],
     steps: ['Profile', 'Goals', 'Strengths', 'Gaps', 'Skills Plan', 'Experience Plan', 'Personal Brand', 'Execution', 'Review'],
     docLabel: 'CV, action plan, skills plan, portfolio',
     kpis: [
