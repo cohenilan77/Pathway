@@ -39,7 +39,7 @@ export default function UndergradTracker({ undergrad, setUndergradTaskStatus, ac
   const latestSnapshot = snapshots[snapshots.length - 1];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
+    <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
       <div style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', marginBottom: 14 }}>Tracker &amp; Calendar</div>
 
       <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 14, padding: '13px 15px', marginBottom: 14 }}>

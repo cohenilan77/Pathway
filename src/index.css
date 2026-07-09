@@ -182,13 +182,21 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 .pw-community-panels { display: flex; flex: 1; min-height: 0; }
 
 @media (max-width: 1180px) {
+  /* minmax(0, 1fr), not bare 1fr: a bare 1fr track's implicit minimum is
+     auto (min-content), so an un-shrinkable descendant (e.g. a flex row
+     whose children have no min-width:0) can force the track — and with it
+     the whole grid — wider than the viewport, silently clipped by the
+     page's overflow-x:hidden instead of visibly breaking. minmax(0, 1fr)
+     removes that floor so the column actually shrinks to the viewport. */
   .pw-dashboard-grid,
   .pw-analysis-grid,
   .pw-narrative-grid,
   .pw-settings-grid,
   .pw-undergrad-grid,
-  .pw-undergrad-buckets {
-    grid-template-columns: 1fr !important;
+  .pw-undergrad-buckets,
+  .pw-ug-tracker-grid,
+  .pw-undergrad-kpi-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .pw-dashboard-grid {
@@ -319,7 +327,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     flex: 1 1 130px !important;
   }
   .pw-dashboard-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     gap: 12px !important;
     max-width: none !important;
   }
@@ -381,7 +389,9 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-narrative-grid,
   .pw-settings-grid,
   .pw-undergrad-grid,
-  .pw-undergrad-buckets {
+  .pw-undergrad-buckets,
+  .pw-ug-tracker-grid,
+  .pw-undergrad-kpi-grid {
     gap: 12px !important;
   }
 
