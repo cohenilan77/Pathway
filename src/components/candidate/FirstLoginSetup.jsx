@@ -289,6 +289,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 <input
                   type="text"
                   name="fullName"
+                  className="pw-firstlogin-input"
                   value={formData.fullName}
                   onChange={handleChange}
                   placeholder="Your full name"
@@ -315,6 +316,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 <input
                   type="email"
                   name="contactEmail"
+                  className="pw-firstlogin-input"
                   value={formData.contactEmail}
                   onChange={handleChange}
                   placeholder="your.email@example.com"
@@ -336,6 +338,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 <input
                   type="email"
                   name="contactEmailConfirm"
+                  className="pw-firstlogin-input"
                   value={formData.contactEmailConfirm}
                   onChange={handleChange}
                   placeholder="Re-enter your email"
@@ -361,6 +364,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 </span>
                 <select
                   name="countryOfResidence"
+                  className="pw-firstlogin-input"
                   value={formData.countryOfResidence}
                   onChange={handleChange}
                   style={{
@@ -386,6 +390,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 <input
                   type="number"
                   name="age"
+                  className="pw-firstlogin-input"
                   value={formData.age}
                   onChange={handleChange}
                   placeholder="Your age"
@@ -408,6 +413,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 </span>
                 <select
                   name="timezone"
+                  className="pw-firstlogin-input"
                   value={formData.timezone}
                   onChange={handleChange}
                   style={{

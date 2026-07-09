@@ -800,6 +800,13 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     display: flex !important;
     flex: 1 !important;
   }
+
+  /* iOS Safari auto-zooms the viewport on focusing any text input/select
+     under 16px — bump these first-login form fields up so tapping into
+     them doesn't yank the whole page. */
+  .pw-firstlogin-input {
+    font-size: 16px !important;
+  }
 }
 
 /* --- Advisor conversational --- */
@@ -826,6 +833,14 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 }
 
 @media (max-width: 680px) {
+  .pw-narrative-modal-shell {
+    padding: 20px !important;
+  }
+
+  .pw-narrative-modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+
   .pw-adv2-stage-grid {
     grid-auto-flow: column;
     grid-template-columns: none;

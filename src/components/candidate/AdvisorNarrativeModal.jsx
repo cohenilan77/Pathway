@@ -3,7 +3,7 @@ import React from 'react';
 export default function NarrativeModal({ onClose, onChoose }) {
   return (
     <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,27,52,.58)', zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ position: 'relative', background: '#fff', borderRadius: 16, maxWidth: 640, width: '100%', padding: 32, boxShadow: '0 30px 60px rgba(20,27,52,.35)', maxHeight: '90vh', overflowY: 'auto' }}>
+      <div className="pw-narrative-modal-shell" onClick={e => e.stopPropagation()} style={{ position: 'relative', background: '#fff', borderRadius: 16, maxWidth: 640, width: '100%', padding: 32, boxShadow: '0 30px 60px rgba(20,27,52,.35)', maxHeight: '90vh', overflowY: 'auto' }}>
         <button onClick={onClose} title="Close" style={{ position: 'absolute', top: 20, right: 20, width: 34, height: 34, borderRadius: 10, border: 'none', background: '#eef1f7', color: '#5a6478', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
@@ -12,7 +12,7 @@ export default function NarrativeModal({ onClose, onChoose }) {
         <p style={{ fontSize: 14, color: '#7a8295', lineHeight: 1.6, margin: '0 0 24px' }}>
           Every strong application is anchored by a clear narrative posture. Pick the one that best reflects how you want to be seen by admissions committees.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 22 }}>
+        <div className="pw-narrative-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 22 }}>
           <div style={{ background: '#fff', border: '1px solid #e8ecf6', borderRadius: 14, padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <span style={{ alignSelf: 'flex-start', fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#16875c', background: '#e9f9f1', padding: '4px 9px', borderRadius: 7 }}>LOWER RISK</span>
             <span style={{ fontSize: 22 }}>📈</span>
