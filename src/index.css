@@ -814,6 +814,11 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     padding: 11px 14px !important;
   }
 
+  .pw-program-card-title {
+    flex-wrap: wrap !important;
+    row-gap: 4px !important;
+  }
+
   .pw-chat-page {
     padding: 14px 12px !important;
   }

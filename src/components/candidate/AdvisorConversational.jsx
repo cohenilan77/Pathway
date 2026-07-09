@@ -270,7 +270,7 @@ function ProgramCard({ program, pickIndex, showRank, pending, onChoose, chosen }
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <button
-          className="pw-adv2-btn"
+          className="pw-adv2-btn pw-program-card-title"
           onClick={() => setOpen(v => !v)}
           aria-expanded={open}
           style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, background: 'none', border: 'none', padding: '14px 16px 14px 12px', cursor: 'pointer', font: 'inherit', textAlign: 'left', minHeight: 44 }}
