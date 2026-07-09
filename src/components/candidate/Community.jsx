@@ -57,7 +57,7 @@ function Avatar({ id, name, initials, size = 38 }) {
   );
 }
 
-function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGroup }) {
+function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGroup, className }) {
   const sectionHeader = {
     fontSize: '12px',
     fontWeight: 850,
@@ -83,7 +83,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
   });
 
   return (
-    <aside style={{
+    <aside className={className} style={{
       width: 210,
       background: '#fffdf9',
       borderRight: '1px solid #e9e1d6',
@@ -153,7 +153,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
   );
 }
 
-function CommunityFeed({ groupId, group, messages, onSendMessage, sending, currentUser }) {
+function CommunityFeed({ groupId, group, messages, onSendMessage, sending, currentUser, className }) {
   const [messageText, setMessageText] = useState('');
   const [focused, setFocused] = useState(false);
   const bottomRef = useRef(null);
@@ -173,7 +173,7 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
 
   if (!group) {
     return (
-      <main style={{
+      <main className={className} style={{
         flex: 1,
         display: 'flex',
         alignItems: 'center',
@@ -195,7 +195,7 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
   const isDirect = group.type === 'personal';
 
   return (
-    <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f7f4ee' }}>
+    <main className={className} style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f7f4ee' }}>
       <header style={{
         background: 'rgba(255, 253, 249, .96)',
         borderBottom: '1px solid #e9e1d6',
@@ -324,9 +324,9 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
   );
 }
 
-function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM, loading }) {
+function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM, loading, className }) {
   return (
-    <aside style={{
+    <aside className={className} style={{
       width: 248,
       background: '#fffdf9',
       borderLeft: '1px solid #e9e1d6',
@@ -432,6 +432,7 @@ export default function Community(props) {
   const [members, setMembers] = useState([]);
   const [connectedIds, setConnectedIds] = useState(() => new Set());
   const [sending, setSending] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState('feed');
 
   const selectedGroup = groups.find((group) => group.id === selectedGroupId)
     || personalChats.find((chat) => chat.id === selectedGroupId)
@@ -615,29 +616,44 @@ export default function Community(props) {
     );
   }
 
+  const selectGroupAndShowFeed = (groupId) => {
+    setSelectedGroupId(groupId);
+    setMobilePanel('feed');
+  };
+
   return (
-    <div style={{ flex: 1, minHeight: 0, display: 'flex', background: '#f6f1e8' }}>
-      <CommunityLeftPanel
-        groups={groups}
-        personalChats={personalChats}
-        selectedGroupId={selectedGroupId}
-        onSelectGroup={setSelectedGroupId}
-      />
-      <CommunityFeed
-        groupId={selectedGroupId}
-        group={selectedGroup}
-        messages={messages}
-        onSendMessage={handleSendMessage}
-        sending={sending}
-        currentUser={authUser}
-      />
-      <CommunityMembers
-        members={members}
-        connectedIds={connectedIds}
-        onToggleConnection={handleToggleConnection}
-        onOpenDM={handleOpenDM}
-        loading={sending}
-      />
+    <div className="pw-community-shell" data-mobile-panel={mobilePanel} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#f6f1e8' }}>
+      <div className="pw-community-tabbar">
+        <button type="button" className={mobilePanel === 'groups' ? 'pw-community-tab is-active' : 'pw-community-tab'} onClick={() => setMobilePanel('groups')}>Groups</button>
+        <button type="button" className={mobilePanel === 'feed' ? 'pw-community-tab is-active' : 'pw-community-tab'} onClick={() => setMobilePanel('feed')}>Chat</button>
+        <button type="button" className={mobilePanel === 'members' ? 'pw-community-tab is-active' : 'pw-community-tab'} onClick={() => setMobilePanel('members')}>Members</button>
+      </div>
+      <div className="pw-community-panels">
+        <CommunityLeftPanel
+          className="pw-community-panel-groups"
+          groups={groups}
+          personalChats={personalChats}
+          selectedGroupId={selectedGroupId}
+          onSelectGroup={selectGroupAndShowFeed}
+        />
+        <CommunityFeed
+          className="pw-community-panel-feed"
+          groupId={selectedGroupId}
+          group={selectedGroup}
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          sending={sending}
+          currentUser={authUser}
+        />
+        <CommunityMembers
+          className="pw-community-panel-members"
+          members={members}
+          connectedIds={connectedIds}
+          onToggleConnection={handleToggleConnection}
+          onOpenDM={handleOpenDM}
+          loading={sending}
+        />
+      </div>
     </div>
   );
 }

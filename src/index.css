@@ -174,6 +174,13 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 .pw-sim-mobile-ai-actions,
 .pw-depository-mobile-list { display: none; }
 
+/* Community's 3 desktop panels live in this row; the tabbar is mobile-only
+   (hidden here) and .pw-community-panels replaces the old shell's own
+   `display:flex` so the shell itself can switch to flex-column under
+   1024px without touching how the panels render above it. */
+.pw-community-tabbar { display: none; }
+.pw-community-panels { display: flex; flex: 1; min-height: 0; }
+
 @media (max-width: 1180px) {
   .pw-dashboard-grid,
   .pw-analysis-grid,
@@ -726,6 +733,62 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     font-size: 12px;
     font-weight: 800;
     font-family: inherit;
+  }
+
+  /* Community: 3-up desktop panels (Groups | Chat | Members) become a
+     tab switcher — one panel visible at a time, chosen by the tabbar. */
+  .pw-community-tabbar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 12px;
+    background: #fffdf9;
+    border-bottom: 1px solid #e9e1d6;
+    flex-shrink: 0;
+  }
+
+  .pw-community-tab {
+    flex: 1;
+    border: 1px solid #e0d9ef;
+    background: #fff;
+    border-radius: 10px;
+    padding: 9px 6px;
+    font-size: 12.5px;
+    font-weight: 750;
+    color: #5b46e0;
+    font-family: inherit;
+    cursor: pointer;
+    min-height: 38px;
+  }
+
+  .pw-community-tab.is-active {
+    background: #5b46e0;
+    color: #fff;
+    border-color: #5b46e0;
+  }
+
+  .pw-community-panels {
+    flex-direction: column !important;
+  }
+
+  .pw-community-panel-groups,
+  .pw-community-panel-feed,
+  .pw-community-panel-members {
+    width: 100% !important;
+    display: none !important;
+  }
+
+  .pw-community-shell[data-mobile-panel="groups"] .pw-community-panel-groups {
+    display: block !important;
+    flex: 1 !important;
+  }
+
+  .pw-community-shell[data-mobile-panel="feed"] .pw-community-panel-feed {
+    display: flex !important;
+  }
+
+  .pw-community-shell[data-mobile-panel="members"] .pw-community-panel-members {
+    display: flex !important;
+    flex: 1 !important;
   }
 }
 
