@@ -805,6 +805,15 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     padding: 0 12px 12px !important;
   }
 
+  .pw-help-modal-header,
+  .pw-help-modal-body {
+    padding: 18px 20px !important;
+  }
+
+  .pw-help-modal-close {
+    padding: 11px 14px !important;
+  }
+
   .pw-chat-page {
     padding: 14px 12px !important;
   }

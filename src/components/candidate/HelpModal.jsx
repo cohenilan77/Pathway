@@ -46,9 +46,10 @@ export default function HelpModal({ authToken, sessionId, onClose }) {
           overflow: 'hidden',
         }}
       >
-        <div style={{ background: 'linear-gradient(135deg,#474d80,#6d5cc2)', padding: '26px 32px', position: 'relative', flexShrink: 0, overflow: 'hidden' }}>
+        <div className="pw-help-modal-header" style={{ background: 'linear-gradient(135deg,#474d80,#6d5cc2)', padding: '26px 32px', position: 'relative', flexShrink: 0, overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
           <button
+            className="pw-help-modal-close"
             onClick={onClose}
             aria-label="Close"
             style={{ position: 'absolute', top: 16, right: 18, background: 'none', border: 'none', cursor: 'pointer', color: '#d9cbb3', fontSize: 22, lineHeight: 1, padding: '4px 8px', borderRadius: 6 }}
@@ -61,7 +62,7 @@ export default function HelpModal({ authToken, sessionId, onClose }) {
           <p style={{ position: 'relative', fontSize: 13.5, color: '#d9cbb3', margin: '6px 0 0' }}>How the process and tabs work, in short.</p>
         </div>
 
-        <div style={{ padding: '26px 32px', overflowY: 'auto', flex: 1 }}>
+        <div className="pw-help-modal-body" style={{ padding: '26px 32px', overflowY: 'auto', flex: 1 }}>
           {loading && (
             <div style={{ fontSize: 14, color: '#9098b5', fontStyle: 'italic' }}>Putting your guide together…</div>
           )}
