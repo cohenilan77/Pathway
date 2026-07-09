@@ -318,7 +318,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-test-picker,
   .pw-test-layout,
   .pw-test-result-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
   .pw-test-actions {
     flex-wrap: wrap !important;
@@ -356,7 +356,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     justify-content: center !important;
   }
   .pw-advisor-rail { display: none !important; }
-  .pw-advisor-grid { grid-template-columns: 1fr !important; overflow: visible !important; }
+  .pw-advisor-grid { grid-template-columns: minmax(0, 1fr) !important; overflow: visible !important; }
   .pw-advisor-status,
   .pw-advisor-workspace {
     width: calc(100% - 24px) !important;
@@ -372,10 +372,10 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   .pw-advisor-grid > section:first-child {
     min-height: calc(100dvh - 170px) !important;
   }
-  .pw-doc-grid { grid-template-columns: 1fr !important; min-height: 0 !important; height: auto !important; overflow: visible !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; background: transparent !important; }
-  .pw-analysis-grid { grid-template-columns: 1fr !important; }
-  .pw-narrative-grid { grid-template-columns: 1fr !important; }
-  .pw-settings-grid { grid-template-columns: 1fr !important; }
+  .pw-doc-grid { grid-template-columns: minmax(0, 1fr) !important; min-height: 0 !important; height: auto !important; overflow: visible !important; border-radius: 0 !important; border: none !important; box-shadow: none !important; background: transparent !important; }
+  .pw-analysis-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .pw-narrative-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .pw-settings-grid { grid-template-columns: minmax(0, 1fr) !important; }
   .pw-school-row { flex-wrap: wrap !important; align-items: flex-start !important; }
   .pw-school-checkbox { margin-top: 2px; }
   .pw-school-info { flex-basis: 100% !important; order: 1; }
@@ -601,7 +601,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
 
   .pw-depository-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
@@ -647,7 +647,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
 
   .pw-depository-filters {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .pw-depository-table {
@@ -813,6 +813,28 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     padding: 12px 14px 14px !important;
   }
 
+  .pw-gmat-idle-card {
+    padding: 20px 18px !important;
+  }
+
+  .pw-gmat-idle-stats {
+    gap: 8px !important;
+  }
+
+  .pw-gmat-idle-stats > div {
+    padding: 9px 6px !important;
+    font-size: 11.5px !important;
+  }
+
+  .pw-gmat-question-nav {
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .pw-gmat-question-nav button {
+    height: 40px !important;
+  }
+
   .pw-analysis-page {
     padding: 14px 12px 40px !important;
   }
@@ -884,7 +906,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
 
   .pw-narrative-modal-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .pw-adv2-stage-grid {
@@ -948,7 +970,7 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 
   .pw-dashboard-actions {
     display: grid !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .pw-school-stats {
@@ -959,10 +981,10 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
   }
 
   .pw-sim-mobile-status {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .pw-depository-mobile-actions {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }

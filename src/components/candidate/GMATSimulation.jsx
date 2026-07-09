@@ -127,13 +127,13 @@ export default function GMATSimulation() {
 
   if (phase === 'idle') return (
     <div style={{ width: '100%', maxWidth: 760 }}>
-      <div style={{ ...card, padding: '34px 36px' }}>
+      <div className="pw-gmat-idle-card" style={{ ...card, padding: '34px 36px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,#5b46e0,#9a65ef)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900 }}>GM</div>
           <div><h2 style={{ fontSize: 24, fontWeight: 850, color: '#141b34', margin: 0 }}>GMAT Simulation</h2><div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 3 }}>20-question focused practice</div></div>
         </div>
         <p style={{ fontSize: 14, color: '#5f6987', lineHeight: 1.65, margin: '18px 0 22px' }}>Practice Quantitative, Verbal, and Data Insights under a 40-minute timer. The final analysis includes accuracy, section performance, total time, average pace, and time spent on every question.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
+        <div className="pw-gmat-idle-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
           {['7 Quantitative', '7 Verbal', '6 Data Insights'].map((label) => <div key={label} style={{ background: '#f1edff', border: '1px solid #ddd4ff', borderRadius: 12, padding: '10px 8px', textAlign: 'center', fontSize: 12.5, fontWeight: 800, color: '#5b46e0' }}>{label}</div>)}
         </div>
         <button onClick={start} style={{ ...primaryButton, width: '100%', padding: '13px 18px', fontSize: 14 }}>Start GMAT Simulation →</button>
@@ -180,7 +180,7 @@ export default function GMATSimulation() {
           <button onClick={() => goToQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0} style={{ background: '#fff', border: '1px solid #e7dcc7', color: '#5b46e0', borderRadius: 11, padding: '9px 13px', fontSize: 12.5, fontWeight: 800, cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer', opacity: currentQuestion === 0 ? .45 : 1, fontFamily: 'inherit' }}>← Previous</button>
           {currentQuestion < QUESTIONS.length - 1 ? <button onClick={() => goToQuestion(currentQuestion + 1)} style={primaryButton}>Next →</button> : <button onClick={finish} style={{ ...primaryButton, background: 'linear-gradient(135deg,#15935f,#3fdca9)' }}>Finish &amp; see results</button>}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1eadd' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#5b46e0' : answers[index] != null ? '#79d4b4' : '#e7dcc7'}`, background: index === currentQuestion ? '#eeeaff' : answers[index] != null ? '#effbf6' : '#fff', color: '#4d5875', fontSize: 12, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
+        <div className="pw-gmat-question-nav" style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1eadd' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#5b46e0' : answers[index] != null ? '#79d4b4' : '#e7dcc7'}`, background: index === currentQuestion ? '#eeeaff' : answers[index] != null ? '#effbf6' : '#fff', color: '#4d5875', fontSize: 12, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
       </div>
     </div>
   );
