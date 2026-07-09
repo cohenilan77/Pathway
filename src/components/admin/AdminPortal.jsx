@@ -942,16 +942,16 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
             <NavIcon><circle cx="9" cy="7" r="4" /><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0-3-3.87" /></NavIcon>
             Candidates
           </button>
-          <button onClick={() => setAdminView('controlTower')} style={sideStyle(adminView === 'controlTower')}>
-            <NavIcon><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></NavIcon>
-            Control Tower
-          </button>
           {canManageUsers && (
             <button onClick={() => setAdminView('users')} style={sideStyle(adminView === 'users')}>
               <NavIcon><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></NavIcon>
               Consultants
             </button>
           )}
+          <button onClick={() => setAdminView('controlTower')} style={sideStyle(adminView === 'controlTower')}>
+            <NavIcon><path d="M12 2v4M12 18v4M2 12h4M18 12h4" /><circle cx="12" cy="12" r="4" /></NavIcon>
+            Control Tower
+          </button>
           {canManageUsers && (
             <button onClick={() => setAdminView('marketing')} style={sideStyle(adminView === 'marketing')}>
               <NavIcon><path d="M3 11l18-7-7 18-3-8-8-3Z" /><path d="M11 14 21 4" /></NavIcon>
