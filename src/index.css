@@ -801,6 +801,18 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     flex: 1 !important;
   }
 
+  .pw-chat-page {
+    padding: 14px 12px !important;
+  }
+
+  .pw-chat-messages {
+    padding: 16px 14px !important;
+  }
+
+  .pw-chat-composer {
+    padding: 12px 14px 14px !important;
+  }
+
   .pw-analysis-page {
     padding: 14px 12px 40px !important;
   }

@@ -97,7 +97,7 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
   };
 
   return (
-    <div dir={dir} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '30px 36px' }}>
+    <div dir={dir} className="pw-chat-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '30px 36px' }}>
       <div style={{ maxWidth: 800 }}>
         <div style={{ fontSize: 13, color: '#9098b5', fontWeight: 600, marginBottom: 14, textAlign: dir === 'rtl' ? 'right' : 'left' }}>{chatT(language, 'viewingConsultant')}</div>
         <div style={{ position: 'relative', background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.06)', display: 'flex', flexDirection: 'column', height: '65vh', minHeight: 360, maxHeight: 680, overflow: 'hidden' }}>
@@ -115,7 +115,7 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
               </button>
             </>
           )}
-          <div ref={chatScrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
+          <div ref={chatScrollRef} className="pw-chat-messages" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px 28px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 640 }}>
               {loading && (
                 <div style={{ fontSize: 13.5, color: '#aab2cc', textAlign: 'center', padding: '40px 0' }}>
@@ -167,7 +167,7 @@ const OPTIONS_PATTERN = /→\s*(.+)$/;
               <div ref={messagesEndRef} />
             </div>
           </div>
-          <div style={{ padding: '16px 24px 20px', flexShrink: 0, borderTop: '1px solid #f1eadd' }}>
+          <div className="pw-chat-composer" style={{ padding: '16px 24px 20px', flexShrink: 0, borderTop: '1px solid #f1eadd' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#f6f1e8', border: '1.5px solid #e7dcc7', borderRadius: 18, padding: '7px 7px 7px 8px' }}>
               <input
                 dir={dir}
