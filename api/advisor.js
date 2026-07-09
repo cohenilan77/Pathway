@@ -18,6 +18,27 @@ function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
 }
 
+// The specialist (e.g. MatchingAgent) computes the authoritative fresh
+// programs/chosenSchools; the AdvisorAgent continuation call that follows is
+// only meant to produce user-facing conversational text. Its own statePatch
+// (derived from whatever structured blocks its raw reply happens to contain)
+// must never silently blank out or downgrade what the specialist already
+// computed just because the continuation's reply omitted or under-specified
+// those same fields — that gap left the client with no way to receive the
+// specialist's fresh state until a page reload re-fetched it from storage.
+export function mergeSpecialistWithContinuation(specialistPatch = {}, continuationPatch = {}) {
+  const merged = { ...specialistPatch, ...continuationPatch };
+  for (const key of ['programs', 'chosenSchools']) {
+    const specialistValue = specialistPatch[key];
+    const continuationValue = continuationPatch[key];
+    const continuationHasValue = Array.isArray(continuationValue) && continuationValue.length > 0;
+    if (Array.isArray(specialistValue) && specialistValue.length > 0 && !continuationHasValue) {
+      merged[key] = specialistValue;
+    }
+  }
+  return merged;
+}
+
 function hybridMetadata(metadata = {}, overrides = {}) {
   return {
     routerSource: metadata.routerSource || 'regex_fallback',
@@ -434,7 +455,7 @@ export default async function handler(req, res) {
         architecture: 'hybrid',
         coordinator: 'AdvisorCoordinator',
         agent: 'AdvisorAgent',
-        statePatch: { ...(result.statePatch || {}), ...(continued.response.statePatch || {}) },
+        statePatch: mergeSpecialistWithContinuation(result.statePatch, continued.response.statePatch),
         metadata: {
           ...continued.response.metadata,
           ...result.metadata,
