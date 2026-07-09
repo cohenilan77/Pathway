@@ -801,6 +801,10 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     flex: 1 !important;
   }
 
+  .pw-workspace-tabs {
+    padding: 0 12px 12px !important;
+  }
+
   .pw-chat-page {
     padding: 14px 12px !important;
   }
