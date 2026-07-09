@@ -13,10 +13,15 @@ import { renderFormattedText } from '../../lib/formatText.jsx';
 import { visibleCandidateChat } from '../../lib/candidateChat.js';
 import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import { needsProgramRecovery } from '../../../lib/program-ready-gate.js';
+import { deriveNarrativeProgress } from '../../lib/narrativeProgress.js';
+import { N1_QUESTION } from '../../../lib/selection-continuity.js';
 import UndergradKpiPanel from './UndergradKpiPanel.jsx';
+import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
 const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
 const OPTIONS_TRAILING_PROMPT = /\s+(?:What should we work on next\??|Inquire about your strategy…?)\s*$/i;
+// Mirrors the deterministic message confirmTargetSchools() injects in App.jsx.
+const NARRATIVE_START = `Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
 
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
@@ -55,7 +60,7 @@ function undergradGradeNumber(profile) {
 // Same state-driven suggestion logic already used by AdvisorChatFirst — keyed
 // off structured stage state (scores/programs/chosenSchools/narrative), never
 // off substring matching of the last AI message.
-function contextualChips({ scores, programs, chosenSchools, narrative }) {
+function contextualChips({ scores, programs, chosenSchools, narrative, narrativeQnAComplete }) {
   if (!scores) {
     return [
       { label: 'Continue analysis', msg: 'Continue my analysis.' },
@@ -76,7 +81,14 @@ function contextualChips({ scores, programs, chosenSchools, narrative }) {
       { label: 'What should I do next?', msg: 'What should I do next?' },
     ];
   }
-  if (!narrative) {
+  // `narrative` only reflects a genuine Pivot/Upgrade choice once N1-N4 have
+  // actually been answered in this chat. A non-null narrative alongside an
+  // incomplete Q&A is stale data (e.g. carried over from a reset/reused
+  // session, or a profile field set some other way) — treat it as unresolved
+  // so we never skip straight to CV/essay chips without the candidate having
+  // gone through the narrative step.
+  if (!narrative || !narrativeQnAComplete) {
+    if (!narrativeQnAComplete) return [];
     return [
       { label: 'Continue narrative', msg: `Continue with the next narrative question using my confirmed target schools: ${(chosenSchools || []).join(' | ')}.` },
       { label: 'Improve my odds', msg: 'What would most improve my odds at my target schools?' },
@@ -402,11 +414,12 @@ const STAGE_TITLES = {
 
 export default function AdvisorConversational({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setProfile, programs,
-  setShowCvModal, cvText, narrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser,
+  setShowCvModal, cvText, narrative, setNarrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser,
 }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [showNarrativeModal, setShowNarrativeModal] = useState(false);
 
   const visibleChat = visibleCandidateChat(chat, {
     whatsapp: authUser?.whatsappOptIn === true,
@@ -456,6 +469,23 @@ export default function AdvisorConversational({
   const [justMarked, setJustMarked] = useState(null);
   const [markNotes, setMarkNotes] = useState([]);
   const isConfirmed = !!chosenSchools?.length;
+  // Once schools are confirmed the recommended-programs list has done its
+  // job — keeping it rendered pins it below every later chat message instead
+  // of letting it leave the stream.
+  const showProgramList = hasPrograms && !isConfirmed;
+
+  const rawNarrative = narrative ?? profile?.narrative;
+  const { narrativeQnAComplete } = deriveNarrativeProgress(visibleChat, NARRATIVE_START);
+  // Stale narrative data (non-null without N1-N4 having been answered here,
+  // whether from a reset/reused session or a profile field set some other
+  // way) must route back to the Pivot/Upgrade modal, not stay hidden behind it.
+  const narrativeDataIntegrityIssue = !!rawNarrative && !narrativeQnAComplete;
+  const showNarrativeCTA = !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !rawNarrative : narrativeDataIntegrityIssue);
+  const handleNarrativeChoose = (kind) => {
+    setNarrative && setNarrative(kind);
+    setShowNarrativeModal(false);
+    send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
+  };
 
   const pushMarkNote = (name, markedNames) => {
     const byName = new Map(normalizedPrograms.map(p => [p.name, p]));
@@ -523,7 +553,7 @@ export default function AdvisorConversational({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chosenSchools]);
 
-  const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: narrative ?? profile?.narrative }) : [];
+  const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: rawNarrative, narrativeQnAComplete }) : [];
   const [chipLog, setChipLog] = useState([]);
   const [statusExpanded, setStatusExpanded] = useState(false);
   const handleChip = (label, msg) => {
@@ -564,7 +594,7 @@ export default function AdvisorConversational({
   const journeyStageIndex = stepIdx <= 2 ? 0 : stepIdx === 3 ? 1 : stepIdx <= 5 ? 2 : stepIdx <= 7 ? 3 : 4;
 
   return (
-    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: "'Albert Sans',system-ui,sans-serif", color: BODY }}>
+    <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', background: 'transparent', fontFamily: "'Albert Sans',system-ui,sans-serif", color: BODY, position: 'relative' }}>
 
       {/* Expandable ambient status bar from the supplied HTML. */}
       <div className="pw-advisor-status" style={{ flex: 'none', width: 'min(820px,calc(100% - 56px))', alignSelf: 'flex-start', marginLeft: 28, paddingTop: 6, boxSizing: 'border-box' }}>
@@ -692,7 +722,7 @@ export default function AdvisorConversational({
               );
             })}
 
-            {hasPrograms && (
+            {showProgramList && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {normalizedPrograms.map(program => {
                   const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
@@ -726,6 +756,16 @@ export default function AdvisorConversational({
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {showNarrativeCTA && (
+              <div style={{ maxWidth: 640, marginLeft: 18, background: INK, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                  <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
+                </div>
+                <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
               </div>
             )}
 
@@ -822,6 +862,10 @@ export default function AdvisorConversational({
         </section>
 
       </div>
+
+      {showNarrativeModal && (
+        <NarrativeModal onClose={() => setShowNarrativeModal(false)} onChoose={handleNarrativeChoose} />
+      )}
     </div>
   );
 }
