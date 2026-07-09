@@ -803,6 +803,11 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                 : (early ? 'Ask your advisor for schools to explore — your inspiration list will appear here.' : 'Ask your advisor for university recommendations — your Reach, Target, and Likely matches will appear here.')}
             </p>
             <p style={{ fontSize: 12.5, color: '#9098b5', margin: '10px 0 0', fontStyle: 'italic' }}>{UNDERGRAD_DISCLAIMER}</p>
+            {import.meta.env.DEV && (programs || []).some(p => p.sourceTag === 'hotfix_school_list') && (
+              <p style={{ fontSize: 11, color: '#9098b5', margin: '6px 0 0', fontFamily: 'monospace' }}>
+                [dev] populated by school-list hotfix ({new Date().toISOString().slice(0, 10)})
+              </p>
+            )}
           </div>
 
           <UndergradKpiPanel scores={scores || {}} profile={profile || {}} />
@@ -952,7 +957,13 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
           ) : (
             <div style={{ background: '#f4f6fb', border: '1.5px dashed #e7dcc7', borderRadius: 18, padding: 32, textAlign: 'center' }}>
               <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>Your profile is ready for an exploratory university universe.</div>
-              <button onClick={() => send?.('Generate my undergraduate university list now. Include PROFILE, SCORES, STRENGTHS, WEAKNESSES, TASKS, and PROGRAMS. Do not reply with school names unless PROGRAMS is emitted.')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Build my list now</button>
+              {/* 2026-07-09 hotfix: this used to ask the chat for the
+                  graduate/MBA <PROFILE>/<PROGRAMS> XML contract, which
+                  undergrad's AdvisorAgent escape could never actually
+                  produce — looped on fabricated chip options instead.
+                  Plain undergrad phrasing routes deterministically via
+                  lib/hybrid-coordinator.js's school-list detection. */}
+              <button onClick={() => send?.('Show me a possible list of schools based on my profile.')} style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>Build my list now</button>
             </div>
           )}
         </div>
