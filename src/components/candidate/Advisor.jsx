@@ -131,7 +131,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
       <AdvisorConversational
         STEPS={STEPS} stepIdx={stepIdx} chat={chat} input={input} setInput={setInput} send={send}
         busy={busy} scores={scores} profile={profile} setProfile={setProfile} programs={programs} setShowCvModal={setShowCvModal}
-        cvText={cvText} narrative={narrative}
+        cvText={cvText} narrative={narrative} setNarrative={setNarrative}
         chosenSchools={chosenSchools} setChosenSchools={setChosenSchools} confirmTargetSchools={confirmTargetSchools}
         setCandTab={setCandTab}
         authUser={authUser}

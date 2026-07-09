@@ -61,8 +61,14 @@ test('program selection writes through shared state and advances the journey', (
 
 test('program artifacts remain visible through school selection and recovery', () => {
   assert.match(chatFirst, /const needsSelectionRecovery = hasPrograms/);
-  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!narrative \|\| !chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
   assert.match(chatFirst, /\{showPrograms && \(/);
+});
+
+test('ProgramsCard hides once target schools are confirmed, regardless of narrative state', () => {
+  // Narrative starting (or not) must not keep the recommended-schools card
+  // pinned below newer chat messages once schools are actually confirmed.
+  assert.match(chatFirst, /const showPrograms = hasPrograms && \(!chosenSchools\?\.length \|\| needsSelectionRecovery\)/);
+  assert.ok(!/showPrograms = hasPrograms && \(!narrative/.test(chatFirst), 'showPrograms must not gate on !narrative');
 });
 
 test('old stuck sessions reopen the saved list without restarting', () => {
@@ -93,12 +99,21 @@ test('narrative CTA is state-based, not a string match on the AI reply', () => {
   assert.ok(!chatFirst.includes("lastAiText.includes('Narrative Strategy tab')"), 'CTA must not gate on a literal phrase the deterministic N1 message never contains');
   assert.match(chatFirst, /import \{ deriveNarrativeProgress \} from '\.\.\/\.\.\/lib\/narrativeProgress\.js'/);
   assert.match(chatFirst, /const \{ narrativeQnAComplete \} = deriveNarrativeProgress\(visibleChat, NARRATIVE_START\)/);
-  assert.match(chatFirst, /const showNarrativeCTA = !busy && !narrative && chosenSchools\?\.length > 0 && narrativeQnAComplete/);
+  assert.match(chatFirst, /const showNarrativeCTA = !busy && chosenSchools\?\.length > 0 && \(narrativeQnAComplete \? !narrative : narrativeDataIntegrityIssue\)/);
 });
 
 test('"Continue narrative" chip cannot fire before N1-N4 are answered', () => {
   assert.match(chatFirst, /if \(!narrativeQnAComplete\) return \[\];/);
   assert.match(chatFirst, /narrativeQnAComplete \}\)/);
+});
+
+test('a stale non-null narrative without answered N1-N4 cannot skip to CV/essay chips', () => {
+  // Data-integrity guard: narrative carried over from a prior/reset session
+  // (non-null) but N1-N4 were never answered in *this* chat must not unlock
+  // the post-narrative CV/essay chips, and must instead route back to the CTA
+  // that reopens the Pivot/Upgrade modal.
+  assert.match(chatFirst, /const narrativeDataIntegrityIssue = !!narrative && !narrativeQnAComplete;/);
+  assert.match(chatFirst, /if \(!narrative \|\| !narrativeQnAComplete\) \{/);
 });
 
 test('deriveNarrativeProgress: CTA readiness right after confirmTargetSchools (0/4 answered)', () => {

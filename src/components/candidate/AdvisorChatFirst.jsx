@@ -376,7 +376,12 @@ function contextualChips({ scores, programs, chosenSchools, narrative, narrative
       { label: 'What should I do next?', msg: 'What should I do next?' },
     ];
   }
-  if (!narrative) {
+  // `narrative` only reflects a genuine Pivot/Upgrade choice once N1-N4 have
+  // actually been answered in this chat. A non-null narrative alongside an
+  // incomplete Q&A is stale data (e.g. carried over from a reset/reused
+  // session) — treat it as unresolved so we never skip straight to CV/essay
+  // chips without the candidate having gone through the narrative step.
+  if (!narrative || !narrativeQnAComplete) {
     // N1-N4 aren't answered yet: don't offer a chip that skips ahead to
     // "the next narrative question" before the candidate has answered this one.
     if (!narrativeQnAComplete) return [];
@@ -457,7 +462,10 @@ export default function AdvisorChatFirst({
   // Derive readiness from state instead: schools confirmed, no narrative
   // chosen yet, and the candidate has actually answered N1-N4.
   const { narrativeQnAComplete } = deriveNarrativeProgress(visibleChat, NARRATIVE_START);
-  const showNarrativeCTA = !busy && !narrative && chosenSchools?.length > 0 && narrativeQnAComplete;
+  // Stale narrative data (non-null without N1-N4 having been answered here)
+  // must route back to the Pivot/Upgrade modal, not stay hidden behind it.
+  const narrativeDataIntegrityIssue = !!narrative && !narrativeQnAComplete;
+  const showNarrativeCTA = !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !narrative : narrativeDataIntegrityIssue);
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
   const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative, narrativeQnAComplete }) : [];
 
@@ -476,7 +484,7 @@ export default function AdvisorChatFirst({
   // Reopen the existing list in place, pre-checked, so they can recover without
   // restarting or losing profile/analysis data.
   const needsSelectionRecovery = hasPrograms && chosenSchools?.length > 0 && TARGET_SELECTION_LOOP.test(lastAiText);
-  const showPrograms = hasPrograms && (!narrative || !chosenSchools?.length || needsSelectionRecovery);
+  const showPrograms = hasPrograms && (!chosenSchools?.length || needsSelectionRecovery);
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
