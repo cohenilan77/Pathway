@@ -801,6 +801,32 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     flex: 1 !important;
   }
 
+  .pw-analysis-page {
+    padding: 14px 12px 40px !important;
+  }
+
+  .pw-analysis-header-actions {
+    flex-wrap: wrap !important;
+    width: 100% !important;
+  }
+
+  .pw-analysis-header-actions button {
+    flex: 1 1 auto !important;
+  }
+
+  .pw-analysis-sticky-bar {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  .pw-analysis-sticky-actions {
+    width: 100% !important;
+  }
+
+  .pw-analysis-sticky-actions button {
+    flex: 1 1 0 !important;
+  }
+
   /* iOS Safari auto-zooms the viewport on focusing any text input/select
      under 16px — bump these first-login form fields up so tapping into
      them doesn't yank the whole page. */

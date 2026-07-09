@@ -548,7 +548,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
   return (
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#faf6ec' }}>
-      <div style={{ maxWidth: 1020, margin: '0 auto', padding: '24px 34px 64px' }}>
+      <div className="pw-analysis-page" style={{ maxWidth: 1020, margin: '0 auto', padding: '24px 34px 64px' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 20, padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#fffdf7,#fff8ea)', border: '1px solid #efe5cf', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
           <div>
@@ -571,7 +571,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               </div>
             )}
           </div>
-          <div style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
+          <div className="pw-analysis-header-actions" style={{ display: 'flex', gap: 12, flexShrink: 0 }}>
             <button onClick={refreshAnalysis} disabled={busy}
               title="Refresh analysis using the latest chat details"
               style={{
@@ -894,7 +894,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           display: 'flex', justifyContent: 'center',
           animation: 'pwFade 0.2s ease',
         }}>
-          <div style={{
+          <div className="pw-analysis-sticky-bar" style={{
             margin: '0 auto 18px', maxWidth: 620, width: 'calc(100% - 32px)',
             background: '#141b34', borderRadius: 14, padding: '14px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
@@ -904,7 +904,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               <span style={{ fontWeight: 800, fontSize: 17, marginRight: 8 }}>{selected.length}</span>
               {selected.length === 1 ? 'school selected' : 'schools selected'}
             </div>
-            <div style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
+            <div className="pw-analysis-sticky-actions" style={{ display: 'flex', gap: 10, flexShrink: 0 }}>
               <button onClick={() => { setSelected([]); setChosenSchools && setChosenSchools([]); }}
                 style={{ background: 'transparent', border: '1px solid rgba(255,255,255,.3)', color: '#c6d2ea', borderRadius: 9, padding: '10px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear
