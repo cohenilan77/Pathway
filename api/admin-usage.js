@@ -17,6 +17,7 @@ const FEATURE_LABELS = [
   { feature: 'essay_workshop', label: 'Essay Workshop' },
   { feature: 'mock_interview', label: 'Mock Interview' },
   { feature: 'general_chat', label: 'General Chat' },
+  { feature: 'undergrad_agent', label: 'Undergrad Smart Agent' },
   { feature: 'session_summary', label: 'Session Summary' },
   { feature: 'help_guide', label: 'Help Guide' },
   { feature: 'document_parsing', label: 'Document Parsing' },
