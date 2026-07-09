@@ -859,6 +859,14 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
 }
 
 @media (max-width: 680px) {
+  .pw-narrative-locked-banner {
+    padding: 20px !important;
+  }
+
+  .pw-narrative-locked-copy {
+    min-width: 0 !important;
+  }
+
   .pw-narrative-modal-shell {
     padding: 20px !important;
   }

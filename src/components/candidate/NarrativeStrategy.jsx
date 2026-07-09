@@ -128,9 +128,9 @@ export default function NarrativeStrategy({ narrative, setNarrative, setCandTab,
 
         {/* Locked narrative banner */}
         {narrative && (
-          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
+          <div className="pw-narrative-locked-banner" style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '28px 32px', marginTop: 24, display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap', animation: 'pwFade .3s ease', boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
-            <div style={{ flex: 1, minWidth: 280, position: 'relative' }}>
+            <div className="pw-narrative-locked-copy" style={{ flex: 1, minWidth: 280, position: 'relative' }}>
               <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#ffd76a', marginBottom: 8 }}>NARRATIVE LOCKED</div>
               {narrative === 'upgrade' ? (
                 <>
