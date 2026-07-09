@@ -865,10 +865,12 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                         return (
                           <div key={school.name} style={{ borderBottom: idx < schools.length - 1 ? `1px solid ${tierConfig.border}` : 'none' }}>
                             <div
+                              className="pw-school-row"
                               onClick={() => toggleExpanded(school.name)}
                               style={{ display: 'flex', alignItems: 'center', padding: '17px 22px', gap: 16, cursor: 'pointer', background: isSelected ? 'rgba(255,255,255,.55)' : 'transparent', boxShadow: isSelected ? `inset 3px 0 0 0 ${tierConfig.accent}` : 'none', transition: 'background 0.15s ease, box-shadow 0.15s ease' }}
                             >
                               <div
+                                className="pw-school-checkbox"
                                 onClick={(e) => { e.stopPropagation(); toggleSchool(school.name); }}
                                 style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, border: isSelected ? `2px solid ${tierConfig.accent}` : '2px solid #e7dcc7', background: isSelected ? tierConfig.accent : '#faf7f2', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s ease', cursor: 'pointer' }}
                               >
@@ -879,7 +881,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                 )}
                               </div>
 
-                              <div style={{ flex: 1, minWidth: 0 }}>
+                              <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
                                   <div style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{school.name}</div>
                                   {school.selectivityLabel && (() => {
@@ -896,7 +898,7 @@ function UndergradJourneyPage({ type, profile, scores, strengths, weaknesses, ta
                                 )}
                               </div>
 
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
+                              <div className="pw-school-stats" style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
                                 {!early && school.avgSAT != null && (
                                   <div style={{ textAlign: 'center' }}>
                                     <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgSAT}</div>
@@ -1192,7 +1194,7 @@ function UndergradSchoolsPage(props) {
     <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
       <UndergradProfilePage {...props} />
       {improvements.length > 0 && (
-        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 28px 4px' }}>
+        <div className="pw-undergrad-page" style={{ maxWidth: 1000, margin: '0 auto', padding: '0 28px 4px' }}>
           <div style={{ background: '#fffdf7', border: '1px solid #efe7d4', borderRadius: 18, boxShadow: '0 12px 30px rgba(22,35,63,.06)', padding: 22 }}>
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', textTransform: 'uppercase', marginBottom: 12 }}>Improve your chances</div>
             <ol style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
