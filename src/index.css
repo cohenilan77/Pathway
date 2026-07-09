@@ -819,6 +819,22 @@ input::placeholder, textarea::placeholder { color: #9aa3b5; }
     row-gap: 4px !important;
   }
 
+  .pw-interview-school-name {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    margin-right: 8px !important;
+  }
+
+  .pw-interview-school-rating {
+    flex-shrink: 0 !important;
+  }
+
+  .pw-livechat-packages {
+    padding: 14px 14px 18px !important;
+  }
+
   .pw-chat-page {
     padding: 14px 12px !important;
   }

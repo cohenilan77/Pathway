@@ -23,7 +23,7 @@ function PackagesPanel({ plan, setPlan, setShowContactModal, showToast }) {
   };
 
   return (
-    <div style={{ padding: '18px 28px 28px', borderTop: '1px solid #f1eadd', flexShrink: 0 }}>
+    <div className="pw-livechat-packages" style={{ padding: '18px 28px 28px', borderTop: '1px solid #f1eadd', flexShrink: 0 }}>
       <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 12 }}>Plans &amp; packages</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
         {PLAN_DETAILS.map(p => {

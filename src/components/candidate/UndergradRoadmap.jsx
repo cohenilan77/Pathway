@@ -99,7 +99,7 @@ export default function UndergradRoadmap({ undergrad, scores, profile, programs,
   const progressLog = (undergrad?.log || []).slice(-5).reverse();
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
+    <div className="pw-undergrad-page" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '22px 26px 36px' }}>
       {/* Hero */}
       <div style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', borderRadius: 22, border: '1px solid #e6e0f6', padding: '22px 24px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
         <div style={{ flex: 1, minWidth: 220 }}>

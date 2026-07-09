@@ -331,10 +331,10 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                     const result = interviews?.[school];
                     return (
                       <div key={school} style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '20px 22px', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
-                          <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34' }}>{school}</div>
+                        <div className="pw-interview-school-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
+                          <div className="pw-interview-school-name" style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34' }}>{school}</div>
                           {result?.rating != null && (
-                            <div style={{ fontSize: 13, fontWeight: 800, color: '#5b46e0' }}>{result.rating}/10</div>
+                            <div className="pw-interview-school-rating" style={{ fontSize: 13, fontWeight: 800, color: '#5b46e0' }}>{result.rating}/10</div>
                           )}
                         </div>
                         {result ? (
