@@ -40,7 +40,7 @@ export const PLANS = {
 
 const PLAN_UPGRADE_MESSAGE = "You've reached the end of the Free plan. Please upgrade in Settings to continue with AI guidance, or choose AI + Strategy to add Live Chat with your consultant.";
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024;
-const PROGRAM_LIST_RECOVERY = /\b(?:show(?: me)? (?:the )?(?:programs?|school list|university list|list)|where (?:is|are) (?:the )?(?:programs?|school list|university list|list)|i (?:do not|don't|cannot|can't) see (?:the )?(?:programs?|schools?|list|matches))\b/i;
+const PROGRAM_LIST_RECOVERY = /\b(?:show(?: me)? (?:the )?(?:programs?|schools?|school list|university list|list)|show\s+now|sho\s+wnow|list\s+(?:of\s+)?s?hc?ools?|where (?:is|are) (?:the )?(?:programs?|school list|university list|list)|i (?:do not|don't|cannot|can't) see (?:the )?(?:programs?|schools?|list|matches)|stop asking.*show)\b/i;
 
 const WELCOME_MESSAGE = {
   English: "Welcome — I’m glad you’re here. We’ll take this one clear step at a time.",
