@@ -509,7 +509,7 @@ export default function AdvisorConversational({
         : counts.reach === 0
           ? ' A reach alongside would round it out.'
           : '';
-    setMarkNotes(notes => [...notes, { id: `mark-${Date.now()}`, text: `${name} marked as a target — that gives you ${shape} in your portfolio.${coda}` }]);
+    setMarkNotes(notes => [...notes, { id: `mark-${Date.now()}`, anchor: visibleChat.length, text: `${name} marked as a target — that gives you ${shape} in your portfolio.${coda}` }]);
   };
 
   const handleChoose = (name, { note = false } = {}) => {
@@ -552,6 +552,25 @@ export default function AdvisorConversational({
     prevChosen.current = count;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chosenSchools]);
+
+  // Program list and the narrative CTA are each inserted once, right after the
+  // message that introduced them — they never re-anchor on later turns, so
+  // they stay put as chat grows instead of trailing the current bottom.
+  const [programsAnchor, setProgramsAnchor] = useState(null);
+  useEffect(() => {
+    if (hasPrograms && programsAnchor === null) {
+      setProgramsAnchor(visibleChat.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasPrograms]);
+
+  const [narrativeCtaAnchor, setNarrativeCtaAnchor] = useState(null);
+  useEffect(() => {
+    if (showNarrativeCTA && narrativeCtaAnchor === null) {
+      setNarrativeCtaAnchor(visibleChat.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNarrativeCTA]);
 
   const chips = !busy ? contextualChips({ scores, programs: normalizedPrograms, chosenSchools, narrative: rawNarrative, narrativeQnAComplete }) : [];
   const [chipLog, setChipLog] = useState([]);
@@ -659,6 +678,9 @@ export default function AdvisorConversational({
               const isAi = m.role === 'ai';
               const ghost = chipLog.find(g => g.anchor === i + 1);
               const milestone = milestones.find(ms => ms.anchor === i + 1);
+              const showPrograms = showProgramList && programsAnchor === i + 1;
+              const notesHere = markNotes.filter(n => n.anchor === i + 1);
+              const showNarrativeCtaHere = showNarrativeCTA && narrativeCtaAnchor === i + 1;
               const parsed = isAi ? parseOptions(m.text) : null;
               return (
                 <React.Fragment key={i}>
@@ -718,57 +740,64 @@ export default function AdvisorConversational({
                       ))}
                     </div>
                   )}
+                  {showPrograms && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {normalizedPrograms.map(program => {
+                        const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
+                        const chosen = isConfirmed ? chosenSchools.includes(program.name) : pickIndex >= 0;
+                        return (
+                          <ProgramCard
+                            key={program.name}
+                            program={program}
+                            pickIndex={pickIndex}
+                            showRank={!isConfirmed}
+                            chosen={chosen}
+                            pending={justMarked === program.name}
+                            onChoose={handleChoose}
+                          />
+                        );
+                      })}
+                      {!isConfirmed && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            className="pw-adv2-btn"
+                            onClick={confirmPicks}
+                            disabled={!picks.length || busy}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 700, minHeight: 38,
+                              border: 'none', cursor: picks.length && !busy ? 'pointer' : 'not-allowed',
+                              background: picks.length && !busy ? PERI : BORDER, color: picks.length && !busy ? '#fff' : MUTED_2,
+                              boxShadow: picks.length && !busy ? '0 3px 10px rgba(148,153,251,.4)' : 'none',
+                            }}
+                          >
+                            {picks.length ? `Confirm ${picks.length} target${picks.length === 1 ? '' : 's'}` : 'Choose schools to confirm'}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {notesHere.map(note => (
+                    <div key={note.id} style={{ position: 'relative', maxWidth: 640, padding: '2px 0 2px 18px', animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
+                      <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
+                      <div style={{ fontSize: 15, lineHeight: 1.65, color: BODY }}>{note.text}</div>
+                    </div>
+                  ))}
+                  {showNarrativeCtaHere && (
+                    <div style={{ maxWidth: 640, marginLeft: 18, background: INK, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                        <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
+                      </div>
+                      <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
+                    </div>
+                  )}
                 </React.Fragment>
               );
             })}
 
-            {showProgramList && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {normalizedPrograms.map(program => {
-                  const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
-                  const chosen = isConfirmed ? chosenSchools.includes(program.name) : pickIndex >= 0;
-                  return (
-                    <ProgramCard
-                      key={program.name}
-                      program={program}
-                      pickIndex={pickIndex}
-                      showRank={!isConfirmed}
-                      chosen={chosen}
-                      pending={justMarked === program.name}
-                      onChoose={handleChoose}
-                    />
-                  );
-                })}
-                {!isConfirmed && (
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      className="pw-adv2-btn"
-                      onClick={confirmPicks}
-                      disabled={!picks.length || busy}
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 700, minHeight: 38,
-                        border: 'none', cursor: picks.length && !busy ? 'pointer' : 'not-allowed',
-                        background: picks.length && !busy ? PERI : BORDER, color: picks.length && !busy ? '#fff' : MUTED_2,
-                        boxShadow: picks.length && !busy ? '0 3px 10px rgba(148,153,251,.4)' : 'none',
-                      }}
-                    >
-                      {picks.length ? `Confirm ${picks.length} target${picks.length === 1 ? '' : 's'}` : 'Choose schools to confirm'}
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {showNarrativeCTA && (
-              <div style={{ maxWidth: 640, marginLeft: 18, background: INK, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
-                  <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
-                </div>
-                <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
-              </div>
-            )}
-
+            {/* Live status widgets: reflect current state, not a point in the
+                conversation, so they intentionally trail the latest message
+                rather than anchor to one — same as ToolStatusLine below. */}
             {isUndergrad && hasScores && <UndergradKpiPanel scores={scores} compact />}
 
             {showProgramRecovery && (
@@ -785,13 +814,6 @@ export default function AdvisorConversational({
                 </button>
               </div>
             )}
-
-            {markNotes.map(note => (
-              <div key={note.id} style={{ position: 'relative', maxWidth: 640, padding: '2px 0 2px 18px', animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
-                <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
-                <div style={{ fontSize: 15, lineHeight: 1.65, color: BODY }}>{note.text}</div>
-              </div>
-            ))}
 
             <ToolStatusLine busy={busy} message={visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text} />
           </div>
