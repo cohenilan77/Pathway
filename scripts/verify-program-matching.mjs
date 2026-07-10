@@ -143,4 +143,41 @@ const partialExceptionGap = computeFit({
 assert.equal(partialExceptionGap.tier, 'stretch', 'partial exceptions with severe gates should stay LOW FIT');
 assert.ok(partialExceptionGap.fit < 50, 'partial exceptions with severe gates should not normalize to WORKABLE/STRONG FIT');
 
+const lowEvidenceLawPrograms = normalizeProgramList([
+  {
+    name: 'Yale Law LLM',
+    fit: 75,
+    tier: 'possible',
+    admissionStatus: 'Competitive',
+    programGroup: 'LLM',
+    admitRate: 6.9,
+    selectivityLabel: 'Ultra Competitive',
+    evidenceGaps: ['Recommendation strategy pending'],
+  },
+  {
+    name: 'Harvard Law LLM',
+    fit: 78,
+    tier: 'possible',
+    admissionStatus: 'Competitive',
+    programGroup: 'LLM',
+    admitRate: 7.7,
+    selectivityLabel: 'Ultra Competitive',
+  },
+], {
+  scores: { overall: 63 },
+  scoreDetails: {
+    research: { status: 'incomplete' },
+    recommenders: { status: 'incomplete' },
+    narrative: { status: 'incomplete' },
+    testScore: { status: 'incomplete' },
+  },
+});
+const yaleLaw = lowEvidenceLawPrograms.find(program => program.name === 'Yale Law LLM');
+const harvardLaw = lowEvidenceLawPrograms.find(program => program.name === 'Harvard Law LLM');
+assert.ok(yaleLaw.fit < 40, 'Yale Law under 8% admit rate and under-65 overall should be capped below 40');
+assert.equal(yaleLaw.fitIndex, yaleLaw.fit, 'fitIndex should mirror the calibrated fit');
+assert.equal(yaleLaw.tier, 'stretch', 'Yale Law should not remain Competitive Fit after calibration');
+assert.equal(yaleLaw.admissionStatus, 'Reach', 'Sub-50 calibrated programs should be admissionStatus Reach');
+assert.ok(harvardLaw.fit < 40, 'Harvard Law under 8% admit rate and under-65 overall should be capped below 40');
+
 console.log('Program matching regression checks passed.');

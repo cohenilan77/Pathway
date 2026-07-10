@@ -16,7 +16,7 @@ const BAR_COLORS = [
   { from: '#6d7f9e', to: '#42536f' }, // steel
 ];
 
-function ScoreBar({ score, title, last, color, incomplete = false }) {
+function ScoreBar({ score, title, last, color, incomplete = false, reason, missingPrompt }) {
   const pct = incomplete ? 0 : Math.max(0, Math.min(100, score || 0));
   return (
     <div style={{ marginBottom: last ? 0 : 22 }}>
@@ -52,6 +52,12 @@ function ScoreBar({ score, title, last, color, incomplete = false }) {
           }} />
         </div>
       </div>
+      {incomplete && (reason || missingPrompt) && (
+        <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.45, color: '#6b7392' }}>
+          {reason && <div>{reason}</div>}
+          {missingPrompt && <div style={{ color: '#33405e', fontWeight: 700 }}>{missingPrompt}</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -485,7 +491,7 @@ function buildAccordionSummary(school, profile) {
   return firstSentences(limitWords(summary, 125), '', 4);
 }
 
-export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools, confirmTargetSchools }) {
+export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools, confirmTargetSchools, insights }) {
   const hasData = !!scores;
   const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
@@ -536,12 +542,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   }
 
   const descriptions = Object.fromEntries((trackConfig.kpis || []).map(([key, , desc]) => [key, desc]));
-  const scoreItems = getCandidateKpiDisplayItems(scores, profile)
+  const scoreItems = getCandidateKpiDisplayItems(scores, profile, undefined, insights?.scoreDetails)
     .map(item => ({ ...item, title: item.label, desc: descriptions[item.key] }));
 
   const displayStrengths = strengths || [];
   const displayWeaknesses = weaknesses || [];
-  const displayPrograms = normalizeProgramList(programs) || [];
+  const displayPrograms = normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || [];
   const savedTargets = chosenSchools || [];
   const hasAnyUnlockedPrograms = displayPrograms.some(program => program.tier !== 'locked');
   const tierOrder = hasAnyUnlockedPrograms ? ['stretch', 'possible', 'safe', 'locked'] : ['locked', 'stretch', 'possible', 'safe'];
@@ -677,7 +683,16 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
         <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
           {scoreItems.map((item, i) => (
-            <ScoreBar key={item.key} score={item.value} incomplete={item.status === 'incomplete'} title={item.title} last={i === scoreItems.length - 1} color={BAR_COLORS[i % BAR_COLORS.length]} />
+            <ScoreBar
+              key={item.key}
+              score={item.value}
+              incomplete={item.status === 'incomplete'}
+              title={item.title}
+              reason={item.reason}
+              missingPrompt={item.missingPrompt}
+              last={i === scoreItems.length - 1}
+              color={BAR_COLORS[i % BAR_COLORS.length]}
+            />
           ))}
         </div>
 

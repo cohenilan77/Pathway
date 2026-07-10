@@ -644,7 +644,7 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
@@ -1038,7 +1038,11 @@ export default function App() {
           setCompletedTasks({});
         }
         if (parsed.programs?.length) {
-          let normalizedPrograms = normalizeProgramList(parsed.programs) || [];
+          const programCalibration = {
+            scores: parsed.scores || scores,
+            scoreDetails: parsed.insights?.scoreDetails || insights?.scoreDetails,
+          };
+          let normalizedPrograms = normalizeProgramList(parsed.programs, programCalibration) || [];
           if (isUndergrad) normalizedPrograms = normalizeUndergradPrograms(normalizedPrograms, parsed.profile || requestProfile || {});
           parsed.programs = normalizedPrograms;
           // Verification log: confirms the advisor's <PROGRAMS> block was parsed
@@ -1476,11 +1480,12 @@ export default function App() {
       {/* CV / Background Upload Modal */}
       {showCvModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,26,48,.6)', zIndex: 9000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-          <div style={{ background: '#fff', borderRadius: 18, padding: 36, width: '100%', maxWidth: 620, boxShadow: '0 24px 60px rgba(15,26,48,.28)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div className="pw-profile-modal" style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 620, maxHeight: 'min(92dvh, 760px)', boxShadow: '0 24px 60px rgba(15,26,48,.28)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, padding: '28px 32px 8px', flexShrink: 0 }}>
               <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 600, color: '#141b34', margin: 0 }}>Upload Your Profile</h2>
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8a93a3', fontSize: 26, lineHeight: 1, padding: 0 }}>×</button>
             </div>
+            <div style={{ overflowY: 'auto', minHeight: 0, padding: '0 32px 16px' }}>
             <p style={{ fontSize: 14, color: '#7a8295', marginBottom: 16, lineHeight: 1.5 }}>
               Paste your CV or upload a file. Add honors, awards, major achievements, test scores, goals, and recommenders if they are not already clear.
             </p>
@@ -1516,7 +1521,7 @@ export default function App() {
                   onChange={e => setCvFileTextDraft(e.target.value)}
                   aria-label="Extracted CV text"
                   placeholder="Text extracted from your file appears here…"
-                  style={{ width: '100%', height: 180, border: '1px solid #cfe6dc', background: '#f6fbf8', borderRadius: 10, padding: '14px 16px', fontSize: 13.5, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+                  style={{ width: '100%', height: 'clamp(110px, 24dvh, 180px)', border: '1px solid #cfe6dc', background: '#f6fbf8', borderRadius: 10, padding: '14px 16px', fontSize: 13.5, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
                 />
                 <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 6 }}>
                   Review the extracted text above. You can edit it before analyzing.
@@ -1530,7 +1535,7 @@ export default function App() {
                 value={cvDraft}
                 onChange={e => setCvDraft(e.target.value)}
                 placeholder="Paste your CV, resume text, or work history…"
-                style={{ width: '100%', height: 160, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+                style={{ width: '100%', height: 'clamp(96px, 21dvh, 160px)', border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
               />
             </div>
 
@@ -1543,11 +1548,12 @@ export default function App() {
                 value={cvExtra}
                 onChange={e => setCvExtra(e.target.value)}
                 placeholder="e.g. I was born in Brazil, started in banking, switched to tech startup... My portfolio includes interactive installations and prototypes. My recommenders are my VP and my professor..."
-                style={{ width: '100%', height: 110, border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
+                style={{ width: '100%', height: 'clamp(84px, 16dvh, 110px)', border: '1px solid #d7ddec', borderRadius: 10, padding: '14px 16px', fontSize: 14, fontFamily: 'inherit', resize: 'vertical', outline: 'none', color: '#1c2433', boxSizing: 'border-box', lineHeight: 1.6 }}
               />
             </div>
+            </div>
 
-            <div style={{ display: 'flex', gap: 12, marginTop: 8, justifyContent: 'flex-end', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', alignItems: 'center', padding: '14px 32px 24px', borderTop: '1px solid #eef1f7', background: '#fff', position: 'sticky', bottom: 0, flexShrink: 0 }}>
               <span style={{ fontSize: 12, color: '#b6bdcd', flex: 1 }}>{(cvFileTextDraft + ' ' + cvDraft + ' ' + cvExtra).trim().split(/\s+/).filter(Boolean).length} words across all sources</span>
               <button onClick={() => { setShowCvModal(false); setCvDraft(''); setCvFileTextDraft(''); setCvFileDraft(null); setCvExtra(''); }} style={{ background: 'none', border: '1px solid #d7ddec', borderRadius: 9, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#6b7280', cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
               <button onClick={submitCv} disabled={!cvFileTextDraft.trim() && !cvDraft.trim() && !cvExtra.trim()} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', border: 'none', borderRadius: 999, padding: '11px 26px', fontSize: 14, fontWeight: 700, color: '#fff', cursor: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 'pointer' : 'not-allowed', fontFamily: 'inherit', opacity: (cvFileTextDraft.trim() || cvDraft.trim() || cvExtra.trim()) ? 1 : 0.5, boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>
