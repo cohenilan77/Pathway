@@ -99,7 +99,11 @@ test('narrative CTA is state-based, not a string match on the AI reply', () => {
   assert.ok(!chatFirst.includes("lastAiText.includes('Narrative Strategy tab')"), 'CTA must not gate on a literal phrase the deterministic N1 message never contains');
   assert.match(chatFirst, /import \{ deriveNarrativeProgress \} from '\.\.\/\.\.\/lib\/narrativeProgress\.js'/);
   assert.match(chatFirst, /const \{ narrativeQnAComplete \} = deriveNarrativeProgress\(visibleChat, NARRATIVE_START\)/);
-  assert.match(chatFirst, /const showNarrativeCTA = !busy && chosenSchools\?\.length > 0 && \(narrativeQnAComplete \? !narrative : narrativeDataIntegrityIssue\)/);
+  assert.match(chatFirst, /const showNarrativeCTA = !isUndergrad && !busy && chosenSchools\?\.length > 0 && \(narrativeQnAComplete \? !narrative : narrativeDataIntegrityIssue\)/);
+});
+
+test('the narrative CTA and modal are never shown to Undergraduate candidates', () => {
+  assert.match(chatFirst, /\{showNarrativeModal && !isUndergrad && \(/);
 });
 
 test('"Continue narrative" chip cannot fire before N1-N4 are answered', () => {

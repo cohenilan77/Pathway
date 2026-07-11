@@ -480,7 +480,12 @@ export default function AdvisorConversational({
   // whether from a reset/reused session or a profile field set some other
   // way) must route back to the Pivot/Upgrade modal, not stay hidden behind it.
   const narrativeDataIntegrityIssue = !!rawNarrative && !narrativeQnAComplete;
-  const showNarrativeCTA = !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !rawNarrative : narrativeDataIntegrityIssue);
+  // The Pivot/Upgrade narrative concept is grad/MBA/PhD/Personal-Development
+  // only. Undergrad's own school-list feature legitimately populates
+  // chosenSchools too, which used to be the sole trigger here with no
+  // category check — surfacing the grad narrative CTA/modal to undergrad
+  // candidates as soon as they picked target schools.
+  const showNarrativeCTA = !isUndergrad && !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !rawNarrative : narrativeDataIntegrityIssue);
   const handleNarrativeChoose = (kind) => {
     setNarrative && setNarrative(kind);
     setShowNarrativeModal(false);
@@ -885,7 +890,10 @@ export default function AdvisorConversational({
 
       </div>
 
-      {showNarrativeModal && (
+      {/* Defense in depth: the only button that opens this sets isUndergrad-gated
+          showNarrativeCTA first, but the modal never renders for undergrad
+          regardless of how showNarrativeModal state got set. */}
+      {showNarrativeModal && !isUndergrad && (
         <NarrativeModal onClose={() => setShowNarrativeModal(false)} onChoose={handleNarrativeChoose} />
       )}
     </div>

@@ -22,7 +22,8 @@ test('Advisor forwards setNarrative to the production conversational advisor', (
 
 test('recommended-schools list hides once target schools are confirmed', () => {
   assert.match(conversational, /const showProgramList = hasPrograms && !isConfirmed;/);
-  assert.match(conversational, /\{showProgramList && \(/);
+  assert.match(conversational, /const showPrograms = showProgramList && programsAnchor === i \+ 1;/);
+  assert.match(conversational, /\{showPrograms && \(/);
   assert.ok(!/\{hasPrograms && \(\s*<div style=\{\{ display: 'flex', flexDirection: 'column', gap: 10 \}\}>/.test(conversational),
     'the program-card list must not stay gated purely on hasPrograms once schools are confirmed');
 });
@@ -38,11 +39,17 @@ test('a stale non-null narrative without answered N1-N4 cannot skip to CV/essay 
   assert.match(conversational, /if \(!narrativeQnAComplete\) return \[\];/);
 });
 
+test('the narrative CTA and modal are never shown to Undergraduate candidates', () => {
+  assert.match(conversational, /const showNarrativeCTA = !isUndergrad && !busy && chosenSchools\?\.length > 0 && \(narrativeQnAComplete \? !rawNarrative : narrativeDataIntegrityIssue\)/);
+  assert.match(conversational, /\{showNarrativeModal && !isUndergrad && \(/);
+  assert.match(advisor, /const showNarrativeCTA = !isUndergrad && !busy && !narrative && lastAiText\.includes\('Narrative Strategy tab'\)/);
+  assert.match(advisor, /\{showNarrativeModal && !isUndergrad && \(/);
+});
+
 test('narrative CTA reopens the Pivot/Upgrade modal, including for the stale-data case', () => {
-  assert.match(conversational, /const showNarrativeCTA = !busy && chosenSchools\?\.length > 0 && \(narrativeQnAComplete \? !rawNarrative : narrativeDataIntegrityIssue\)/);
   assert.match(conversational, /import NarrativeModal from '\.\/AdvisorNarrativeModal\.jsx'/);
   assert.match(conversational, /const handleNarrativeChoose = \(kind\) => \{/);
-  assert.match(conversational, /\{showNarrativeModal && \(/);
+  assert.match(conversational, /\{showNarrativeModal && !isUndergrad && \(/);
 });
 
 test('deriveNarrativeProgress: stale narrative on a fresh/reset chat is reported incomplete', () => {

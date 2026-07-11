@@ -465,11 +465,12 @@ export default function AdvisorChatFirst({
   // Stale narrative data (non-null without N1-N4 having been answered here)
   // must route back to the Pivot/Upgrade modal, not stay hidden behind it.
   const narrativeDataIntegrityIssue = !!narrative && !narrativeQnAComplete;
-  const showNarrativeCTA = !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !narrative : narrativeDataIntegrityIssue);
+  const isUndergrad = profile?.category === 'Undergraduate';
+  // Grad/MBA/PhD/Personal-Development-only concept; not applicable to Undergrad.
+  const showNarrativeCTA = !isUndergrad && !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !narrative : narrativeDataIntegrityIssue);
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
   const chips = !busy && !lastParsed ? contextualChips({ scores, programs, chosenSchools, narrative, narrativeQnAComplete }) : [];
 
-  const isUndergrad = profile?.category === 'Undergraduate';
   const gradeNumber = undergradGradeNumber(profile);
   const futureStages = isUndergrad && gradeNumber && gradeNumber <= 10 ? new Set(['Essays', 'Applications']) : new Set();
   const toggleTask = (text) => setCompletedTasks?.(prev => ({ ...prev, [text]: !prev[text] }));
@@ -710,7 +711,7 @@ export default function AdvisorChatFirst({
 
         </div>
 
-        {showNarrativeModal && (
+        {showNarrativeModal && !isUndergrad && (
           <NarrativeModal onClose={() => setShowNarrativeModal(false)} onChoose={handleNarrativeChoose} />
         )}
       </div>

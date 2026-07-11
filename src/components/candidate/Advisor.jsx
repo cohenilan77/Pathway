@@ -119,7 +119,8 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];
   const lastAiText = lastAiMsg?.text || '';
   const latestUserText = visibleChat.filter(m => m.role === 'user').slice(-1)[0]?.text || '';
-  const showNarrativeCTA = !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
+  // Grad/MBA/PhD/Personal-Development-only concept; not applicable to Undergrad.
+  const showNarrativeCTA = !isUndergrad && !busy && !narrative && lastAiText.includes('Narrative Strategy tab');
   const showSchoolPathChips = !busy && !programs && lastAiText.includes('AI-led search together');
   const lastParsed = !busy ? parseOptions(lastAiText) : null;
 
@@ -376,7 +377,7 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               </div>
             </div>
 
-            {showNarrativeModal && (
+            {showNarrativeModal && !isUndergrad && (
               <NarrativeModal onClose={() => setShowNarrativeModal(false)} onChoose={handleNarrativeChoose} />
             )}
           </div>
