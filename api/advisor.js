@@ -330,6 +330,9 @@ async function invokeAdvisor(req, bypassRuntimeConfig, candidateState = {}) {
     profileSources: candidateState.profileSources || req.body?.profileSources,
     cvExtraction: candidateState.cvExtraction || req.body?.cvExtraction,
     extraText: candidateState.extraText || req.body?.extraText,
+    // Narrative Coaching v2 (NARRATIVE_COACHING_V2): once locked via
+    // NarrativeCoachAgent, every downstream AdvisorAgent turn must see it.
+    narrativeText: candidateState.narrativeText || req.body?.narrativeText,
   };
   const body = deterministicContext
     ? { ...baseBody, systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }

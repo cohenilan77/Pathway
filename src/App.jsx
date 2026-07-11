@@ -1321,7 +1321,7 @@ export default function App() {
       const res = await fetch('/api/rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: essayText, school: essaySchool, narrative }),
+        body: JSON.stringify({ text: essayText, school: essaySchool, narrative, narrativeText }),
       });
       const data = await res.json();
       if (data.result) {
@@ -1341,7 +1341,7 @@ export default function App() {
       else showToast('Rewrite failed. Check your API key.');
     } catch { showToast('Rewrite failed. Please try again.'); }
     finally { setBusy(false); }
-  }, [essayText, essaySchool, essayQuestion, narrative, showToast, saveDocument]);
+  }, [essayText, essaySchool, essayQuestion, narrative, narrativeText, showToast, saveDocument]);
 
   const analyzeEssay = useCallback(() => {
     if (!essayText.trim()) { showToast('Paste your essay text first.'); return; }

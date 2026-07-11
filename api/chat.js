@@ -861,7 +861,7 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext, cvExtraction, extraText, profileSources, candidateFacts: suppliedCandidateFacts } = req.body;
+  const { messages, aiConfig, language, conversationId, profile, scores, programs, chosenSchools, stage, systemContext, cvExtraction, extraText, profileSources, candidateFacts: suppliedCandidateFacts, narrativeText } = req.body;
   if (!messages || !Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'Messages array is required' });
   }
@@ -943,7 +943,14 @@ export default async function handler(req, res) {
     const candidateDataContext = (profile && Object.keys(profile).length)
       ? `\n\nCANDIDATE PROFILE DATA (authoritative, sent by the app on this turn):\n${JSON.stringify({ profile, scores: scores || undefined, chosenSchools: (Array.isArray(chosenSchools) && chosenSchools.length) ? chosenSchools : undefined }, null, 2)}`
       : '';
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + candidateDataContext + lockedTargetsContext + idleContext;
+    // Narrative Coaching v2 (NARRATIVE_COACHING_V2): once locked via
+    // NarrativeCoachAgent, every AdvisorAgent turn — including CV-stage
+    // rewrites, the current CV-rewrite path per our audit — must treat the
+    // narrative as source of truth.
+    const narrativeContext = narrativeText
+      ? `\n\nCANDIDATE NARRATIVE (source of truth): "${narrativeText}"\n\nEvery response — including CV bullet rewrites — must be consistent with this narrative. If the candidate's request conflicts with it, note the conflict and ask before drifting.`
+      : '';
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + candidateDataContext + lockedTargetsContext + narrativeContext + idleContext;
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
