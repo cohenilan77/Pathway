@@ -11,12 +11,65 @@ const docNavStyle = (active) => ({
   boxShadow: active ? '0 10px 20px rgba(105,91,255,.32)' : 'none',
 });
 
-export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, saveEssayToDocuments, saveCvToDocuments, busy, setShowCvModal, setCandTab, send, showToast, narrative, authToken, currentConfig, variant }) {
+function relativeTime(ts) {
+  if (!ts) return '';
+  const diffMs = Date.now() - Number(ts);
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile, essayText, setEssayText, essaySchool, setEssaySchool, essayQuestion, setEssayQuestion, essays, interviews, selectEssaySchool, chosenSchools, insights, rewriteEssay, analyzeEssay, saveEssayToDocuments, saveCvToDocuments, busy, setShowCvModal, setCandTab, send, showToast, narrative, narrativeText, setNarrativeText, narrativeTextUpdatedAt, setNarrativeTextUpdatedAt, authToken, authUser, currentConfig, variant }) {
   // Undergraduate "Essays & Documents" reuses this workspace but hides the
   // graduate-only GMAT simulator. Default (graduate) behaviour is unchanged.
   const isUndergradVariant = variant === 'undergrad';
   const [editingCv, setEditingCv] = useState(false);
   const [cvEdit, setCvEdit] = useState('');
+  const [editingNarrative, setEditingNarrative] = useState(false);
+  const [narrativeEdit, setNarrativeEdit] = useState('');
+  const [savingNarrative, setSavingNarrative] = useState(false);
+  const NARRATIVE_TEXT_MIN = 200;
+  const NARRATIVE_TEXT_MAX = 800;
+
+  const startCoachingFromChat = () => {
+    setCandTab('advisor');
+    send("In a paragraph, what do you actually want after the MBA?");
+  };
+
+  const refineNarrative = () => {
+    setCandTab('advisor');
+    send('I want to sharpen my narrative.');
+  };
+
+  const saveNarrativeEdit = async () => {
+    const text = narrativeEdit.trim();
+    if (text.length < NARRATIVE_TEXT_MIN || text.length > NARRATIVE_TEXT_MAX) {
+      showToast(`Narrative must be ${NARRATIVE_TEXT_MIN}-${NARRATIVE_TEXT_MAX} characters.`);
+      return;
+    }
+    setSavingNarrative(true);
+    try {
+      const res = await fetch('/api/admin-user-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ action: 'save_narrative_edit', userId: authUser?.id, text }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Save failed');
+      setNarrativeText(data.narrativeText);
+      setNarrativeTextUpdatedAt(data.updatedAt);
+      setEditingNarrative(false);
+      showToast('Narrative saved.');
+    } catch (err) {
+      showToast(err.message || 'Could not save narrative.');
+    } finally {
+      setSavingNarrative(false);
+    }
+  };
 
   const wordCount = essayText ? essayText.trim().split(/\s+/).filter(Boolean).length : 0;
   const essayPct = Math.min(100, Math.round((wordCount / 1000) * 100));
@@ -53,7 +106,8 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
     { key: 'interview', label: 'Mock Interview', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7A8.5 8.5 0 1 1 21 11.5Z" /></svg> },
     { key: 'gmat', label: 'GMAT', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M4 19V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" /><path d="M8 8h8M8 12h3M14 12h2M8 16h2M13 16h3" /></svg> },
     { key: 'insights', label: 'AI Insights', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" /></svg> },
-  ].filter(item => !(isUndergradVariant && item.key === 'gmat'));
+    { key: 'narrative', label: 'Narrative', icon: <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: '1.8', strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M17 6H7a4 4 0 0 0-4 4v4a4 4 0 0 0 4 4h1v3l4-3h5a4 4 0 0 0 4-4v-4a4 4 0 0 0-4-4Z" /><path d="M9 10c0-1 1-1.5 1-1.5M15 10c0-1 1-1.5 1-1.5" /></svg> },
+  ].filter(item => !(isUndergradVariant && item.key === 'gmat') && !(isUndergradVariant && item.key === 'narrative'));
 
   return (
     <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#faf6ec' }}>
@@ -287,6 +341,15 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               )}
 
               <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '40px 0 16px', letterSpacing: '-.4px' }}>My Essays</h2>
+              {narrativeText && (
+                <div style={{ background: '#f1eadd', borderRadius: 12, padding: '12px 16px', marginBottom: 16, fontSize: 12.5, color: '#5e688c', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span>Based on your narrative: "{narrativeText.split(/(?<=[.!?])\s/)[0]}"…</span>
+                  <button onClick={() => setDocTab('narrative')}
+                    style={{ background: 'none', border: 'none', color: '#5b46e0', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, padding: 0 }}>
+                    View full →
+                  </button>
+                </div>
+              )}
               {savedSchools.filter(s => essays?.[s]?.text).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {savedSchools.filter(s => essays?.[s]?.text).map(school => (
@@ -406,6 +469,56 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   <button onClick={() => setDocTab('editor')}
                     style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
                     Go to Essay Editor →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {docTab === 'narrative' && (
+            <div style={{ width: '100%', maxWidth: 640 }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.4px' }}>Your Narrative</h2>
+              {narrativeText ? (
+                editingNarrative ? (
+                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: 22 }}>
+                    <textarea value={narrativeEdit} onChange={e => setNarrativeEdit(e.target.value)} rows={8}
+                      style={{ width: '100%', fontFamily: 'inherit', fontSize: 14, lineHeight: 1.6, color: '#33405e', border: '1.5px solid #efe5cf', borderRadius: 12, padding: 14, resize: 'vertical' }} />
+                    <div style={{ fontSize: 12, color: '#9098b5', marginTop: 6 }}>{narrativeEdit.trim().length} / {NARRATIVE_TEXT_MAX} characters (minimum {NARRATIVE_TEXT_MIN})</div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                      <button onClick={saveNarrativeEdit} disabled={savingNarrative}
+                        style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: savingNarrative ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: savingNarrative ? 0.6 : 1 }}>
+                        {savingNarrative ? 'Saving…' : 'Save'}
+                      </button>
+                      <button onClick={() => setEditingNarrative(false)} disabled={savingNarrative}
+                        style={{ background: 'none', border: '1.5px solid #efe5cf', color: '#141b34', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: 22, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+                    <div style={{ fontSize: 15, lineHeight: 1.75, color: '#33405e' }}>{narrativeText}</div>
+                    <div style={{ fontSize: 12, color: '#9098b5', marginTop: 16 }}>Updated {relativeTime(narrativeTextUpdatedAt) || 'recently'}</div>
+                    <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+                      <button onClick={refineNarrative}
+                        style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Refine →
+                      </button>
+                      <button onClick={() => { setNarrativeEdit(narrativeText); setEditingNarrative(true); }}
+                        style={{ background: 'none', border: '1.5px solid #efe5cf', color: '#141b34', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                    Your narrative is written during coaching. Start a session in Advisor to build yours.
+                  </div>
+                  <button onClick={startCoachingFromChat}
+                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    Start coaching →
                   </button>
                 </div>
               )}

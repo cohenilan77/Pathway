@@ -426,6 +426,7 @@ export default function App() {
   const [sel, setSel] = useState(0);
   const [narrative, setNarrative] = useState(null);
   const [narrativeText, setNarrativeText] = useState(null);
+  const [narrativeTextUpdatedAt, setNarrativeTextUpdatedAt] = useState(null);
   const [narrativeCoaching, setNarrativeCoaching] = useState(null);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState(INITIAL_CHAT);
@@ -592,6 +593,7 @@ export default function App() {
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
         setNarrativeText(data?.narrativeText || null);
+        setNarrativeTextUpdatedAt(data?.narrativeTextUpdatedAt || null);
         setNarrativeCoaching(data?.narrativeCoaching || null);
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
         const loadedUndergrad = data?.undergrad || null;
@@ -649,12 +651,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeCoaching, undergrad, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeCoaching, undergrad, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -780,7 +782,7 @@ export default function App() {
     setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
-    setInsights(null); setNarrative(null); setNarrativeText(null); setNarrativeCoaching(null); setUndergrad(null); setOverride(0);
+    setInsights(null); setNarrative(null); setNarrativeText(null); setNarrativeTextUpdatedAt(null); setNarrativeCoaching(null); setUndergrad(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
         method: 'POST',
@@ -1082,6 +1084,7 @@ export default function App() {
         // statePatch field (see chosenSchools/essays/interviews above).
         if (typedPatch.narrativeText) {
           setNarrativeText(typedPatch.narrativeText);
+          setNarrativeTextUpdatedAt(Date.now());
           const cvStep = advanceOnNarrativeLock(stepIdx, STEPS);
           if (cvStep !== null) setStepIdx(prev => Math.max(prev, cvStep));
         }
@@ -1456,6 +1459,7 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
+    narrativeText, setNarrativeText, narrativeTextUpdatedAt, setNarrativeTextUpdatedAt, narrativeCoaching,
     undergrad, setUndergradTaskStatus, acknowledgeReminder, regenerateRoadmap,
     sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
