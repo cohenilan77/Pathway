@@ -19,6 +19,7 @@ import {
   GRADUATE_DEGREE_OTHER_PROMPT,
   computeStageAdvancement,
   explainIfTooEarly,
+  advanceOnNarrativeLock,
 } from '../lib/candidate-stage-flow.js';
 import { processUndergradInput, runScheduledNagger } from '../lib/undergrad/engine.js';
 import { normalizeUndergradAdvisorOutput } from '../lib/undergrad/advisor-output.js';
@@ -424,6 +425,8 @@ export default function App() {
   const [adminTab, setAdminTab] = useState('feed');
   const [sel, setSel] = useState(0);
   const [narrative, setNarrative] = useState(null);
+  const [narrativeText, setNarrativeText] = useState(null);
+  const [narrativeCoaching, setNarrativeCoaching] = useState(null);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState(INITIAL_CHAT);
   const [sessionId, setSessionId] = useState(createSessionId);
@@ -588,6 +591,8 @@ export default function App() {
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
+        setNarrativeText(data?.narrativeText || null);
+        setNarrativeCoaching(data?.narrativeCoaching || null);
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
         const loadedUndergrad = data?.undergrad || null;
         setUndergrad(isUndergrad && loadedUndergrad
@@ -644,12 +649,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeCoaching, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, undergrad, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeCoaching, undergrad, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -775,7 +780,7 @@ export default function App() {
     setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
-    setInsights(null); setNarrative(null); setUndergrad(null); setOverride(0);
+    setInsights(null); setNarrative(null); setNarrativeText(null); setNarrativeCoaching(null); setUndergrad(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
         method: 'POST',
@@ -1069,6 +1074,18 @@ export default function App() {
             setStepIdx(prev => Math.max(prev, STEPS.indexOf('Narrative')));
           }
         }
+        // Narrative Coaching v2 (NARRATIVE_COACHING_V2): NarrativeCoachAgent's
+        // save_narrative_text tool only includes narrativeText in the patch
+        // when it was actually just saved this turn, so its presence here
+        // always means "freshly locked" — advance straight to CV the same
+        // way every other stage transition already bumps stepIdx off a
+        // statePatch field (see chosenSchools/essays/interviews above).
+        if (typedPatch.narrativeText) {
+          setNarrativeText(typedPatch.narrativeText);
+          const cvStep = advanceOnNarrativeLock(stepIdx, STEPS);
+          if (cvStep !== null) setStepIdx(prev => Math.max(prev, cvStep));
+        }
+        if (typedPatch.narrativeCoaching) setNarrativeCoaching(typedPatch.narrativeCoaching);
         if (parsed.insights) setInsights(parsed.insights);
         if (parsed.essay && parsed.essay.school) {
           const essayName = safeDocBaseName(parsed.essay.school ? `Essay - ${parsed.essay.school}` : titleFromText(parsed.essay.text, 'Essay Draft'), 'Essay Draft');
