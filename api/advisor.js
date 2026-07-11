@@ -73,7 +73,48 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
   return diagnostic;
 }
 
+// PRODUCTION HOTFIX (see commit message): the rest of finalizeKpiResponse
+// below is a legacy grad/MBA one-shot CV-analysis cascade. It (a) starts
+// with applyDeterministicKpiToResponse, which alone deletes statePatch.
+// scores/programs whenever evidenceCount/candidateFacts.readyForScoring
+// isn't satisfied, and (b) further down gates on undergradBaseline's
+// ALL-of-N-fields-known bar (grade + curriculum + gpa + activities +
+// pathwayType + geography + testing + ...) before computing scores even
+// once, deleting statePatch.scores/programs again on every branch and
+// re-injecting a raw `<PROFILE>{...}</PROFILE>` block into the response
+// text. The Undergraduate smart agent (lib/agents/UndergradAgent.js) and
+// its deterministic school-list hotfix (lib/undergrad/handle-school-list.js)
+// already fully own message shaping and already correctly save scores/
+// programs/profile facts themselves — this cascade predates both and was
+// never scoped away from Undergraduate, so in production it silently
+// deleted the school list and progress score this same turn's agent had
+// just computed, and leaked exactly the `<PROFILE>` block the 2026-07-09
+// hotfix (lib/hybrid-coordinator.js) was meant to eliminate — just at this
+// later layer instead. Recompute scores/strengths/weaknesses/tasks live
+// from whatever the profile knows right now (profile-temperature.js scores
+// partial profiles fine — see weightedScore) and never let this response
+// reach any of the legacy machinery below.
+function finalizeUndergradKpiResponse(response, candidateState) {
+  const mergedProfile = { ...(candidateState?.profile || {}), ...(response?.statePatch?.profile || {}) };
+  const normalized = normalizeProfileFacts(mergedProfile, {}, { chosenSchools: candidateState?.chosenSchools || [] });
+  const kpi = scoreCandidateKPIs(normalized, mergedProfile);
+  return {
+    ...response,
+    statePatch: {
+      ...(response?.statePatch || {}),
+      profile: mergedProfile,
+      scores: kpi.scores,
+      strengths: kpi.strengths,
+      weaknesses: kpi.weaknesses,
+      tasks: kpi.tasks,
+    },
+  };
+}
+
 async function finalizeKpiResponse(response, candidateState, candidateId) {
+  const isUndergradCandidate = candidateState?.profile?.category === 'Undergraduate' || response?.statePatch?.profile?.category === 'Undergraduate';
+  if (isUndergradCandidate) return finalizeUndergradKpiResponse(response, candidateState);
+
   let attemptsScoring = responseAttemptsScoring(response);
   let finalized = applyDeterministicKpiToResponse(response, { candidateState });
   const mergedProfile = { ...(candidateState?.profile || {}), ...(finalized?.statePatch?.profile || {}) };
