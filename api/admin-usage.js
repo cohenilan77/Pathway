@@ -23,6 +23,7 @@ const FEATURE_LABELS = [
   { feature: 'document_parsing', label: 'Document Parsing' },
   { feature: 'translation', label: 'Translation' },
   { feature: 'test_simulation', label: 'Test Simulation' },
+  { feature: 'scholarship_search', label: 'Scholarship Search' },
 ];
 
 function dateKey(ts) {
