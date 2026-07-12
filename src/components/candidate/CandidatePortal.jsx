@@ -10,6 +10,7 @@ import UndergradTracker from './UndergradTracker.jsx';
 import UndergradKpiPanel from './UndergradKpiPanel.jsx';
 import EssayDocuments from './EssayDocuments.jsx';
 import WorkspaceHub from './WorkspaceHub.jsx';
+import Scholarships from './Scholarships.jsx';
 import CommunityHub from './CommunityHub.jsx';
 import LiveChatHub from './LiveChatHub.jsx';
 import HelpModal from './HelpModal.jsx';
@@ -1275,7 +1276,7 @@ export default function CandidatePortal(props) {
   // comment). useConsolidatedLayout is the single switch every layout-only
   // (not content-routing) isUndergrad check below is generalized to.
   const useConsolidatedLayout = isUndergrad || CONSOLIDATED_WORKSPACE_TRACKS.has(trackConfig.key);
-  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', workspace: 'Workspace', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
+  const tabLabels = { dashboard: 'Dashboard', advisor: 'Advisor', studentProfile: 'Advisor', workspace: 'Workspace', roadmap: 'Roadmap', ugRoadmap: 'Roadmap', calendar: 'Calendar', activities: 'Activities', universities: 'University List', universityList: 'University List', testing: 'Testing', essays: 'Essays', scholarships: 'Scholarships', applications: 'Applications', analysis: 'Analysis', documents: 'Simulation', documentDepository: 'Documents', community: 'Community', settings: 'Settings', chat: 'Live Chat' };
   const tabSubtitles = {
     dashboard: 'Here is your overview.', advisor: 'Your next steps are one message away.', studentProfile: 'Your next steps are one message away.',
     workspace: 'Everything you\'ve built, in one place.',
@@ -1305,7 +1306,7 @@ export default function CandidatePortal(props) {
   // inside Schools instead of as its own tab; 'activities' stays reachable
   // (e.g. the Advisor's "Improve Activities" suggestion chip) but is no
   // longer its own visible tab — it renders inside Schools too.
-  const WORKSPACE_TAB_KEYS = ['analysis', 'universities', 'universityList', 'ugRoadmap', 'activities', 'testing', 'essays', 'applications', 'documents'];
+  const WORKSPACE_TAB_KEYS = ['analysis', 'universities', 'universityList', 'ugRoadmap', 'activities', 'testing', 'essays', 'applications', 'documents', 'scholarships'];
   const WORKSPACE_DEFAULT_TAB = 'universities';
   const WORKSPACE_TABS = [
     ['universities', 'Schools'],
@@ -1313,6 +1314,7 @@ export default function CandidatePortal(props) {
     ['testing', 'Testing'],
     ['documents', 'Documents'],
     ['essays', 'Essays'],
+    ['scholarships', 'Scholarships'],
     ['applications', 'Applications'],
   ];
   const workspaceActiveKey = WORKSPACE_TAB_KEYS.includes(candTab)
@@ -1324,12 +1326,13 @@ export default function CandidatePortal(props) {
   // the same three pages these tracks already had as top-level tabs
   // (Analysis, Simulation, Documents) behind one Workspace sub-nav, same
   // components/props/candTab keys, nothing renamed or merged.
-  const GRAD_WORKSPACE_TAB_KEYS = ['analysis', 'documents', 'documentDepository'];
+  const GRAD_WORKSPACE_TAB_KEYS = ['analysis', 'documents', 'documentDepository', 'scholarships'];
   const GRAD_WORKSPACE_DEFAULT_TAB = 'analysis';
   const GRAD_WORKSPACE_TABS = [
     ['analysis', 'Analysis'],
     ['documents', 'Simulation'],
     ['documentDepository', 'Documents'],
+    ['scholarships', 'Scholarships'],
   ];
   const gradWorkspaceActiveKey = GRAD_WORKSPACE_TAB_KEYS.includes(candTab) ? candTab : GRAD_WORKSPACE_DEFAULT_TAB;
 
@@ -1532,6 +1535,7 @@ export default function CandidatePortal(props) {
             {candTab === 'testing' && <UndergradJourneyPage type="testing" {...props} />}
             {candTab === 'essays' && <EssayDocuments {...props} />}
             {candTab === 'documents' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+            {candTab === 'scholarships' && <Scholarships {...props} />}
             {candTab === 'applications' && <UndergradJourneyPage type="applications" {...props} />}
           </WorkspaceHub>
         )}
@@ -1546,6 +1550,7 @@ export default function CandidatePortal(props) {
             {candTab === 'analysis' && <Analysis {...props} />}
             {candTab === 'documents' && <Documents {...props} />}
             {candTab === 'documentDepository' && <DocumentDepositoryPage documents={documents} setCandTab={setCandTab} send={send} archiveDocument={archiveDocument} showToast={showToast} />}
+            {candTab === 'scholarships' && <Scholarships {...props} />}
           </WorkspaceHub>
         )}
 
