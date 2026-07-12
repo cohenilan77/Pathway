@@ -446,6 +446,14 @@ export default function AdvisorConversational({
 
   // Real-time gauges — mapped from the live scores object across every track.
   const hasScores = !!scores && Object.keys(scores).some(k => Number.isFinite(Number(scores[k])));
+  // profile-temperature.js's development-mode dimensions carry neutral floor
+  // scores even from a completely empty profile (e.g. testingAwareness=55
+  // with zero facts known — "no plan yet" is not meant to read as a
+  // failing grade), so hasScores alone goes true almost immediately for
+  // Undergrad and is not a real "enough info" signal on its own. Gate the
+  // readiness card specifically on grade being known too — the one fact
+  // every profile-temperature grade config actually depends on.
+  const readinessReady = hasScores && (!isUndergrad || !!profile?.grade);
   const gauges = [
     { label: 'Academic', sublabel: 'Academic strength', color: INK, value: pickScore(scores, ['academic']) },
     {
@@ -537,6 +545,22 @@ export default function AdvisorConversational({
     confirmTargetSchools(picks);
     setPicks([]);
   };
+
+  // Readiness/KPI card: fires ONCE, anchored to the message that made
+  // readinessReady true — same anchor pattern as milestones below — instead
+  // of trailing the whole message list on every render (which re-rendered
+  // itself immediately above the composer on every new turn, reading as the
+  // conversation being interrupted rather than continuing normally beneath
+  // a one-time card).
+  const [readinessCardAnchor, setReadinessCardAnchor] = useState(null);
+  const prevReadinessReady = useRef(readinessReady);
+  useEffect(() => {
+    if (readinessReady && !prevReadinessReady.current) {
+      setReadinessCardAnchor(visibleChat.length);
+    }
+    prevReadinessReady.current = readinessReady;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [readinessReady]);
 
   // Milestone lines — one quiet centered moment per real state transition.
   const [milestones, setMilestones] = useState([]);
@@ -683,6 +707,7 @@ export default function AdvisorConversational({
               const isAi = m.role === 'ai';
               const ghost = chipLog.find(g => g.anchor === i + 1);
               const milestone = milestones.find(ms => ms.anchor === i + 1);
+              const showReadinessCard = isUndergrad && readinessCardAnchor === i + 1;
               const showPrograms = showProgramList && programsAnchor === i + 1;
               const notesHere = markNotes.filter(n => n.anchor === i + 1);
               const showNarrativeCtaHere = showNarrativeCTA && narrativeCtaAnchor === i + 1;
@@ -735,6 +760,7 @@ export default function AdvisorConversational({
                       <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#d9cfff,transparent)' }} />
                     </div>
                   )}
+                  {showReadinessCard && <UndergradKpiPanel scores={scores} compact />}
                   {ghost && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end', opacity: .55, pointerEvents: 'none' }} aria-hidden="true">
                       {ghost.options.map(label => (
@@ -800,11 +826,11 @@ export default function AdvisorConversational({
               );
             })}
 
-            {/* Live status widgets: reflect current state, not a point in the
-                conversation, so they intentionally trail the latest message
-                rather than anchor to one — same as ToolStatusLine below. */}
-            {isUndergrad && hasScores && <UndergradKpiPanel scores={scores} compact />}
-
+            {/* Live status widgets that genuinely reflect the CURRENT
+                instant (busy indicator, generate-list recovery prompt)
+                still intentionally trail the latest message — the
+                readiness/KPI card above is anchored once instead, since
+                unlike these it isn't a live status, it's a one-time reveal. */}
             {showProgramRecovery && (
               <div style={{ maxWidth: 640, marginLeft: 18, background: '#fffaf0', border: `1px solid ${BORDER_2}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 6px 18px rgba(20,27,52,.06)' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>The list has not been generated yet.</div>
