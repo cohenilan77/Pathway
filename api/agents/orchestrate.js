@@ -1,6 +1,7 @@
 import { getUserIdByToken, getUserById, ROLES } from '../../lib/db.js';
 import { MainAgent } from '../../lib/agents/MainAgent.js';
 import { getAgentArchitecture } from '../../lib/agent-architecture.js';
+import { isUndergradProfile, recomputeUndergradScores } from '../../lib/undergrad/recompute-scores.js';
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -60,6 +61,23 @@ export default async function handler(req, res) {
       extra,
     });
 
+    // PRODUCTION HOTFIX (see commit message): this is the actual primary
+    // path authenticated Undergraduate candidates use (src/App.jsx routes
+    // them here, not to /api/advisor, whenever a token is present). Neither
+    // this handler nor MainAgent.handle()/UndergradAgent.handle() ever
+    // computed scores, so the client's scores state never updated and the
+    // debounced /api/session save persisted the same stale (usually empty)
+    // scores forever — the profile-percentage card stayed blank regardless
+    // of how many facts UndergradAgent's save_profile_fact tool had saved.
+    // Recompute live from whatever the profile knows right now, same as the
+    // /api/advisor path (lib/undergrad/recompute-scores.js).
+    let statePatch = response.result?.statePatch || null;
+    const mergedProfile = { ...(extra?.profile || {}), ...(statePatch?.profile || {}) };
+    if (isUndergradProfile(mergedProfile)) {
+      const kpi = recomputeUndergradScores(mergedProfile, extra?.chosenSchools || []);
+      statePatch = { ...(statePatch || {}), profile: mergedProfile, ...kpi };
+    }
+
     return res.status(200).json({
       ok: true,
       agent: response.agent,
@@ -71,7 +89,7 @@ export default async function handler(req, res) {
       // stage tracker's lastTopics bookkeeping); every other agent's result
       // has no statePatch field, so this stays undefined for them exactly as
       // before this field was added.
-      statePatch: response.result?.statePatch || null,
+      statePatch,
       latencyMs: response.latencyMs,
       architecture: 'hybrid',
     });

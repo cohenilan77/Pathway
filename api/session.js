@@ -3,6 +3,22 @@ import { toEnglish } from '../lib/translate.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { getCandidateClock } from '../lib/candidate-clock.js';
 import { getUserAssignments } from '../lib/assignments.js';
+import { isUndergradProfile, scoresAreStale, recomputeUndergradScores } from '../lib/undergrad/recompute-scores.js';
+
+// PRODUCTION HOTFIX (see commit message): self-heals any Undergraduate
+// candidate who was already stuck with stale/empty scores before the
+// api/advisor.js and api/agents/orchestrate.js fixes shipped — those only
+// cover new turns going forward. A profile with real facts (grade known) but
+// no real score gets recomputed and persisted once, here, on the next
+// load, with no migration script needed.
+async function backfillUndergradScoresIfStale(userId, data) {
+  if (!data || !isUndergradProfile(data.profile) || !data.profile?.grade) return data;
+  if (!scoresAreStale(data.scores)) return data;
+  const kpi = recomputeUndergradScores(data.profile, data.chosenSchools || []);
+  const next = { ...data, ...kpi };
+  await setUserData(userId, next).catch(() => {});
+  return next;
+}
 
 function getToken(req) {
   const header = req.headers.authorization || '';
@@ -55,8 +71,9 @@ export default async function handler(req, res) {
       res.status(403).json({ error: 'This account has been suspended.' });
       return;
     }
-    const data = await getUserData(userId);
+    let data = await getUserData(userId);
     if (data?.programs) data.programs = normalizeProgramList(data.programs);
+    data = await backfillUndergradScoresIfStale(userId, data);
 
     // Load journey information
     const clock = await getCandidateClock(userId);
