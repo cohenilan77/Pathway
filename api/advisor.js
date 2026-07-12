@@ -13,6 +13,7 @@ import { mergeCandidateState, shouldRequestProfileUpload } from '../lib/candidat
 import { responseAttemptsScoring } from '../lib/onboarding.js';
 import { normalizeProfileFacts } from '../lib/profile-facts.js';
 import { scoreCandidateKPIs } from '../lib/kpi-engine.js';
+import { isUndergradProfile, recomputeUndergradScores } from '../lib/undergrad/recompute-scores.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -96,23 +97,19 @@ function safeRoutingDiagnostic({ candidateId, message, metadata }) {
 // reach any of the legacy machinery below.
 function finalizeUndergradKpiResponse(response, candidateState) {
   const mergedProfile = { ...(candidateState?.profile || {}), ...(response?.statePatch?.profile || {}) };
-  const normalized = normalizeProfileFacts(mergedProfile, {}, { chosenSchools: candidateState?.chosenSchools || [] });
-  const kpi = scoreCandidateKPIs(normalized, mergedProfile);
+  const kpi = recomputeUndergradScores(mergedProfile, candidateState?.chosenSchools || []);
   return {
     ...response,
     statePatch: {
       ...(response?.statePatch || {}),
       profile: mergedProfile,
-      scores: kpi.scores,
-      strengths: kpi.strengths,
-      weaknesses: kpi.weaknesses,
-      tasks: kpi.tasks,
+      ...kpi,
     },
   };
 }
 
 async function finalizeKpiResponse(response, candidateState, candidateId) {
-  const isUndergradCandidate = candidateState?.profile?.category === 'Undergraduate' || response?.statePatch?.profile?.category === 'Undergraduate';
+  const isUndergradCandidate = isUndergradProfile(candidateState?.profile) || isUndergradProfile(response?.statePatch?.profile);
   if (isUndergradCandidate) return finalizeUndergradKpiResponse(response, candidateState);
 
   let attemptsScoring = responseAttemptsScoring(response);

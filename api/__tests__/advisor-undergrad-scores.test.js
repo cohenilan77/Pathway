@@ -16,7 +16,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import handler from '../advisor.js';
+import orchestrateHandler from '../agents/orchestrate.js';
+import { MainAgent } from '../../lib/agents/MainAgent.js';
+import { createManagedUser, createSessionToken } from '../../lib/db.js';
 import { getAgentArchitecture, setAgentArchitecture } from '../../lib/agent-architecture.js';
+
+// The orchestrate.js coverage below intentionally lives in THIS file rather
+// than its own: node's test runner runs files concurrently, and every file
+// that toggles the shared, file-store-backed agent-architecture config
+// (getAgentArchitecture/setAgentArchitecture) races with every other one
+// doing the same — a second file here landed cleanly, a third (tried as its
+// own file) intermittently flipped the mode out from under this file's
+// request mid-flight, causing a real (missing-API-key) Anthropic call
+// attempt and a flaky 500. Keeping all api/advisor.js + api/agents/
+// orchestrate.js architecture-mode-dependent tests in this one file avoids
+// adding another concurrent toggler beyond the two (this file +
+// advisor-routing.test.js) already proven stable together.
 
 async function request(profile) {
   let code = 200;
@@ -82,6 +97,117 @@ test('Graduate candidates on the same hybrid-mode deterministic path are unaffec
     assert.equal(code, 200);
     assert.deepEqual(body.statePatch.chosenSchools, ['Booth', 'Wharton']);
   } finally {
+    await setAgentArchitecture({ mode: original.mode, updatedBy: 'test-restore' });
+  }
+});
+
+// api/agents/orchestrate.js is the ACTUAL primary path authenticated
+// Undergraduate candidates use (src/App.jsx routes them here instead of
+// /api/advisor whenever a token is present — `usedOrchestrate = isUndergrad
+// && !!auth?.token`). Neither this handler nor MainAgent.handle()/
+// UndergradAgent.handle() ever computed scores, so the client's scores
+// state never updated no matter how many facts had actually saved via
+// save_profile_fact, and the debounced /api/session save persisted the
+// same stale (empty) scores forever.
+async function makeCandidate(email) {
+  const user = await createManagedUser({
+    name: 'Test Undergrad',
+    email,
+    password: 'password123',
+    allowUnassigned: true,
+  });
+  const token = await createSessionToken(user.id);
+  return { user, token };
+}
+
+test('orchestrate: Undergraduate turn gets real scores injected into statePatch', async () => {
+  const original = await getAgentArchitecture();
+  const originalHandle = MainAgent.prototype.handle;
+  try {
+    await setAgentArchitecture({ mode: 'hybrid', updatedBy: 'test' });
+    const { user, token } = await makeCandidate(`undergrad-orchestrate-${Date.now()}@test.pathway`);
+
+    // Stub MainAgent.handle to act like UndergradAgent.handle() actually
+    // does today: return a statePatch with profile/undergrad/programs, but
+    // NEVER scores — that's the real shape that reaches this handler.
+    MainAgent.prototype.handle = async function stub() {
+      return {
+        agent: 'advisor',
+        intent: 'undergrad_smart_agent',
+        result: {
+          text: 'Robotics is a great start!',
+          toolUses: [],
+          usage: null,
+          raw: null,
+          statePatch: { profile: { grade: '10', activities: ['Robotics club'] } },
+          metadata: {},
+        },
+        latencyMs: 12,
+      };
+    };
+
+    let code = 200;
+    let body;
+    const req = {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: {
+        message: 'I joined robotics club, I am in grade 10',
+        candidateId: user.id,
+        conversationHistory: [],
+        extra: { profile: { category: 'Undergraduate', gpa: 3.8 } },
+      },
+    };
+    const res = { status(value) { code = value; return this; }, json(value) { body = value; return this; } };
+    await orchestrateHandler(req, res);
+
+    assert.equal(code, 200);
+    assert.ok(body.statePatch?.scores, 'statePatch.scores must be present');
+    assert.ok(Number.isFinite(body.statePatch.scores.overall));
+    assert.ok(body.statePatch.scores.overall > 0);
+    assert.equal(body.statePatch.profile.grade, '10');
+    assert.equal(body.statePatch.profile.gpa, 3.8);
+  } finally {
+    MainAgent.prototype.handle = originalHandle;
+    await setAgentArchitecture({ mode: original.mode, updatedBy: 'test-restore' });
+  }
+});
+
+test('orchestrate: Graduate candidates are unaffected (no scores injected)', async () => {
+  const original = await getAgentArchitecture();
+  const originalHandle = MainAgent.prototype.handle;
+  try {
+    await setAgentArchitecture({ mode: 'hybrid', updatedBy: 'test' });
+    const { user, token } = await makeCandidate(`grad-orchestrate-${Date.now()}@test.pathway`);
+
+    MainAgent.prototype.handle = async function stub() {
+      return {
+        agent: 'chat',
+        intent: 'generic reply',
+        result: { text: 'Sure, tell me more.', toolUses: [], usage: null, raw: null },
+        latencyMs: 5,
+      };
+    };
+
+    let code = 200;
+    let body;
+    const req = {
+      method: 'POST',
+      headers: { authorization: `Bearer ${token}` },
+      body: {
+        message: 'Tell me about MBA programs',
+        candidateId: user.id,
+        conversationHistory: [],
+        extra: { profile: { category: 'Graduate', degree: 'MBA' } },
+      },
+    };
+    const res = { status(value) { code = value; return this; }, json(value) { body = value; return this; } };
+    await orchestrateHandler(req, res);
+
+    assert.equal(code, 200);
+    assert.equal(body.statePatch, null);
+  } finally {
+    MainAgent.prototype.handle = originalHandle;
     await setAgentArchitecture({ mode: original.mode, updatedBy: 'test-restore' });
   }
 });
