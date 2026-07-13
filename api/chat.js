@@ -763,6 +763,47 @@ export function programListRecoveryRaw(raw) {
   return `${blocks.join('')}I wasn't able to generate your program list this turn — let me try again. → Generate my program list now`;
 }
 
+// A candidate asking for MORE schools after a portfolio already exists
+// ("show me more", "expand my list", "add a few more", "give me additional
+// options") is a distinct intent from the initial recommend/regenerate
+// request: it must ADD to the existing list, never replace or shrink it.
+export function requestsProgramListExpansion(text) {
+  const value = String(text || '').trim();
+  return /\b(?:show me|give me|find me)?\s*(?:a few |some )?more\s+(?:schools?|programs?|options?|choices?)\b/i.test(value)
+    || /\bexpand\s+(?:my|the|this)\s+(?:list|portfolio|shortlist)\b/i.test(value)
+    || /\badd(?:\s+(?:a\s+few|some))?\s+more(?:\s+schools?)?\b/i.test(value)
+    || /\badditional\s+(?:schools?|programs?|options?)\b/i.test(value);
+}
+
+// Merges a freshly-generated <PROGRAMS> block into the candidate's existing
+// program list (union by lowercased name, existing entries first so their
+// already-confirmed order/details never move) — used on an explicit
+// expansion request so the model regenerating a fresh 10-14 school list
+// still results in an additive, non-destructive statePatch.programs. Returns
+// `raw` unchanged if there is no existing list or no new block to merge.
+export function mergeExpandedProgramsRaw(raw, existingPrograms) {
+  const existing = normalizeProgramList(existingPrograms) || [];
+  if (!existing.length) return raw;
+  const match = String(raw || '').match(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/i);
+  if (!match) return raw;
+  let fresh;
+  try {
+    const parsed = JSON.parse(match[1].trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
+    fresh = normalizeProgramList(parsed) || [];
+  } catch {
+    return raw;
+  }
+  const seen = new Set(existing.map(p => String(p?.name || '').trim().toLowerCase()));
+  const additions = fresh.filter(p => {
+    const key = String(p?.name || '').trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const merged = [...existing, ...additions];
+  return raw.replace(/<PROGRAMS>[\s\S]*?<\/PROGRAMS>/i, `<PROGRAMS>${JSON.stringify(merged)}</PROGRAMS>`);
+}
+
 // Infers which pipeline "feature" the candidate is currently in, based on the most
 // recent assistant message — used purely for usage/cost attribution, never for
 // altering the actual conversation/system prompt behavior.
@@ -950,7 +991,15 @@ export default async function handler(req, res) {
     const narrativeContext = narrativeText
       ? `\n\nCANDIDATE NARRATIVE (source of truth): "${narrativeText}"\n\nEvery response — including CV bullet rewrites — must be consistent with this narrative. If the candidate's request conflicts with it, note the conflict and ask before drifting.`
       : '';
-    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + candidateDataContext + lockedTargetsContext + narrativeContext + idleContext;
+    // "Show me more schools" after a portfolio already exists must ADD to it,
+    // never regenerate/replace it — see mergeExpandedProgramsRaw below, which
+    // does the actual append regardless of what the model returns, but this
+    // steers the model toward genuinely distinct schools in the first place.
+    const requestsExpansion = requestsProgramListExpansion(latestCandidateText) && Array.isArray(programs) && programs.length > 0;
+    const expansionContext = requestsExpansion
+      ? `\n\nLIST EXPANSION REQUEST: the candidate wants MORE schools added to their existing portfolio, not a fresh replacement. Their current list already includes: ${programs.map(p => p?.name).filter(Boolean).join(', ')}. Emit a <PROGRAMS> block containing distinct schools not already in that list.`
+      : '';
+    const systemPrompt = buildSystemPrompt(resolveConfig(aiConfig), language, kpiPromptSummary, verifiedScoringSection, systemContext) + `\n\n${candidateFactsPrompt(candidateFacts)}` + candidateDataContext + lockedTargetsContext + narrativeContext + idleContext + expansionContext;
     let anthropicMessages = messages
       .filter((message) => message?.role !== 'system' && message?.text && message?.text !== '__idle_checkin__')
       .map((message) => ({
@@ -1177,6 +1226,14 @@ export default async function handler(req, res) {
       if (!isIdleCheckin && !/specific schools|want recommendations/i.test(raw)) {
         raw = `${raw}\n\nDo you already have specific schools, or do you want recommendations?`.trim();
       }
+    }
+
+    // "Show me more schools" must ADD to the existing portfolio, never
+    // replace/shrink it — regardless of whether the model regenerated a
+    // fresh list or actually returned only the new additions, union with
+    // whatever the candidate already had so the saved result is additive.
+    if (requestsExpansion) {
+      raw = mergeExpandedProgramsRaw(raw, programs);
     }
 
     const isUndergraduate = candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate';

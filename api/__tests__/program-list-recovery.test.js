@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleClaimsProgramListReady, programListRecoveryRaw, parsedProgramsCount } from '../chat.js';
+import { visibleClaimsProgramListReady, programListRecoveryRaw, parsedProgramsCount, requestsProgramListExpansion, mergeExpandedProgramsRaw } from '../chat.js';
 
 // Regression test for the PhD "it's live in the University List tab" bug:
 // the model's confirmation sentence (STEP 4 BRANCH B/C in the system prompt)
@@ -35,4 +35,33 @@ test('programListRecoveryRaw preserves earlier structured blocks and replaces th
   assert.match(recovered, /<SCORES>/);
   assert.doesNotMatch(recovered, /University List tab/);
   assert.match(recovered, /wasn't able to generate/i);
+});
+
+test('requestsProgramListExpansion recognizes common "more schools" phrasings', () => {
+  assert.equal(requestsProgramListExpansion('show me more schools'), true);
+  assert.equal(requestsProgramListExpansion('can you give me a few more options?'), true);
+  assert.equal(requestsProgramListExpansion('expand my list please'), true);
+  assert.equal(requestsProgramListExpansion('add a few more schools'), true);
+  assert.equal(requestsProgramListExpansion('any additional programs?'), true);
+});
+
+test('requestsProgramListExpansion does not false-positive on the initial recommend request', () => {
+  assert.equal(requestsProgramListExpansion('Please recommend my portfolio.'), false);
+  assert.equal(requestsProgramListExpansion('I want to apply to Harvard and Wharton.'), false);
+});
+
+test('mergeExpandedProgramsRaw unions the new PROGRAMS block with the existing list, deduped by name', () => {
+  const existing = [{ name: 'Harvard' }, { name: 'Wharton' }];
+  const raw = `<PROGRAMS>${JSON.stringify([{ name: 'Wharton' }, { name: 'Booth' }, { name: 'Kellogg' }])}</PROGRAMS>Here are more options.`;
+  const merged = mergeExpandedProgramsRaw(raw, existing);
+  const parsed = JSON.parse(merged.match(/<PROGRAMS>([\s\S]*?)<\/PROGRAMS>/)[1]);
+  const names = parsed.map(p => p.name).sort();
+  // Union, not a replace: both originals plus only the genuinely new ones.
+  assert.deepEqual(names, ['Booth', 'Harvard', 'Kellogg', 'Wharton'].sort());
+});
+
+test('mergeExpandedProgramsRaw is a no-op when there is no existing list or no new PROGRAMS block', () => {
+  const raw = '<PROGRAMS>[{"name":"Booth"}]</PROGRAMS>text';
+  assert.equal(mergeExpandedProgramsRaw(raw, []), raw);
+  assert.equal(mergeExpandedProgramsRaw('no programs block here', [{ name: 'Harvard' }]), 'no programs block here');
 });
