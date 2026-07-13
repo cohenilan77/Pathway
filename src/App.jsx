@@ -449,6 +449,7 @@ export default function App() {
   const [essayQuestion, setEssayQuestion] = useState('');
   const [essays, setEssays] = useState({});
   const [documents, setDocuments] = useState([]);
+  const [scholarships, setScholarships] = useState([]);
   const [interviews, setInterviews] = useState({});
   const [insights, setInsights] = useState(null);
   // Undergrad Candidate-Building Engine state (roadmap/tasks/calendar/reminders/
@@ -589,6 +590,7 @@ export default function App() {
         setEssayQuestion(data?.essayQuestion || '');
         setEssays(loadedEssays);
         setDocuments(data?.documents || []);
+        setScholarships(Array.isArray(data?.scholarships) ? data.scholarships : []);
         setInterviews(data?.interviews || {});
         setInsights(data?.insights || null);
         setNarrative(data?.narrative || null);
@@ -651,12 +653,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -1022,6 +1024,16 @@ export default function App() {
         if (!parsed.insights && typedPatch.insights) parsed.insights = typedPatch.insights;
         if (!parsed.essay && typedPatch.essays) parsed.essay = Object.entries(typedPatch.essays).map(([school, value]) => ({ school, ...value }))[0];
         if (!parsed.interviewResult && typedPatch.interviews) parsed.interviewResult = Object.values(typedPatch.interviews)[0];
+        // Undergrad's save_scholarship_interest tool only ever reaches the
+        // candidate via statePatch.scholarships (see UndergradAgent.js) — unlike
+        // the Graduate ScholarshipAgent, which persists straight to the
+        // scholarships:${candidateId} store key, this path relied entirely on
+        // the periodic /api/session save re-sending whatever's in local state.
+        // Without capturing it here, a saved scholarship never made it past
+        // this one turn: the next /api/session POST silently dropped it (no
+        // `scholarships` field existed in this component's state at all), so
+        // it was never actually persisted despite the agent reporting success.
+        if (typedPatch.scholarships) setScholarships(typedPatch.scholarships);
         const category = parsed.profile?.category || requestProfile?.category;
         const isUndergrad = category === 'Undergraduate';
         if (isUndergrad && candTab === 'advisor') setCandTab('studentProfile');
