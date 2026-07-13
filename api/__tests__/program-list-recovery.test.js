@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { visibleClaimsProgramListReady, programListRecoveryRaw, parsedProgramsCount, requestsProgramListExpansion, mergeExpandedProgramsRaw } from '../chat.js';
+import { visibleClaimsProgramListReady, programListRecoveryRaw, parsedProgramsCount, requestsProgramListExpansion, mergeExpandedProgramsRaw, shouldRecoverProgramList } from '../chat.js';
 
 // Regression test for the PhD "it's live in the University List tab" bug:
 // the model's confirmation sentence (STEP 4 BRANCH B/C in the system prompt)
@@ -64,4 +64,24 @@ test('mergeExpandedProgramsRaw is a no-op when there is no existing list or no n
   const raw = '<PROGRAMS>[{"name":"Booth"}]</PROGRAMS>text';
   assert.equal(mergeExpandedProgramsRaw(raw, []), raw);
   assert.equal(mergeExpandedProgramsRaw('no programs block here', [{ name: 'Harvard' }]), 'no programs block here');
+});
+
+test('shouldRecoverProgramList: claimsReady with only 3 schools and a Branch B signal triggers recovery', () => {
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: 'recommendations' }), true);
+  // No explicit schoolChoice at all defaults to Branch B (the safe default).
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: undefined }), true);
+});
+
+test('shouldRecoverProgramList: claimsReady with only 3 schools but a Branch A (named schools) signal does not trigger recovery', () => {
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: 'specific' }), false);
+});
+
+test('shouldRecoverProgramList: claimsReady with 12 schools passes through unchanged regardless of branch', () => {
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 12, schoolChoice: 'recommendations' }), false);
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 12, schoolChoice: 'specific' }), false);
+});
+
+test('shouldRecoverProgramList: zero schools always triggers recovery regardless of branch, not-ready never does', () => {
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 0, schoolChoice: 'specific' }), true);
+  assert.equal(shouldRecoverProgramList({ claimsReady: false, programsCount: 3, schoolChoice: 'recommendations' }), false);
 });

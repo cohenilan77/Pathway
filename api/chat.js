@@ -2,7 +2,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { enforceProgramFormatInRaw, requestedProgramFormat } from '../lib/program-format.js';
-import { ensureSelectionContinuity, selectionFromMessage, N1_QUESTION } from '../lib/selection-continuity.js';
+import { ensureSelectionContinuity, selectionFromMessage, N1_QUESTION, ensureNarrativeProgress } from '../lib/selection-continuity.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
@@ -763,6 +763,22 @@ export function programListRecoveryRaw(raw) {
   return `${blocks.join('')}I wasn't able to generate your program list this turn — let me try again. → Generate my program list now`;
 }
 
+// Non-Undergrad tracks (Graduate/MBA/PhD/Personal Development): a claimed-
+// ready response with zero schools was already a malformed-output signal;
+// a claimed-ready response with a SHORT (1-9) list is too, but only for
+// Branch B/C (recommend/AI-generated) — Branch A (candidate named specific
+// schools) has no fixed minimum by design. Defaults to Branch B (enforce
+// the minimum) unless schoolChoice clearly signals the candidate dictated
+// specific names — the safe default per this file's own STEP 4 prompt rule
+// ("Always recommend at least 10 schools in a Branch B/AI-generated
+// portfolio"), which was previously prompt-only and unenforced.
+export function shouldRecoverProgramList({ claimsReady, programsCount, schoolChoice } = {}) {
+  if (!claimsReady) return false;
+  if (programsCount === 0) return true;
+  const isBranchB = schoolChoice !== 'specific';
+  return isBranchB && programsCount > 0 && programsCount < 10;
+}
+
 // A candidate asking for MORE schools after a portfolio already exists
 // ("show me more", "expand my list", "add a few more", "give me additional
 // options") is a distinct intent from the initial recommend/regenerate
@@ -1139,6 +1155,13 @@ export default async function handler(req, res) {
     // of what the model produced. Prevents the pick-your-schools loop.
     raw = ensureSelectionContinuity(raw, lastRealUserText);
 
+    // Same class of guard as ensureSelectionContinuity, one stage later: the
+    // N1->N2->N3->N4 narrative progression had no code-level protection
+    // against the model re-asking the same question every turn. messages
+    // already uses the { role: 'ai'|'user', text } shape ensureNarrativeProgress
+    // expects (see lastRealUserText above), so no adaptation needed.
+    raw = ensureNarrativeProgress(raw, messages, lastRealUserText);
+
     // Final anti-loop guard: even if the model ignores the authoritative
     // target state, never show another request to name/lock schools.
     const asksForTargetsAgain = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i.test(String(raw || ''));
@@ -1256,13 +1279,16 @@ export default async function handler(req, res) {
       // Non-Undergrad tracks (Graduate/MBA/PhD/Personal Development) had no
       // equivalent safety net: the model can claim "it's live in the
       // University List tab" per its own prompt instructions (STEP 4 BRANCH
-      // B/C) even when its <PROGRAMS> block was malformed or omitted this
-      // turn, and nothing downstream caught it — the candidate saw a false
-      // confirmation with an empty Chat/Analysis tab. Uses a count-of-zero
-      // threshold rather than undergrad's >=10 minimum since Branch A (named
-      // schools) has no fixed minimum count.
-      const claimsReady = visibleClaimsProgramListReady(raw);
-      if (claimsReady && parsedProgramsCount(raw) === 0) raw = programListRecoveryRaw(raw);
+      // B/C) even when its <PROGRAMS> block was malformed, short, or omitted
+      // this turn, and nothing downstream caught it — the candidate saw a
+      // false confirmation with an empty or too-short Chat/Analysis tab.
+      // Confirmed live: a candidate who never named a single school landed
+      // with only 3. See shouldRecoverProgramList for the Branch A/B logic.
+      if (shouldRecoverProgramList({
+        claimsReady: visibleClaimsProgramListReady(raw),
+        programsCount: parsedProgramsCount(raw),
+        schoolChoice: candidateFacts.schoolChoice,
+      })) raw = programListRecoveryRaw(raw);
     }
 
     const usageWarning = '⚠️ You are approaching the AI usage limit for this period. Some features may be limited.';
