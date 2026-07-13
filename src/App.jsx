@@ -27,6 +27,7 @@ import { ensureUndergradState, completeTask } from '../lib/undergrad/store.js';
 import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
+import { PROGRAM_GENERATION_FAILURE_REPLY, hasValidProgramList, validateProgramList } from '../lib/program-validation.js';
 import { buildReturningCandidateMessage } from '../lib/returning-candidate.js';
 import { normalizeUndergradProfile, normalizeUndergradPrograms } from '../lib/undergrad-profile.js';
 import { upcomingTestDatesPromptLine } from './lib/testDates.js';
@@ -847,13 +848,20 @@ export default function App() {
 
     const isTargetSelection = /^i'?d like to move forward with:/i.test(raw_t);
     const isProgramRecovery = PROGRAM_LIST_RECOVERY.test(raw_t);
-    const hasSavedPrograms = Array.isArray(programs) && programs.length > 0;
+    const hasSavedPrograms = hasValidProgramList(programs);
+    const explicitRegenerateProgramList = /\bregenerate\b[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches|list)\b/i.test(raw_t);
     const requestsFirstProgramList = (isSchoolListRequest(raw_t) || isProgramRecovery) && !hasSavedPrograms;
 
     // A saved list is already the source of truth for both the inline card and
     // University List. Recover it locally instead of asking the model to claim
     // it generated something that the candidate still cannot see.
-    if (isProgramRecovery && hasSavedPrograms) {
+    if ((isProgramRecovery || isSchoolListRequest(raw_t)) && hasSavedPrograms && !explicitRegenerateProgramList) {
+      const normalizedExisting = validateProgramList(programs).programs;
+      console.info('[program-list]', {
+        event: 'frontend_reopen_existing_programs',
+        normalizedProgramCount: normalizedExisting.length,
+      });
+      setPrograms(normalizedExisting);
       setChat(prev => [...prev,
         { role: 'user', channel: 'web', text: raw_t },
         { role: 'ai', channel: 'web', text: 'Here’s your list again. You can review and select schools directly below.' },
@@ -925,6 +933,15 @@ export default function App() {
     setInput('');
     setBusy(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.warn('[program-list]', {
+        event: 'frontend_request_timeout',
+        requestKind: requestsFirstProgramList || explicitRegenerateProgramList ? 'school_list' : 'advisor',
+      });
+      controller.abort();
+    }, (requestsFirstProgramList || explicitRegenerateProgramList) ? 90000 : 90000);
+
     try {
       const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
       let systemContext = buildAISystemContext(stage);
@@ -944,6 +961,7 @@ export default function App() {
 
       const callAdvisor = () => fetch('/api/advisor', {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
@@ -976,6 +994,7 @@ export default function App() {
       let res = usedOrchestrate
         ? await fetch('/api/agents/orchestrate', {
             method: 'POST',
+            signal: controller.signal,
             headers: {
               'Content-Type': 'application/json',
               Authorization: `Bearer ${auth.token}`,
@@ -1004,7 +1023,9 @@ export default function App() {
         res = await callAdvisor();
       }
 
-      const data = await res.json();
+      const data = await res.json().catch(() => {
+        throw new Error('Advisor returned malformed JSON.');
+      });
       if (!res.ok) throw new Error(data.error || 'Advisor request failed.');
       // /api/agents/orchestrate returns { text }, not { raw }/{ reply } — adapt
       // it into the same shape the rest of this pipeline (parseBlocks etc.) expects.
@@ -1056,35 +1077,67 @@ export default function App() {
           setTasks(next);
           setCompletedTasks({});
         }
+        let programListFailure = false;
         if (parsed.programs?.length) {
           const programCalibration = {
             scores: parsed.scores || scores,
             scoreDetails: parsed.insights?.scoreDetails || insights?.scoreDetails,
           };
-          let normalizedPrograms = normalizeProgramList(parsed.programs, programCalibration) || [];
+          let validation = validateProgramList(parsed.programs, { calibration: programCalibration });
+          console.info('[program-list]', {
+            event: 'frontend_programs_received',
+            normalizedProgramCount: validation.count,
+            valid: validation.valid,
+            validationFailureReason: validation.valid ? '' : validation.reason,
+          });
+          if (!validation.valid) {
+            parsed.programs = null;
+            programListFailure = true;
+          }
+          let normalizedPrograms = validation.valid ? validation.programs : [];
           if (isUndergrad) normalizedPrograms = normalizeUndergradPrograms(normalizedPrograms, parsed.profile || requestProfile || {});
-          parsed.programs = normalizedPrograms;
-          // Verification log: confirms the advisor's <PROGRAMS> block was parsed
-          // into structured university data and dispatched into state, which the
-          // University List and Advisor panels then render.
-          console.log('[Pathway] recommended universities parsed from advisor:', normalizedPrograms.map(p => ({ name: p.name, tier: p.tier, fit: p.fitIndex ?? p.fit, location: p.location })));
-          setPrograms(normalizedPrograms);
-          const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
-            || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);
-          if (!isUndergrad && regeneratedProgramList) {
-            // A fresh list invalidates earlier picks. Reopen selection so the
-            // new rows are visible and can be confirmed without typing names.
-            setChosenSchools(null);
-            setStepIdx(3);
+          if (validation.valid) {
+            parsed.programs = normalizedPrograms;
+            // Verification log: confirms the advisor's <PROGRAMS> block was parsed
+            // into structured university data and dispatched into state, which the
+            // University List and Advisor panels then render.
+            console.log('[Pathway] recommended universities parsed from advisor:', normalizedPrograms.map(p => ({ name: p.name, tier: p.tier, fit: p.fitIndex ?? p.fit, location: p.location })));
+            console.info('[program-list]', { event: 'frontend_programs_written_to_state', normalizedProgramCount: normalizedPrograms.length });
+            setPrograms(normalizedPrograms);
+            const regeneratedProgramList = /(?:recommend|generate|regenerate|show|build|create|refresh)[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches)/i.test(t)
+              || /(?:cannot|can't|do not|don't)\s+see[\s\S]{0,80}(?:programs?|portfolio|schools?|list|matches)/i.test(t);
+            if (!isUndergrad && regeneratedProgramList) {
+              // A fresh list invalidates earlier picks. Reopen selection so the
+              // new rows are visible and can be confirmed without typing names.
+              setChosenSchools(null);
+              setStepIdx(3);
+            } else {
+              setStepIdx(prev => Math.max(prev, 3));
+            }
           } else {
-            setStepIdx(prev => Math.max(prev, 3));
+            console.warn('[program-list]', { event: 'frontend_program_validation_failed', validationFailureReason: validation.reason });
           }
         }
         if (parsed.chosenSchools) {
-          setChosenSchools(parsed.chosenSchools);
+          const narrativeProgramValidation = validateProgramList(parsed.programs?.length ? parsed.programs : programs);
+          const availableProgramNames = new Set(narrativeProgramValidation.programs.map(program => String(program.name || '').trim()));
+          const confirmedFromList = [...new Set((Array.isArray(parsed.chosenSchools) ? parsed.chosenSchools : [])
+            .map(name => String(name || '').trim())
+            .filter(name => name && availableProgramNames.has(name)))];
+          if (!narrativeProgramValidation.valid || !confirmedFromList.length) {
+            console.warn('[program-list]', {
+              event: 'stage_transition_blocked',
+              reason: !narrativeProgramValidation.valid ? 'chosen_schools_without_valid_programs' : 'chosen_schools_not_in_program_list',
+            });
+            parsed.chosenSchools = null;
+          } else {
+            parsed.chosenSchools = confirmedFromList;
+            setChosenSchools(confirmedFromList);
+          }
           // Saving target schools is the only gate into Narrative. Advance the
           // stepper once chosenSchools actually exists, never on message text.
-          if (!isUndergrad && Array.isArray(parsed.chosenSchools) && parsed.chosenSchools.length) {
+          if (!isUndergrad && narrativeProgramValidation.valid && Array.isArray(parsed.chosenSchools) && parsed.chosenSchools.length) {
+            console.info('[program-list]', { event: 'stage_transition_attempted', targetStage: 'Narrative', allowed: true });
             setStepIdx(prev => Math.max(prev, STEPS.indexOf('Narrative')));
           }
         }
@@ -1136,6 +1189,9 @@ export default function App() {
           ? normalizeUndergradAdvisorOutput(parsed.undergradOutput || displayText, { message: t })
           : null;
         if (undergradOutput) displayText = undergradOutput.chatMessage;
+        if (programListFailure && (requestsFirstProgramList || explicitRegenerateProgramList)) {
+          displayText = `${PROGRAM_GENERATION_FAILURE_REPLY} → Generate my program list now`;
+        }
         displayText = gateProgramReadyReply({
           text: displayText,
           isUndergrad,
@@ -1203,10 +1259,16 @@ export default function App() {
         setChat(baseChat);
         showToast('The Advisor is temporarily unavailable. Please try again.');
       }
-    } catch {
-      setChat(baseChat);
-      showToast('The Advisor is temporarily unavailable. Please try again.');
+    } catch (error) {
+      const message = error?.name === 'AbortError'
+        ? 'The school-list request timed out. Please retry generation.'
+        : (requestsFirstProgramList || explicitRegenerateProgramList)
+          ? `${PROGRAM_GENERATION_FAILURE_REPLY} Please try again.`
+          : 'The Advisor is temporarily unavailable. Please try again.';
+      setChat([...baseChat, userMsg, { role: 'ai', channel: 'web', text: message }]);
+      showToast(message);
     } finally {
+      clearTimeout(timeoutId);
       setBusy(false);
     }
   }, [input, chat, busy, aiConfig, plan, scores, profile, programs, chosenSchools, narrative, cvText, completedTasks, language, sessionId, saveDocument, candTab, showToast]);
@@ -1408,11 +1470,20 @@ export default function App() {
     setCandTab('advisor');
   }, []);
   const confirmTargetSchools = useCallback((schools) => {
-    const confirmed = [...new Set((Array.isArray(schools) ? schools : []).map(name => String(name || '').trim()).filter(Boolean))];
+    const programValidation = validateProgramList(programs);
+    if (!programValidation.valid) {
+      console.warn('[program-list]', { event: 'stage_transition_blocked', reason: 'confirm_without_valid_programs' });
+      showToast(PROGRAM_GENERATION_FAILURE_REPLY);
+      return;
+    }
+    const availableNames = new Set(programValidation.programs.map(program => String(program.name || '').trim()));
+    const confirmed = [...new Set((Array.isArray(schools) ? schools : []).map(name => String(name || '').trim()).filter(Boolean))]
+      .filter(name => availableNames.has(name));
     if (!confirmed.length) return;
     const userText = `I confirm these target schools: ${confirmed.join(' | ')}.`;
     const aiText = `Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
     setChosenSchools(confirmed);
+    console.info('[program-list]', { event: 'stage_transition_attempted', targetStage: 'Narrative', allowed: true, chosenCount: confirmed.length });
     setStepIdx(prev => Math.max(prev, 4));
     setCandTab('advisor');
     setInput('');
@@ -1422,7 +1493,7 @@ export default function App() {
       if (lastTwo[0]?.text === userText && lastTwo[1]?.text === aiText) return prev;
       return [...prev, { role: 'user', channel: 'web', text: userText }, { role: 'ai', channel: 'web', text: aiText }];
     });
-  }, []);
+  }, [programs, showToast]);
 
   // Undergrad engine candidate-side actions (mark task/roadmap item done,
   // acknowledge a reminder, rebuild the roadmap). All persist via `undergrad`.

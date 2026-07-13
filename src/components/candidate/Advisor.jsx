@@ -428,12 +428,12 @@ export default function Advisor({ STEPS, stepIdx, chat, input, setInput, send, s
               </div>
             )}
 
-            {isUndergrad && programs?.length > 0 && (
+            {programs?.length > 0 && (
               <div style={{ marginTop: 20, background: '#fffaf0', border: '1px solid #ecd9a8', borderRadius: 12, padding: '14px 14px' }}>
-                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>UNIVERSITY LIST</div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 10 }}>{programs.length} universities matched</div>
+                <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 6 }}>{isUndergrad ? 'UNIVERSITY LIST' : 'SCHOOL LIST'}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34', marginBottom: 10 }}>{programs.length} {isUndergrad ? 'universities' : 'programs'} matched</div>
                 <button onClick={() => setCandTab('universities')} style={{ width: '100%', background: '#141b34', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  Open University List →
+                  {isUndergrad ? 'Open University List →' : 'Open School List →'}
                 </button>
               </div>
             )}

@@ -24,6 +24,8 @@ test('confirmTargetSchools stays the deterministic Programs → Narrative gate',
 });
 
 test('parsed chosenSchools saves first, then advances to the Narrative step', () => {
-  assert.match(appSrc, /if \(parsed\.chosenSchools\) \{\s*\n\s*setChosenSchools\(parsed\.chosenSchools\);/);
+  assert.match(appSrc, /const narrativeProgramValidation = validateProgramList\(parsed\.programs\?\.length \? parsed\.programs : programs\);/);
+  assert.match(appSrc, /const confirmedFromList = \[\.\.\.new Set/);
+  assert.match(appSrc, /setChosenSchools\(confirmedFromList\);/);
   assert.match(appSrc, /setStepIdx\(prev => Math\.max\(prev, STEPS\.indexOf\('Narrative'\)\)\)/);
 });

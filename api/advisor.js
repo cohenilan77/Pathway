@@ -14,6 +14,7 @@ import { responseAttemptsScoring } from '../lib/onboarding.js';
 import { normalizeProfileFacts } from '../lib/profile-facts.js';
 import { scoreCandidateKPIs } from '../lib/kpi-engine.js';
 import { isUndergradProfile, recomputeUndergradScores } from '../lib/undergrad/recompute-scores.js';
+import { PROGRAM_GENERATION_FAILURE_REPLY, validateProgramList } from '../lib/program-validation.js';
 
 function token(req) {
   return String(req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
@@ -29,13 +30,16 @@ function token(req) {
 // specialist's fresh state until a page reload re-fetched it from storage.
 export function mergeSpecialistWithContinuation(specialistPatch = {}, continuationPatch = {}) {
   const merged = { ...specialistPatch, ...continuationPatch };
-  for (const key of ['programs', 'chosenSchools']) {
-    const specialistValue = specialistPatch[key];
-    const continuationValue = continuationPatch[key];
-    const continuationHasValue = Array.isArray(continuationValue) && continuationValue.length > 0;
-    if (Array.isArray(specialistValue) && specialistValue.length > 0 && !continuationHasValue) {
-      merged[key] = specialistValue;
-    }
+  const specialistPrograms = validateProgramList(specialistPatch.programs);
+  const continuationPrograms = validateProgramList(continuationPatch.programs);
+  if (specialistPrograms.valid && (!continuationPrograms.valid || continuationPrograms.count < specialistPrograms.count)) {
+    merged.programs = specialistPrograms.programs;
+  }
+  const specialistChosen = specialistPatch.chosenSchools;
+  const continuationChosen = continuationPatch.chosenSchools;
+  const continuationHasChosen = Array.isArray(continuationChosen) && continuationChosen.length > 0;
+  if (Array.isArray(specialistChosen) && specialistChosen.length > 0 && !continuationHasChosen) {
+    merged.chosenSchools = specialistChosen;
   }
   return merged;
 }
@@ -385,6 +389,14 @@ async function persistStatePatch(candidateId, response) {
   if (!candidateId || !response?.statePatch || !Object.keys(response.statePatch).length) return;
   const current = (await getUserData(candidateId)) || {};
   const patch = response.statePatch;
+  if (patch.programs) {
+    console.info('[program-list]', {
+      event: 'persist_programs',
+      candidateId,
+      count: Array.isArray(patch.programs) ? patch.programs.length : 0,
+      valid: validateProgramList(patch.programs).valid,
+    });
+  }
   await setUserData(candidateId, {
     ...current,
     ...patch,
@@ -393,6 +405,55 @@ async function persistStatePatch(candidateId, response) {
     stateVersion: Number(current.stateVersion || 0) + 1,
     updatedAt: Date.now(),
   });
+}
+
+function enforceSchoolListResponseContract(response, effectiveState = {}, message = '') {
+  if (!isSchoolListRequest(message)) return response;
+  const existing = validateProgramList(effectiveState.programs);
+  const patch = validateProgramList(response?.statePatch?.programs);
+  console.info('[program-list]', {
+    event: 'school_list_contract',
+    route: response?.metadata?.routedAgent || response?.agent,
+    existingCount: existing.count,
+    patchCount: patch.count,
+    patchValid: patch.valid,
+    validationFailureReason: patch.valid ? '' : patch.reason,
+  });
+
+  if (existing.valid && !patch.valid) {
+    return {
+      ...response,
+      raw: `Here's your school list again — ${existing.count} programs are ready to review.`,
+      message: `Here's your school list again — ${existing.count} programs are ready to review.`,
+      statePatch: { ...(response.statePatch || {}), programs: existing.programs },
+      metadata: { ...(response.metadata || {}), resurfacedExistingPrograms: true, existingProgramCount: existing.count },
+    };
+  }
+  if (patch.valid) {
+    return {
+      ...response,
+      statePatch: { ...(response.statePatch || {}), programs: patch.programs },
+      metadata: { ...(response.metadata || {}), validatedProgramCount: patch.count },
+    };
+  }
+  const nextPatch = { ...(response?.statePatch || {}) };
+  delete nextPatch.programs;
+  delete nextPatch.chosenSchools;
+  delete nextPatch.journeyStage;
+  delete nextPatch.stepIdx;
+  return {
+    ...response,
+    raw: PROGRAM_GENERATION_FAILURE_REPLY,
+    message: PROGRAM_GENERATION_FAILURE_REPLY,
+    statePatch: nextPatch,
+    nextAction: { type: 'retry_program_generation' },
+    metadata: {
+      ...(response?.metadata || {}),
+      programValidationFailed: true,
+      validationFailureReason: patch.reason,
+      validatedProgramCount: patch.count,
+    },
+  };
 }
 
 export default async function handler(req, res) {
@@ -412,7 +473,8 @@ export default async function handler(req, res) {
     const effectiveState = mergeCandidateState({ body: req.body, frontendState: req.body?.candidateState, storedState });
     const output = await invokeAdvisor(req, true, effectiveState);
     if (output.error) return res.status(output.statusCode).json(output.error);
-    const response = await finalizeKpiResponse(output.response, effectiveState, candidateId);
+    let response = await finalizeKpiResponse(output.response, effectiveState, candidateId);
+    response = enforceSchoolListResponseContract(response, effectiveState, latestMessage);
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'legacy', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(response);
@@ -473,6 +535,7 @@ export default async function handler(req, res) {
         }),
       });
       response = await finalizeKpiResponse(response, effectiveState, candidateId);
+      response = enforceSchoolListResponseContract(response, effectiveState, message);
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: response.metadata?.configVersion });
       return res.status(200).json(response);
@@ -514,6 +577,7 @@ export default async function handler(req, res) {
         },
       };
       response = await finalizeKpiResponse(response, continuedState, candidateId);
+      response = enforceSchoolListResponseContract(response, continuedState, message);
       await persistStatePatch(candidateId, response);
       await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false, configVersion: result.metadata?.configVersion });
       return res.status(200).json(response);
@@ -534,6 +598,7 @@ export default async function handler(req, res) {
       }),
     };
     response = await finalizeKpiResponse(response, effectiveState, candidateId);
+    response = enforceSchoolListResponseContract(response, effectiveState, message);
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: false });
     return res.status(200).json(response);
@@ -564,6 +629,7 @@ export default async function handler(req, res) {
       }),
     };
     response = await finalizeKpiResponse(response, effectiveFallbackState, candidateId);
+    response = enforceSchoolListResponseContract(response, effectiveFallbackState, latestMessage);
     await persistStatePatch(candidateId, response);
     await recordArchitectureEvent({ architecture: 'hybrid', agent: response.agent, latencyMs: Date.now() - startedAt, fallbackUsed: true, error: error.message });
     return res.status(200).json(response);

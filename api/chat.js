@@ -20,6 +20,7 @@ import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
 import { buildCandidateFacts, buildComplementaryQuestion, candidateFactsPrompt, isSchoolListRequest, stripStructuredBlocks } from '../lib/candidate-facts.js';
+import { MIN_GENERATED_PROGRAMS, PROGRAM_GENERATION_FAILURE_REPLY, validateProgramList } from '../lib/program-validation.js';
 
 const CHAT_MODEL = 'claude-haiku-4-5-20251001';
 
@@ -729,8 +730,7 @@ export function parsedProgramsCount(raw) {
   if (!match) return 0;
   try {
     const parsed = JSON.parse(match[1].trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, ''));
-    const normalized = normalizeProgramList(parsed);
-    return Array.isArray(normalized) ? normalized.length : 0;
+    return validateProgramList(parsed).count;
   } catch { return 0; }
 }
 
@@ -755,12 +755,12 @@ function undergradRecoveryRaw(raw) {
 // unrelated short confirmations that don't claim the list is ready/live.
 export function visibleClaimsProgramListReady(raw) {
   const visible = stripStructuredBlocks(raw, ['PROFILE', 'SCORES', 'STRENGTHS', 'WEAKNESSES', 'TASKS', 'PROGRAMS', 'CHOSEN_SCHOOLS', 'INSIGHTS', 'ESSAY', 'INTERVIEW_RESULT']);
-  return /(?:university|program|school)\s+list\s+tab|(?:is|are)\s+live\s+in\s+the\s+\w+\s+tab|showing\s+(?:the\s+)?full\s+list\s+(?:directly\s+)?below/i.test(visible);
+  return /(?:university|program|school)\s+list\s+tab|(?:is|are)\s+live\s+in\s+the\s+\w+\s+tab|showing\s+(?:the\s+)?full\s+list\s+(?:directly\s+)?below|your targets are (?:locked in|set)|school portfolio is complete|recommendations are ready|now let'?s shape your narrative|move to narrative\s*&?\s*strategy|select from the list|(?:schools?|programs?|portfolio|matches|recommendations?)\s+(?:were|are|have been)\s+(?:matched|generated|saved|displayed|ready)|(?:matched|generated|saved|displayed)\s+(?:your\s+)?(?:schools?|programs?|portfolio|matches)/i.test(visible);
 }
 
 export function programListRecoveryRaw(raw) {
   const blocks = [...String(raw || '').matchAll(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|CHOSEN_SCHOOLS|INSIGHTS)>([\s\S]*?)<\/\1>/gi)].map(match => match[0]);
-  return `${blocks.join('')}I wasn't able to generate your program list this turn — let me try again. → Generate my program list now`;
+  return `${blocks.join('')}${PROGRAM_GENERATION_FAILURE_REPLY} → Generate my program list now`;
 }
 
 // Non-Undergrad tracks (Graduate/MBA/PhD/Personal Development): a claimed-
@@ -1284,11 +1284,26 @@ export default async function handler(req, res) {
       // false confirmation with an empty or too-short Chat/Analysis tab.
       // Confirmed live: a candidate who never named a single school landed
       // with only 3. See shouldRecoverProgramList for the Branch A/B logic.
+      const existingProgramValidation = validateProgramList(programs);
+      const rawProgramCount = parsedProgramsCount(raw);
       if (shouldRecoverProgramList({
         claimsReady: visibleClaimsProgramListReady(raw),
-        programsCount: parsedProgramsCount(raw),
+        programsCount: rawProgramCount,
         schoolChoice: candidateFacts.schoolChoice,
       })) raw = programListRecoveryRaw(raw);
+      else if (
+        isSchoolListRequest(latestCandidateText)
+        && candidateFacts.readyForScoring
+        && !existingProgramValidation.valid
+        && rawProgramCount < MIN_GENERATED_PROGRAMS
+      ) {
+        console.info('[program-list]', {
+          event: 'legacy_program_validation_failed',
+          normalizedProgramCount: rawProgramCount,
+          validationFailureReason: rawProgramCount ? 'too_few_programs' : 'missing_programs',
+        });
+        raw = programListRecoveryRaw(raw);
+      }
     }
 
     const usageWarning = '⚠️ You are approaching the AI usage limit for this period. Some features may be limited.';

@@ -442,7 +442,7 @@ export default function AdvisorConversational({
   const normalizedPrograms = useMemo(() => normalizeProgramList(programs) || [], [programs]);
   const hasPrograms = normalizedPrograms.length > 0;
   const latestAiText = [...visibleChat].reverse().find(message => message.role === 'ai')?.text || '';
-  const showProgramRecovery = isUndergrad && needsProgramRecovery(latestAiText, normalizedPrograms);
+  const showProgramRecovery = needsProgramRecovery(latestAiText, normalizedPrograms);
 
   // Real-time gauges — mapped from the live scores object across every track.
   const hasScores = !!scores && Object.keys(scores).some(k => Number.isFinite(Number(scores[k])));
@@ -477,10 +477,7 @@ export default function AdvisorConversational({
   const [justMarked, setJustMarked] = useState(null);
   const [markNotes, setMarkNotes] = useState([]);
   const isConfirmed = !!chosenSchools?.length;
-  // Once schools are confirmed the recommended-programs list has done its
-  // job — keeping it rendered pins it below every later chat message instead
-  // of letting it leave the stream.
-  const showProgramList = hasPrograms && !isConfirmed;
+  const showProgramList = hasPrograms;
 
   const rawNarrative = narrative ?? profile?.narrative;
   const { narrativeQnAComplete } = deriveNarrativeProgress(visibleChat, NARRATIVE_START);
@@ -708,7 +705,7 @@ export default function AdvisorConversational({
               const ghost = chipLog.find(g => g.anchor === i + 1);
               const milestone = milestones.find(ms => ms.anchor === i + 1);
               const showReadinessCard = isUndergrad && readinessCardAnchor === i + 1;
-              const showPrograms = showProgramList && programsAnchor === i + 1;
+              const showPrograms = showProgramList && (programsAnchor === i + 1 || /list again|review and select schools/i.test(String(m.text || '')));
               const notesHere = markNotes.filter(n => n.anchor === i + 1);
               const showNarrativeCtaHere = showNarrativeCTA && narrativeCtaAnchor === i + 1;
               const parsed = isAi ? parseOptions(m.text) : null;
@@ -773,6 +770,18 @@ export default function AdvisorConversational({
                   )}
                   {showPrograms && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {isConfirmed && (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={() => setCandTab?.('universities')}
+                            className="pw-adv2-btn"
+                            style={{ border: 'none', borderRadius: 999, padding: '9px 16px', background: INK, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            Open School List →
+                          </button>
+                        </div>
+                      )}
                       {normalizedPrograms.map(program => {
                         const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
                         const chosen = isConfirmed ? chosenSchools.includes(program.name) : pickIndex >= 0;
@@ -831,12 +840,14 @@ export default function AdvisorConversational({
                 still intentionally trail the latest message — the
                 readiness/KPI card above is anchored once instead, since
                 unlike these it isn't a live status, it's a one-time reveal. */}
-            {showProgramRecovery && (
+                  {showProgramRecovery && (
               <div style={{ maxWidth: 640, marginLeft: 18, background: '#fffaf0', border: `1px solid ${BORDER_2}`, borderRadius: 16, padding: '16px 18px', boxShadow: '0 6px 18px rgba(20,27,52,.06)' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: INK }}>The list has not been generated yet.</div>
                 <button
                   type="button"
-                  onClick={() => send('Generate my complete undergraduate university list now. I cannot see any schools in chat or University List.')}
+                  onClick={() => send(isUndergrad
+                    ? 'Generate my complete undergraduate university list now. I cannot see any schools in chat or University List.'
+                    : 'Generate my complete school list now. I cannot see any schools in Chat or Analysis.')}
                   disabled={busy}
                   className="pw-adv2-btn"
                   style={{ marginTop: 10, border: 'none', borderRadius: 999, padding: '10px 16px', background: PERI, color: '#fff', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer' }}

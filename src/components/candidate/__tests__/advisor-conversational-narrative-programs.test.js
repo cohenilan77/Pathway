@@ -20,12 +20,11 @@ test('Advisor forwards setNarrative to the production conversational advisor', (
   assert.match(advisor, /<AdvisorConversational[\s\S]*?narrative=\{narrative\} setNarrative=\{setNarrative\}/);
 });
 
-test('recommended-schools list hides once target schools are confirmed', () => {
-  assert.match(conversational, /const showProgramList = hasPrograms && !isConfirmed;/);
-  assert.match(conversational, /const showPrograms = showProgramList && programsAnchor === i \+ 1;/);
+test('recommended-schools list remains available after target schools are confirmed', () => {
+  assert.match(conversational, /const showProgramList = hasPrograms;/);
+  assert.match(conversational, /const showPrograms = showProgramList && \(programsAnchor === i \+ 1 \|\| \/list again\|review and select schools\/i\.test/);
   assert.match(conversational, /\{showPrograms && \(/);
-  assert.ok(!/\{hasPrograms && \(\s*<div style=\{\{ display: 'flex', flexDirection: 'column', gap: 10 \}\}>/.test(conversational),
-    'the program-card list must not stay gated purely on hasPrograms once schools are confirmed');
+  assert.match(conversational, /Open School List →/);
 });
 
 test('narrative gating imports the same deriveNarrativeProgress used elsewhere', () => {

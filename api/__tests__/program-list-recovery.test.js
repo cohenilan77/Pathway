@@ -12,6 +12,8 @@ test('visibleClaimsProgramListReady detects the exact confirmation phrasings fro
   assert.equal(visibleClaimsProgramListReady("Your recommended programs are ready — I'm showing the full list directly below and in the University List tab."), true);
   assert.equal(visibleClaimsProgramListReady('Your shortlist is live in the Analysis tab — take a look and tell me what to adjust.'), true);
   assert.equal(visibleClaimsProgramListReady('Updated list is in the University List tab.'), true);
+  assert.equal(visibleClaimsProgramListReady("Your targets are locked in. Now let's shape your Narrative & Strategy."), true);
+  assert.equal(visibleClaimsProgramListReady('Your recommendations are ready. Select from the list.'), true);
 });
 
 test('visibleClaimsProgramListReady does not false-positive on unrelated confirmations', () => {
@@ -34,7 +36,7 @@ test('programListRecoveryRaw preserves earlier structured blocks and replaces th
   const recovered = programListRecoveryRaw(raw);
   assert.match(recovered, /<SCORES>/);
   assert.doesNotMatch(recovered, /University List tab/);
-  assert.match(recovered, /wasn't able to generate/i);
+  assert.match(recovered, /couldn’t complete your school list/i);
 });
 
 test('requestsProgramListExpansion recognizes common "more schools" phrasings', () => {

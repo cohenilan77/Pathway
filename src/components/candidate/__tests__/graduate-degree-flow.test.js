@@ -65,7 +65,7 @@ test('the chat renders trailing "→ a | b" options as clickable bubbles', () =>
 
 test('saved program-list recovery is local and missing lists force generation', () => {
   assert.match(appSrc, /PROGRAM_LIST_RECOVERY/);
-  assert.match(appSrc, /isProgramRecovery && hasSavedPrograms/);
+  assert.match(appSrc, /\(isProgramRecovery \|\| isSchoolListRequest\(raw_t\)\) && hasSavedPrograms && !explicitRegenerateProgramList/);
   assert.match(appSrc, /PROGRAM LIST RECOVERY:[\s\S]*MUST include a valid <PROGRAMS>/);
   assert.match(appSrc, /setCandTab\('universities'\)/);
   assert.match(appSrc, /gateProgramReadyReply/);
