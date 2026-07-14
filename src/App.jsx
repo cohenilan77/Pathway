@@ -28,6 +28,7 @@ import { syncRoadmap } from '../lib/undergrad/agents/roadmap-agent.js';
 import { isSchoolListRequest } from '../lib/candidate-facts.js';
 import { gateProgramReadyReply } from '../lib/program-ready-gate.js';
 import { PROGRAM_GENERATION_FAILURE_REPLY, hasValidProgramList, validateProgramList } from '../lib/program-validation.js';
+import { buildAdvisorFallbackMessage, isCvSubmissionMessage } from '../lib/advisor-fallback-message.js';
 import { buildReturningCandidateMessage } from '../lib/returning-candidate.js';
 import { normalizeUndergradProfile, normalizeUndergradPrograms } from '../lib/undergrad-profile.js';
 import { upcomingTestDatesPromptLine } from './lib/testDates.js';
@@ -925,7 +926,8 @@ export default function App() {
 
     const userMsg = { role: 'user', channel: 'web', text: t };
     // If re-submitting CV, replace the previous CV message to avoid duplicates in context
-    const baseChat = t.startsWith('Here is my CV')
+    const isCvSubmission = isCvSubmissionMessage(t);
+    const baseChat = isCvSubmission
       ? chat.filter(m => !(m.role === 'user' && m.text.startsWith('Here is my CV')))
       : chat;
     const newChat = [...baseChat, userMsg];
@@ -1271,11 +1273,12 @@ export default function App() {
         showToast('The Advisor is temporarily unavailable. Please try again.');
       }
     } catch (error) {
-      const message = error?.name === 'AbortError'
-        ? 'The school-list request timed out. Please retry generation.'
-        : (requestsFirstProgramList || explicitRegenerateProgramList)
-          ? `${PROGRAM_GENERATION_FAILURE_REPLY} Please try again.`
-          : 'The Advisor is temporarily unavailable. Please try again.';
+      const message = buildAdvisorFallbackMessage({
+        errorName: error?.name,
+        isSchoolListPhase,
+        isCvSubmission,
+        requestedProgramList: requestsFirstProgramList || explicitRegenerateProgramList,
+      });
       setChat([...baseChat, userMsg, { role: 'ai', channel: 'web', text: message }]);
       showToast(message);
     } finally {

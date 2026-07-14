@@ -565,7 +565,7 @@ export default function AdvisorConversational({
   const prevChosen = useRef(chosenSchools?.length || 0);
   useEffect(() => {
     if (!!cvText && !prevCv.current) {
-      setMilestones(m => [...m, { id: `cv-${Date.now()}`, anchor: visibleChat.length, text: 'CV received — estimates are sharper' }]);
+      setMilestones(m => [...m, { id: `cv-${Date.now()}`, anchor: visibleChat.length, text: 'CV saved — profile updated' }]);
     }
     prevCv.current = !!cvText;
     // eslint-disable-next-line react-hooks/exhaustive-deps
