@@ -933,14 +933,25 @@ export default function App() {
     setInput('');
     setBusy(true);
 
+    // School-list requests run AdvisorAgent's up-to-4-attempt retry loop
+    // server-side (api/advisor.js / api/chat.js maxDuration is 280s on
+    // vercel.json) and can legitimately take much longer than a normal
+    // conversational advisor turn. Match the client timeout to the server
+    // ceiling plus a small buffer instead of aborting before the server
+    // itself could have finished.
+    const SCHOOL_LIST_TIMEOUT_MS = 290000;
+    const ADVISOR_TIMEOUT_MS = 90000;
+    const isSchoolListRequest = requestsFirstProgramList || explicitRegenerateProgramList;
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       console.warn('[program-list]', {
         event: 'frontend_request_timeout',
-        requestKind: requestsFirstProgramList || explicitRegenerateProgramList ? 'school_list' : 'advisor',
+        requestKind: isSchoolListRequest ? 'school_list' : 'advisor',
+        phase: isSchoolListRequest ? (requestsFirstProgramList ? 'first_request' : 'explicit_regenerate') : 'continuation',
       });
       controller.abort();
-    }, (requestsFirstProgramList || explicitRegenerateProgramList) ? 90000 : 90000);
+    }, isSchoolListRequest ? SCHOOL_LIST_TIMEOUT_MS : ADVISOR_TIMEOUT_MS);
 
     try {
       const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);

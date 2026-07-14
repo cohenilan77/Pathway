@@ -15,7 +15,7 @@ import {
 } from '../lib/usage.js';
 import { isHeadroomEnabled, compressText, compressMessages, estimateCompressionPercent, HeadroomFlags } from '../lib/headroom.js';
 import { logTokenUsage } from '../lib/token-usage-logger.js';
-import { AdvisorAgent } from '../lib/agents/sub/AdvisorAgent.js';
+import { AdvisorAgent, ADVISOR_RETRY_BUDGET_MS } from '../lib/agents/sub/AdvisorAgent.js';
 import { upcomingTestDatesPromptLine } from '../lib/test-dates.js';
 import { appendMessage } from '../lib/chat.js';
 import { recordCandidateActivity } from '../lib/candidate-activity.js';
@@ -906,6 +906,7 @@ async function checkUsageLimits(userId) {
 }
 
 export default async function handler(req, res) {
+  const requestStartedAt = Date.now();
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -1086,6 +1087,7 @@ export default async function handler(req, res) {
         systemPrompt: compressedSystemPrompt,
         formatConstraint: requestedProgramFormat(profile, messages),
         hasPrograms: Array.isArray(programs) && programs.length > 0,
+        deadlineAt: requestStartedAt + ADVISOR_RETRY_BUDGET_MS,
         onAttempt: (response, attempt, { useWebSearch }) => {
         const inputTokens = Number(response.usage?.input_tokens || 0);
         const outputTokens = Number(response.usage?.output_tokens || 0);

@@ -1,7 +1,9 @@
 {
   "functions": {
     "api/test-simulation.js": { "maxDuration": 60 },
-    "api/community-*.js": { "maxDuration": 30 }
+    "api/community-*.js": { "maxDuration": 30 },
+    "api/advisor.js": { "maxDuration": 280 },
+    "api/chat.js": { "maxDuration": 280 }
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
