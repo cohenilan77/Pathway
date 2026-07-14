@@ -851,7 +851,29 @@ export default function App() {
     const isProgramRecovery = PROGRAM_LIST_RECOVERY.test(raw_t);
     const hasSavedPrograms = hasValidProgramList(programs);
     const explicitRegenerateProgramList = /\bregenerate\b[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches|list)\b/i.test(raw_t);
+    const hasLockedTargets = Array.isArray(chosenSchools) && chosenSchools.length > 0;
+    const isPostTargetNarrativeContinue = hasLockedTargets
+      && /^(?:next|continue|advance|proceed|move on|continue my narrative|review my targets)[.!]?$/i.test(raw_t);
     const requestsFirstProgramList = (isSchoolListRequest(raw_t) || isProgramRecovery) && !hasSavedPrograms;
+
+    // Once targets are locked, the journey must move into Narrative & Strategy.
+    // A bare "next" used to be treated as school-list recovery and reopened
+    // the list, trapping Graduate users after choosing programs.
+    if (isPostTargetNarrativeContinue && !explicitRegenerateProgramList) {
+      const aiText = `Your targets are already locked in. Now let's continue your Narrative & Strategy. ${N1_QUESTION}`;
+      setChat(prev => {
+        const previousAi = [...prev].reverse().find(message => message.role === 'ai');
+        return [
+          ...prev,
+          { role: 'user', channel: 'web', text: raw_t },
+          ...(previousAi?.text === aiText ? [] : [{ role: 'ai', channel: 'web', text: aiText }]),
+        ];
+      });
+      setInput('');
+      setStepIdx(prev => Math.max(prev, STEPS.indexOf('Narrative')));
+      setCandTab('advisor');
+      return;
+    }
 
     // A saved list is already the source of truth for both the inline card and
     // University List. Recover it locally instead of asking the model to claim

@@ -70,3 +70,11 @@ test('saved program-list recovery is local and missing lists force generation', 
   assert.match(appSrc, /setCandTab\('universities'\)/);
   assert.match(appSrc, /gateProgramReadyReply/);
 });
+
+test('locked targets make next continue narrative instead of reopening the list', () => {
+  const postTargetIdx = appSrc.indexOf('const isPostTargetNarrativeContinue = hasLockedTargets');
+  const recoveryIdx = appSrc.indexOf('// A saved list is already the source of truth');
+  assert.ok(postTargetIdx > -1 && recoveryIdx > -1 && postTargetIdx < recoveryIdx, 'post-target narrative continuation must run before list recovery');
+  assert.match(appSrc, /Now let's continue your Narrative & Strategy/);
+  assert.match(appSrc, /setStepIdx\(prev => Math\.max\(prev, STEPS\.indexOf\('Narrative'\)\)\)/);
+});
