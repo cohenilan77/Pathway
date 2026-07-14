@@ -941,17 +941,17 @@ export default function App() {
     // itself could have finished.
     const SCHOOL_LIST_TIMEOUT_MS = 290000;
     const ADVISOR_TIMEOUT_MS = 90000;
-    const isSchoolListRequest = requestsFirstProgramList || explicitRegenerateProgramList;
+    const isSchoolListTimeoutPhase = requestsFirstProgramList || explicitRegenerateProgramList;
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
       console.warn('[program-list]', {
         event: 'frontend_request_timeout',
-        requestKind: isSchoolListRequest ? 'school_list' : 'advisor',
-        phase: isSchoolListRequest ? (requestsFirstProgramList ? 'first_request' : 'explicit_regenerate') : 'continuation',
+        requestKind: isSchoolListTimeoutPhase ? 'school_list' : 'advisor',
+        phase: isSchoolListTimeoutPhase ? (requestsFirstProgramList ? 'first_request' : 'explicit_regenerate') : 'continuation',
       });
       controller.abort();
-    }, isSchoolListRequest ? SCHOOL_LIST_TIMEOUT_MS : ADVISOR_TIMEOUT_MS);
+    }, isSchoolListTimeoutPhase ? SCHOOL_LIST_TIMEOUT_MS : ADVISOR_TIMEOUT_MS);
 
     try {
       const stage = buildStageContext(stepIdx, requestProfile, scores, programs, essays, tasks, strengths, chat[0]?.timestamp, weaknesses);
