@@ -760,7 +760,7 @@ export function visibleClaimsProgramListReady(raw) {
 
 export function programListRecoveryRaw(raw) {
   const blocks = [...String(raw || '').matchAll(/<(PROFILE|SCORES|STRENGTHS|WEAKNESSES|TASKS|CHOSEN_SCHOOLS|INSIGHTS)>([\s\S]*?)<\/\1>/gi)].map(match => match[0]);
-  return `${blocks.join('')}${PROGRAM_GENERATION_FAILURE_REPLY} → Generate my program list now`;
+  return `${blocks.join('')}${PROGRAM_GENERATION_FAILURE_REPLY} → Build my school list now`;
 }
 
 // Non-Undergrad tracks (Graduate/MBA/PhD/Personal Development): a claimed-
@@ -775,8 +775,7 @@ export function programListRecoveryRaw(raw) {
 export function shouldRecoverProgramList({ claimsReady, programsCount, schoolChoice } = {}) {
   if (!claimsReady) return false;
   if (programsCount === 0) return true;
-  const isBranchB = schoolChoice !== 'specific';
-  return isBranchB && programsCount > 0 && programsCount < 10;
+  return false;
 }
 
 // A candidate asking for MORE schools after a portfolio already exists
@@ -1264,7 +1263,7 @@ export default async function handler(req, res) {
     const isUndergraduate = candidateFacts.selectedCandidateType === 'Undergraduate' || profile?.category === 'Undergraduate';
     if (isUndergraduate) {
       const count = parsedProgramsCount(raw);
-      const hasProgramsBlock = count >= 10;
+      const hasProgramsBlock = count > 0;
       const visibleMentionsSchools = visibleMentionsUndergradSchools(raw);
       console.log('[UG_PROGRAM_SAVE_CHECK]', {
         hasProgramsBlock,
@@ -1297,7 +1296,7 @@ export default async function handler(req, res) {
         isSchoolListRequest(latestCandidateText)
         && candidateFacts.readyForScoring
         && !existingProgramValidation.valid
-        && rawProgramCount < MIN_GENERATED_PROGRAMS
+        && rawProgramCount === 0
       ) {
         console.info('[program-list]', {
           event: 'legacy_program_validation_failed',

@@ -1104,12 +1104,23 @@ export default function App() {
             validationFailureReason: validation.valid ? '' : validation.reason,
           });
           if (!validation.valid) {
-            parsed.programs = null;
-            programListFailure = true;
+            // If the agent produced real schools but missed the target count,
+            // keep the starter portfolio instead of throwing it away and
+            // showing a dead-end failure message.
+            if (validation.reason === 'too_few_programs' && validation.count > 0) {
+              console.warn('[program-list]', {
+                event: 'frontend_program_short_list_accepted',
+                normalizedProgramCount: validation.count,
+                validationFailureReason: validation.reason,
+              });
+            } else {
+              parsed.programs = null;
+              programListFailure = true;
+            }
           }
-          let normalizedPrograms = validation.valid ? validation.programs : [];
+          let normalizedPrograms = (validation.valid || (validation.reason === 'too_few_programs' && validation.count > 0)) ? validation.programs : [];
           if (isUndergrad) normalizedPrograms = normalizeUndergradPrograms(normalizedPrograms, parsed.profile || requestProfile || {});
-          if (validation.valid) {
+          if (validation.valid || (validation.reason === 'too_few_programs' && validation.count > 0)) {
             parsed.programs = normalizedPrograms;
             // Verification log: confirms the advisor's <PROGRAMS> block was parsed
             // into structured university data and dispatched into state, which the
@@ -1203,7 +1214,7 @@ export default function App() {
           : null;
         if (undergradOutput) displayText = undergradOutput.chatMessage;
         if (programListFailure && (requestsFirstProgramList || explicitRegenerateProgramList)) {
-          displayText = `${PROGRAM_GENERATION_FAILURE_REPLY} → Generate my program list now`;
+          displayText = `${PROGRAM_GENERATION_FAILURE_REPLY} → Build my school list now`;
         }
         displayText = gateProgramReadyReply({
           text: displayText,

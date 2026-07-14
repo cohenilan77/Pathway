@@ -429,11 +429,15 @@ function enforceSchoolListResponseContract(response, effectiveState = {}, messag
       metadata: { ...(response.metadata || {}), resurfacedExistingPrograms: true, existingProgramCount: existing.count },
     };
   }
-  if (patch.valid) {
+  if (patch.valid || (patch.reason === 'too_few_programs' && patch.count > 0)) {
     return {
       ...response,
       statePatch: { ...(response.statePatch || {}), programs: patch.programs },
-      metadata: { ...(response.metadata || {}), validatedProgramCount: patch.count },
+      metadata: {
+        ...(response.metadata || {}),
+        validatedProgramCount: patch.count,
+        acceptedShortProgramList: !patch.valid,
+      },
     };
   }
   const nextPatch = { ...(response?.statePatch || {}) };

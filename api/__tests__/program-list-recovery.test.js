@@ -36,7 +36,8 @@ test('programListRecoveryRaw preserves earlier structured blocks and replaces th
   const recovered = programListRecoveryRaw(raw);
   assert.match(recovered, /<SCORES>/);
   assert.doesNotMatch(recovered, /University List tab/);
-  assert.match(recovered, /couldn’t complete your school list/i);
+  assert.match(recovered, /saved your profile/i);
+  assert.doesNotMatch(recovered, /retry generation/i);
 });
 
 test('requestsProgramListExpansion recognizes common "more schools" phrasings', () => {
@@ -68,10 +69,9 @@ test('mergeExpandedProgramsRaw is a no-op when there is no existing list or no n
   assert.equal(mergeExpandedProgramsRaw('no programs block here', [{ name: 'Harvard' }]), 'no programs block here');
 });
 
-test('shouldRecoverProgramList: claimsReady with only 3 schools and a Branch B signal triggers recovery', () => {
-  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: 'recommendations' }), true);
-  // No explicit schoolChoice at all defaults to Branch B (the safe default).
-  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: undefined }), true);
+test('shouldRecoverProgramList: claimsReady with a short real list ships the starter portfolio', () => {
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: 'recommendations' }), false);
+  assert.equal(shouldRecoverProgramList({ claimsReady: true, programsCount: 3, schoolChoice: undefined }), false);
 });
 
 test('shouldRecoverProgramList: claimsReady with only 3 schools but a Branch A (named schools) signal does not trigger recovery', () => {
