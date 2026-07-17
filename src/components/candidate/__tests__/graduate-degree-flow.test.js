@@ -65,7 +65,11 @@ test('the chat renders trailing "→ a | b" options as clickable bubbles', () =>
 
 test('saved program-list recovery is local and missing lists force generation', () => {
   assert.match(appSrc, /PROGRAM_LIST_RECOVERY/);
-  assert.match(appSrc, /\(isProgramRecovery \|\| isSchoolListRequest\(raw_t\)\) && hasSavedPrograms && !explicitRegenerateProgramList/);
+  // Only an explicit list request re-surfaces the saved list — a bare
+  // "continue" must advance the journey instead (see the isBareAdvance tests
+  // below), so this branch is gated on isExplicitListRequest, not a raw
+  // isSchoolListRequest/isProgramRecovery check.
+  assert.match(appSrc, /isExplicitListRequest && hasSavedPrograms && !explicitRegenerateProgramList/);
   assert.match(appSrc, /PROGRAM LIST RECOVERY:[\s\S]*MUST include a valid <PROGRAMS>/);
   assert.match(appSrc, /setCandTab\('universities'\)/);
   assert.match(appSrc, /gateProgramReadyReply/);

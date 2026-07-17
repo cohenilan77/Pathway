@@ -852,9 +852,14 @@ export default function App() {
     const hasSavedPrograms = hasValidProgramList(programs);
     const explicitRegenerateProgramList = /\bregenerate\b[\s\S]{0,80}(?:programs?|portfolio|schools?|school\s+list|matches|list)\b/i.test(raw_t);
     const hasLockedTargets = Array.isArray(chosenSchools) && chosenSchools.length > 0;
-    const isPostTargetNarrativeContinue = hasLockedTargets
-      && /^(?:next|continue|advance|proceed|move on|continue my narrative|review my targets)[.!]?$/i.test(raw_t);
-    const requestsFirstProgramList = (isSchoolListRequest(raw_t) || isProgramRecovery) && !hasSavedPrograms;
+    // A bare advance ("continue", "continue my analysis") must move the
+    // journey forward, never re-open the list — only an explicit ask for the
+    // list itself ("show my school list", "where is my list") should do that.
+    const isBareAdvance = /^(?:next|continue|proceed|move on|advance|go on|keep going|continue\s+(?:my\s+)?analysis|continue\s+(?:my\s+)?narrative)[.!?]*$/i.test(raw_t);
+    const isExplicitListRequest = (!isBareAdvance && (isSchoolListRequest(raw_t) || isProgramRecovery))
+      || /\b(?:show|see|open|view|display|where(?:'s| is)?)\b[\s\S]{0,30}\b(?:school\s+list|university\s+list|program\s+list|portfolio|my\s+list|schools|programs)\b/i.test(raw_t);
+    const isPostTargetNarrativeContinue = hasLockedTargets && isBareAdvance;
+    const requestsFirstProgramList = (isExplicitListRequest || isBareAdvance) && !hasSavedPrograms;
 
     // Once targets are locked, the journey must move into Narrative & Strategy.
     // A bare "next" used to be treated as school-list recovery and reopened
@@ -875,10 +880,23 @@ export default function App() {
       return;
     }
 
+    // A saved list exists but no targets are locked yet, and the candidate
+    // just said "continue" rather than asking for the list itself. Keep them
+    // on the advisor tab and prompt for target selection instead of
+    // re-surfacing the list and force-switching tabs on every bare advance.
+    if (hasSavedPrograms && isBareAdvance && !hasLockedTargets) {
+      setChat(prev => [...prev,
+        { role: 'user', channel: 'web', text: raw_t },
+        { role: 'ai', channel: 'web', text: 'Your school list is ready in the Analysis tab. Pick the 3-5 schools that excite you most to lock your targets, and we\'ll move on to Narrative & Strategy.' },
+      ]);
+      setInput('');
+      return;
+    }
+
     // A saved list is already the source of truth for both the inline card and
     // University List. Recover it locally instead of asking the model to claim
     // it generated something that the candidate still cannot see.
-    if ((isProgramRecovery || isSchoolListRequest(raw_t)) && hasSavedPrograms && !explicitRegenerateProgramList) {
+    if (isExplicitListRequest && hasSavedPrograms && !explicitRegenerateProgramList) {
       const normalizedExisting = validateProgramList(programs).programs;
       console.info('[program-list]', {
         event: 'frontend_reopen_existing_programs',
