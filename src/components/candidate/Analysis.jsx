@@ -492,7 +492,12 @@ function buildAccordionSummary(school, profile) {
 }
 
 export default function Analysis({ setCandTab, scores, strengths, weaknesses, programs, profile, send, busy, chosenSchools, setChosenSchools, confirmTargetSchools, insights }) {
-  const hasData = !!scores;
+  // A candidate can have a real school list (and even confirmed targets)
+  // before scores exist — MatchingAgent only ever patches `programs`, and
+  // scores requires a separate readyForScoring pass. Gating the whole tab on
+  // `scores` alone hid an already-generated, already-independently-gated
+  // Strategic School Portfolio section behind "Analysis Not Yet Available."
+  const hasData = !!scores || (Array.isArray(programs) && programs.length > 0) || (Array.isArray(chosenSchools) && chosenSchools.length > 0);
   const trackConfig = getTrackConfig(profile || {});
   const [selected, setSelected] = useState(chosenSchools || []);
   const [expanded, setExpanded] = useState({});
@@ -669,7 +674,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         </div>
 
         {/* Overall score banner */}
-        {scores.overall != null && (
+        {scores?.overall != null && (
           <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ position: 'relative' }}>
@@ -679,22 +684,27 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           </div>
         )}
 
-        {/* Score breakdown */}
-        <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
-        <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
-          {scoreItems.map((item, i) => (
-            <ScoreBar
-              key={item.key}
-              score={item.value}
-              incomplete={item.status === 'incomplete'}
-              title={item.title}
-              reason={item.reason}
-              missingPrompt={item.missingPrompt}
-              last={i === scoreItems.length - 1}
-              color={BAR_COLORS[i % BAR_COLORS.length]}
-            />
-          ))}
-        </div>
+        {/* Score breakdown — only once real scores exist; a school list with
+            no scores yet should not show a wall of "incomplete" bars. */}
+        {scores && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
+            <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
+              {scoreItems.map((item, i) => (
+                <ScoreBar
+                  key={item.key}
+                  score={item.value}
+                  incomplete={item.status === 'incomplete'}
+                  title={item.title}
+                  reason={item.reason}
+                  missingPrompt={item.missingPrompt}
+                  last={i === scoreItems.length - 1}
+                  color={BAR_COLORS[i % BAR_COLORS.length]}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Strengths / Growth areas */}
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
