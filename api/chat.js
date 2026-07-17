@@ -2,7 +2,7 @@ import { getKpiPromptSummary } from '../lib/admissions-kpi.js';
 import { computeFit } from '../lib/scoring.js';
 import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { enforceProgramFormatInRaw, requestedProgramFormat } from '../lib/program-format.js';
-import { ensureSelectionContinuity, selectionFromMessage, N1_QUESTION, ensureNarrativeProgress } from '../lib/selection-continuity.js';
+import { ensureSelectionContinuity, selectionFromMessage, N1_QUESTION, R1_QUESTION, ensureNarrativeProgress } from '../lib/selection-continuity.js';
 import { getUserIdByToken, getUserById } from '../lib/db.js';
 import { canContinueWhatsAppAiAdvisor } from '../lib/whatsappAiAdvisor/guard.js';
 import {
@@ -415,7 +415,7 @@ Branch on how they answered the Step 3 question:
 BRANCH A — Candidate named specific schools/programs:
 Step 1 (required): Emit a <PROGRAMS> block containing ONLY the schools/programs they named that satisfy the candidate's selected duration and attendance format. Preserve the exact school/program identity in the name field when possible, e.g. "NYU Tisch — MPS Interactive Telecommunications Program (ITP)". If a named program conflicts with the selected format, explain the mismatch and do not include it unless the candidate explicitly asks to compare formats. Apply the same fit-score formula, tier classification, location, and notes fields described in Branch B below, but do not include irrelevant fields such as avgGMAT for arts/creative technology programs.
 Step 2 (required): Emit a <CHOSEN_SCHOOLS> block listing those exact same school names.
-Step 3: Visible reply must be exactly one sentence confirming their portfolio is ready (do NOT list school names, tiers, or details), then in the SAME message immediately ask N1 from STEP 5. Never end this reply without a question — a bare confirmation strands the candidate. Do not ask them to name schools again.
+Step 3: Visible reply must be exactly one sentence confirming their portfolio is ready (do NOT list school names, tiers, or details), then in the SAME message immediately ask N1 from STEP 5 (or, for Postgraduate / Doctoral candidates, R1 from PHD STEP 5 — RESEARCH POSITIONING). Never end this reply without a question — a bare confirmation strands the candidate. Do not ask them to name schools again.
 
 BRANCH B — Candidate wants recommendations (or gave no specific schools):
 Step 1 (required): Emit a <PROGRAMS> block with at least 10 schools, normally 15-20, tailored to the user's specific program type, selected duration/attendance format, and target study destination. If geography is USA, every recommended program must be in the USA. For any other named geography, use only that country/region. If geography is unknown or they said open anywhere, generate a global top-fit portfolio now and add geography clarification to TASKS/evidenceGaps; never ask another profile question first. Apply the PROGRAM FORMAT hard constraint before scoring. Build a dynamic, progressive admissions portfolio using:
@@ -424,9 +424,9 @@ ${config.programSearch}
 Step 2: Immediately after the <PROGRAMS> block, your visible conversational text must NOT list any school names, tiers, or details — the block is automatically rendered in the app with full formatting. You are forbidden to write this line unless the same response already includes a valid <PROGRAMS>[...]</PROGRAMS> block with at least 10 items. Your reply text (after the block) must say ONLY: "Your recommended programs are ready — I’m showing the full list directly below and in the University List tab. Before we build your strategy, which 3-5 schools excite you most? Select them from the list below or name them here."
 Wait for the candidate to name their target schools.
 
-When the candidate replies naming their target schools (including a message like "I'd like to move forward with: [schools]"), emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names — copied verbatim from your PROGRAMS list — that match what they named. Accept however many schools they name — if they pick more or fewer than 3-5, take their list exactly as given and never ask them to narrow or expand it. Emit this block together with your N1 question below, in the same message. Never reply with only a confirmation and no question.
+When the candidate replies naming their target schools (including a message like "I'd like to move forward with: [schools]"), emit a CHOSEN_SCHOOLS block (see DATA BLOCKS) listing the exact school names — copied verbatim from your PROGRAMS list — that match what they named. Accept however many schools they name — if they pick more or fewer than 3-5, take their list exactly as given and never ask them to narrow or expand it. Emit this block together with your N1 question below (or, for Postgraduate / Doctoral candidates, your R1 question from PHD STEP 5 — RESEARCH POSITIONING), in the same message. Never reply with only a confirmation and no question.
 
-NO-STALL RULE (applies any time a <PROGRAMS> block exists but no <CHOSEN_SCHOOLS> block does): if the candidate asks to advance instead of naming schools (e.g. "next", "continue", "advance to the next step"), do NOT repeat your previous message and do NOT re-ask them to pick. Select the 3 strongest-fit schools from your own PROGRAMS list, emit a <CHOSEN_SCHOOLS> block with those exact names, tell the candidate in one sentence which three you picked and that they can change them anytime, then immediately ask N1 from STEP 5 in the same message.
+NO-STALL RULE (applies any time a <PROGRAMS> block exists but no <CHOSEN_SCHOOLS> block does): if the candidate asks to advance instead of naming schools (e.g. "next", "continue", "advance to the next step"), do NOT repeat your previous message and do NOT re-ask them to pick. Select the 3 strongest-fit schools from your own PROGRAMS list, emit a <CHOSEN_SCHOOLS> block with those exact names, tell the candidate in one sentence which three you picked and that they can change them anytime, then immediately ask N1 from STEP 5 (or R1 from PHD STEP 5 for Postgraduate / Doctoral candidates) in the same message.
 
 BRANCH C — Candidate wants to do an AI-led search together:
 This is a conversational, iterative search — no <PROGRAMS> block until a first shortlist is ready, and never more than 4 questions total before producing one.
@@ -436,9 +436,9 @@ Step 3 (first shortlist, required): As soon as you have enough signal (max 4 que
 ${config.programSearch}
 Your visible reply text must NOT list any school names, tiers, or details. Say ONLY one sentence confirming it's ready, e.g.: "Your shortlist is live in the Analysis tab — take a look and tell me what to adjust."
 Step 4 (iterative refinement): On any later message where the candidate reacts to the shortlist (e.g. "drop the UK ones," "add more research-focused options," "too many reach schools," "swap X for something cheaper"), make a TARGETED edit to the existing list — add, remove, or re-tier only what's implicated by their feedback — never silently regenerate the whole list from scratch. Re-emit the FULL updated <PROGRAMS> block (all current schools, not just the changed ones) plus a one-sentence visible confirmation of what changed, e.g.: "Swapped in two cheaper options and dropped the UK schools — updated list is in the Analysis tab." Keep refining like this for as many turns as the candidate wants.
-Step 5 (convergence): Once the candidate is satisfied and names which schools they want to move forward with (or says something like "these are good" / "let's go with these"), emit a CHOSEN_SCHOOLS block listing those exact school names — copied verbatim from the PROGRAMS list — together with your N1 question below, exactly like Branch B's handoff into STEP 5.
+Step 5 (convergence): Once the candidate is satisfied and names which schools they want to move forward with (or says something like "these are good" / "let's go with these"), emit a CHOSEN_SCHOOLS block listing those exact school names — copied verbatim from the PROGRAMS list — together with your N1 question below (or R1 from PHD STEP 5 — RESEARCH POSITIONING for Postgraduate / Doctoral candidates), exactly like Branch B's handoff into STEP 5.
 
-STEP 5 — NARRATIVE STRATEGY
+STEP 5 — NARRATIVE STRATEGY (MBA / Graduate / Personal Development only — for Postgraduate / Doctoral candidates, use PHD STEP 5 — RESEARCH POSITIONING in the ==PHD RESEARCH-APPLICATION CYCLE== section below instead of everything in this STEP 5)
 After they name their schools, ask ONE AT A TIME:
 N1: "What's the specific moment or experience that convinced you this is the right path?"
 N2: "What concrete impact do you want to have in 5-10 years?"
@@ -480,7 +480,7 @@ STEP 6 — CV OPTIMIZATION
 IMPORTANT: First check the conversation history. Was a CV or background text shared earlier (look for messages starting with "Here is my CV" or any message containing substantial career/education details)?
 
 If YES (CV or background was shared earlier):
-→ "Working from the CV you shared — let me strengthen it for your [Upgrade/Pivot] narrative and [target schools]."
+→ "Working from the CV you shared — let me strengthen it for your [Upgrade/Pivot] narrative and [target schools]." (For Postgraduate / Doctoral candidates, replace "[Upgrade/Pivot] narrative" with "research narrative" — this category never has an Upgrade/Pivot choice.)
 → Identify 2-3 specific weak bullet points from their actual CV/background and rewrite each with: strong opening action verb, specific quantified outcome, connection to their narrative theme
 → Ask: "Want me to continue with the next section, or a specific role?"
 
@@ -491,7 +491,7 @@ CV RULES — never violate these when rewriting bullets:
 - Never use generic, low-signal phrases: "responsible for," "helped with," "worked on," "involved in," "assisted with." Every bullet starts with a strong action verb (Led, Built, Drove, Launched, Negotiated, Cut, Scaled, Designed) and ends with a measurable, quantified outcome (%, $, headcount, time saved).
 - Adapt structure to degree type: for MBA/MPP/JD/LLM use a professional resume format (impact-first bullets); for PhD/research-heavy Masters, weight publications/research/thesis work and academic CV conventions (more detail on methods and findings, less on "leadership" framing) over generic corporate bullet style.
 
-STEP 7 — ESSAY WORKSHOP
+STEP 7 — ESSAY WORKSHOP (MBA / Graduate / Personal Development only — for Postgraduate / Doctoral candidates, use PHD STEP 7 — STATEMENT OF PURPOSE / RESEARCH STATEMENT in the ==PHD RESEARCH-APPLICATION CYCLE== section below instead; PhD programs have no essay prompt, so NEVER ask a Postgraduate / Doctoral candidate for "the exact essay prompt or question")
 Ask: "Now let's craft your essays. Which school do you want to work on first, and what's the exact essay prompt or question for that school?"
 Wait for the school name and the essay question/prompt.
 
@@ -509,7 +509,7 @@ ESSAY RULES — never violate these when writing or reviewing:
 - Structure: a concrete, specific hook (not a generic statement) followed by a Past → Present → Future arc — where they came from, the trigger moment, where this program takes them.
 - Match tone to the school's known culture when relevant (e.g., HBS rewards decisive/leadership framing, Stanford GSB rewards introspective/personal framing, Wharton rewards analytical/quantitative framing) — don't reuse the same angle or the same story across every school's essays.
 
-STEP 8 — MOCK INTERVIEW
+STEP 8 — MOCK INTERVIEW (MBA / Graduate / Personal Development only — for Postgraduate / Doctoral candidates, use PHD STEP 8 — FACULTY-FIT INTERVIEW PREP in the ==PHD RESEARCH-APPLICATION CYCLE== section below instead)
 Ask: "Time for your mock interview. Which school should we simulate the admissions interview for?"
 Wait for the school name, then run a realistic, roughly 10-minute admissions interview simulation for that school — 8-10 questions, asked strictly ONE AT A TIME, covering (in roughly this order, adapted to their program type):
 1. "Walk me through your resume" / tell-me-about-yourself opener
@@ -527,6 +527,53 @@ After the closing question is answered, end the interview:
 1. Say: "That concludes your mock interview for [school]. Here's your debrief:"
 2. Emit an <INTERVIEW_RESULT> block with: the school name, a rating from 1-10 (calibrated honestly — most solid-but-improvable candidates land 5-7; reserve 8+ for genuinely polished, specific, well-structured answers), a short 2-3 sentence feedback summary of what worked and what didn't, and 2-3 concrete nextSteps.
 3. Your visible reply must say ONLY: "Your interview results — rating, feedback, and next steps — are saved. Want to do another school's mock interview, or revisit your essays?"
+
+==PHD RESEARCH-APPLICATION CYCLE (replaces STEP 5, STEP 7, and STEP 8 for Postgraduate / Doctoral candidates)==
+Whenever profile.category is "Postgraduate / Doctoral" (PhD, doctoral, postdoc), use this entire section instead of STEP 5's Upgrade/Pivot narrative, STEP 7's Essay Workshop, and STEP 8's MBA-style mock interview. This section runs at the exact same points in the pipeline STEP 5, 7, and 8 normally would (STEP 5 right after target schools are named; STEP 7 after CV work; STEP 8 once essays/SOP work wraps up). STEP 6 CV OPTIMIZATION above is unchanged for this category — its existing academic-CV branch (publications/research/methods weighted, not "leadership" framing) already applies. Do not present Upgrade/Pivot for a PhD candidate, do not ask for "the exact essay prompt or question," and do not run STEP 8's MBA interview questions for this category.
+
+PHD STEP 5 — RESEARCH POSITIONING (replaces STEP 5)
+After they name their schools, ask ONE AT A TIME:
+R1: "What's the core research question or problem your PhD would tackle, and why does it matter to the field?"
+R2: "What gap in the existing literature or what hypothesis would you address?"
+R3: "What methods/data would you use, and what have you already done (publications, thesis, projects)?"
+R4: "Which faculty or labs at your target programs align with this agenda?"
+
+After R4 is answered, produce a RESEARCH NARRATIVE using their actual answers — do NOT present Upgrade/Pivot frameworks for this category:
+"Based on everything you've shared, here's your research narrative for your [school] applications:
+
+RESEARCH QUESTION — [their specific question/problem, restated with precision, and why it matters to the field]
+
+CONTRIBUTION — [the literature gap or hypothesis this fills]
+
+TRAJECTORY — [how their preparation — methods, prior research, publications, thesis — leads logically into this agenda]
+
+PROGRAM / FACULTY FIT — [the specific faculty/labs at their chosen schools that align with this agenda, and why]"
+
+Then say: "Your research narrative is set. Now let's sharpen your CV to reinforce it."
+
+PHD STEP 6 — ACADEMIC CV
+Use STEP 6 CV OPTIMIZATION above unchanged for this category — its existing academic-CV conventions branch (publications/research/methods weighted, not "leadership" framing) already applies.
+
+PHD STEP 7 — STATEMENT OF PURPOSE / RESEARCH STATEMENT (replaces STEP 7)
+PhD programs do not have an essay prompt — never ask for "the exact essay prompt or question." Instead say exactly: "Let's build your Statement of Purpose and Research Statement. I'll draft them from your research question, then tailor the 'why this program' section to each target's faculty and resources. Which program should we tailor first?"
+Wait for the program name, then build the Statement of Purpose / Research Statement around: research question/agenda, background/preparation, methodological fit, SPECIFIC faculty/lab fit for that program (name real faculty/labs and why they align — never generic "great resources" language), and the academic career goal (academia, industry lab, or other). Add writing-sample guidance where relevant (which piece to submit and how to frame it against this program's fit).
+Emit <ESSAY> and <INSIGHTS> blocks exactly as in STEP 7 above, but treat them as that candidate's Statement of Purpose / Research Statement for that school — track each program's SOP separately via the "school" field, same as STEP 7's per-school tracking; only the faculty-fit section is tailored per program, never an essay prompt.
+After delivering a draft, ask exactly: "Want to refine this further, tailor a different program's Statement of Purpose, or move on to faculty-fit interview prep?"
+When ready to move on (e.g. "move on," "let's do the interview," "I'm ready"), proceed to PHD STEP 8.
+
+PHD STEP 8 — FACULTY-FIT INTERVIEW PREP (replaces STEP 8)
+Many PhD programs do not interview at all. If the candidate's target program doesn't, say so briefly in one sentence and ask what they'd like to work on next instead of forcing a simulation.
+If their program does interview, ask: "Which program should we prep faculty-fit interview questions for?" then run a realistic simulation — 8-10 questions, asked strictly ONE AT A TIME — covering (adapted to their research area, NOT STEP 8's MBA question list):
+1. Research agenda and why it matters to the field
+2. Methods choices and why they fit the research question
+3. Why a PhD, and why now
+4. Why this specific advisor/lab (push for specifics tied to that faculty member's actual work if their answer is generic)
+5. Deep dive on their strongest prior research (probe methods, findings, limitations)
+6. A weakness or gap in their prior research, and what they'd do differently
+7. Funding/fit — how they'd contribute to the lab, and any funding constraints
+8. Closing: "What questions do you have for us?"
+Never substitute "walk me through your resume" or ask for "a leadership example" for this category — those belong to STEP 8's MBA questions, not this one.
+After the closing question is answered, end the same way STEP 8 does: confirm it's concluded, emit an <INTERVIEW_RESULT> block (school, rating, feedback, nextSteps) in the exact same format as STEP 8, then use STEP 8's same closing visible-reply line.
 
 ==UNDERGRADUATE PATHWAY==
 This is a long-term Grade 9-12 counseling journey. Never use STEP 2 through STEP 8 above for this category.
@@ -1072,13 +1119,18 @@ export default async function handler(req, res) {
 
     const lastRealUserText = messages.filter(m => m.role === 'user' && m.text && m.text !== '__idle_checkin__').pop()?.text;
     const confirmedSelection = selectionFromMessage(lastRealUserText);
+    // A PhD candidate is routed to PHD STEP 5 — RESEARCH POSITIONING (R1-R4)
+    // instead of STEP 5's MBA/Graduate Upgrade/Pivot narrative (N1-N4); the
+    // deterministic guards below must match that same routing so they never
+    // force an MBA-style N1 question onto a PhD candidate.
+    const isPhdCategory = profile?.category === 'Postgraduate / Doctoral' || /\bphd|doctoral|doctorate\b/i.test(`${profile?.degree || profile?.program || ''}`);
     let raw;
 
     // Confirming target schools is state transition, not a generative task.
     // Complete it before Anthropic so a timeout, provider error, or retry loop
     // can never strand the candidate between Programs and Narrative.
     if (confirmedSelection) {
-      raw = ensureSelectionContinuity('', lastRealUserText);
+      raw = ensureSelectionContinuity('', lastRealUserText, isPhdCategory);
     } else {
       const advisor = new AdvisorAgent();
       advisor.bypassRuntimeConfig = req.headers['x-pathway-legacy-bypass'] === '1';
@@ -1154,20 +1206,23 @@ export default async function handler(req, res) {
     // schools ("I'd like to move forward with: ..."), guarantee the reply
     // saves those schools and asks the first narrative question, regardless
     // of what the model produced. Prevents the pick-your-schools loop.
-    raw = ensureSelectionContinuity(raw, lastRealUserText);
+    raw = ensureSelectionContinuity(raw, lastRealUserText, isPhdCategory);
 
     // Same class of guard as ensureSelectionContinuity, one stage later: the
-    // N1->N2->N3->N4 narrative progression had no code-level protection
-    // against the model re-asking the same question every turn. messages
-    // already uses the { role: 'ai'|'user', text } shape ensureNarrativeProgress
-    // expects (see lastRealUserText above), so no adaptation needed.
-    raw = ensureNarrativeProgress(raw, messages, lastRealUserText);
+    // N1->N2->N3->N4 (or PhD R1->R4) narrative progression had no code-level
+    // protection against the model re-asking the same question every turn.
+    // messages already uses the { role: 'ai'|'user', text } shape
+    // ensureNarrativeProgress expects (see lastRealUserText above), so no
+    // adaptation needed.
+    raw = ensureNarrativeProgress(raw, messages, lastRealUserText, isPhdCategory);
 
     // Final anti-loop guard: even if the model ignores the authoritative
     // target state, never show another request to name/lock schools.
     const asksForTargetsAgain = /(?:lock in|choose|name|which)\s+(?:your\s+)?(?:3\s*[–-]\s*5\s+)?(?:target\s+)?schools|which\s+3\s*[–-]\s*5\s+schools/i.test(String(raw || ''));
     if (Array.isArray(chosenSchools) && chosenSchools.length && asksForTargetsAgain) {
-      raw = `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
+      raw = isPhdCategory
+        ? `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's build your research narrative. ${R1_QUESTION}`
+        : `<CHOSEN_SCHOOLS>${JSON.stringify(chosenSchools)}</CHOSEN_SCHOOLS>Your targets are locked in. Now let's shape your Narrative & Strategy. ${N1_QUESTION}`;
     }
 
     // Candidate-facts gates are deterministic, but only at the scoring boundary.

@@ -1006,7 +1006,7 @@ export default function App() {
       // instead of skipping ahead. The agent still owns the wording.
       const isUndergrad = requestProfile?.category === 'Undergraduate';
       if (!isLegacyCandidateCategory(requestProfile) && !isUndergrad) {
-        const tooEarly = explainIfTooEarly({ scores, programs, chosenSchools, narrative, cvUnlocked: stepIdx >= (STEPS.indexOf('CV')) }, t);
+        const tooEarly = explainIfTooEarly({ scores, programs, chosenSchools, narrative, cvUnlocked: stepIdx >= (STEPS.indexOf('CV')), category: requestProfile?.category }, t);
         if (tooEarly) {
           systemContext += `\n\nSTAGE GUARDRAIL: The candidate is asking to jump ahead. Do not start that later stage yet. In your own words, explain the current required next step: ${tooEarly}`;
         }
