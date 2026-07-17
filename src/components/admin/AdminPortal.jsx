@@ -267,6 +267,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const stepsFor = (category) => (category === 'Undergraduate' ? UNDERGRAD_STEPS : STEPS);
   const [adminView, setAdminView] = useState('dashboard');
   const [candidateOpen, setCandidateOpen] = useState(false);
+  const [showAllPrograms, setShowAllPrograms] = useState(false);
   const [msgInput, setMsgInput] = useState('');
   const [liveChatMessages, setLiveChatMessages] = useState([]);
   const [liveChatInput, setLiveChatInput] = useState('');
@@ -459,6 +460,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
   const openCandidate = (userId) => {
     setSelectedUserId(userId);
     setCandidateOpen(true);
+    setShowAllPrograms(false);
     setSelectedLoading(true);
     setSummary(''); setSummaryVisible(false);
     fetch(`/api/admin-session?userId=${userId}`, { headers: adminHeaders })
@@ -1583,7 +1585,7 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
 
                     {/* All schools list — chosen schools first, then the rest */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {sortedPrograms.slice(0, Math.max(6, chosenPrograms.length)).map(p => {
+                      {(showAllPrograms ? sortedPrograms : sortedPrograms.slice(0, Math.max(6, chosenPrograms.length))).map(p => {
                         const isChosen = chosenPrograms.some(c => c.name === p.name);
                         return (
                           <div key={p.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #f6f1e8' }}>
@@ -1596,8 +1598,14 @@ export default function AdminPortal({ adminTab, setAdminTab, signOut, showToast,
                           </div>
                         );
                       })}
-                      {programs.length > Math.max(6, chosenPrograms.length) && (
-                        <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>+{programs.length - Math.max(6, chosenPrograms.length)} more schools in full portfolio</div>
+                      {sortedPrograms.length > Math.max(6, chosenPrograms.length) && (
+                        <button
+                          onClick={() => setShowAllPrograms(v => !v)}
+                          style={{ fontSize: 12, fontWeight: 700, color: '#5b46e0', marginTop: 4, background: 'none', border: 'none', padding: '4px 0', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}>
+                          {showAllPrograms
+                            ? '− Show less'
+                            : `+${sortedPrograms.length - Math.max(6, chosenPrograms.length)} more schools in full portfolio — show all`}
+                        </button>
                       )}
                     </div>
                   </div>
