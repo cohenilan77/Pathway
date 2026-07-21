@@ -491,10 +491,9 @@ export default function AdvisorConversational({
   // category check — surfacing the grad narrative CTA/modal to undergrad
   // candidates as soon as they picked target schools.
   const showNarrativeCTA = !isUndergrad && !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !rawNarrative : narrativeDataIntegrityIssue);
-  const handleNarrativeChoose = (kind) => {
-    setNarrative && setNarrative(kind);
+  const handleNarrativeChoose = () => {
     setShowNarrativeModal(false);
-    send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
+    send('__idle_checkin__', { action: 'start_narrative_strategy' });
   };
 
   const pushMarkNote = (name, markedNames) => {
@@ -826,9 +825,9 @@ export default function AdvisorConversational({
                     <div style={{ maxWidth: 640, marginLeft: 18, background: INK, borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
                       <div>
                         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
-                        <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
+                        <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Build your narrative strategy</span>
                       </div>
-                      <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
+                      <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Start →</button>
                     </div>
                   )}
                 </React.Fragment>

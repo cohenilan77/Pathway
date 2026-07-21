@@ -448,10 +448,9 @@ export default function AdvisorChatFirst({
     inputRef.current?.focus();
   };
 
-  const handleNarrativeChoose = (kind) => {
-    setNarrative && setNarrative(kind);
+  const handleNarrativeChoose = () => {
     setShowNarrativeModal(false);
-    send(`I've chosen the ${kind === 'upgrade' ? 'Upgrade' : 'Pivot'} narrative. Please craft my complete narrative strategy now for my chosen schools.`);
+    send('__idle_checkin__', { action: 'start_narrative_strategy' });
   };
 
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];

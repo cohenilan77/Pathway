@@ -45,9 +45,11 @@ test('the narrative CTA and modal are never shown to Undergraduate candidates', 
   assert.match(advisor, /\{showNarrativeModal && !isUndergrad && \(/);
 });
 
-test('narrative CTA reopens the Pivot/Upgrade modal, including for the stale-data case', () => {
+test('narrative CTA opens strategy synthesis with an explicit action, including for stale data', () => {
   assert.match(conversational, /import NarrativeModal from '\.\/AdvisorNarrativeModal\.jsx'/);
-  assert.match(conversational, /const handleNarrativeChoose = \(kind\) => \{/);
+  assert.match(conversational, /const handleNarrativeChoose = \(\) => \{/);
+  assert.match(conversational, /start_narrative_strategy/);
+  assert.doesNotMatch(conversational, /I've chosen the \$\{kind/);
   assert.match(conversational, /\{showNarrativeModal && !isUndergrad && \(/);
 });
 
