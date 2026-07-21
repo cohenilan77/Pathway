@@ -1329,7 +1329,7 @@ export default function App() {
     } catch (error) {
       const message = buildAdvisorFallbackMessage({
         errorName: error?.name,
-        isSchoolListPhase,
+        isSchoolListPhase: isSchoolListTimeoutPhase,
         isCvSubmission,
         requestedProgramList: requestsFirstProgramList || explicitRegenerateProgramList,
       });

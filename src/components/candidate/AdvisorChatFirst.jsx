@@ -450,7 +450,7 @@ export default function AdvisorChatFirst({
 
   const handleNarrativeChoose = () => {
     setShowNarrativeModal(false);
-    send('__idle_checkin__', { action: 'start_narrative_strategy' });
+    send('Start my Narrative Strategy review using my existing evidence.', { action: 'start_narrative_strategy' });
   };
 
   const lastAiMsg = visibleChat.filter(m => m.role === 'ai').slice(-1)[0];

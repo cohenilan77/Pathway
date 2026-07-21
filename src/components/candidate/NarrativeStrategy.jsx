@@ -5,7 +5,7 @@ const panel = { background: '#faf7f2', border: '1px solid #e8dfd0', borderRadius
 export default function NarrativeStrategy({ strategy, narrativeCoaching, setCandTab, send }) {
   const current = strategy || narrativeCoaching?.strategy || null;
   const confirmed = current?.confirmationStatus === 'confirmed';
-  const start = () => { send?.('__idle_checkin__', { action: 'start_narrative_strategy' }); setCandTab?.('advisor'); };
+  const start = () => { send?.('Start my Narrative Strategy review using my existing evidence.', { action: 'start_narrative_strategy' }); setCandTab?.('advisor'); };
   const respond = (message, action) => { send?.(message, { action }); setCandTab?.('advisor'); };
 
   return (

@@ -493,7 +493,7 @@ export default function AdvisorConversational({
   const showNarrativeCTA = !isUndergrad && !busy && chosenSchools?.length > 0 && (narrativeQnAComplete ? !rawNarrative : narrativeDataIntegrityIssue);
   const handleNarrativeChoose = () => {
     setShowNarrativeModal(false);
-    send('__idle_checkin__', { action: 'start_narrative_strategy' });
+    send('Start my Narrative Strategy review using my existing evidence.', { action: 'start_narrative_strategy' });
   };
 
   const pushMarkNote = (name, markedNames) => {
