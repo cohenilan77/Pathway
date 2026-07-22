@@ -15,8 +15,9 @@ const conversational = read('AdvisorConversational.jsx');
 // read as the conversation being interrupted every time a new message
 // arrived rather than continuing normally beneath a one-time card.
 
-test('readiness card is gated on grade being known, not just any non-null score dimension', () => {
-  assert.match(conversational, /const readinessReady = hasScores && \(!isUndergrad \|\| !!profile\?\.grade\);/);
+test('readiness card is gated on grade AND a real (>0) score — an all-zero starter profile shows no card', () => {
+  assert.match(conversational, /const hasRealScores = .*Number\(v\) > 0\);/);
+  assert.match(conversational, /const readinessReady = \(isUndergrad \? hasRealScores : hasScores\) && \(!isUndergrad \|\| !!profile\?\.grade\);/);
 });
 
 test('readiness card is anchored once to the message that made it ready, like milestones', () => {
