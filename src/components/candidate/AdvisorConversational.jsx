@@ -708,8 +708,50 @@ export default function AdvisorConversational({
               const notesHere = markNotes.filter(n => n.anchor === i + 1);
               const showNarrativeCtaHere = showNarrativeCTA && narrativeCtaAnchor === i + 1;
               const parsed = isAi ? parseOptions(m.text) : null;
+              // The inline school/program list. Rendered above the advisor's
+              // message once the portfolio is confirmed (the list is the answer,
+              // the message is the follow-up), and below it during selection so
+              // the "pick your schools" instruction still leads. The old "Open
+              // School List →" shortcut is gone — the list is right here inline.
+              const programsBlock = showPrograms ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {normalizedPrograms.map(program => {
+                    const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
+                    const chosen = isConfirmed ? chosenSchools.includes(program.name) : pickIndex >= 0;
+                    return (
+                      <ProgramCard
+                        key={program.name}
+                        program={program}
+                        pickIndex={pickIndex}
+                        showRank={!isConfirmed}
+                        chosen={chosen}
+                        pending={justMarked === program.name}
+                        onChoose={handleChoose}
+                      />
+                    );
+                  })}
+                  {!isConfirmed && (
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        className="pw-adv2-btn"
+                        onClick={confirmPicks}
+                        disabled={!picks.length || busy}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 700, minHeight: 38,
+                          border: 'none', cursor: picks.length && !busy ? 'pointer' : 'not-allowed',
+                          background: picks.length && !busy ? PERI : BORDER, color: picks.length && !busy ? '#fff' : MUTED_2,
+                          boxShadow: picks.length && !busy ? '0 3px 10px rgba(58,99,255,.4)' : 'none',
+                        }}
+                      >
+                        {picks.length ? `Confirm ${picks.length} target${picks.length === 1 ? '' : 's'}` : 'Choose schools to confirm'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : null;
               return (
                 <React.Fragment key={i}>
+                  {isConfirmed && programsBlock}
                   <div style={{ animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
                     {isAi ? (
                       <div style={{ position: 'relative', maxWidth: 640, padding: '2px 0 2px 18px' }}>
@@ -767,54 +809,7 @@ export default function AdvisorConversational({
                       ))}
                     </div>
                   )}
-                  {showPrograms && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {isConfirmed && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button
-                            type="button"
-                            onClick={() => setCandTab?.('universities')}
-                            className="pw-adv2-btn"
-                            style={{ border: 'none', borderRadius: 999, padding: '9px 16px', background: INK, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
-                          >
-                            Open School List →
-                          </button>
-                        </div>
-                      )}
-                      {normalizedPrograms.map(program => {
-                        const pickIndex = isConfirmed ? -1 : picks.indexOf(program.name);
-                        const chosen = isConfirmed ? chosenSchools.includes(program.name) : pickIndex >= 0;
-                        return (
-                          <ProgramCard
-                            key={program.name}
-                            program={program}
-                            pickIndex={pickIndex}
-                            showRank={!isConfirmed}
-                            chosen={chosen}
-                            pending={justMarked === program.name}
-                            onChoose={handleChoose}
-                          />
-                        );
-                      })}
-                      {!isConfirmed && (
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                          <button
-                            className="pw-adv2-btn"
-                            onClick={confirmPicks}
-                            disabled={!picks.length || busy}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 7, borderRadius: 999, padding: '9px 16px', font: 'inherit', fontSize: 13, fontWeight: 700, minHeight: 38,
-                              border: 'none', cursor: picks.length && !busy ? 'pointer' : 'not-allowed',
-                              background: picks.length && !busy ? PERI : BORDER, color: picks.length && !busy ? '#fff' : MUTED_2,
-                              boxShadow: picks.length && !busy ? '0 3px 10px rgba(58,99,255,.4)' : 'none',
-                            }}
-                          >
-                            {picks.length ? `Confirm ${picks.length} target${picks.length === 1 ? '' : 's'}` : 'Choose schools to confirm'}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                  {!isConfirmed && programsBlock}
                   {notesHere.map(note => (
                     <div key={note.id} style={{ position: 'relative', maxWidth: 640, padding: '2px 0 2px 18px', animation: reduceMotion ? 'none' : 'adv2In .3s ease both' }}>
                       <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 6, bottom: 6, width: 2, borderRadius: 2, background: HAIRLINE }} />
