@@ -59,8 +59,8 @@ function buildResults(answers, questionTimes, totalSeconds) {
   return { correct, percentage: Math.round((correct / QUESTIONS.length) * 100), sections, totalSeconds, averageSeconds, questionTimes, improvements: improvements.slice(0, 3) };
 }
 
-const primaryButton = { background: 'linear-gradient(135deg,#5b46e0,#9a65ef)', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 16px', fontSize: 12.5, fontWeight: 850, cursor: 'pointer', fontFamily: 'inherit' };
-const card = { background: '#faf7f2', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.08)' };
+const primaryButton = { background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', border: 'none', borderRadius: 11, padding: '10px 16px', fontSize: 12.5, fontWeight: 850, cursor: 'pointer', fontFamily: 'inherit' };
+const card = { background: '#f2f6ff', borderRadius: 20, border: '1px solid #dbe4f7', boxShadow: '0 18px 40px rgba(30,45,90,.08)' };
 
 export default function GMATSimulation() {
   const [phase, setPhase] = useState('idle');
@@ -129,12 +129,12 @@ export default function GMATSimulation() {
     <div style={{ width: '100%', maxWidth: 760 }}>
       <div className="pw-gmat-idle-card" style={{ ...card, padding: '34px 36px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,#5b46e0,#9a65ef)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900 }}>GM</div>
-          <div><h2 style={{ fontSize: 24, fontWeight: 850, color: '#141b34', margin: 0 }}>GMAT Simulation</h2><div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 3 }}>20-question focused practice</div></div>
+          <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900 }}>GM</div>
+          <div><h2 style={{ fontSize: 24, fontWeight: 850, color: '#111a33', margin: 0 }}>GMAT Simulation</h2><div style={{ fontSize: 12.5, color: '#8b97b8', marginTop: 3 }}>20-question focused practice</div></div>
         </div>
-        <p style={{ fontSize: 14, color: '#5f6987', lineHeight: 1.65, margin: '18px 0 22px' }}>Practice Quantitative, Verbal, and Data Insights under a 40-minute timer. The final analysis includes accuracy, section performance, total time, average pace, and time spent on every question.</p>
+        <p style={{ fontSize: 14, color: '#5a6a8f', lineHeight: 1.65, margin: '18px 0 22px' }}>Practice Quantitative, Verbal, and Data Insights under a 40-minute timer. The final analysis includes accuracy, section performance, total time, average pace, and time spent on every question.</p>
         <div className="pw-gmat-idle-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}>
-          {['7 Quantitative', '7 Verbal', '6 Data Insights'].map((label) => <div key={label} style={{ background: '#f1edff', border: '1px solid #ddd4ff', borderRadius: 12, padding: '10px 8px', textAlign: 'center', fontSize: 12.5, fontWeight: 800, color: '#5b46e0' }}>{label}</div>)}
+          {['7 Quantitative', '7 Verbal', '6 Data Insights'].map((label) => <div key={label} style={{ background: '#f2f6ff', border: '1px solid #c6d2ea', borderRadius: 12, padding: '10px 8px', textAlign: 'center', fontSize: 12.5, fontWeight: 800, color: '#3a63ff' }}>{label}</div>)}
         </div>
         <button onClick={start} style={{ ...primaryButton, width: '100%', padding: '13px 18px', fontSize: 14 }}>Start GMAT Simulation →</button>
       </div>
@@ -145,19 +145,19 @@ export default function GMATSimulation() {
     <div style={{ width: '100%', maxWidth: 820, display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ ...card, padding: 26 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#9098b5', letterSpacing: '.8px' }}>GMAT PRACTICE RESULT</div><div style={{ fontSize: 42, fontWeight: 900, color: '#5b46e0', lineHeight: 1.1 }}>{results.percentage}%</div><div style={{ fontSize: 13.5, color: '#5f6987' }}>{results.correct} of {QUESTIONS.length} correct</div></div>
+          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#8b97b8', letterSpacing: '.8px' }}>GMAT PRACTICE RESULT</div><div style={{ fontSize: 42, fontWeight: 900, color: '#3a63ff', lineHeight: 1.1 }}>{results.percentage}%</div><div style={{ fontSize: 13.5, color: '#5a6a8f' }}>{results.correct} of {QUESTIONS.length} correct</div></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(120px,1fr))', gap: 10 }}>
-            {[['TOTAL TIME', formatTime(results.totalSeconds), '#f1edff'], ['AVG / QUESTION', formatTime(results.averageSeconds), '#eefaf6']].map(([label, value, background]) => <div key={label} style={{ background, borderRadius: 12, padding: '11px 14px' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#7d8499' }}>{label}</div><div style={{ fontSize: 20, fontWeight: 900, color: '#33265f' }}>{value}</div></div>)}
+            {[['TOTAL TIME', formatTime(results.totalSeconds), '#f2f6ff'], ['AVG / QUESTION', formatTime(results.averageSeconds), '#f2f6ff']].map(([label, value, background]) => <div key={label} style={{ background, borderRadius: 12, padding: '11px 14px' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#5a6a8f' }}>{label}</div><div style={{ fontSize: 20, fontWeight: 900, color: '#111a33' }}>{value}</div></div>)}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>{Object.entries(results.sections).map(([section, score]) => <span key={section} style={{ background: '#f6f1e8', border: '1px solid #e7dcc7', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, color: '#4d5875' }}>{section}: {score.correct}/{score.total}</span>)}</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 18 }}>{Object.entries(results.sections).map(([section, score]) => <span key={section} style={{ background: '#eef4ff', border: '1px solid #e3ebfa', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, color: '#5a6a8f' }}>{section}: {score.correct}/{score.total}</span>)}</div>
       </div>
-      <div style={{ ...card, padding: 22 }}><div style={{ fontSize: 17, fontWeight: 850, color: '#141b34', marginBottom: 12 }}>Things to improve</div>{results.improvements.map((item) => <div key={item} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#56617e', lineHeight: 1.5, marginBottom: 8 }}><span style={{ color: '#8b5cf6', fontWeight: 900 }}>→</span><span>{item}</span></div>)}</div>
+      <div style={{ ...card, padding: 22 }}><div style={{ fontSize: 17, fontWeight: 850, color: '#111a33', marginBottom: 12 }}>Things to improve</div>{results.improvements.map((item) => <div key={item} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#38456b', lineHeight: 1.5, marginBottom: 8 }}><span style={{ color: '#6d8cff', fontWeight: 900 }}>→</span><span>{item}</span></div>)}</div>
       <div style={{ ...card, padding: 22, overflowX: 'auto' }}>
-        <div style={{ fontSize: 17, fontWeight: 850, color: '#141b34', marginBottom: 12 }}>Question timing</div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: '#4d5875' }}>
-          <thead><tr>{['Question', 'Section', 'Result', 'Time'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #e7dcc7', color: '#858da6', fontSize: 12 }}>{label.toUpperCase()}</th>)}</tr></thead>
-          <tbody>{QUESTIONS.map((question, index) => { const correct = answers[index] === question.correctIndex; return <tr key={question.id}><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', fontWeight: 800 }}>Q{index + 1}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd' }}>{question.section}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', color: correct ? '#168c68' : '#c2416c', fontWeight: 800 }}>{correct ? 'Correct' : answers[index] == null ? 'Unanswered' : 'Review'}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #f1eadd', fontWeight: 750 }}>{formatTime(results.questionTimes[index])}</td></tr>; })}</tbody>
+        <div style={{ fontSize: 17, fontWeight: 850, color: '#111a33', marginBottom: 12 }}>Question timing</div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, color: '#5a6a8f' }}>
+          <thead><tr>{['Question', 'Section', 'Result', 'Time'].map((label) => <th key={label} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #e3ebfa', color: '#8b97b8', fontSize: 12 }}>{label.toUpperCase()}</th>)}</tr></thead>
+          <tbody>{QUESTIONS.map((question, index) => { const correct = answers[index] === question.correctIndex; return <tr key={question.id}><td style={{ padding: '9px 10px', borderBottom: '1px solid #dbe4f7', fontWeight: 800 }}>Q{index + 1}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #dbe4f7' }}>{question.section}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #dbe4f7', color: correct ? '#0ca678' : '#e8476b', fontWeight: 800 }}>{correct ? 'Correct' : answers[index] == null ? 'Unanswered' : 'Review'}</td><td style={{ padding: '9px 10px', borderBottom: '1px solid #dbe4f7', fontWeight: 750 }}>{formatTime(results.questionTimes[index])}</td></tr>; })}</tbody>
         </table>
       </div>
       <button onClick={start} style={{ ...primaryButton, alignSelf: 'flex-start' }}>Try another attempt</button>
@@ -169,18 +169,18 @@ export default function GMATSimulation() {
     <div style={{ width: '100%', maxWidth: 820 }}>
       <div style={{ ...card, padding: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 14 }}>
-          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#5b46e0' }}>{question.section}</div><div style={{ fontSize: 12, color: '#9098b5', marginTop: 3 }}>Question {currentQuestion + 1} of {QUESTIONS.length} · {Object.keys(answers).length} answered</div></div>
-          <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#9098b5' }}>TIME LEFT</div><div style={{ fontSize: 22, fontWeight: 900, color: timeLeft < 300 ? '#d33f72' : '#5b46e0' }}>{formatTime(timeLeft)}</div></div>
+          <div><div style={{ fontSize: 12, fontWeight: 850, color: '#3a63ff' }}>{question.section}</div><div style={{ fontSize: 12, color: '#8b97b8', marginTop: 3 }}>Question {currentQuestion + 1} of {QUESTIONS.length} · {Object.keys(answers).length} answered</div></div>
+          <div style={{ textAlign: 'right' }}><div style={{ fontSize: 12, fontWeight: 800, color: '#8b97b8' }}>TIME LEFT</div><div style={{ fontSize: 22, fontWeight: 900, color: timeLeft < 300 ? '#e8476b' : '#3a63ff' }}>{formatTime(timeLeft)}</div></div>
         </div>
-        <div style={{ height: 7, background: '#e7dcc7', borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}><div style={{ width: `${((currentQuestion + 1) / QUESTIONS.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg,#5b46e0,#b899fb)' }} /></div>
-        {question.stimulus && <div style={{ background: '#f6f1e8', borderRadius: 13, padding: 15, fontSize: 13.5, color: '#3d4865', lineHeight: 1.6, marginBottom: 16 }}>{question.stimulus}</div>}
-        <div style={{ fontSize: 16, fontWeight: 750, color: '#141b34', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>{question.options.map((option, index) => { const selected = answers[currentQuestion] === index; return <button key={option} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#eeeaff' : '#fff', border: `1.5px solid ${selected ? '#765ce5' : '#e7dcc7'}`, borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, textAlign: 'left', cursor: 'pointer', color: '#28324d', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.45 }}><span style={{ fontWeight: 900, color: selected ? '#5b46e0' : '#9098b5' }}>{String.fromCharCode(65 + index)}.</span><span>{option}</span></button>; })}</div>
+        <div style={{ height: 7, background: '#e3ebfa', borderRadius: 99, overflow: 'hidden', marginBottom: 20 }}><div style={{ width: `${((currentQuestion + 1) / QUESTIONS.length) * 100}%`, height: '100%', background: 'linear-gradient(90deg,#3a63ff,#6d8cff)' }} /></div>
+        {question.stimulus && <div style={{ background: '#eef4ff', borderRadius: 13, padding: 15, fontSize: 13.5, color: '#38456b', lineHeight: 1.6, marginBottom: 16 }}>{question.stimulus}</div>}
+        <div style={{ fontSize: 16, fontWeight: 750, color: '#111a33', lineHeight: 1.55, marginBottom: 16 }}>{question.prompt}</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>{question.options.map((option, index) => { const selected = answers[currentQuestion] === index; return <button key={option} onClick={() => setAnswers((previous) => ({ ...previous, [currentQuestion]: index }))} style={{ background: selected ? '#f2f6ff' : '#fff', border: `1.5px solid ${selected ? '#3a63ff' : '#e3ebfa'}`, borderRadius: 12, padding: '12px 14px', display: 'flex', gap: 10, textAlign: 'left', cursor: 'pointer', color: '#111a33', fontSize: 13.5, fontFamily: 'inherit', lineHeight: 1.45 }}><span style={{ fontWeight: 900, color: selected ? '#3a63ff' : '#8b97b8' }}>{String.fromCharCode(65 + index)}.</span><span>{option}</span></button>; })}</div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 20 }}>
-          <button onClick={() => goToQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0} style={{ background: '#fff', border: '1px solid #e7dcc7', color: '#5b46e0', borderRadius: 11, padding: '9px 13px', fontSize: 12.5, fontWeight: 800, cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer', opacity: currentQuestion === 0 ? .45 : 1, fontFamily: 'inherit' }}>← Previous</button>
-          {currentQuestion < QUESTIONS.length - 1 ? <button onClick={() => goToQuestion(currentQuestion + 1)} style={primaryButton}>Next →</button> : <button onClick={finish} style={{ ...primaryButton, background: 'linear-gradient(135deg,#15935f,#3fdca9)' }}>Finish &amp; see results</button>}
+          <button onClick={() => goToQuestion(Math.max(0, currentQuestion - 1))} disabled={currentQuestion === 0} style={{ background: '#fff', border: '1px solid #e3ebfa', color: '#3a63ff', borderRadius: 11, padding: '9px 13px', fontSize: 12.5, fontWeight: 800, cursor: currentQuestion === 0 ? 'not-allowed' : 'pointer', opacity: currentQuestion === 0 ? .45 : 1, fontFamily: 'inherit' }}>← Previous</button>
+          {currentQuestion < QUESTIONS.length - 1 ? <button onClick={() => goToQuestion(currentQuestion + 1)} style={primaryButton}>Next →</button> : <button onClick={finish} style={{ ...primaryButton, background: 'linear-gradient(135deg,#0ca678,#12b886)' }}>Finish &amp; see results</button>}
         </div>
-        <div className="pw-gmat-question-nav" style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #f1eadd' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#5b46e0' : answers[index] != null ? '#79d4b4' : '#e7dcc7'}`, background: index === currentQuestion ? '#eeeaff' : answers[index] != null ? '#effbf6' : '#fff', color: '#4d5875', fontSize: 12, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
+        <div className="pw-gmat-question-nav" style={{ display: 'grid', gridTemplateColumns: 'repeat(10,1fr)', gap: 6, marginTop: 20, paddingTop: 16, borderTop: '1px solid #dbe4f7' }}>{QUESTIONS.map((item, index) => <button key={item.id} onClick={() => goToQuestion(index)} style={{ height: 30, borderRadius: 8, border: `1px solid ${index === currentQuestion ? '#3a63ff' : answers[index] != null ? '#0ca678' : '#e3ebfa'}`, background: index === currentQuestion ? '#f2f6ff' : answers[index] != null ? '#f2f6ff' : '#fff', color: '#5a6a8f', fontSize: 12, fontWeight: 850, cursor: 'pointer' }}>{index + 1}</button>)}</div>
       </div>
     </div>
   );

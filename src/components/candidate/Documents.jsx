@@ -6,9 +6,9 @@ const docNavStyle = (active) => ({
   display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', borderRadius: 13,
   fontSize: 13.5, fontWeight: active ? 700 : 600, cursor: 'pointer', width: '100%',
   textAlign: 'left', border: 'none', fontFamily: 'inherit',
-  background: active ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : 'transparent',
-  color: active ? '#faf7f2' : '#5e688c',
-  boxShadow: active ? '0 10px 20px rgba(105,91,255,.32)' : 'none',
+  background: active ? 'linear-gradient(135deg,#3a63ff,#6d8cff)' : 'transparent',
+  color: active ? '#f2f6ff' : '#5a6a8f',
+  boxShadow: active ? '0 10px 20px rgba(58,99,255,.32)' : 'none',
 });
 
 function relativeTime(ts) {
@@ -110,14 +110,14 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
   ].filter(item => !(isUndergradVariant && item.key === 'gmat') && !(isUndergradVariant && item.key === 'narrative'));
 
   return (
-    <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#faf6ec' }}>
-      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#fffdf7', borderRadius: 24, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(60,72,130,.06)', overflow: 'hidden' }}>
+    <div className="pw-simulation-page" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '24px 28px 28px', background: '#f2f6ff' }}>
+      <div className="pw-doc-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '270px minmax(0, 1fr)', background: '#ffffff', borderRadius: 24, border: '1px solid #e3ebfa', boxShadow: '0 18px 40px rgba(30,45,90,.06)', overflow: 'hidden' }}>
         {/* Left nav */}
-        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #efe5cf', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#f6f1e8' }}>
-          <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e1e6f5' }}>
+        <div className="pw-sim-sidebar" style={{ borderRight: '1px solid #e3ebfa', display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#eef4ff' }}>
+          <div style={{ padding: '20px 16px 14px', borderBottom: '1px solid #e3ebfa' }}>
             {currentConfig?.docLabel && (
-              <div style={{ fontSize: 12, color: '#7e86a5', lineHeight: 1.5, marginBottom: 14 }}>
-                Simulation for this track: <span style={{ color: '#5b46e0', fontWeight: 700 }}>{currentConfig.docLabel}</span>
+              <div style={{ fontSize: 12, color: '#5a6a8f', lineHeight: 1.5, marginBottom: 14 }}>
+                Simulation for this track: <span style={{ color: '#3a63ff', fontWeight: 700 }}>{currentConfig.docLabel}</span>
               </div>
             )}
             <div className="pw-sim-nav" style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -130,27 +130,27 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
           </div>
           {/* Status panel */}
           <div className="pw-sim-status" style={{ padding: 18, flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#b2bad2', marginBottom: 14 }}>STATUS</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#97a3c0', marginBottom: 14 }}>STATUS</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#eafdf6' : '#f8fafc', border: `1px solid ${cvText ? '#a9eed1' : '#e1e6f5'}` }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: cvText ? '#e6faf3' : '#ffffff', border: `1px solid ${cvText ? '#b7ecd8' : '#e3ebfa'}` }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: cvText ? '#12b886' : '#c6d2ea', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>CV / Resume</div>
-                  <div style={{ fontSize: 12, color: '#9098b5' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111a33' }}>CV / Resume</div>
+                  <div style={{ fontSize: 12, color: '#8b97b8' }}>{cvText ? `${cvText.trim().split(/\s+/).length} words${cvFile ? ' + original file' : ''}` : 'Not uploaded'}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: essayText ? '#eafdf6' : '#f8fafc', border: `1px solid ${essayText ? '#a9eed1' : '#e1e6f5'}` }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: essayText ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: essayText ? '#e6faf3' : '#ffffff', border: `1px solid ${essayText ? '#b7ecd8' : '#e3ebfa'}` }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: essayText ? '#12b886' : '#c6d2ea', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>Personal Essay</div>
-                  <div style={{ fontSize: 12, color: '#9098b5' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111a33' }}>Personal Essay</div>
+                  <div style={{ fontSize: 12, color: '#8b97b8' }}>{essayText ? `${wordCount} words` : 'Not started'}</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: insights ? '#eafdf6' : '#f8fafc', border: `1px solid ${insights ? '#a9eed1' : '#e1e6f5'}` }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: insights ? '#3fdca9' : '#c7cce3', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 13, background: insights ? '#e6faf3' : '#ffffff', border: `1px solid ${insights ? '#b7ecd8' : '#e3ebfa'}` }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: insights ? '#12b886' : '#c6d2ea', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#141b34' }}>AI Insights</div>
-                  <div style={{ fontSize: 12, color: '#9098b5' }}>{insights ? `${insights.length} suggestions` : 'Submit essay to unlock'}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111a33' }}>AI Insights</div>
+                  <div style={{ fontSize: 12, color: '#8b97b8' }}>{insights ? `${insights.length} suggestions` : 'Submit essay to unlock'}</div>
                 </div>
               </div>
             </div>
@@ -159,37 +159,37 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
 
         <div className="pw-sim-mobile-status">
           <div className="pw-sim-mobile-stat">
-            <span style={{ background: cvText ? '#3fdca9' : '#c7cce3' }} />
+            <span style={{ background: cvText ? '#12b886' : '#c6d2ea' }} />
             <div><strong>CV</strong><small>{cvText ? `${cvText.trim().split(/\s+/).length} words` : 'Missing'}</small></div>
           </div>
           <div className="pw-sim-mobile-stat">
-            <span style={{ background: essayText ? '#3fdca9' : '#c7cce3' }} />
+            <span style={{ background: essayText ? '#12b886' : '#c6d2ea' }} />
             <div><strong>Essay</strong><small>{essayText ? `${wordCount} words` : 'Draft'}</small></div>
           </div>
           <div className="pw-sim-mobile-stat">
-            <span style={{ background: insights ? '#3fdca9' : '#c7cce3' }} />
+            <span style={{ background: insights ? '#12b886' : '#c6d2ea' }} />
             <div><strong>Insights</strong><small>{insights ? `${insights.length} items` : 'None'}</small></div>
           </div>
         </div>
 
         {/* Main content */}
-        <div className="pw-sim-main" style={{ background: '#faf6ec', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
+        <div className="pw-sim-main" style={{ background: '#f2f6ff', padding: 40, overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
           {docTab === 'editor' && (
-            <div className="pw-sim-editor-card" style={{ background: '#fffdf7', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(60,72,130,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #efe5cf' }}>
-              <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#aab2cc', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
+            <div className="pw-sim-editor-card" style={{ background: '#ffffff', maxWidth: 580, width: '100%', borderRadius: 20, boxShadow: '0 18px 40px rgba(30,45,90,.08)', padding: '44px 48px', minHeight: 600, border: '1px solid #e3ebfa' }}>
+              <div className="pw-sim-mode-label" style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#97a3c0', marginBottom: 28 }}>PATHWAY STRATEGIST REVIEW MODE</div>
 
               {savedSchools.length > 0 && (
                 <div style={{ marginBottom: 20 }}>
-                  <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>YOUR SCHOOLS</label>
+                  <label style={{ fontSize: 12, fontWeight: 800, color: '#8b97b8', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>YOUR SCHOOLS</label>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {savedSchools.map(school => (
                       <button key={school} onClick={() => selectEssaySchool(school)}
                         style={{
-                          background: essaySchool === school ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#fffdf7',
-                          color: essaySchool === school ? '#faf7f2' : '#141b34',
-                          border: essaySchool === school ? 'none' : '1.5px solid #efe5cf', borderRadius: 12, padding: '7px 14px',
+                          background: essaySchool === school ? 'linear-gradient(135deg,#3a63ff,#6d8cff)' : '#ffffff',
+                          color: essaySchool === school ? '#f2f6ff' : '#111a33',
+                          border: essaySchool === school ? 'none' : '1.5px solid #e3ebfa', borderRadius: 12, padding: '7px 14px',
                           fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                          boxShadow: essaySchool === school ? '0 8px 16px rgba(105,91,255,.3)' : 'none',
+                          boxShadow: essaySchool === school ? '0 8px 16px rgba(58,99,255,.3)' : 'none',
                         }}>
                         {school}{essays?.[school]?.text ? ' ✓' : ''}
                       </button>
@@ -199,32 +199,32 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               )}
 
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
+                <label style={{ fontSize: 12, fontWeight: 800, color: '#8b97b8', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>TARGET SCHOOL</label>
                 <input
                   value={essaySchool}
                   onChange={e => setEssaySchool(e.target.value)}
                   placeholder="e.g. Harvard Business School"
-                  style={{ width: '100%', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', background: '#fffdf7' }}
+                  style={{ width: '100%', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111a33', boxSizing: 'border-box', background: '#ffffff' }}
                 />
               </div>
 
               <div style={{ marginBottom: 20 }}>
-                <label style={{ fontSize: 12, fontWeight: 800, color: '#9098b5', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>ESSAY QUESTION</label>
+                <label style={{ fontSize: 12, fontWeight: 800, color: '#8b97b8', letterSpacing: '.6px', display: 'block', marginBottom: 8 }}>ESSAY QUESTION</label>
                 <textarea
                   value={essayQuestion}
                   onChange={e => setEssayQuestion(e.target.value)}
                   placeholder="Paste the exact essay prompt/question for this school…"
-                  style={{ width: '100%', minHeight: 60, border: '1.5px solid #efe5cf', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#141b34', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, background: '#fffdf7' }}
+                  style={{ width: '100%', minHeight: 60, border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '10px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', color: '#111a33', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.5, background: '#ffffff' }}
                 />
               </div>
 
               <div className="pw-sim-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
-                <h1 style={{ fontSize: 24, lineHeight: 1.2, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>
+                <h1 style={{ fontSize: 24, lineHeight: 1.2, fontWeight: 800, color: '#111a33', margin: 0, letterSpacing: '-.4px' }}>
                   Personal Statement{essaySchool ? `: ${essaySchool}` : ''}
                 </h1>
                 {essayText && (
                   <button onClick={saveEssayToDocuments}
-                      style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                      style={{ background: '#ffffff', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, color: '#3a63ff', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                     Save to Documents
                   </button>
                 )}
@@ -233,7 +233,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 <div className="pw-sim-mobile-ai-actions">
                   <div>
                     <strong>{wordCount} / 1000 words</strong>
-                    <div><span style={{ width: `${Math.min(essayPct, 100)}%`, background: wordCount > 1000 ? '#e384a5' : 'linear-gradient(90deg,#94b3fb,#b899fb)' }} /></div>
+                    <div><span style={{ width: `${Math.min(essayPct, 100)}%`, background: wordCount > 1000 ? '#f2789b' : 'linear-gradient(90deg,#3a63ff,#6d8cff)' }} /></div>
                   </div>
                   <button onClick={() => analyzeEssay()} disabled={busy}>Analyze</button>
                   <button onClick={() => rewriteEssay()} disabled={busy}>{busy ? 'Writing...' : 'Rewrite'}</button>
@@ -243,16 +243,16 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 <textarea
                   value={essayText}
                   onChange={e => setEssayText(e.target.value)}
-                  style={{ width: '100%', minHeight: 380, border: '1.5px solid #f1eadd', borderRadius: 14, padding: '16px', fontSize: 15, lineHeight: 1.8, color: '#33405e', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#f6f1e8' }}
+                  style={{ width: '100%', minHeight: 380, border: '1.5px solid #dbe4f7', borderRadius: 14, padding: '16px', fontSize: 15, lineHeight: 1.8, color: '#38456b', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#eef4ff' }}
                 />
               ) : (
-                <div style={{ minHeight: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e7dcc7', borderRadius: 14, padding: 32, textAlign: 'center' }}>
-                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ minHeight: 380, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e3ebfa', borderRadius: 14, padding: 32, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#8b97b8', marginBottom: 18, lineHeight: 1.6 }}>
                     Paste your personal statement or essay draft here to unlock AI analysis and rewriting.
                   </div>
                   <button
                     onClick={() => setEssayText(' ')}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '11px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Start Writing →
                   </button>
                 </div>
@@ -264,38 +264,38 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
             <div style={{ width: '100%', maxWidth: 680 }}>
               <div className="pw-sim-cv-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
-                  <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.4px' }}>My CV</h2>
-                  {cvFile && <div style={{ fontSize: 12, color: '#9098b5', marginTop: 4 }}>Original file saved: {cvFile.name}</div>}
+                  <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111a33', margin: 0, letterSpacing: '-.4px' }}>My CV</h2>
+                  {cvFile && <div style={{ fontSize: 12, color: '#8b97b8', marginTop: 4 }}>Original file saved: {cvFile.name}</div>}
                 </div>
                 {cvText ? (
                   <div className="pw-sim-actions" style={{ display: 'flex', gap: 10 }}>
                     {cvFile && (
                       <button onClick={downloadOriginalCv}
-                        style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: '#f2f6ff', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                         Original
                       </button>
                     )}
                     <button onClick={() => downloadAsPdf(cvText, 'my_cv')}
-                      style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ background: '#f2f6ff', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                       PDF
                     </button>
                     <button onClick={() => downloadAsDocx(cvText, 'my_cv')}
-                      style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      style={{ background: '#f2f6ff', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                       Word
                     </button>
                     {!editingCv ? (
                       <button onClick={() => { setEditingCv(true); setCvEdit(cvText); }}
-                        style={{ background: '#faf7f2', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: '#f2f6ff', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                         Edit
                       </button>
                     ) : (
                       <>
                         <button onClick={() => setEditingCv(false)}
-                          style={{ background: 'none', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#6b7392', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: 'none', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 600, color: '#5a6a8f', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Cancel
                         </button>
                         <button onClick={() => { setCvText(cvEdit); saveCvToDocuments(cvEdit); setEditingCv(false); showToast('CV saved.'); }}
-                          style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(105,91,255,.3)' }}>
+                          style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 12, padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(58,99,255,.3)' }}>
                           Save
                         </button>
                       </>
@@ -303,7 +303,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   </div>
                 ) : (
                   <button onClick={() => setShowCvModal(true)}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(105,91,255,.3)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(58,99,255,.3)' }}>
                     + Upload CV
                   </button>
                 )}
@@ -312,7 +312,7 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                 <>
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
                   <button onClick={() => saveCvToDocuments(cvText)}
-                    style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    style={{ background: '#ffffff', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, color: '#3a63ff', cursor: 'pointer', fontFamily: 'inherit' }}>
                     Save to Documents
                   </button>
                 </div>
@@ -320,32 +320,32 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   <textarea
                     value={cvEdit}
                     onChange={e => setCvEdit(e.target.value)}
-                    style={{ width: '100%', minHeight: 500, border: '1.5px solid #efe5cf', borderRadius: 14, padding: '20px', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.7, color: '#141b34', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#fffdf7' }}
+                    style={{ width: '100%', minHeight: 500, border: '1.5px solid #e3ebfa', borderRadius: 14, padding: '20px', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.7, color: '#111a33', resize: 'vertical', outline: 'none', boxSizing: 'border-box', background: '#ffffff' }}
                   />
                 ) : (
-                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#33405e', fontFamily: 'inherit', minHeight: 400, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+                  <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e3ebfa', padding: '28px 32px', whiteSpace: 'pre-wrap', fontSize: 14, lineHeight: 1.8, color: '#38456b', fontFamily: 'inherit', minHeight: 400, boxShadow: '0 18px 40px rgba(30,45,90,.06)' }}>
                     {cvText}
                   </div>
                 )}
                 </>
               ) : (
-                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ background: '#ffffff', borderRadius: 16, border: '2px dashed #e3ebfa', padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#8b97b8', marginBottom: 18, lineHeight: 1.6 }}>
                     No CV uploaded yet. Paste your CV to unlock profile analysis and personalized strategy.
                   </div>
                   <button onClick={() => setShowCvModal(true)}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Paste My CV →
                   </button>
                 </div>
               )}
 
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '40px 0 16px', letterSpacing: '-.4px' }}>My Essays</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111a33', margin: '40px 0 16px', letterSpacing: '-.4px' }}>My Essays</h2>
               {narrativeText && (
-                <div style={{ background: '#f1eadd', borderRadius: 12, padding: '12px 16px', marginBottom: 16, fontSize: 12.5, color: '#5e688c', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ background: '#dbe4f7', borderRadius: 12, padding: '12px 16px', marginBottom: 16, fontSize: 12.5, color: '#5a6a8f', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span>Based on your narrative: "{narrativeText.split(/(?<=[.!?])\s/)[0]}"…</span>
                   <button onClick={() => setDocTab('narrative')}
-                    style={{ background: 'none', border: 'none', color: '#5b46e0', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, padding: 0 }}>
+                    style={{ background: 'none', border: 'none', color: '#3a63ff', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, padding: 0 }}>
                     View full →
                   </button>
                 </div>
@@ -353,22 +353,22 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
               {savedSchools.filter(s => essays?.[s]?.text).length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {savedSchools.filter(s => essays?.[s]?.text).map(school => (
-                    <div className="pw-sim-list-row" key={school} style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
+                    <div className="pw-sim-list-row" key={school} style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e3ebfa', padding: '18px 22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 14 }}>
                       <div>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: '#141b34' }}>{school}</div>
-                        <div style={{ fontSize: 12, color: '#9098b5' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
+                        <div style={{ fontSize: 15, fontWeight: 700, color: '#111a33' }}>{school}</div>
+                        <div style={{ fontSize: 12, color: '#8b97b8' }}>{essays[school].text.trim().split(/\s+/).filter(Boolean).length} words</div>
                       </div>
                   <div className="pw-sim-actions" style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => selectEssaySchool(school)}
-                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#5b46e0', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#ffffff', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#3a63ff', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Open
                         </button>
                         <button onClick={() => downloadAsPdf(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
-                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#ffffff', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                           PDF
                         </button>
                         <button onClick={() => downloadAsDocx(essays[school].text, `essay_${school.replace(/[^a-z0-9]+/gi, '_')}`)}
-                          style={{ background: '#fffdf7', border: '1.5px solid #efe5cf', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+                          style={{ background: '#ffffff', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: '8px 14px', fontSize: 12.5, fontWeight: 700, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
                           Word
                         </button>
                       </div>
@@ -376,15 +376,15 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   ))}
                 </div>
               ) : (
-                <div style={{ fontSize: 13.5, color: '#9098b5' }}>No saved essays yet — write one in the Essay Editor tab.</div>
+                <div style={{ fontSize: 13.5, color: '#8b97b8' }}>No saved essays yet — write one in the Essay Editor tab.</div>
               )}
             </div>
           )}
 
           {docTab === 'interview' && (
             <div style={{ width: '100%', maxWidth: 680 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.4px' }}>Mock Interview</h2>
-              <p style={{ fontSize: 13.5, color: '#6b7392', margin: '0 0 24px', lineHeight: 1.55, fontWeight: 500 }}>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111a33', margin: '0 0 8px', letterSpacing: '-.4px' }}>Mock Interview</h2>
+              <p style={{ fontSize: 13.5, color: '#5a6a8f', margin: '0 0 24px', lineHeight: 1.55, fontWeight: 500 }}>
                 Run a realistic ~10-minute admissions interview in chat, school by school. Each one ends with a rating, feedback, and next steps.
               </p>
 
@@ -393,29 +393,29 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   {interviewSchools.map(school => {
                     const result = interviews?.[school];
                     return (
-                      <div key={school} style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: '20px 22px', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
+                      <div key={school} style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e3ebfa', padding: '20px 22px', boxShadow: '0 18px 40px rgba(30,45,90,.06)' }}>
                         <div className="pw-interview-school-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: result ? 10 : 4 }}>
-                          <div className="pw-interview-school-name" style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34' }}>{school}</div>
+                          <div className="pw-interview-school-name" style={{ fontSize: 15.5, fontWeight: 700, color: '#111a33' }}>{school}</div>
                           {result?.rating != null && (
-                            <div className="pw-interview-school-rating" style={{ fontSize: 13, fontWeight: 800, color: '#5b46e0' }}>{result.rating}/10</div>
+                            <div className="pw-interview-school-rating" style={{ fontSize: 13, fontWeight: 800, color: '#3a63ff' }}>{result.rating}/10</div>
                           )}
                         </div>
                         {result ? (
                           <>
-                            <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#33405e', marginBottom: result.nextSteps?.length ? 12 : 0 }}>{result.feedback}</div>
+                            <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#38456b', marginBottom: result.nextSteps?.length ? 12 : 0 }}>{result.feedback}</div>
                             {result.nextSteps?.length > 0 && (
-                              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: '#6b7392' }}>
+                              <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.7, color: '#5a6a8f' }}>
                                 {result.nextSteps.map((step, i) => <li key={i}>{step}</li>)}
                               </ul>
                             )}
                             <button onClick={() => startInterview(school)}
-                              style={{ marginTop: 14, background: 'none', border: '1.5px solid #f1eadd', color: '#5b46e0', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ marginTop: 14, background: 'none', border: '1.5px solid #dbe4f7', color: '#3a63ff', borderRadius: 12, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                               Redo Interview →
                             </button>
                           </>
                         ) : (
                           <button onClick={() => startInterview(school)}
-                            style={{ marginTop: 6, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(105,91,255,.3)' }}>
+                            style={{ marginTop: 6, background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 12, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 16px rgba(58,99,255,.3)' }}>
                             Start Mock Interview →
                           </button>
                         )}
@@ -424,12 +424,12 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
                   })}
                 </div>
               ) : (
-                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ background: '#ffffff', borderRadius: 16, border: '2px dashed #e3ebfa', padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#8b97b8', marginBottom: 18, lineHeight: 1.6 }}>
                     Choose your target schools in the chat first, then come back here to start a mock interview for each one.
                   </div>
                   <button onClick={() => setCandTab('advisor')}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Go to Chat →
                   </button>
                 </div>
@@ -441,33 +441,33 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
 
           {docTab === 'insights' && (
             <div style={{ width: '100%', maxWidth: 580 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 24px', letterSpacing: '-.4px' }}>AI Insights</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111a33', margin: '0 0 24px', letterSpacing: '-.4px' }}>AI Insights</h2>
               {insights && insights.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {insights.map((item, i) => (
                     <div key={i} style={{
-                      background: item.type === 'strength' ? '#eafdf6' : '#fff8ea',
-                      border: `1px solid ${item.type === 'strength' ? '#a9eed1' : '#ffe3a8'}`,
+                      background: item.type === 'strength' ? '#e6faf3' : '#ffffff',
+                      border: `1px solid ${item.type === 'strength' ? '#b7ecd8' : '#fff4e2'}`,
                       borderRadius: 14, padding: '16px 18px',
                     }}>
-                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: item.type === 'strength' ? '#3fdca9' : '#eaa129', marginBottom: 6, textTransform: 'uppercase' }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.5px', color: item.type === 'strength' ? '#12b886' : '#e08600', marginBottom: 6, textTransform: 'uppercase' }}>
                         {item.type === 'strength' ? '✓ Strength' : '→ Suggestion'}
                       </div>
-                      <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#33405e' }}>{item.text}</div>
+                      <div style={{ fontSize: 13.5, lineHeight: 1.6, color: '#38456b' }}>{item.text}</div>
                     </div>
                   ))}
                   <button onClick={() => analyzeEssay()} disabled={busy}
-                    style={{ marginTop: 8, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 14, padding: '14px', fontSize: 14, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.6 : 1, boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ marginTop: 8, background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 14, padding: '14px', fontSize: 14, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: busy ? 0.6 : 1, boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Re-analyze Essay
                   </button>
                 </div>
               ) : (
-                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ background: '#ffffff', borderRadius: 16, border: '2px dashed #e3ebfa', padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#8b97b8', marginBottom: 18, lineHeight: 1.6 }}>
                     Paste your essay in the Essay Editor, then click "Analyze with AI" to get specific, actionable feedback.
                   </div>
                   <button onClick={() => setDocTab('editor')}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Go to Essay Editor →
                   </button>
                 </div>
@@ -477,47 +477,47 @@ export default function Documents({ docTab, setDocTab, cvText, setCvText, cvFile
 
           {docTab === 'narrative' && (
             <div style={{ width: '100%', maxWidth: 640 }}>
-              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.4px' }}>Your Narrative</h2>
+              <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111a33', margin: '0 0 8px', letterSpacing: '-.4px' }}>Your Narrative</h2>
               {narrativeText ? (
                 editingNarrative ? (
-                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: 22 }}>
+                  <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e3ebfa', padding: 22 }}>
                     <textarea value={narrativeEdit} onChange={e => setNarrativeEdit(e.target.value)} rows={8}
-                      style={{ width: '100%', fontFamily: 'inherit', fontSize: 14, lineHeight: 1.6, color: '#33405e', border: '1.5px solid #efe5cf', borderRadius: 12, padding: 14, resize: 'vertical' }} />
-                    <div style={{ fontSize: 12, color: '#9098b5', marginTop: 6 }}>{narrativeEdit.trim().length} / {NARRATIVE_TEXT_MAX} characters (minimum {NARRATIVE_TEXT_MIN})</div>
+                      style={{ width: '100%', fontFamily: 'inherit', fontSize: 14, lineHeight: 1.6, color: '#38456b', border: '1.5px solid #e3ebfa', borderRadius: 12, padding: 14, resize: 'vertical' }} />
+                    <div style={{ fontSize: 12, color: '#8b97b8', marginTop: 6 }}>{narrativeEdit.trim().length} / {NARRATIVE_TEXT_MAX} characters (minimum {NARRATIVE_TEXT_MIN})</div>
                     <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
                       <button onClick={saveNarrativeEdit} disabled={savingNarrative}
-                        style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: savingNarrative ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: savingNarrative ? 0.6 : 1 }}>
+                        style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: savingNarrative ? 'not-allowed' : 'pointer', fontFamily: 'inherit', opacity: savingNarrative ? 0.6 : 1 }}>
                         {savingNarrative ? 'Saving…' : 'Save'}
                       </button>
                       <button onClick={() => setEditingNarrative(false)} disabled={savingNarrative}
-                        style={{ background: 'none', border: '1.5px solid #efe5cf', color: '#141b34', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: 'none', border: '1.5px solid #e3ebfa', color: '#111a33', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                         Cancel
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ background: '#fffdf7', borderRadius: 16, border: '1px solid #efe5cf', padding: 22, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-                    <div style={{ fontSize: 15, lineHeight: 1.75, color: '#33405e' }}>{narrativeText}</div>
-                    <div style={{ fontSize: 12, color: '#9098b5', marginTop: 16 }}>Updated {relativeTime(narrativeTextUpdatedAt) || 'recently'}</div>
+                  <div style={{ background: '#ffffff', borderRadius: 16, border: '1px solid #e3ebfa', padding: 22, boxShadow: '0 18px 40px rgba(30,45,90,.06)' }}>
+                    <div style={{ fontSize: 15, lineHeight: 1.75, color: '#38456b' }}>{narrativeText}</div>
+                    <div style={{ fontSize: 12, color: '#8b97b8', marginTop: 16 }}>Updated {relativeTime(narrativeTextUpdatedAt) || 'recently'}</div>
                     <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
                       <button onClick={refineNarrative}
-                        style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                         Refine →
                       </button>
                       <button onClick={() => { setNarrativeEdit(narrativeText); setEditingNarrative(true); }}
-                        style={{ background: 'none', border: '1.5px solid #efe5cf', color: '#141b34', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        style={{ background: 'none', border: '1.5px solid #e3ebfa', color: '#111a33', borderRadius: 12, padding: '10px 20px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                         Edit
                       </button>
                     </div>
                   </div>
                 )
               ) : (
-                <div style={{ background: '#fffdf7', borderRadius: 16, border: '2px dashed #e7dcc7', padding: 48, textAlign: 'center' }}>
-                  <div style={{ fontSize: 14.5, color: '#9098b5', marginBottom: 18, lineHeight: 1.6 }}>
+                <div style={{ background: '#ffffff', borderRadius: 16, border: '2px dashed #e3ebfa', padding: 48, textAlign: 'center' }}>
+                  <div style={{ fontSize: 14.5, color: '#8b97b8', marginBottom: 18, lineHeight: 1.6 }}>
                     Your narrative is written during coaching. Start a session in Advisor to build yours.
                   </div>
                   <button onClick={startCoachingFromChat}
-                    style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+                    style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '13px 26px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                     Start coaching →
                   </button>
                 </div>

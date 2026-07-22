@@ -4,16 +4,16 @@ import { getTrackConfig } from '../../trackConfig.js';
 import { getCandidateKpiDisplayItems } from '../../../lib/candidate-kpi-schemas.js';
 
 const BAR_COLORS = [
-  { from: '#2c3e63', to: '#141b34' }, // navy
-  { from: '#e3bc5e', to: '#5b46e0' }, // gold
-  { from: '#8ea2c9', to: '#5a7099' }, // slate blue
-  { from: '#d3c9a8', to: '#a89767' }, // parchment
-  { from: '#4a5b82', to: '#22304f' }, // deep slate
-  { from: '#c9a85c', to: '#96742a' }, // bronze
-  { from: '#aebde6', to: '#7688b8' }, // periwinkle
-  { from: '#38507a', to: '#1a2947' }, // midnight
-  { from: '#e8d29a', to: '#5b46e0' }, // champagne
-  { from: '#6d7f9e', to: '#42536f' }, // steel
+  { from: '#111a33', to: '#111a33' }, // navy
+  { from: '#f2a63b', to: '#3a63ff' }, // gold
+  { from: '#8b97b8', to: '#5a6a8f' }, // slate blue
+  { from: '#dbe4f7', to: '#e08600' }, // parchment
+  { from: '#38456b', to: '#111a33' }, // deep slate
+  { from: '#e08600', to: '#e08600' }, // bronze
+  { from: '#6d8cff', to: '#8b97b8' }, // periwinkle
+  { from: '#38456b', to: '#111a33' }, // midnight
+  { from: '#e08600', to: '#3a63ff' }, // champagne
+  { from: '#5a6a8f', to: '#38456b' }, // steel
 ];
 
 function ScoreBar({ score, title, last, color, incomplete = false, reason, missingPrompt }) {
@@ -21,15 +21,15 @@ function ScoreBar({ score, title, last, color, incomplete = false, reason, missi
   return (
     <div style={{ marginBottom: last ? 0 : 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#141b34' }}>{title}</span>
-        <span style={{ fontSize: incomplete ? 12 : 14.5, fontWeight: 700, color: incomplete ? '#9098b5' : '#141b34' }}>{incomplete ? 'Incomplete' : pct}</span>
+        <span style={{ fontSize: 14.5, fontWeight: 700, color: '#111a33' }}>{title}</span>
+        <span style={{ fontSize: incomplete ? 12 : 14.5, fontWeight: 700, color: incomplete ? '#8b97b8' : '#111a33' }}>{incomplete ? 'Incomplete' : pct}</span>
       </div>
       <div style={{
         height: 12,
         borderRadius: 10,
-        background: incomplete ? '#f2f4f9' : '#f1eadd',
-        border: incomplete ? '1px dashed #d8cdb4' : 'none',
-        boxShadow: 'inset 0 1px 3px rgba(60,72,130,.08)',
+        background: incomplete ? '#f2f6ff' : '#dbe4f7',
+        border: incomplete ? '1px dashed #97a3c0' : 'none',
+        boxShadow: 'inset 0 1px 3px rgba(30,45,90,.08)',
         overflow: 'hidden',
         position: 'relative',
       }}>
@@ -53,9 +53,9 @@ function ScoreBar({ score, title, last, color, incomplete = false, reason, missi
         </div>
       </div>
       {incomplete && (reason || missingPrompt) && (
-        <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.45, color: '#6b7392' }}>
+        <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.45, color: '#5a6a8f' }}>
           {reason && <div>{reason}</div>}
-          {missingPrompt && <div style={{ color: '#33405e', fontWeight: 700 }}>{missingPrompt}</div>}
+          {missingPrompt && <div style={{ color: '#38456b', fontWeight: 700 }}>{missingPrompt}</div>}
         </div>
       )}
     </div>
@@ -66,39 +66,39 @@ const TIERS = [
   {
     key: 'stretch',
     label: 'LOW FIT · <50%',
-    accent: '#e384a5',
-    bg: '#fff1f6',
-    border: '#ffd3e3',
+    accent: '#f2789b',
+    bg: '#ffe9ef',
+    border: '#ffe9ef',
   },
   {
     key: 'possible',
     label: 'WORKABLE FIT · 50-80%',
-    accent: '#eaa129',
-    bg: '#fff8ea',
-    border: '#ffe3a8',
+    accent: '#e08600',
+    bg: '#ffffff',
+    border: '#fff4e2',
   },
   {
     key: 'safe',
     label: 'STRONG FIT · >80%',
-    accent: '#3fdca9',
-    bg: '#eafdf6',
-    border: '#a9eed1',
+    accent: '#12b886',
+    bg: '#e6faf3',
+    border: '#b7ecd8',
   },
   {
     key: 'locked',
     label: 'PREREQUISITES',
-    accent: '#9098b5',
-    bg: '#f4f5f8',
-    border: '#dde0e8',
+    accent: '#8b97b8',
+    bg: '#f2f6ff',
+    border: '#e3ebfa',
   },
 ];
 
 const STATUS_COLORS = {
   'Not Eligible': '#c2410c',
-  'Below Baseline': '#e0457a',
-  Plausible: '#eaa129',
-  Competitive: '#4b8fea',
-  Strong: '#19a974',
+  'Below Baseline': '#e8476b',
+  Plausible: '#e08600',
+  Competitive: '#3a63ff',
+  Strong: '#0ca678',
 };
 
 const FIT_LABELS = {
@@ -122,19 +122,19 @@ function fitBucketLabel(school) {
 function fitBucketColor(school) {
   const tier = String(school?.tier || '').toLowerCase();
   const fit = Number(school?.fit);
-  if (tier === 'locked') return '#9098b5';
-  if (tier === 'safe' || fit > 80) return '#19a974';
-  if (tier === 'possible' || fit >= 50) return '#eaa129';
-  if (tier === 'stretch' || Number.isFinite(fit)) return '#e0457a';
-  return STATUS_COLORS[school?.admissionStatus] || '#6b7392';
+  if (tier === 'locked') return '#8b97b8';
+  if (tier === 'safe' || fit > 80) return '#0ca678';
+  if (tier === 'possible' || fit >= 50) return '#e08600';
+  if (tier === 'stretch' || Number.isFinite(fit)) return '#e8476b';
+  return STATUS_COLORS[school?.admissionStatus] || '#5a6a8f';
 }
 
 const SELECTIVITY_BADGES = {
-  'Ultra Competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  'Ultra competitive': { color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
-  Competitive: { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
-  'Highly competitive': { color: '#c56a12', bg: '#fff7ed', border: '#fed7aa' },
-  Accessible: { color: '#15935f', bg: '#ecfdf5', border: '#bbf7d0' },
+  'Ultra Competitive': { color: '#e8476b', bg: '#ffe9ef', border: '#ffd0dc' },
+  'Ultra competitive': { color: '#e8476b', bg: '#ffe9ef', border: '#ffd0dc' },
+  Competitive: { color: '#c2410c', bg: '#fff1e8', border: '#fff1e8' },
+  'Highly competitive': { color: '#c2410c', bg: '#fff1e8', border: '#fff1e8' },
+  Accessible: { color: '#0ca678', bg: '#f2f6ff', border: '#e6faf3' },
 };
 
 function displaySelectivityLabel(label) {
@@ -527,18 +527,18 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   if (!hasData) {
     return (
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 34px 34px' }}>
-        <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#fff', borderRadius: 20, border: '1px solid #f1eadd', boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-          <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>
+        <div style={{ textAlign: 'center', maxWidth: 440, padding: '52px 36px', background: '#fff', borderRadius: 20, border: '1px solid #dbe4f7', boxShadow: '0 18px 40px rgba(30,45,90,.06)' }}>
+          <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 3px 10px rgba(58,99,255,.4)' }}>
             <svg viewBox="0 0 24 24" width="32" height="32" style={{ fill: 'none', stroke: '#fff', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M3 3v18h18" /><path d="m7 14 4-4 3 3 5-6" />
             </svg>
           </div>
-          <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 28, fontWeight: 700, color: '#141b34', margin: '0 0 14px' }}>Analysis Not Yet Available</h2>
-          <p style={{ fontSize: 14.5, color: '#6b7392', lineHeight: 1.65, margin: '0 0 28px' }}>
+          <h2 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 28, fontWeight: 700, color: '#111a33', margin: '0 0 14px' }}>Analysis Not Yet Available</h2>
+          <p style={{ fontSize: 14.5, color: '#5a6a8f', lineHeight: 1.65, margin: '0 0 28px' }}>
             Your competitiveness analysis will appear here once the advisor has enough information about your profile. Paste your CV or answer a few questions to get started.
           </p>
           <button onClick={() => setCandTab('advisor')}
-            style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>
+            style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', border: 'none', borderRadius: 999, padding: '12px 22px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(58,99,255,.4)' }}>
             Go to Advisor →
           </button>
         </div>
@@ -558,24 +558,24 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
   const tierOrder = hasAnyUnlockedPrograms ? ['stretch', 'possible', 'safe', 'locked'] : ['locked', 'stretch', 'possible', 'safe'];
 
   return (
-    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#faf6ec' }}>
+    <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', background: '#f2f6ff' }}>
       <div className="pw-analysis-page" style={{ maxWidth: 1020, margin: '0 auto', padding: '24px 34px 64px' }}>
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 20, padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#fffdf7,#fff8ea)', border: '1px solid #efe5cf', boxShadow: '0 16px 32px rgba(22,35,63,.06)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 24, flexWrap: 'wrap', marginBottom: 20, padding: '18px 22px', borderRadius: 20, background: 'linear-gradient(135deg,#ffffff,#ffffff)', border: '1px solid #e3ebfa', boxShadow: '0 16px 32px rgba(30,45,90,.06)' }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
-            <h1 style={{ fontFamily: "'Newsreader',serif", fontSize: 40, lineHeight: 1.08, fontWeight: 800, color: '#141b34', margin: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#3a63ff', marginBottom: 10 }}>CANDIDATE OVERVIEW</div>
+            <h1 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 40, lineHeight: 1.08, fontWeight: 800, color: '#111a33', margin: 0 }}>
               {profile?.name ? `${profile.name}'s` : 'Your'} Competitiveness
             </h1>
             {profile && (
-              <div style={{ marginTop: 12, fontSize: 13.5, color: '#6b7392', fontWeight: 500 }}>
+              <div style={{ marginTop: 12, fontSize: 13.5, color: '#5a6a8f', fontWeight: 500 }}>
                 {[profile.degree, profile.gpa && `GPA ${profile.gpa}`, profile.gmat && `Test/portfolio ${profile.gmat}`, profile.experience].filter(Boolean).join(' · ')}
               </div>
             )}
             {savedTargets.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
                 {savedTargets.map(school => (
-                  <span key={school} style={{ background: '#eef7f3', color: '#25785d', border: '1px solid #cfe9df', borderRadius: 999, padding: '6px 10px', fontSize: 12, fontWeight: 800 }}>
+                  <span key={school} style={{ background: '#f2f6ff', color: '#0ca678', border: '1px solid #dbe4f7', borderRadius: 999, padding: '6px 10px', fontSize: 12, fontWeight: 800 }}>
                     {school}
                   </span>
                 ))}
@@ -587,14 +587,14 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               title="Refresh analysis using the latest chat details"
               style={{
                 background: busy
-                  ? 'linear-gradient(135deg,#e7dcc7,#c8cfdf)'
-                  : 'linear-gradient(135deg,#141b34,#2c3e63)',
+                  ? 'linear-gradient(135deg,#e3ebfa,#c6d2ea)'
+                  : 'linear-gradient(135deg,#111a33,#111a33)',
                 border: '1px solid rgba(255,255,255,.55)',
                 borderRadius: 999,
                 padding: '11px 18px',
                 fontSize: 13.5,
                 fontWeight: 800,
-                color: busy ? '#788198' : '#fff',
+                color: busy ? '#5a6a8f' : '#fff',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit',
                 display: 'flex',
@@ -602,7 +602,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 gap: 8,
                 boxShadow: busy
                   ? 'inset 0 1px 0 rgba(255,255,255,.35)'
-                  : '0 12px 24px rgba(217,166,44,.28), inset 0 1px 0 rgba(255,255,255,.72)',
+                  : '0 12px 24px rgba(255,95,90,.28), inset 0 1px 0 rgba(255,255,255,.72)',
                 opacity: busy ? 0.7 : 1,
               }}>
               <svg viewBox="0 0 24 24" width="15" height="15" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
@@ -614,11 +614,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               {busy ? 'Refreshing...' : 'Refresh Analysis'}
             </button>
             <button onClick={() => setCandTab('documents')}
-              style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ background: '#fff', border: '1px solid #e3ebfa', borderRadius: 10, padding: '12px 18px', fontSize: 13.5, fontWeight: 700, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit' }}>
               Strengthen My CV
             </button>
             <button onClick={() => setCandTab('advisor')}
-              style={{ background: '#5b46e0', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(184,144,47,.26)' }}>
+              style={{ background: '#3a63ff', border: 'none', borderRadius: 10, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(255,95,90,.26)' }}>
               Ask Advisor
             </button>
           </div>
@@ -628,12 +628,12 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         <div style={{
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg,#fff8de,#f5c94c 52%,#d8a326)',
+          background: 'linear-gradient(135deg,#fff4e2,#f2a63b 52%,#e08600)',
           border: '1px solid rgba(255,255,255,.7)',
           borderRadius: 20,
           padding: '18px 22px',
           marginBottom: 24,
-          boxShadow: '0 16px 32px rgba(217,166,44,.24), inset 0 1px 0 rgba(255,255,255,.7)',
+          boxShadow: '0 16px 32px rgba(255,95,90,.24), inset 0 1px 0 rgba(255,255,255,.7)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -643,8 +643,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
           <div style={{ position: 'absolute', top: -28, right: 24, width: 82, height: 82, borderRadius: '50%', background: 'rgba(255,255,255,.24)' }} />
           <div style={{ position: 'absolute', bottom: -34, left: -18, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,.16)' }} />
           <div style={{ position: 'relative', minWidth: 220 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '1px', color: '#70510a', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#3d2d08' }}>Refresh scores and school matches with new info.</div>
+            <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '1px', color: '#e08600', marginBottom: 5 }}>LATEST CHAT UPDATE</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#e08600' }}>Refresh scores and school matches with new info.</div>
           </div>
           <button onClick={refreshAnalysis} disabled={busy}
             style={{
@@ -655,13 +655,13 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
               padding: '12px 20px',
               fontSize: 13.5,
               fontWeight: 900,
-              color: busy ? '#8d7b50' : '#4b3708',
+              color: busy ? '#e08600' : '#e08600',
               cursor: busy ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit',
               display: 'flex',
               alignItems: 'center',
               gap: 9,
-              boxShadow: '0 10px 20px rgba(85,58,4,.16), inset 0 1px 0 rgba(255,255,255,.8)',
+              boxShadow: '0 10px 20px rgba(196,110,20,.16), inset 0 1px 0 rgba(255,255,255,.8)',
             }}>
             <svg viewBox="0 0 24 24" width="16" height="16" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
               <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16" />
@@ -675,11 +675,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
         {/* Overall score banner */}
         {scores?.overall != null && (
-          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#474d80,#6d5cc2)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(40,30,90,.28)' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', background: 'linear-gradient(135deg,#111a33,#3a63ff)', borderRadius: 20, padding: '24px 28px', marginBottom: 24, boxShadow: '0 16px 30px rgba(30,45,90,.28)' }}>
             <div style={{ position: 'absolute', top: -30, right: -20, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,.08)' }} />
             <div style={{ position: 'relative' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#d9cbb3', marginBottom: 6 }}>OVERALL COMPETITIVENESS SCORE</div>
-              <div style={{ fontFamily: "'Newsreader',serif", fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-1px' }}>{scores.overall}<span style={{ fontSize: 18, color: '#d9cbb3', fontWeight: 600 }}>/100</span></div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: '#dbe4f7', marginBottom: 6 }}>OVERALL COMPETITIVENESS SCORE</div>
+              <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 42, fontWeight: 700, color: '#fff', letterSpacing: '-1px' }}>{scores.overall}<span style={{ fontSize: 18, color: '#dbe4f7', fontWeight: 600 }}>/100</span></div>
             </div>
           </div>
         )}
@@ -688,8 +688,8 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
             no scores yet should not show a wall of "incomplete" bars. */}
         {scores && (
           <>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
-            <div style={{ background: '#fffdf7', borderRadius: 20, padding: '28px 26px', border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)', marginBottom: 24 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#3a63ff', marginBottom: 10 }}>PROFILE BREAKDOWN · {scoreItems.length} KPIs</div>
+            <div style={{ background: '#ffffff', borderRadius: 20, padding: '28px 26px', border: '1px solid #e3ebfa', boxShadow: '0 18px 40px rgba(30,45,90,.05)', marginBottom: 24 }}>
               {scoreItems.map((item, i) => (
                 <ScoreBar
                   key={item.key}
@@ -710,32 +710,32 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {(displayStrengths.length > 0 || displayWeaknesses.length > 0) && (
           <div className="pw-analysis-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18, marginBottom: 40 }}>
             {displayStrengths.length > 0 && (
-              <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#eafdf6', color: '#19c08a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
-                  <h3 style={{ fontFamily: "'Newsreader',serif", fontSize: 20, fontWeight: 700, color: '#141b34', margin: 0 }}>Core Strengths</h3>
+              <div style={{ background: '#ffffff', borderRadius: 20, padding: 28, border: '1px solid #e3ebfa', boxShadow: '0 18px 40px rgba(30,45,90,.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e3ebfa', paddingBottom: 14, marginBottom: 18 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#e6faf3', color: '#0ca678', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>★</span>
+                  <h3 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 20, fontWeight: 700, color: '#111a33', margin: 0 }}>Core Strengths</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {displayStrengths.map((s, i) => (
                     <div key={i} style={{ display: 'flex', gap: 12 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#3fdca9', marginTop: 6, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.55 }}>{s}</div>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#12b886', marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13.5, color: '#38456b', lineHeight: 1.55 }}>{s}</div>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             {displayWeaknesses.length > 0 && (
-              <div style={{ background: '#fffdf7', borderRadius: 20, padding: 28, border: '1px solid #efe5cf', boxShadow: '0 18px 40px rgba(22,35,63,.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #efe5cf', paddingBottom: 14, marginBottom: 18 }}>
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#fff1f6', color: '#e0457a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
-                  <h3 style={{ fontFamily: "'Newsreader',serif", fontSize: 20, fontWeight: 700, color: '#141b34', margin: 0 }}>Growth Areas</h3>
+              <div style={{ background: '#ffffff', borderRadius: 20, padding: 28, border: '1px solid #e3ebfa', boxShadow: '0 18px 40px rgba(30,45,90,.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, borderBottom: '1px solid #e3ebfa', paddingBottom: 14, marginBottom: 18 }}>
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#ffe9ef', color: '#e8476b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>◷</span>
+                  <h3 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 20, fontWeight: 700, color: '#111a33', margin: 0 }}>Growth Areas</h3>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {displayWeaknesses.map((w, i) => (
                     <div key={i} style={{ display: 'flex', gap: 12 }}>
-                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e384a5', marginTop: 6, flexShrink: 0 }} />
-                      <div style={{ fontSize: 13.5, color: '#33405e', lineHeight: 1.55 }}>{w}</div>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#f2789b', marginTop: 6, flexShrink: 0 }} />
+                      <div style={{ fontSize: 13.5, color: '#38456b', lineHeight: 1.55 }}>{w}</div>
                     </div>
                   ))}
                 </div>
@@ -747,11 +747,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {/* Strategic School Portfolio */}
         {displayPrograms.length > 0 && (
           <>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#5b46e0', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.4px', color: '#3a63ff', marginBottom: 10 }}>PORTFOLIO OPTIMIZATION</div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
-              <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 32, fontWeight: 800, color: '#141b34', margin: 0 }}>Strategic School Portfolio</h2>
+              <h2 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 32, fontWeight: 800, color: '#111a33', margin: 0 }}>Strategic School Portfolio</h2>
             </div>
-            <p style={{ fontSize: 13.5, color: '#6b7392', margin: '0 0 24px', fontWeight: 500 }}>
+            <p style={{ fontSize: 13.5, color: '#5a6a8f', margin: '0 0 24px', fontWeight: 500 }}>
               {savedTargets.length > 0 ? 'Your target schools are saved here. You can adjust them anytime.' : 'Tap the schools that excite you most, then send your picks straight to your advisor.'}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
@@ -760,14 +760,14 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 const schools = displayPrograms.filter(p => p.tier === tier.key);
                 if (schools.length === 0) return null;
                 return (
-                  <div key={tier.key} style={{ background: tier.bg, border: `1px solid ${tier.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 12px 28px rgba(22,35,63,.05)' }}>
+                  <div key={tier.key} style={{ background: tier.bg, border: `1px solid ${tier.border}`, borderRadius: 18, overflow: 'hidden', boxShadow: '0 12px 28px rgba(30,45,90,.05)' }}>
                     {/* Tier header */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '15px 22px', borderBottom: `1px solid ${tier.border}` }}>
                       <span style={{ width: 9, height: 9, borderRadius: '50%', background: tier.accent, flexShrink: 0, display: 'inline-block' }} />
                       <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1.2px', color: tier.accent }}>{tier.label}</span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: '#9098b5', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: '#8b97b8', marginLeft: 4 }}>{schools.length} {schools.length === 1 ? 'school' : 'schools'}</span>
                       {tier.key === 'locked' && (
-                        <span style={{ fontSize: 12, fontStyle: 'italic', color: '#9098b5', marginLeft: 6 }}>Significant metric gaps — can still be selected.</span>
+                        <span style={{ fontSize: 12, fontStyle: 'italic', color: '#8b97b8', marginLeft: 6 }}>Significant metric gaps — can still be selected.</span>
                       )}
                     </div>
                     {/* School rows */}
@@ -809,7 +809,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                               tabIndex={-1}
                               style={{
                                 width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                                border: isSelected ? `2px solid ${tier.accent}` : '2px solid #e7dcc7',
+                                border: isSelected ? `2px solid ${tier.accent}` : '2px solid #e3ebfa',
                                 background: isSelected ? tier.accent : '#fff',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 transition: 'all 0.15s ease',
@@ -823,7 +823,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
                             <div className="pw-school-info" style={{ flex: 1, minWidth: 0 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-                                <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#9098b5' : '#141b34' }}>
+                                <div style={{ fontSize: 14.5, fontWeight: 700, color: isLocked ? '#8b97b8' : '#111a33' }}>
                                   {school.name}
                                 </div>
                                 {(school.admissionStatus || school.tier || school.fit != null) && (
@@ -841,7 +841,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                                 })()}
                               </div>
                               {(school.location || school.programGroup) && (
-                                <div style={{ fontSize: 12, color: '#6b7392', fontWeight: 500 }}>
+                                <div style={{ fontSize: 12, color: '#5a6a8f', fontWeight: 500 }}>
                                   {[school.location, school.programGroup].filter(Boolean).join(' · ')}
                                 </div>
                               )}
@@ -850,26 +850,26 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                             <div className="pw-school-stats" style={{ display: 'flex', alignItems: 'center', gap: 18, flexShrink: 0 }}>
                               {admitRate && (
                                 <div style={{ textAlign: 'center' }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{admitRate}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>ADMIT RATE</div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#38456b' }}>{admitRate}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8b97b8', marginTop: 1 }}>ADMIT RATE</div>
                                 </div>
                               )}
                               {testMetric && (
                                 <div style={{ textAlign: 'center' }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{testMetric.value}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>{testMetric.label}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#38456b' }}>{testMetric.value}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8b97b8', marginTop: 1 }}>{testMetric.label}</div>
                                 </div>
                               )}
                               {school.avgGPA != null && (
                                 <div style={{ textAlign: 'center' }}>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#33405e' }}>{school.avgGPA}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 1 }}>AVG GPA</div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#38456b' }}>{school.avgGPA}</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8b97b8', marginTop: 1 }}>AVG GPA</div>
                                 </div>
                               )}
                               {school.fit != null && (
                                 <div style={{ textAlign: 'center' }}>
                                   <div style={{ fontSize: 20, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>{isLocked ? '—' : `${school.fit}%`}</div>
-                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                                  <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.5px', color: '#8b97b8', marginTop: 3 }}>FIT INDEX</div>
                                 </div>
                               )}
                               <div style={{ width: 24, textAlign: 'center', fontSize: 18, fontWeight: 800, color: tier.accent, lineHeight: 1 }}>
@@ -880,7 +880,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
 
                           {isExpanded && (
                             <div style={{ padding: '10px 22px 18px 58px' }}>
-                              <div style={{ fontSize: 12.5, color: '#33405e', lineHeight: 1.55, maxWidth: 760 }}>
+                              <div style={{ fontSize: 12.5, color: '#38456b', lineHeight: 1.55, maxWidth: 760 }}>
                                 {buildAccordionSummary(school, profile)}
                               </div>
                             </div>
@@ -899,16 +899,16 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         {selected.length > 0 && <div style={{ height: 88 }} />}
 
         {!displayPrograms.length && scores && (
-          <div style={{ background: '#fffdf7', border: '1px dashed #d3c9a8', borderRadius: 16, padding: 32, textAlign: 'center' }}>
-            <div style={{ fontSize: 14.5, color: '#6b7392', marginBottom: 16, fontWeight: 500 }}>School recommendations will appear here after your advisor completes the Programs step.</div>
+          <div style={{ background: '#ffffff', border: '1px dashed #dbe4f7', borderRadius: 16, padding: 32, textAlign: 'center' }}>
+            <div style={{ fontSize: 14.5, color: '#5a6a8f', marginBottom: 16, fontWeight: 500 }}>School recommendations will appear here after your advisor completes the Programs step.</div>
             <button onClick={() => setCandTab('advisor')}
-              style={{ background: '#141b34', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(22,35,63,.26)' }}>
+              style={{ background: '#111a33', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(30,45,90,.26)' }}>
               Continue with Advisor →
             </button>
           </div>
         )}
 
-        <div style={{ borderTop: '1px solid #edf0f9', marginTop: 40, paddingTop: 24, fontSize: 12.5, color: '#9098b5', textAlign: 'center', fontWeight: 500 }}>
+        <div style={{ borderTop: '1px solid #f2f6ff', marginTop: 40, paddingTop: 24, fontSize: 12.5, color: '#8b97b8', textAlign: 'center', fontWeight: 500 }}>
           © 2024 Pathway Admissions Strategic Advisors. All rights reserved.
         </div>
       </div>
@@ -921,11 +921,11 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
         }}>
           <div className="pw-analysis-sticky-bar" style={{
             margin: '0 auto 18px', maxWidth: 620, width: 'calc(100% - 32px)',
-            background: '#141b34', borderRadius: 14, padding: '14px 20px',
+            background: '#111a33', borderRadius: 14, padding: '14px 20px',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-            boxShadow: '0 16px 34px rgba(15,26,48,.35)',
+            boxShadow: '0 16px 34px rgba(17,26,51,.35)',
           }}>
-            <div style={{ color: '#eef2fa', fontSize: 13.5, fontWeight: 600, minWidth: 0 }}>
+            <div style={{ color: '#f2f6ff', fontSize: 13.5, fontWeight: 600, minWidth: 0 }}>
               <span style={{ fontWeight: 800, fontSize: 17, marginRight: 8 }}>{selected.length}</span>
               {selected.length === 1 ? 'school selected' : 'schools selected'}
             </div>
@@ -935,7 +935,7 @@ export default function Analysis({ setCandTab, scores, strengths, weaknesses, pr
                 Clear
               </button>
               <button onClick={confirmSelection} disabled={busy}
-                style={{ background: '#f5c94c', border: 'none', color: '#42320a', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                style={{ background: '#f2a63b', border: 'none', color: '#e08600', borderRadius: 9, padding: '10px 18px', fontSize: 13, fontWeight: 700, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? .6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                 {busy ? 'Confirming…' : 'Back to Chat with Picks →'}
               </button>
             </div>

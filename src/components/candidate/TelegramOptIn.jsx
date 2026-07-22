@@ -155,11 +155,11 @@ export default function TelegramOptIn({ user, onSave, disabled = false }) {
 
 const styles = {
   card: {
-    border: '1px solid #e0e0e0',
+    border: '1px solid #e3ebfa',
     borderRadius: '8px',
     padding: '20px',
     marginBottom: '20px',
-    backgroundColor: '#fafafa',
+    backgroundColor: '#ffffff',
   },
   heading: {
     fontSize: '18px',
@@ -193,7 +193,7 @@ const styles = {
   form: {
     marginTop: '16px',
     paddingTop: '16px',
-    borderTop: '1px solid #e0e0e0',
+    borderTop: '1px solid #e3ebfa',
   },
   formGroup: {
     marginBottom: '16px',
@@ -224,7 +224,7 @@ const styles = {
   button: {
     display: 'inline-block',
     padding: '10px 20px',
-    backgroundColor: '#007bff',
+    backgroundColor: '#2f52e6',
     color: '#fff',
     border: 'none',
     borderRadius: '4px',
@@ -235,12 +235,12 @@ const styles = {
   },
   error: {
     fontSize: '14px',
-    color: '#d32f2f',
+    color: '#e8476b',
     marginBottom: '12px',
   },
   success: {
     fontSize: '14px',
-    color: '#388e3c',
+    color: '#0ca678',
     marginBottom: '12px',
   },
   timestamp: {

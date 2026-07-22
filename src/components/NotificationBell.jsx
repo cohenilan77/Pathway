@@ -4,20 +4,20 @@ const defaultButtonStyle = {
   width: 42,
   height: 42,
   borderRadius: 13,
-  border: '1.5px solid #f1eadd',
-  background: '#faf7f2',
+  border: '1.5px solid #dbe4f7',
+  background: '#f2f6ff',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
   cursor: 'pointer',
-  color: '#6b7392',
+  color: '#5a6a8f',
   position: 'relative',
 };
 
 function priorityColor(priority) {
-  if (priority === 'high') return '#e0457a';
-  if (priority === 'medium') return '#eaa129';
-  return '#5b46e0';
+  if (priority === 'high') return '#e8476b';
+  if (priority === 'medium') return '#e08600';
+  return '#3a63ff';
 }
 
 export default function NotificationBell({ alerts = [], storageKey = 'pathway_alerts', title = 'Alerts', buttonStyle }) {
@@ -60,7 +60,7 @@ export default function NotificationBell({ alerts = [], storageKey = 'pathway_al
         {unreadCount > 0 && (
           <span style={{
             position: 'absolute', top: 7, right: 8, minWidth: 16, height: 16, padding: '0 4px',
-            borderRadius: 999, background: '#e0457a', color: '#fff', border: '2px solid #faf7f2',
+            borderRadius: 999, background: '#e8476b', color: '#fff', border: '2px solid #f2f6ff',
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800,
             lineHeight: 1,
           }}>
@@ -71,36 +71,36 @@ export default function NotificationBell({ alerts = [], storageKey = 'pathway_al
       {open && (
         <div style={{
           position: 'absolute', right: 0, top: 50, width: 340, maxWidth: 'calc(100vw - 32px)',
-          background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 18,
-          boxShadow: '0 24px 70px rgba(40,30,90,.18)', zIndex: 80, overflow: 'hidden',
+          background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 18,
+          boxShadow: '0 24px 70px rgba(30,45,90,.18)', zIndex: 80, overflow: 'hidden',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #f1eadd' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid #dbe4f7' }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#141b34' }}>{title}</div>
-              <div style={{ fontSize: 12, color: '#9098b5', marginTop: 2 }}>{unreadCount ? `${unreadCount} unread` : 'All caught up'}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#111a33' }}>{title}</div>
+              <div style={{ fontSize: 12, color: '#8b97b8', marginTop: 2 }}>{unreadCount ? `${unreadCount} unread` : 'All caught up'}</div>
             </div>
             {!!items.length && (
-              <button onClick={markAllRead} style={{ border: 'none', background: '#f6f1e8', color: '#5b46e0', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={markAllRead} style={{ border: 'none', background: '#eef4ff', color: '#3a63ff', borderRadius: 9, padding: '7px 10px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Mark all read
               </button>
             )}
           </div>
           <div style={{ maxHeight: 360, overflowY: 'auto', padding: 8 }}>
             {!items.length ? (
-              <div style={{ padding: 22, textAlign: 'center', color: '#9098b5', fontSize: 13 }}>No alerts yet.</div>
+              <div style={{ padding: 22, textAlign: 'center', color: '#8b97b8', fontSize: 13 }}>No alerts yet.</div>
             ) : items.map(item => {
               const unread = !readIds.has(item.id);
               return (
                 <button key={item.id} onClick={() => markRead(item.id)} style={{
-                  width: '100%', border: 'none', background: unread ? '#fff8ea' : 'transparent',
+                  width: '100%', border: 'none', background: unread ? '#ffffff' : 'transparent',
                   borderRadius: 12, padding: '11px 12px', display: 'flex', gap: 10, textAlign: 'left',
                   cursor: 'pointer', fontFamily: 'inherit', marginBottom: 4,
                 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: unread ? priorityColor(item.priority) : '#d8dfeb', flexShrink: 0, marginTop: 6 }} />
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: unread ? priorityColor(item.priority) : '#dbe4f7', flexShrink: 0, marginTop: 6 }} />
                   <span style={{ minWidth: 0 }}>
-                    <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#141b34', lineHeight: 1.25 }}>{item.title}</span>
-                    {item.message && <span style={{ display: 'block', fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, marginTop: 3 }}>{item.message}</span>}
-                    {item.createdAt && <span style={{ display: 'block', fontSize: 12, color: '#aab2cc', marginTop: 5 }}>{new Date(item.createdAt).toLocaleString()}</span>}
+                    <span style={{ display: 'block', fontSize: 13, fontWeight: 800, color: '#111a33', lineHeight: 1.25 }}>{item.title}</span>
+                    {item.message && <span style={{ display: 'block', fontSize: 12.5, color: '#5a6a8f', lineHeight: 1.45, marginTop: 3 }}>{item.message}</span>}
+                    {item.createdAt && <span style={{ display: 'block', fontSize: 12, color: '#97a3c0', marginTop: 5 }}>{new Date(item.createdAt).toLocaleString()}</span>}
                   </span>
                 </button>
               );

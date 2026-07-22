@@ -23,25 +23,25 @@ function PackagesPanel({ plan, setPlan, setShowContactModal, showToast }) {
   };
 
   return (
-    <div className="pw-livechat-packages" style={{ padding: '18px 28px 28px', borderTop: '1px solid #f1eadd', flexShrink: 0 }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase', marginBottom: 12 }}>Plans &amp; packages</div>
+    <div className="pw-livechat-packages" style={{ padding: '18px 28px 28px', borderTop: '1px solid #dbe4f7', flexShrink: 0 }}>
+      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#8b97b8', textTransform: 'uppercase', marginBottom: 12 }}>Plans &amp; packages</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
         {PLAN_DETAILS.map(p => {
           const active = plan === p.key;
           return (
-            <div key={p.key} style={{ background: '#fffdf7', border: active ? '2px solid #5b46e0' : '1px solid #efe7d4', borderRadius: 16, padding: 16 }}>
+            <div key={p.key} style={{ background: '#ffffff', border: active ? '2px solid #3a63ff' : '1px solid #e3ebfa', borderRadius: 16, padding: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#141b34' }}>{p.label}</div>
-                {active && <span style={{ fontSize: 11, fontWeight: 800, color: '#5b46e0', background: '#eef1ff', borderRadius: 999, padding: '3px 9px' }}>Current</span>}
+                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#111a33' }}>{p.label}</div>
+                {active && <span style={{ fontSize: 11, fontWeight: 800, color: '#3a63ff', background: '#eef1ff', borderRadius: 999, padding: '3px 9px' }}>Current</span>}
               </div>
-              <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 14 }}>{p.description}</div>
+              <div style={{ fontSize: 12.5, color: '#5a6a8f', lineHeight: 1.5, marginBottom: 14 }}>{p.description}</div>
               <button
                 onClick={() => handleSelectPlan(p.key)}
                 disabled={active}
                 style={{
                   width: '100%', border: 'none', borderRadius: 999, padding: '9px 0', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
-                  color: active ? '#9098b5' : '#fff',
-                  background: active ? '#f1eadd' : 'linear-gradient(135deg,#94b3fb,#b899fb)',
+                  color: active ? '#8b97b8' : '#fff',
+                  background: active ? '#dbe4f7' : 'linear-gradient(135deg,#3a63ff,#6d8cff)',
                   cursor: active ? 'default' : 'pointer',
                 }}
               >

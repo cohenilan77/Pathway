@@ -9,7 +9,7 @@ import React from 'react';
 export default function WorkspaceHub({ tabs, activeKey, onSelect, children }) {
   return (
     <div className="pw-workspace-hub" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div className="pw-workspace-tabs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '0 28px 14px', borderBottom: '1px solid #f1eadd', flexShrink: 0 }}>
+      <div className="pw-workspace-tabs" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '0 28px 14px', borderBottom: '1px solid #dbe4f7', flexShrink: 0 }}>
         {tabs.map(([key, label]) => {
           const active = activeKey === key;
           return (
@@ -18,9 +18,9 @@ export default function WorkspaceHub({ tabs, activeKey, onSelect, children }) {
               onClick={() => onSelect(key)}
               style={{
                 border: 'none', borderRadius: 999, padding: '8px 16px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                background: active ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : 'transparent',
-                color: active ? '#fff' : '#6b7392',
-                boxShadow: active ? '0 3px 10px rgba(148,153,251,.35)' : 'none',
+                background: active ? 'linear-gradient(135deg,#3a63ff,#6d8cff)' : 'transparent',
+                color: active ? '#fff' : '#5a6a8f',
+                boxShadow: active ? '0 3px 10px rgba(58,99,255,.35)' : 'none',
               }}
             >
               {label}

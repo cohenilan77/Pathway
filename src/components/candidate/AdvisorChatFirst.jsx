@@ -25,7 +25,7 @@ const NARRATIVE_START = "Your targets are locked in. Now let's shape your Narrat
 // Ring circumference for r=50 (design uses 2·π·50 ≈ 314 for the dash array).
 const RING_CIRC = 314;
 // Ring accent colors, in the design's order: navy, gold, periwinkle.
-const RING_COLORS = ['#141b34', '#5b46e0', '#aebde6'];
+const RING_COLORS = ['#111a33', '#3a63ff', '#6d8cff'];
 
 function parseOptions(text) {
   const match = OPTIONS_PATTERN.exec(text || '');
@@ -45,7 +45,7 @@ function undergradGradeNumber(profile) {
 }
 
 const AiAvatar = ({ size = 34 }) => (
-  <div style={{ width: size, height: size, borderRadius: '50%', background: '#141b34', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(22,35,63,.28)' }}>
+  <div style={{ width: size, height: size, borderRadius: '50%', background: '#111a33', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 6px 14px rgba(30,45,90,.28)' }}>
     <svg viewBox="0 0 24 24" width={Math.round(size * 0.5)} height={Math.round(size * 0.5)} style={{ fill: 'none', stroke: '#fff', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
       <path d="M12 2a5 5 0 0 0-5 5v3a5 5 0 0 0 10 0V7a5 5 0 0 0-5-5Z" />
       <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
@@ -58,7 +58,7 @@ const AiAvatar = ({ size = 34 }) => (
 // and stepIdx; undergrad future stages render dashed/gold like the legacy view.
 function DesignStepper({ STEPS, stepIdx, futureStages }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 32px', borderBottom: '1px solid #f1eadd', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 32px', borderBottom: '1px solid #dbe4f7', background: '#fff', overflowX: 'auto', flexShrink: 0 }}>
       {STEPS.map((label, i) => {
         const active = i === stepIdx;
         const done = i < stepIdx;
@@ -68,19 +68,19 @@ function DesignStepper({ STEPS, stepIdx, futureStages }) {
             <span style={{
               width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0,
               ...(active
-                ? { background: '#141b34', color: '#fff', boxShadow: '0 4px 10px rgba(22,35,63,.28)' }
+                ? { background: '#111a33', color: '#fff', boxShadow: '0 4px 10px rgba(30,45,90,.28)' }
                 : done
-                ? { background: '#141b34', color: '#fff' }
+                ? { background: '#111a33', color: '#fff' }
                 : future
-                ? { background: '#fffaf0', color: '#5b46e0', border: '1px dashed #d3c9a8' }
-                : { background: '#fff', color: '#9aa3b5', border: '1px solid #e7dcc7' }),
+                ? { background: '#ffffff', color: '#3a63ff', border: '1px dashed #dbe4f7' }
+                : { background: '#fff', color: '#97a3c0', border: '1px solid #e3ebfa' }),
             }}>
               {done ? '✓' : i + 1}
             </span>
-            <span style={{ fontSize: 13.5, fontWeight: active ? 700 : 600, whiteSpace: 'nowrap', color: active ? '#141b34' : done ? '#3a425a' : future ? '#5b46e0' : '#9aa3b5' }}>
+            <span style={{ fontSize: 13.5, fontWeight: active ? 700 : 600, whiteSpace: 'nowrap', color: active ? '#111a33' : done ? '#38456b' : future ? '#3a63ff' : '#97a3c0' }}>
               {label}
             </span>
-            {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: done ? '#5b46e0' : '#e1e6f0', margin: '0 4px', flexShrink: 0 }} />}
+            {i < STEPS.length - 1 && <span style={{ width: 34, height: 1, background: done ? '#3a63ff' : '#e3ebfa', margin: '0 4px', flexShrink: 0 }} />}
           </div>
         );
       })}
@@ -97,12 +97,12 @@ function RingGauge({ value, color, label, caption }) {
   return (
     <div style={{ textAlign: 'center' }}>
       <svg width="116" height="116" viewBox="0 0 120 120">
-        <circle cx="60" cy="60" r="50" style={{ fill: 'none', stroke: '#eef1f7', strokeWidth: 9 }} />
+        <circle cx="60" cy="60" r="50" style={{ fill: 'none', stroke: '#f2f6ff', strokeWidth: 9 }} />
         <circle cx="60" cy="60" r="50" transform="rotate(-90 60 60)" style={{ fill: 'none', stroke: color, strokeWidth: 9, strokeLinecap: 'round', strokeDasharray: `${dash} ${RING_CIRC}`, transition: 'stroke-dasharray .6s ease' }} />
-        <text x="60" y="70" textAnchor="middle" style={{ fontFamily: "'Newsreader',serif", fontSize: 30, fontWeight: 700, fill: '#141b34' }}>{has ? Math.round(value) : '—'}</text>
+        <text x="60" y="70" textAnchor="middle" style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 30, fontWeight: 700, fill: '#111a33' }}>{has ? Math.round(value) : '—'}</text>
       </svg>
-      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#141b34', marginTop: 8, textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 12, color: '#8a93a3', marginTop: 2 }}>{caption}</div>
+      <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: '#111a33', marginTop: 8, textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 12, color: '#8b97b8', marginTop: 2 }}>{caption}</div>
     </div>
   );
 }
@@ -119,9 +119,9 @@ function RealtimeAnalysisPanel({ scores, profile, programs, isUndergrad, setCand
   const doneCount = taskList.filter(t => completedTasks?.[t]).length;
 
   return (
-    <div className="pw-advisor-rail" style={{ background: '#fbfcfe', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
-      <h3 style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', margin: '0 0 6px', lineHeight: 1.15 }}>Real-time Analysis</h3>
-      <p style={{ fontSize: 13, color: '#8a93a3', margin: '0 0 30px', lineHeight: 1.5 }}>Live profile calibration based on dialogue.</p>
+    <div className="pw-advisor-rail" style={{ background: '#ffffff', padding: '32px 26px', overflowY: 'auto', minHeight: 0 }}>
+      <h3 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 24, fontWeight: 700, color: '#111a33', margin: '0 0 6px', lineHeight: 1.15 }}>Real-time Analysis</h3>
+      <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 30px', lineHeight: 1.5 }}>Live profile calibration based on dialogue.</p>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 30, alignItems: 'center' }}>
         {slots.map((d, i) => (
@@ -133,44 +133,44 @@ function RealtimeAnalysisPanel({ scores, profile, programs, isUndergrad, setCand
             caption={!d ? 'Awaiting analysis' : d.status === 'incomplete' ? 'Awaiting data' : 'Live estimate'}
           />
         ))}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#5b46e0', fontSize: 14, fontWeight: 700, borderTop: '1px solid #eef1f6', width: '100%', justifyContent: 'center', paddingTop: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#3a63ff', fontSize: 14, fontWeight: 700, borderTop: '1px solid #f2f6ff', width: '100%', justifyContent: 'center', paddingTop: 22 }}>
           <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M12 2 9.2 8.6 2 9.2l5.5 4.8L5.8 21 12 17.3 18.2 21l-1.7-7L22 9.2l-7.2-.6Z" /></svg>
           Fit Index: {fit != null ? `${fit}%` : '—'}
         </div>
       </div>
 
       {(isUndergrad && programs?.length > 0) && (
-        <button onClick={() => setCandTab?.('universities')} style={{ marginTop: 26, width: '100%', background: '#141b34', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => setCandTab?.('universities')} style={{ marginTop: 26, width: '100%', background: '#111a33', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           Open University List →
         </button>
       )}
       {(!isUndergrad && scores) && (
-        <button onClick={() => setCandTab?.('analysis')} style={{ marginTop: 26, width: '100%', background: '#141b34', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => setCandTab?.('analysis')} style={{ marginTop: 26, width: '100%', background: '#111a33', color: '#fff', border: 'none', borderRadius: 9, padding: '11px 0', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
           View Full Analysis →
         </button>
       )}
 
       {taskList.length > 0 && (
-        <div style={{ marginTop: 26, borderTop: '1px solid #eef1f6', paddingTop: 22 }}>
+        <div style={{ marginTop: 26, borderTop: '1px solid #f2f6ff', paddingTop: 22 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#8a93a3' }}>YOUR TASKS</div>
-            <span style={{ fontSize: 12, fontWeight: 800, color: '#141b34', background: '#eef1f7', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#8b97b8' }}>YOUR TASKS</div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: '#111a33', background: '#f2f6ff', padding: '3px 9px', borderRadius: 7 }}>{doneCount}/{taskList.length}</span>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {taskList.map((text) => {
               const done = !!completedTasks?.[text];
               return (
                 <div key={text} onClick={() => toggleTask(text)}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#d9e3d5' : '#e8ecf6'}`, background: done ? '#f5f9f4' : '#fff', transition: 'all .15s' }}>
+                  style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 12px', borderRadius: 11, cursor: 'pointer', border: `1px solid ${done ? '#dbe4f7' : '#eef4ff'}`, background: done ? '#ffffff' : '#fff', transition: 'all .15s' }}>
                   <span style={{
                     width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    ...(done ? { background: '#141b34', boxShadow: '0 3px 8px rgba(22,35,63,.24)' } : { background: '#fff', border: '1px solid #e7dcc7' }),
+                    ...(done ? { background: '#111a33', boxShadow: '0 3px 8px rgba(30,45,90,.24)' } : { background: '#fff', border: '1px solid #e3ebfa' }),
                   }}>
                     {done && (
                       <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
                     )}
                   </span>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#9aa3b5' : '#2a3447', textDecoration: done ? 'line-through' : 'none' }}>{text}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, lineHeight: 1.4, color: done ? '#97a3c0' : '#22304f', textDecoration: done ? 'line-through' : 'none' }}>{text}</span>
                 </div>
               );
             })}
@@ -186,16 +186,16 @@ function ThinkingLine({ message }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, animation: 'pwFade .3s ease' }}>
       <AiAvatar />
-      <div style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '12px 17px', display: 'flex', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: 9, maxWidth: '100%' }}>
+      <div style={{ background: '#f2f6ff', border: '1px solid #eef4ff', borderRadius: '4px 16px 16px 16px', padding: '12px 17px', display: 'flex', alignItems: 'center', flexWrap: 'nowrap', whiteSpace: 'nowrap', gap: 9, maxWidth: '100%' }}>
         <LongRunningAdvisorStatus busy message={message} />
       </div>
     </div>
   );
 }
 
-function CardShell({ label, labelColor = '#5b46e0', children }) {
+function CardShell({ label, labelColor = '#3a63ff', children }) {
   return (
-    <div style={{ marginLeft: 42, maxWidth: 640, background: '#fff', border: '1px solid #e8ecf6', borderRadius: 16, padding: '16px 18px', boxShadow: '0 10px 26px rgba(22,35,63,.07)', animation: 'pwFade .3s ease' }}>
+    <div style={{ marginLeft: 42, maxWidth: 640, background: '#fff', border: '1px solid #eef4ff', borderRadius: 16, padding: '16px 18px', boxShadow: '0 10px 26px rgba(30,45,90,.07)', animation: 'pwFade .3s ease' }}>
       <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.8px', color: labelColor, marginBottom: 10 }}>{label}</div>
       {children}
     </div>
@@ -213,10 +213,10 @@ function ReadinessCard({ scores, profile }) {
   return (
     <CardShell label="READINESS SNAPSHOT">
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: dims.length ? 12 : 0 }}>
-        <div style={{ fontFamily: "'Newsreader',serif", fontSize: 36, fontWeight: 700, color: '#141b34', lineHeight: 1 }}>
-          {scores?.overall ?? 0}<span style={{ fontFamily: "'Albert Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#9aa3b5' }}>/100</span>
+        <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 36, fontWeight: 700, color: '#111a33', lineHeight: 1 }}>
+          {scores?.overall ?? 0}<span style={{ fontFamily: "'Albert Sans',system-ui,sans-serif", fontSize: 14, fontWeight: 600, color: '#97a3c0' }}>/100</span>
         </div>
-        <div style={{ fontSize: 12.5, color: '#7a8295', fontWeight: 600, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 12.5, color: '#5a6a8f', fontWeight: 600, lineHeight: 1.45 }}>
           {trackConfig.scoreLabel || 'Competitiveness'} based on everything you have shared so far.
         </div>
       </div>
@@ -224,17 +224,17 @@ function ReadinessCard({ scores, profile }) {
         {shown.map(d => (
           <div key={d.key}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#2a3447' }}>{d.title}</span>
-              <span style={{ fontSize: d.status === 'incomplete' ? 10.5 : 11.5, fontWeight: 800, color: d.status === 'incomplete' ? '#9aa3b5' : '#141b34' }}>{d.status === 'incomplete' ? 'Incomplete' : d.value}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#22304f' }}>{d.title}</span>
+              <span style={{ fontSize: d.status === 'incomplete' ? 10.5 : 11.5, fontWeight: 800, color: d.status === 'incomplete' ? '#97a3c0' : '#111a33' }}>{d.status === 'incomplete' ? 'Incomplete' : d.value}</span>
             </div>
-            <div style={{ height: 5, borderRadius: 3, background: '#eef1f7', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${d.status === 'incomplete' ? 0 : Math.max(0, Math.min(100, d.value))}%`, borderRadius: 3, background: 'linear-gradient(90deg,#94b3fb,#b899fb)', transition: 'width .4s ease' }} />
+            <div style={{ height: 5, borderRadius: 3, background: '#f2f6ff', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${d.status === 'incomplete' ? 0 : Math.max(0, Math.min(100, d.value))}%`, borderRadius: 3, background: 'linear-gradient(90deg,#3a63ff,#6d8cff)', transition: 'width .4s ease' }} />
             </div>
           </div>
         ))}
       </div>
       {dims.length > 3 && (
-        <button onClick={() => setOpen(v => !v)} style={{ marginTop: 10, background: 'none', border: 'none', color: '#5b46e0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+        <button onClick={() => setOpen(v => !v)} style={{ marginTop: 10, background: 'none', border: 'none', color: '#3a63ff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           {open ? 'Show less' : `Show all ${dims.length} dimensions`}
         </button>
       )}
@@ -244,10 +244,10 @@ function ReadinessCard({ scores, profile }) {
 
 function tierMeta(program) {
   const tier = String(program?.tier || '').toLowerCase();
-  if (tier === 'locked') return { label: 'Locked', color: '#747b91', bg: '#f4f4f2', border: '#d9d6cf' };
-  if (tier === 'safe') return { label: 'Strong Fit', color: '#16875c', bg: '#f0f9f4', border: '#cfe8da' };
-  if (tier === 'possible') return { label: 'Possible', color: '#a97510', bg: '#fffaf0', border: '#ecd9a8' };
-  return { label: 'Stretch', color: '#b04a68', bg: '#fdf4f7', border: '#eccfd9' };
+  if (tier === 'locked') return { label: 'Locked', color: '#5a6a8f', bg: '#f2f6ff', border: '#dbe4f7' };
+  if (tier === 'safe') return { label: 'Strong Fit', color: '#0ca678', bg: '#f2f6ff', border: '#dbe4f7' };
+  if (tier === 'possible') return { label: 'Possible', color: '#b45309', bg: '#ffffff', border: '#fff4e2' };
+  return { label: 'Stretch', color: '#e8476b', bg: '#ffe9ef', border: '#ffd0dc' };
 }
 
 // University list as a first-class chat artifact. Selection writes through
@@ -285,11 +285,11 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
           const actions = Array.isArray(program.missingActions) ? program.missingActions : [];
           return (
             <div key={program.name} className={`pw-card${isPicked ? ' is-selected' : ''}`} onClick={() => toggle(program.name)}
-              style={{ padding: '12px 13px', borderRadius: 13, cursor: 'pointer', border: `1.5px solid ${isPicked ? '#5b46e0' : meta.border}`, background: isPicked ? '#fffaf0' : meta.bg }}>
+              style={{ padding: '12px 13px', borderRadius: 13, cursor: 'pointer', border: `1.5px solid ${isPicked ? '#3a63ff' : meta.border}`, background: isPicked ? '#ffffff' : meta.bg }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
                 <span className="pw-card-check-badge" style={{
                   width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  ...(isPicked ? { background: '#141b34', boxShadow: '0 3px 8px rgba(22,35,63,.3)', transform: 'scale(1.05)' } : { background: '#fff', border: `1.5px solid ${meta.border}` }),
+                  ...(isPicked ? { background: '#111a33', boxShadow: '0 3px 8px rgba(30,45,90,.3)', transform: 'scale(1.05)' } : { background: '#fff', border: `1.5px solid ${meta.border}` }),
                 }}>
                   {isPicked && (
                     <svg viewBox="0 0 24 24" width="11" height="11" style={{ fill: 'none', stroke: '#fff', strokeWidth: 3.2, strokeLinecap: 'round', strokeLinejoin: 'round' }}><path d="M5 13l4 4L19 7" /></svg>
@@ -297,29 +297,29 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#141b34' }}>{program.name}</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: '#111a33' }}>{program.name}</div>
                     <span style={{ fontSize: 12, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: '#ffffffb8', color: meta.color, border: `1px solid ${meta.border}` }}>{meta.label}</span>
                     {program.selectivityLabel && (
-                      <span style={{ fontSize: 12, color: '#7a8295', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#ffffff9c', border: '1px solid #e7dcc7' }}>{program.selectivityLabel}</span>
+                      <span style={{ fontSize: 12, color: '#5a6a8f', fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: '#ffffff9c', border: '1px solid #e3ebfa' }}>{program.selectivityLabel}</span>
                     )}
                   </div>
                   {(program.fitExplanation || program.notes) && (
-                    <div style={{ fontSize: 12, color: '#5f6885', lineHeight: 1.45, marginTop: 5 }}>{program.fitExplanation || program.notes}</div>
+                    <div style={{ fontSize: 12, color: '#5a6a8f', lineHeight: 1.45, marginTop: 5 }}>{program.fitExplanation || program.notes}</div>
                   )}
                 </div>
                 {Number.isFinite(Number(program.fitIndex ?? program.fit)) && (
                   <div style={{ textAlign: 'center', flexShrink: 0 }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color: meta.color, lineHeight: 1 }}>{Math.round(Number(program.fitIndex ?? program.fit))}%</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.45px', color: '#9098b5', marginTop: 3 }}>FIT INDEX</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.45px', color: '#8b97b8', marginTop: 3 }}>FIT INDEX</div>
                   </div>
                 )}
               </div>
               {(drivers.length || risks.length || gaps.length || actions.length) > 0 && (
                 <div style={{ marginLeft: 31, marginTop: 9, display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 6 }}>
-                  {drivers.length > 0 && <div style={{ fontSize: 12, color: '#16875c', lineHeight: 1.4 }}><b>Drivers:</b> {drivers.join(' · ')}</div>}
-                  {risks.length > 0 && <div style={{ fontSize: 12, color: '#b44b57', lineHeight: 1.4 }}><b>Risks:</b> {risks.join(' · ')}</div>}
-                  {gaps.length > 0 && <div style={{ fontSize: 12, color: '#8a6717', lineHeight: 1.4 }}><b>Evidence gaps:</b> {gaps.join(' · ')}</div>}
-                  {actions.length > 0 && <div style={{ fontSize: 12, color: '#141b34', lineHeight: 1.4 }}><b>Next actions:</b> {actions.join(' · ')}</div>}
+                  {drivers.length > 0 && <div style={{ fontSize: 12, color: '#0ca678', lineHeight: 1.4 }}><b>Drivers:</b> {drivers.join(' · ')}</div>}
+                  {risks.length > 0 && <div style={{ fontSize: 12, color: '#e8476b', lineHeight: 1.4 }}><b>Risks:</b> {risks.join(' · ')}</div>}
+                  {gaps.length > 0 && <div style={{ fontSize: 12, color: '#8a5a12', lineHeight: 1.4 }}><b>Evidence gaps:</b> {gaps.join(' · ')}</div>}
+                  {actions.length > 0 && <div style={{ fontSize: 12, color: '#111a33', lineHeight: 1.4 }}><b>Next actions:</b> {actions.join(' · ')}</div>}
                 </div>
               )}
             </div>
@@ -328,23 +328,23 @@ function ProgramsCard({ programs, chosenSchools, setChosenSchools, confirmTarget
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
         {hidden > 0 && (
-          <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+          <button onClick={() => setOpen(true)} style={{ background: 'none', border: 'none', color: '#3a63ff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
             Show all {list.length} programs
           </button>
         )}
         {open && list.length > 8 && (
-          <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#5b46e0', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
+          <button onClick={() => setOpen(false)} style={{ background: 'none', border: 'none', color: '#3a63ff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
             Show less
           </button>
         )}
         <span style={{ flex: 1 }} />
         <button onClick={confirm} disabled={!selected.length || busy}
           style={{
-            background: selected.length && !busy ? '#141b34' : '#e2e7f2',
-            color: selected.length && !busy ? '#fff' : '#9aa3b5',
+            background: selected.length && !busy ? '#111a33' : '#e3ebfa',
+            color: selected.length && !busy ? '#fff' : '#97a3c0',
             border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 12.5, fontWeight: 700,
             cursor: selected.length && !busy ? 'pointer' : 'not-allowed', fontFamily: 'inherit',
-            boxShadow: selected.length && !busy ? '0 6px 16px rgba(22,35,63,.26)' : 'none', transition: 'all .2s',
+            boxShadow: selected.length && !busy ? '0 6px 16px rgba(30,45,90,.26)' : 'none', transition: 'all .2s',
           }}>
           {selected.length ? `Confirm ${selected.length} target${selected.length === 1 ? '' : 's'}` : 'Select targets'}
         </button>
@@ -488,7 +488,7 @@ export default function AdvisorChatFirst({
 
   return (
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '20px 24px 24px' }}>
-      <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #f1eadd', boxShadow: '0 20px 50px rgba(22,35,63,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', position: 'relative' }}>
+      <div style={{ flex: 1, minHeight: 0, borderRadius: 16, border: '1px solid #dbe4f7', boxShadow: '0 20px 50px rgba(30,45,90,.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', position: 'relative' }}>
 
         {/* numbered stepper (design: step row) */}
         <DesignStepper STEPS={STEPS} stepIdx={stepIdx} futureStages={futureStages} />
@@ -497,16 +497,16 @@ export default function AdvisorChatFirst({
         <div className="pw-advisor-grid" style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 340px', overflow: 'hidden' }}>
 
         {/* chat column */}
-        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #eef1f6' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, borderRight: '1px solid #f2f6ff' }}>
 
         {/* header: circular avatar + serif title (design) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '20px 32px 16px', flexShrink: 0 }}>
           <AiAvatar size={46} />
           <div>
-            <h2 style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 700, color: '#141b34', margin: 0, lineHeight: 1.1 }}>
+            <h2 style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 26, fontWeight: 700, color: '#111a33', margin: 0, lineHeight: 1.1 }}>
               {profile?.name ? `${String(profile.name).split(' ')[0]}'s Strategic Profile` : 'Strategic Profile Initiation'}
             </h2>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#8a93a3', marginTop: 4 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#8b97b8', marginTop: 4 }}>
               Stage {Math.min(stepIdx + 1, STEPS.length)} of {STEPS.length} · {STEPS[Math.min(stepIdx, STEPS.length - 1)]}
             </div>
           </div>
@@ -535,7 +535,7 @@ export default function AdvisorChatFirst({
                   >
                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                       {showAvatar ? <AiAvatar /> : <span style={{ width: 34, flexShrink: 0 }} />}
-                      <div className="pw-rich-text" style={{ background: '#f4f6fb', border: '1px solid #e8ecf6', borderRadius: '4px 16px 16px 16px', padding: '14px 18px', fontSize: 14.5, lineHeight: 1.65, maxWidth: 640, boxShadow: '0 4px 14px rgba(22,35,63,.05)' }}>
+                      <div className="pw-rich-text" style={{ background: '#f2f6ff', border: '1px solid #eef4ff', borderRadius: '4px 16px 16px 16px', padding: '14px 18px', fontSize: 14.5, lineHeight: 1.65, maxWidth: 640, boxShadow: '0 4px 14px rgba(30,45,90,.05)' }}>
                         {renderFormattedText(parsed ? parsed.mainText : visibleText)}
                       </div>
                     </div>
@@ -543,7 +543,7 @@ export default function AdvisorChatFirst({
                       <div style={{ marginLeft: 42, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                         {parsed.options.map(opt => (
                           <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
-                            style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#141b34', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                            style={{ background: '#fff', border: '1px solid #e3ebfa', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#111a33', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                             {opt}
                           </button>
                         ))}
@@ -558,7 +558,7 @@ export default function AdvisorChatFirst({
                   initial={reduceMotion ? false : { opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.35, delay: Math.min(i * 0.03, 0.3), ease: 'easeOut' }}
-                  style={{ alignSelf: 'flex-end', background: '#141b34', color: '#eef2fa', borderRadius: '16px 16px 4px 16px', padding: '13px 18px', fontSize: 14.5, lineHeight: 1.6, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(22,35,63,.22)' }}
+                  style={{ alignSelf: 'flex-end', background: '#111a33', color: '#f2f6ff', borderRadius: '16px 16px 4px 16px', padding: '13px 18px', fontSize: 14.5, lineHeight: 1.6, maxWidth: '72%', whiteSpace: 'pre-wrap', boxShadow: '0 8px 20px rgba(30,45,90,.22)' }}
                 >
                   {m.text.startsWith('Here is my CV') ? '📄 CV submitted for analysis' : m.text}
                 </motion.div>
@@ -574,12 +574,12 @@ export default function AdvisorChatFirst({
             )}
 
             {showNarrativeCTA && (
-              <div style={{ marginLeft: 42, maxWidth: 640, background: '#141b34', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: 'pwFade .3s ease' }}>
+              <div style={{ marginLeft: 42, maxWidth: 640, background: '#111a33', borderRadius: 14, padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, animation: 'pwFade .3s ease' }}>
                 <div>
-                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f5c94c', marginBottom: 3 }}>NEXT STEP</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '1px', color: '#f2a63b', marginBottom: 3 }}>NEXT STEP</div>
                   <span style={{ fontSize: 13.5, color: '#c6d2ea', fontWeight: 600 }}>Choose your narrative strategy</span>
                 </div>
-                <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f5c94c', color: '#42320a', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
+                <button onClick={() => setShowNarrativeModal(true)} style={{ background: '#f2a63b', color: '#e08600', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}>Choose →</button>
               </div>
             )}
 
@@ -616,15 +616,15 @@ export default function AdvisorChatFirst({
 
         {/* quick replies required by the current question */}
         {lastParsed && !busy && (
-          <div style={{ padding: '10px 24px 0', borderTop: '1px solid #eef1f6', background: '#fff', flexShrink: 0 }}>
+          <div style={{ padding: '10px 24px 0', borderTop: '1px solid #f2f6ff', background: '#fff', flexShrink: 0 }}>
             <div style={{ maxWidth: 780, margin: '0 auto' }}>
-              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#5b46e0', marginBottom: 8 }}>QUICK REPLY</div>
+              <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#3a63ff', marginBottom: 8 }}>QUICK REPLY</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                 {lastParsed.options.map(opt => (
                   <button key={opt} className="pw-chip" onClick={() => handleChip(opt)} disabled={busy}
-                    style={{ background: '#f4f6fb', border: '1px solid #e7dcc7', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#141b34', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#141b34'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#141b34'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = '#f4f6fb'; e.currentTarget.style.color = '#141b34'; e.currentTarget.style.borderColor = '#e7dcc7'; }}>
+                    style={{ background: '#f2f6ff', border: '1px solid #e3ebfa', borderRadius: 9, padding: '9px 17px', fontSize: 13.5, fontWeight: 600, color: '#111a33', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#111a33'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#111a33'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '#f2f6ff'; e.currentTarget.style.color = '#111a33'; e.currentTarget.style.borderColor = '#e3ebfa'; }}>
                     {opt}
                   </button>
                 ))}
@@ -634,9 +634,9 @@ export default function AdvisorChatFirst({
         )}
 
         {/* input */}
-        <div style={{ padding: lastParsed && !busy ? '10px 20px 8px' : '14px 20px 8px', flexShrink: 0, background: '#fff', borderTop: '1px solid #eef1f6' }}>
+        <div style={{ padding: lastParsed && !busy ? '10px 20px 8px' : '14px 20px 8px', flexShrink: 0, background: '#fff', borderTop: '1px solid #f2f6ff' }}>
           <div style={{ maxWidth: 780, margin: '0 auto' }}>
-            <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#f4f6fb', border: '1px solid #e2e7f2', borderRadius: 12, padding: '6px 6px 6px 18px', boxShadow: '0 2px 12px rgba(22,35,63,.04)' }}>
+            <div className="pw-composer-shell" style={{ display: 'flex', alignItems: 'flex-end', gap: 10, background: '#f2f6ff', border: '1px solid #e3ebfa', borderRadius: 12, padding: '6px 6px 6px 18px', boxShadow: '0 2px 12px rgba(30,45,90,.04)' }}>
               <textarea
                 ref={inputRef}
                 className="pw-composer-textarea"
@@ -646,16 +646,16 @@ export default function AdvisorChatFirst({
                 onKeyDown={handleKey}
                 disabled={busy}
                 placeholder={busy ? 'Advisor is analyzing…' : lastParsed ? 'Or type your own answer…' : 'Inquire about your strategy…'}
-                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 15, padding: '10px 0', color: '#1c2433', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
+                style={{ flex: 1, border: 'none', outline: 'none', background: 'none', fontSize: 15, padding: '10px 0', color: '#1a2540', fontFamily: 'inherit', fontWeight: 500, maxHeight: 120 }}
               />
               <button onClick={() => setShowCvModal(true)} title="Upload CV / attach background"
-                style={{ background: '#eef1f7', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6b7280', flexShrink: 0 }}>
+                style={{ background: '#f2f6ff', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#5a6a8f', flexShrink: 0 }}>
                 <svg viewBox="0 0 24 24" width="18" height="18" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }}>
                   <path d="M21.4 11.05 12.25 20.2a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.48-8.49" />
                 </svg>
               </button>
               <button onClick={() => send()} disabled={busy || !input.trim()}
-                style={{ background: input.trim() ? '#141b34' : '#e2e7f2', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#fff' : '#9aa3b5', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(22,35,63,.26)' : 'none' }}>
+                style={{ background: input.trim() ? '#111a33' : '#e3ebfa', border: 'none', borderRadius: 9, width: 38, height: 38, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: busy || !input.trim() ? 'not-allowed' : 'pointer', color: input.trim() ? '#fff' : '#97a3c0', flexShrink: 0, transition: 'all .2s', boxShadow: input.trim() ? '0 6px 16px rgba(30,45,90,.26)' : 'none' }}>
                 {busy ? (
                   <svg className="pw-send-spinner" viewBox="0 0 24 24" width="17" height="17" style={{ fill: 'none', stroke: 'currentColor', strokeWidth: 2.4, strokeLinecap: 'round' }}>
                     <path d="M12 2a10 10 0 0 1 10 10" opacity="0.85" />
@@ -673,22 +673,22 @@ export default function AdvisorChatFirst({
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
                 {chosenSchools?.length > 0 && !narrative && (
                   <button className="pw-chip" onClick={reopenProgramSelection} disabled={busy}
-                    style={{ background: '#fffaf0', border: '1px solid #d3c9a8', borderRadius: 9, padding: '8px 15px', fontSize: 12, fontWeight: 700, color: '#8a6717', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                    style={{ background: '#ffffff', border: '1px solid #dbe4f7', borderRadius: 9, padding: '8px 15px', fontSize: 12, fontWeight: 700, color: '#8a5a12', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
                     Change school selection
                   </button>
                 )}
                 {chips.map(({ label, msg }) => (
                   <button key={msg} className="pw-chip" onClick={() => handleChip(msg)} disabled={busy}
-                    style={{ background: '#fff', border: '1px solid #e7dcc7', borderRadius: 9, padding: '8px 15px', fontSize: 12, fontWeight: 600, color: '#3a425a', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
-                    onMouseEnter={e => { if (!busy) { e.currentTarget.style.borderColor = '#141b34'; e.currentTarget.style.color = '#141b34'; } }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e7dcc7'; e.currentTarget.style.color = '#3a425a'; }}>
+                    style={{ background: '#fff', border: '1px solid #e3ebfa', borderRadius: 9, padding: '8px 15px', fontSize: 12, fontWeight: 600, color: '#38456b', cursor: busy ? 'not-allowed' : 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'all .15s' }}
+                    onMouseEnter={e => { if (!busy) { e.currentTarget.style.borderColor = '#111a33'; e.currentTarget.style.color = '#111a33'; } }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = '#e3ebfa'; e.currentTarget.style.color = '#38456b'; }}>
                     {label}
                   </button>
                 ))}
               </div>
             )}
 
-            <div style={{ margin: '8px 0 10px', textAlign: 'center', fontSize: 12, color: '#9aa3b5', fontWeight: 500 }}>
+            <div style={{ margin: '8px 0 10px', textAlign: 'center', fontSize: 12, color: '#97a3c0', fontWeight: 500 }}>
               Confidential consultation active. End-to-end encrypted.
             </div>
           </div>

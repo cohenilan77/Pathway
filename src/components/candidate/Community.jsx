@@ -24,11 +24,11 @@ function programName(item) {
 function Avatar({ id, name, initials, size = 38 }) {
   const label = initials || getInitials(name);
   const palettes = [
-    ['#6d28d9', '#9333ea'],
-    ['#0369a1', '#0891b2'],
-    ['#be123c', '#e11d48'],
-    ['#047857', '#10b981'],
-    ['#c2410c', '#f97316'],
+    ['#2f52e6', '#2f52e6'],
+    ['#2f52e6', '#0ca678'],
+    ['#c2334f', '#e8476b'],
+    ['#0ca678', '#12b886'],
+    ['#c2410c', '#ff8a4c'],
   ];
   const hash = Array.from(String(id || label)).reduce((total, char) => total + char.charCodeAt(0), 0);
   const [from, to] = palettes[hash % palettes.length];
@@ -41,7 +41,7 @@ function Avatar({ id, name, initials, size = 38 }) {
         height: size,
         borderRadius: Math.round(size / 3),
         background: `linear-gradient(140deg, ${from}, ${to})`,
-        boxShadow: '0 4px 12px rgba(55, 34, 120, .18)',
+        boxShadow: '0 4px 12px rgba(58,99,255, .18)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -62,7 +62,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
     fontSize: '12px',
     fontWeight: 850,
     letterSpacing: '.75px',
-    color: '#5b46e0',
+    color: '#3a63ff',
     textTransform: 'uppercase',
     padding: '16px 15px 8px',
   };
@@ -74,8 +74,8 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
     padding: '11px 13px 11px 15px',
     cursor: 'pointer',
     border: 'none',
-    borderLeft: active ? '3px solid #5b46e0' : '3px solid transparent',
-    background: active ? 'rgba(91, 70, 224, .1)' : 'transparent',
+    borderLeft: active ? '3px solid #3a63ff' : '3px solid transparent',
+    background: active ? 'rgba(58,99,255, .1)' : 'transparent',
     width: '100%',
     textAlign: 'left',
     fontFamily: 'inherit',
@@ -85,15 +85,15 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
   return (
     <aside className={className} style={{
       width: 210,
-      background: '#fffdf9',
-      borderRight: '1px solid #e9e1d6',
+      background: '#ffffff',
+      borderRight: '1px solid #e3ebfa',
       overflowY: 'auto',
       flexShrink: 0,
       paddingBottom: 12,
     }}>
       <div style={sectionHeader}>Programs</div>
       {groups.length === 0 ? (
-        <div style={{ padding: '22px 15px', fontSize: '13.5px', color: '#727b96', lineHeight: 1.55 }}>
+        <div style={{ padding: '22px 15px', fontSize: '13.5px', color: '#5a6a8f', lineHeight: 1.55 }}>
           No programs yet — add schools in your Analysis tab
         </div>
       ) : groups.map((group) => {
@@ -103,7 +103,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
             <span style={{
               fontSize: '14px',
               fontWeight: active ? 800 : 650,
-              color: active ? '#5138d4' : '#26324f',
+              color: active ? '#2f52e6' : '#111a33',
               flex: 1,
               lineHeight: 1.35,
               overflow: 'hidden',
@@ -112,8 +112,8 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
               {group.name}
             </span>
             <span style={{
-              background: active ? '#5b46e0' : '#ece6dc',
-              color: active ? '#fff' : '#4e5872',
+              background: active ? '#3a63ff' : '#f2f6ff',
+              color: active ? '#fff' : '#38456b',
               fontSize: '12px',
               fontWeight: 750,
               borderRadius: 999,
@@ -128,7 +128,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
 
       {personalChats.length > 0 && (
         <>
-          <div style={{ ...sectionHeader, marginTop: 10, borderTop: '1px solid #eee7dd' }}>Personal chats</div>
+          <div style={{ ...sectionHeader, marginTop: 10, borderTop: '1px solid #f2f6ff' }}>Personal chats</div>
           {personalChats.map((chat) => {
             const active = selectedGroupId === chat.id;
             return (
@@ -137,7 +137,7 @@ function CommunityLeftPanel({ groups, personalChats, selectedGroupId, onSelectGr
                 <span style={{
                   fontSize: '14px',
                   fontWeight: active ? 800 : 650,
-                  color: active ? '#5138d4' : '#26324f',
+                  color: active ? '#2f52e6' : '#111a33',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -178,13 +178,13 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: '#f7f4ee',
+        background: '#f2f6ff',
         padding: 30,
       }}>
         <div style={{ textAlign: 'center', maxWidth: 360 }}>
           <div style={{ fontSize: 34, marginBottom: 12 }}>💬</div>
-          <div style={{ fontSize: '17px', fontWeight: 850, color: '#18213a' }}>Choose a conversation</div>
-          <div style={{ fontSize: '13.5px', color: '#737d98', marginTop: 6, lineHeight: 1.55 }}>
+          <div style={{ fontSize: '17px', fontWeight: 850, color: '#16233f' }}>Choose a conversation</div>
+          <div style={{ fontSize: '13.5px', color: '#5a6a8f', marginTop: 6, lineHeight: 1.55 }}>
             Select a program on the left or message someone from the candidate community.
           </div>
         </div>
@@ -195,17 +195,17 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
   const isDirect = group.type === 'personal';
 
   return (
-    <main className={className} style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f7f4ee' }}>
+    <main className={className} style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, background: '#f2f6ff' }}>
       <header style={{
-        background: 'rgba(255, 253, 249, .96)',
-        borderBottom: '1px solid #e9e1d6',
+        background: 'rgba(255,255,255, .96)',
+        borderBottom: '1px solid #e3ebfa',
         padding: '16px 20px',
         flexShrink: 0,
       }}>
-        <div style={{ fontSize: '16px', fontWeight: 850, color: '#18213a' }}>
+        <div style={{ fontSize: '16px', fontWeight: 850, color: '#16233f' }}>
           {isDirect ? '💬' : '📚'} {group.name}
         </div>
-        <div style={{ fontSize: '12.5px', color: '#77809a', fontWeight: 600, marginTop: 4 }}>
+        <div style={{ fontSize: '12.5px', color: '#5a6a8f', fontWeight: 600, marginTop: 4 }}>
           {isDirect ? 'Private conversation' : `${group.memberCount} candidates in the community`}
         </div>
       </header>
@@ -219,7 +219,7 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
         gap: 14,
       }}>
         {messages.length === 0 ? (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7b849d', fontSize: '13.5px' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5a6a8f', fontSize: '13.5px' }}>
             No messages yet. Start the conversation!
           </div>
         ) : messages.map((msg) => {
@@ -236,22 +236,22 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
               <Avatar id={msg.userId} name={msg.userName || 'User'} size={30} />
               <div style={{ minWidth: 0, textAlign: ownMessage ? 'right' : 'left' }}>
                 <div style={{ marginBottom: 4, display: 'flex', flexDirection: ownMessage ? 'row-reverse' : 'row', gap: 7, alignItems: 'center' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#202a44' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#111a33' }}>
                     {msg.userName || 'User'}
                   </span>
-                  <span style={{ fontSize: '12px', color: '#929ab0' }}>
+                  <span style={{ fontSize: '12px', color: '#8b97b8' }}>
                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 <div style={{
                   fontSize: '13.5px',
-                  color: ownMessage ? '#fff' : '#303a55',
+                  color: ownMessage ? '#fff' : '#111a33',
                   lineHeight: 1.55,
-                  background: ownMessage ? 'linear-gradient(135deg, #644ce6, #7c3aed)' : '#fffdf9',
+                  background: ownMessage ? 'linear-gradient(135deg, #3a63ff, #2f52e6)' : '#ffffff',
                   borderRadius: ownMessage ? '12px 4px 12px 12px' : '4px 12px 12px 12px',
                   padding: '9px 12px',
-                  border: ownMessage ? 'none' : '1px solid #e7dfd4',
-                  boxShadow: '0 3px 10px rgba(42, 35, 80, .06)',
+                  border: ownMessage ? 'none' : '1px solid #e3ebfa',
+                  boxShadow: '0 3px 10px rgba(30,45,90, .06)',
                   textAlign: 'left',
                   overflowWrap: 'anywhere',
                 }}>
@@ -265,8 +265,8 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
       </div>
 
       <div style={{
-        background: '#fffdf9',
-        borderTop: '1px solid #e9e1d6',
+        background: '#ffffff',
+        borderTop: '1px solid #e3ebfa',
         padding: '12px 15px',
         display: 'flex',
         alignItems: 'center',
@@ -284,12 +284,12 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
           style={{
             flex: 1,
             background: '#fff',
-            border: focused ? '1px solid #6d55df' : '1px solid #dcd5ca',
-            boxShadow: focused ? '0 0 0 3px rgba(91, 70, 224, .13)' : 'none',
+            border: focused ? '1px solid #3a63ff' : '1px solid #dbe4f7',
+            boxShadow: focused ? '0 0 0 3px rgba(58,99,255, .13)' : 'none',
             borderRadius: 11,
             padding: '10px 13px',
             fontSize: '13.5px',
-            color: '#18213a',
+            color: '#16233f',
             fontFamily: 'inherit',
             outline: 'none',
             transition: 'border-color .15s ease, box-shadow .15s ease',
@@ -301,7 +301,7 @@ function CommunityFeed({ groupId, group, messages, onSendMessage, sending, curre
           title="Send message"
           aria-label="Send message"
           style={{
-            background: '#5b46e0',
+            background: '#3a63ff',
             border: 'none',
             borderRadius: 10,
             width: 38,
@@ -328,25 +328,25 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
   return (
     <aside className={className} style={{
       width: 248,
-      background: '#fffdf9',
-      borderLeft: '1px solid #e9e1d6',
+      background: '#ffffff',
+      borderLeft: '1px solid #e3ebfa',
       overflowY: 'auto',
       flexShrink: 0,
       display: 'flex',
       flexDirection: 'column',
     }}>
-      <div style={{ padding: '16px 15px', borderBottom: '1px solid #e9e1d6', background: '#faf7f2' }}>
-        <div style={{ fontSize: '12px', fontWeight: 850, letterSpacing: '.75px', color: '#5b46e0', textTransform: 'uppercase' }}>
+      <div style={{ padding: '16px 15px', borderBottom: '1px solid #e3ebfa', background: '#f2f6ff' }}>
+        <div style={{ fontSize: '12px', fontWeight: 850, letterSpacing: '.75px', color: '#3a63ff', textTransform: 'uppercase' }}>
           Candidate community
         </div>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: '#313b57', marginTop: 5 }}>
+        <div style={{ fontSize: '13px', fontWeight: 700, color: '#111a33', marginTop: 5 }}>
           {members.length} {members.length === 1 ? 'candidate' : 'candidates'}
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 11 }}>
         {members.length === 0 ? (
-          <div style={{ padding: '34px 13px', textAlign: 'center', fontSize: '13.5px', color: '#78819a', lineHeight: 1.6 }}>
+          <div style={{ padding: '34px 13px', textAlign: 'center', fontSize: '13.5px', color: '#5a6a8f', lineHeight: 1.6 }}>
             Other candidates will appear here when they join.
           </div>
         ) : members.map((member) => {
@@ -355,18 +355,18 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
             <div key={member.id} style={{
               marginBottom: 11,
               background: '#fff',
-              border: '1px solid #e8e0d5',
+              border: '1px solid #e3ebfa',
               borderRadius: 12,
               padding: 11,
-              boxShadow: '0 4px 13px rgba(47, 37, 83, .05)',
+              boxShadow: '0 4px 13px rgba(30,45,90, .05)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <Avatar id={member.id} initials={member.initials || getInitials(member.name)} size={40} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: 850, color: '#18213a', letterSpacing: '.2px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 850, color: '#16233f', letterSpacing: '.2px' }}>
                     {member.initials || getInitials(member.name)}
                   </div>
-                  <div style={{ fontSize: '12.5px', color: '#747e97', marginTop: 3, lineHeight: 1.3 }}>
+                  <div style={{ fontSize: '12.5px', color: '#5a6a8f', marginTop: 3, lineHeight: 1.3 }}>
                     📍 {member.residency || 'Residence not provided'}
                   </div>
                 </div>
@@ -376,9 +376,9 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
                   onClick={() => onOpenDM(member.id)}
                   disabled={loading}
                   style={{
-                    background: '#5b46e0',
+                    background: '#3a63ff',
                     color: '#fff',
-                    border: '1px solid #5b46e0',
+                    border: '1px solid #3a63ff',
                     borderRadius: 8,
                     padding: '8px 5px',
                     fontSize: '12px',
@@ -392,9 +392,9 @@ function CommunityMembers({ members, connectedIds, onToggleConnection, onOpenDM,
                 <button
                   onClick={() => onToggleConnection(member.id)}
                   style={{
-                    background: connected ? '#169b62' : '#fff',
-                    color: connected ? '#fff' : '#5b46e0',
-                    border: connected ? '1px solid #169b62' : '1px solid #6d55df',
+                    background: connected ? '#0ca678' : '#fff',
+                    color: connected ? '#fff' : '#3a63ff',
+                    border: connected ? '1px solid #0ca678' : '1px solid #3a63ff',
                     borderRadius: 8,
                     padding: '8px 5px',
                     fontSize: '12px',
@@ -593,12 +593,12 @@ export default function Community(props) {
 
   if (!canAccessCommunity) {
     return (
-      <div style={{ flex: 1, minHeight: 0, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, background: '#f7f4ee' }}>
-        <div style={{ fontSize: '16px', fontWeight: 850, color: '#18213a' }}>Community not available yet</div>
-        <div style={{ fontSize: '13.5px', color: '#737d98', maxWidth: 400, textAlign: 'center', marginBottom: 12 }}>
+      <div style={{ flex: 1, minHeight: 0, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, background: '#f2f6ff' }}>
+        <div style={{ fontSize: '16px', fontWeight: 850, color: '#16233f' }}>Community not available yet</div>
+        <div style={{ fontSize: '13.5px', color: '#5a6a8f', maxWidth: 400, textAlign: 'center', marginBottom: 12 }}>
           Set your journey type in Settings to unlock Community.
         </div>
-        <button onClick={() => setCandTab?.('settings')} style={{ background: '#5b46e0', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13.5, fontWeight: 750, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={() => setCandTab?.('settings')} style={{ background: '#3a63ff', color: '#fff', border: 'none', borderRadius: 10, padding: '10px 20px', fontSize: 13.5, fontWeight: 750, cursor: 'pointer', fontFamily: 'inherit' }}>
           Go to Settings →
         </button>
       </div>
@@ -607,9 +607,9 @@ export default function Community(props) {
 
   if (category === 'Undergraduate' && !['11th', '12th'].includes(profile?.grade)) {
     return (
-      <div style={{ flex: 1, minHeight: 0, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, background: '#f7f4ee' }}>
-        <div style={{ fontSize: '16px', fontWeight: 850, color: '#18213a' }}>Community available for grades 11–12</div>
-        <div style={{ fontSize: '13.5px', color: '#737d98', maxWidth: 400, textAlign: 'center' }}>
+      <div style={{ flex: 1, minHeight: 0, padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 10, background: '#f2f6ff' }}>
+        <div style={{ fontSize: '16px', fontWeight: 850, color: '#16233f' }}>Community available for grades 11–12</div>
+        <div style={{ fontSize: '13.5px', color: '#5a6a8f', maxWidth: 400, textAlign: 'center' }}>
           Community is available to high school students in 11th or 12th grade only.
         </div>
       </div>
@@ -622,7 +622,7 @@ export default function Community(props) {
   };
 
   return (
-    <div className="pw-community-shell" data-mobile-panel={mobilePanel} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#f6f1e8' }}>
+    <div className="pw-community-shell" data-mobile-panel={mobilePanel} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', background: '#eef4ff' }}>
       <div className="pw-community-tabbar">
         <button type="button" className={mobilePanel === 'groups' ? 'pw-community-tab is-active' : 'pw-community-tab'} onClick={() => setMobilePanel('groups')}>Groups</button>
         <button type="button" className={mobilePanel === 'feed' ? 'pw-community-tab is-active' : 'pw-community-tab'} onClick={() => setMobilePanel('feed')}>Chat</button>
