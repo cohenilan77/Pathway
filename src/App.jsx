@@ -569,6 +569,7 @@ export default function App() {
           essays: loadedEssays,
           interviews: data?.interviews,
           chat: loadedChat,
+          undergrad: data?.undergrad,
         });
         setChat(returnMessage ? [...loadedChat, { role: 'ai', channel: 'web', text: returnMessage }] : loadedChat);
         if (returnMessage) sessionStorage.setItem(returnWelcomeKey, '1');
