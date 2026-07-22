@@ -14,6 +14,7 @@ import Scholarships from './Scholarships.jsx';
 import CommunityHub from './CommunityHub.jsx';
 import LiveChatHub from './LiveChatHub.jsx';
 import HelpModal from './HelpModal.jsx';
+import OnboardingModal from './OnboardingModal.jsx';
 import { LANGUAGES } from '../../constants.js';
 import { downloadAsPdf, downloadAsDocx } from '../../lib/documentExport.js';
 import NotificationBell from '../NotificationBell.jsx';
@@ -1223,8 +1224,12 @@ function UndergradSchoolsPage(props) {
 }
 
 export default function CandidatePortal(props) {
-  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks } = props;
+  const { candTab, setCandTab, signOut, plan, language, setLanguage, profile, authUser, authToken, sessionId, resetSession, requiresOAuthDetails, showToast, chosenSchools, documents, archiveDocument, send, chat, tasks, completedTasks, showOnboarding, busy } = props;
   const [showHelp, setShowHelp] = useState(false);
+  // "Help me decide" hides the first-run track picker for this session without
+  // setting a category; the picker naturally stops showing once send() resolves
+  // a track. showOnboarding is derived in App.jsx from the loaded profile.
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
@@ -1363,6 +1368,11 @@ export default function CandidatePortal(props) {
 
   return (
     <div className="pw-shell" style={{ display: 'flex', height: '100vh', overflow: 'hidden', background: 'linear-gradient(180deg,#f2f6ff 0%,#eef4ff 100%)', fontFamily: "'Albert Sans',system-ui,sans-serif", color: '#38456b', WebkitFontSmoothing: 'antialiased' }}>
+      {/* First-run track picker (replaces the old opening chat "which path?" turn) */}
+      {showOnboarding && !onboardingDismissed && (
+        <OnboardingModal send={send} busy={busy} onDismiss={() => setOnboardingDismissed(true)} />
+      )}
+
       {/* Mobile top bar with hamburger */}
       <div className="pw-mobile-bar" style={{ background: 'rgba(238,244,255,.96)', borderBottom: '1px solid #dbe4f7', backdropFilter: 'blur(14px)' }}>
         <button className="pw-hamburger" onClick={() => setMenuOpen(o => !o)} aria-label="Toggle menu" aria-expanded={menuOpen}>
