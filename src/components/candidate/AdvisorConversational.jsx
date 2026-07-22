@@ -414,10 +414,27 @@ const STAGE_TITLES = {
 
 export default function AdvisorConversational({
   STEPS, stepIdx, chat, input, setInput, send, busy, scores, profile, setProfile, programs,
-  setShowCvModal, cvText, narrative, setNarrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser,
+  setShowCvModal, cvText, narrative, setNarrative, chosenSchools, setChosenSchools, confirmTargetSchools, setCandTab, authUser, signOut,
 }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  // Undergrad "Goodbye 👋" is code-enforced (a persistent chip every turn, below),
+  // not left to the model. Tapping it sends a goodbye so the coach does its
+  // structured close (rule 17: save_session_summary + summary), then we log the
+  // student out to the login screen once that final turn finishes rendering.
+  const [endState, setEndState] = useState('idle'); // idle | sending | closing
+  const handleEndSession = () => {
+    if (busy || endState !== 'idle') return;
+    setEndState('sending');
+    send('Goodbye 👋');
+  };
+  useEffect(() => {
+    if (endState === 'sending' && busy) { setEndState('closing'); return; }
+    if (endState === 'closing' && !busy) {
+      const t = setTimeout(() => { signOut?.(); }, 4000); // 4s to read the sign-off
+      return () => clearTimeout(t);
+    }
+  }, [endState, busy, signOut]);
   const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const [showNarrativeModal, setShowNarrativeModal] = useState(false);
 
@@ -622,6 +639,12 @@ export default function AdvisorConversational({
   };
 
   const handleInlineOption = (option) => {
+    // Any goodbye/end-session option (the persistent chip OR one the model
+    // happened to emit) runs the same end-session + logout flow.
+    if (isUndergrad && /\b(goodbye|end session|i'?m done|see you|gotta go)\b/i.test(String(option || ''))) {
+      handleEndSession();
+      return;
+    }
     const directTabs = {
       'View University List': 'universities',
       'View Roadmap': 'ugRoadmap',
@@ -913,6 +936,19 @@ export default function AdvisorConversational({
                     {c.label}
                   </button>
                 ))}
+              </div>
+            )}
+            {isUndergrad && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+                <button
+                  type="button"
+                  className="pw-adv2-btn"
+                  onClick={handleEndSession}
+                  disabled={busy || endState !== 'idle'}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, borderRadius: 999, padding: '8px 16px', font: 'inherit', fontSize: 12.5, fontWeight: 600, minHeight: 34, border: `1px solid ${BORDER_2}`, background: 'rgba(255,255,255,.7)', color: MUTED, cursor: (busy || endState !== 'idle') ? 'not-allowed' : 'pointer', opacity: (busy || endState !== 'idle') ? 0.6 : 1 }}
+                >
+                  {endState !== 'idle' ? 'Wrapping up…' : 'Goodbye 👋'}
+                </button>
               </div>
             )}
             <div style={{ textAlign: 'center', fontSize: 12, color: MUTED_2, marginTop: 10 }}>Confidential consultation active · End-to-end encrypted</div>
