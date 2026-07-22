@@ -463,6 +463,10 @@ export default function AdvisorConversational({
 
   // Real-time gauges — mapped from the live scores object across every track.
   const hasScores = !!scores && Object.keys(scores).some(k => Number.isFinite(Number(scores[k])));
+  // A meaningful readiness snapshot needs at least one real (>0) score — an
+  // all-zero / "Needs update" set (a brand-new profile) should NOT surface the
+  // Undergraduate Readiness card in chat.
+  const hasRealScores = !!scores && Object.values(scores).some(v => Number.isFinite(Number(v)) && Number(v) > 0);
   // profile-temperature.js's development-mode dimensions carry neutral floor
   // scores even from a completely empty profile (e.g. testingAwareness=55
   // with zero facts known — "no plan yet" is not meant to read as a
@@ -470,7 +474,7 @@ export default function AdvisorConversational({
   // Undergrad and is not a real "enough info" signal on its own. Gate the
   // readiness card specifically on grade being known too — the one fact
   // every profile-temperature grade config actually depends on.
-  const readinessReady = hasScores && (!isUndergrad || !!profile?.grade);
+  const readinessReady = (isUndergrad ? hasRealScores : hasScores) && (!isUndergrad || !!profile?.grade);
   const gauges = [
     { label: 'Academic', sublabel: 'Academic strength', color: INK, value: pickScore(scores, ['academic']) },
     {
