@@ -8,26 +8,13 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (rel) => readFileSync(path.join(here, '..', rel), 'utf8');
 const conversational = read('AdvisorConversational.jsx');
 
-// The readiness/KPI card used to be an unconditional trailing widget
-// re-rendered directly above the composer on every turn (profile-
-// temperature.js's neutral floor scores make hasScores go true almost
-// immediately for Undergrad, well before there's real profile info), which
-// read as the conversation being interrupted every time a new message
-// arrived rather than continuing normally beneath a one-time card.
+// The Undergraduate Readiness / KPI scorecard must NOT appear in the advisor
+// chat — it lives in the Dashboard and Workspace. It kept cluttering the
+// conversation on login (an all-zero / partially-scored starter profile still
+// surfaced the big "Needs update" card), so it's been removed from chat.
 
-test('readiness card is gated on grade AND a real (>0) score — an all-zero starter profile shows no card', () => {
-  assert.match(conversational, /const hasRealScores = .*Number\(v\) > 0\);/);
-  assert.match(conversational, /const readinessReady = \(isUndergrad \? hasRealScores : hasScores\) && \(!isUndergrad \|\| !!profile\?\.grade\);/);
-});
-
-test('readiness card is anchored once to the message that made it ready, like milestones', () => {
-  assert.match(conversational, /const \[readinessCardAnchor, setReadinessCardAnchor\] = useState\(null\);/);
-  assert.match(conversational, /if \(readinessReady && !prevReadinessReady\.current\) \{\s*setReadinessCardAnchor\(visibleChat\.length\);/);
-  assert.match(conversational, /const showReadinessCard = isUndergrad && readinessCardAnchor === i \+ 1;/);
-  assert.match(conversational, /\{showReadinessCard && <UndergradKpiPanel scores=\{scores\} compact \/>\}/);
-});
-
-test('the old unconditional trailing readiness card render is gone', () => {
-  assert.ok(!/\{isUndergrad && hasScores && <UndergradKpiPanel scores=\{scores\} compact \/>\}/.test(conversational),
-    'UndergradKpiPanel must not render as an unconditional trailer after the message map anymore');
+test('the readiness/KPI scorecard is not rendered inside the advisor chat', () => {
+  assert.ok(!/UndergradKpiPanel/.test(conversational), 'UndergradKpiPanel must not be rendered by AdvisorConversational');
+  assert.ok(!/showReadinessCard/.test(conversational), 'no in-chat readiness-card render gate should remain');
+  assert.ok(!/readinessCardAnchor/.test(conversational), 'the readiness-card anchor machinery should be gone');
 });

@@ -15,7 +15,6 @@ import { normalizeProgramList } from '../../../lib/program-normalizer.js';
 import { needsProgramRecovery } from '../../../lib/program-ready-gate.js';
 import { deriveNarrativeProgress } from '../../lib/narrativeProgress.js';
 import { N1_QUESTION } from '../../../lib/selection-continuity.js';
-import UndergradKpiPanel from './UndergradKpiPanel.jsx';
 import NarrativeModal from './AdvisorNarrativeModal.jsx';
 
 const OPTIONS_PATTERN = /→\s*([\s\S]+)$/;
@@ -463,18 +462,6 @@ export default function AdvisorConversational({
 
   // Real-time gauges — mapped from the live scores object across every track.
   const hasScores = !!scores && Object.keys(scores).some(k => Number.isFinite(Number(scores[k])));
-  // A meaningful readiness snapshot needs at least one real (>0) score — an
-  // all-zero / "Needs update" set (a brand-new profile) should NOT surface the
-  // Undergraduate Readiness card in chat.
-  const hasRealScores = !!scores && Object.values(scores).some(v => Number.isFinite(Number(v)) && Number(v) > 0);
-  // profile-temperature.js's development-mode dimensions carry neutral floor
-  // scores even from a completely empty profile (e.g. testingAwareness=55
-  // with zero facts known — "no plan yet" is not meant to read as a
-  // failing grade), so hasScores alone goes true almost immediately for
-  // Undergrad and is not a real "enough info" signal on its own. Gate the
-  // readiness card specifically on grade being known too — the one fact
-  // every profile-temperature grade config actually depends on.
-  const readinessReady = (isUndergrad ? hasRealScores : hasScores) && (!isUndergrad || !!profile?.grade);
   const gauges = [
     { label: 'Academic', sublabel: 'Academic strength', color: INK, value: pickScore(scores, ['academic']) },
     {
@@ -563,21 +550,9 @@ export default function AdvisorConversational({
     setPicks([]);
   };
 
-  // Readiness/KPI card: fires ONCE, anchored to the message that made
-  // readinessReady true — same anchor pattern as milestones below — instead
-  // of trailing the whole message list on every render (which re-rendered
-  // itself immediately above the composer on every new turn, reading as the
-  // conversation being interrupted rather than continuing normally beneath
-  // a one-time card).
-  const [readinessCardAnchor, setReadinessCardAnchor] = useState(null);
-  const prevReadinessReady = useRef(readinessReady);
-  useEffect(() => {
-    if (readinessReady && !prevReadinessReady.current) {
-      setReadinessCardAnchor(visibleChat.length);
-    }
-    prevReadinessReady.current = readinessReady;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [readinessReady]);
+  // The Undergraduate Readiness / KPI scorecard is intentionally NOT rendered in
+  // the chat — it lives in the Dashboard and Workspace instead. Keeping it out
+  // of the conversation keeps the advisor feeling like a chat, not a report.
 
   // Milestone lines — one quiet centered moment per real state transition.
   const [milestones, setMilestones] = useState([]);
@@ -730,7 +705,6 @@ export default function AdvisorConversational({
               const isAi = m.role === 'ai';
               const ghost = chipLog.find(g => g.anchor === i + 1);
               const milestone = milestones.find(ms => ms.anchor === i + 1);
-              const showReadinessCard = isUndergrad && readinessCardAnchor === i + 1;
               const showPrograms = showProgramList && (programsAnchor === i + 1 || /list again|review and select schools/i.test(String(m.text || '')));
               const notesHere = markNotes.filter(n => n.anchor === i + 1);
               const showNarrativeCtaHere = showNarrativeCTA && narrativeCtaAnchor === i + 1;
@@ -825,7 +799,6 @@ export default function AdvisorConversational({
                       <span style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,#c6d2ea,transparent)' }} />
                     </div>
                   )}
-                  {showReadinessCard && <UndergradKpiPanel scores={scores} compact />}
                   {ghost && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'flex-end', opacity: .55, pointerEvents: 'none' }} aria-hidden="true">
                       {ghost.options.map(label => (
