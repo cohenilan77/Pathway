@@ -23,8 +23,14 @@ test('Advisor forwards setNarrative to the production conversational advisor', (
 test('recommended-schools list remains available after target schools are confirmed', () => {
   assert.match(conversational, /const showProgramList = hasPrograms;/);
   assert.match(conversational, /const showPrograms = showProgramList && \(programsAnchor === i \+ 1 \|\| \/list again\|review and select schools\/i\.test/);
-  assert.match(conversational, /\{showPrograms && \(/);
-  assert.match(conversational, /Open School List →/);
+  // The program list renders above the advisor message for a locked portfolio,
+  // and below it during selection so the "pick your schools" instruction leads.
+  assert.match(conversational, /const programsBlock = showPrograms \? \(/);
+  assert.match(conversational, /\{isConfirmed && programsBlock\}/);
+  assert.match(conversational, /\{!isConfirmed && programsBlock\}/);
+  // The redundant "Open School List →" tab-shortcut button is gone — the list
+  // is shown inline in the chat, not behind a button.
+  assert.ok(!/Open School List →/.test(conversational), 'the Open School List shortcut button is removed');
 });
 
 test('narrative gating imports the same deriveNarrativeProgress used elsewhere', () => {
