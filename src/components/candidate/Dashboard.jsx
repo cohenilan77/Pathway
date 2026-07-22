@@ -18,17 +18,17 @@ function ScoreRing({ value }) {
   const offset = c - (pct / 100) * c;
   return (
     <svg viewBox="0 0 100 100" width="104" height="104" style={{ flexShrink: 0 }}>
-      <circle cx="50" cy="50" r={r} fill="none" stroke="#eef1f7" strokeWidth="9" />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="#f2f6ff" strokeWidth="9" />
       <circle cx="50" cy="50" r={r} fill="none" stroke="url(#dashGrad)" strokeWidth="9"
         strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 50 50)" />
       <defs>
         <linearGradient id="dashGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#94b3fb" />
-          <stop offset="100%" stopColor="#b899fb" />
+          <stop offset="0%" stopColor="#3a63ff" />
+          <stop offset="100%" stopColor="#6d8cff" />
         </linearGradient>
       </defs>
-      <text x="50" y="54" textAnchor="middle" fontSize="24" fontWeight="800" fill="#141b34" fontFamily="inherit">{value != null ? value : '–'}</text>
-      <text x="50" y="70" textAnchor="middle" fontSize="8.5" fontWeight="700" letterSpacing="1" fill="#9aa3b5" fontFamily="inherit">READINESS</text>
+      <text x="50" y="54" textAnchor="middle" fontSize="24" fontWeight="800" fill="#111a33" fontFamily="inherit">{value != null ? value : '–'}</text>
+      <text x="50" y="70" textAnchor="middle" fontSize="8.5" fontWeight="700" letterSpacing="1" fill="#97a3c0" fontFamily="inherit">READINESS</text>
     </svg>
   );
 }
@@ -40,24 +40,24 @@ function UndergradMiniCalendar({ undergrad, setCandTab }) {
   const cells = [
     ['Today', mini.counts.today],
     ['This week', mini.counts.thisWeek],
-    ['Overdue', mini.counts.overdue, mini.counts.overdue ? '#e0556b' : '#141b34'],
+    ['Overdue', mini.counts.overdue, mini.counts.overdue ? '#e8476b' : '#111a33'],
   ];
   return (
     <Card style={{ cursor: 'pointer' }}>
       <div onClick={() => setCandTab?.('calendar')} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') setCandTab?.('calendar'); }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', textTransform: 'uppercase' }}>Calendar</div>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#5b46e0' }}>Open →</span>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#8b97b8', textTransform: 'uppercase' }}>Calendar</div>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: '#3a63ff' }}>Open →</span>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {cells.map(([label, value, tone]) => (
-            <div key={label} style={{ flex: 1, background: '#faf7f2', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: tone || '#141b34' }}>{value}</div>
-              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#9098b5', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
+            <div key={label} style={{ flex: 1, background: '#f2f6ff', borderRadius: 12, padding: '12px 10px', textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: tone || '#111a33' }}>{value}</div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '.4px', color: '#8b97b8', textTransform: 'uppercase', marginTop: 3 }}>{label}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 12.5, color: '#6b7392', marginTop: 12 }}>Next deadline · {mini.nextDeadline ? `${fmtDay(mini.nextDeadline.date)} — ${mini.nextDeadline.title}` : 'None yet'}</div>
+        <div style={{ fontSize: 12.5, color: '#5a6a8f', marginTop: 12 }}>Next deadline · {mini.nextDeadline ? `${fmtDay(mini.nextDeadline.date)} — ${mini.nextDeadline.title}` : 'None yet'}</div>
       </div>
     </Card>
   );
@@ -65,14 +65,14 @@ function UndergradMiniCalendar({ undergrad, setCandTab }) {
 
 function Card({ children, style }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 22, border: '1px solid #f1eadd', boxShadow: '0 1px 2px rgba(20,27,52,.04),0 10px 30px rgba(20,27,52,.05)', padding: 24, ...style }}>
+    <div style={{ background: '#fff', borderRadius: 22, border: '1px solid #dbe4f7', boxShadow: '0 1px 2px rgba(30,45,90,.04),0 10px 30px rgba(30,45,90,.05)', padding: 24, ...style }}>
       {children}
     </div>
   );
 }
 
 function CardLabel({ children }) {
-  return <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#9098b5', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
+  return <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#8b97b8', marginBottom: 14, textTransform: 'uppercase' }}>{children}</div>;
 }
 
 // The single most useful next move, derived from real data only.
@@ -134,29 +134,29 @@ function undergradMilestones(profile) {
 
 function JourneyMap({ steps, currentIdx, setCandTab }) {
   return (
-    <Card style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
+    <Card style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f2f6ff)', border: '1px solid #e8efff' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
         <div>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your journey</div>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 22, fontWeight: 700, color: '#141b34', marginTop: 6 }}>Foundation → Applications</div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#6d8cff', textTransform: 'uppercase' }}>Your journey</div>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 22, fontWeight: 700, color: '#111a33', marginTop: 6 }}>Foundation → Applications</div>
         </div>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#5b46e0' }}>Stage {Math.min(currentIdx + 1, steps.length)} of {steps.length}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: '#3a63ff' }}>Stage {Math.min(currentIdx + 1, steps.length)} of {steps.length}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-start', overflowX: 'auto', paddingBottom: 4 }}>
         {steps.map((label, i) => {
           const state = i < currentIdx ? 'done' : i === currentIdx ? 'current' : 'locked';
           const dot = state === 'done'
-            ? { background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: '2px solid transparent' }
+            ? { background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', border: '2px solid transparent' }
             : state === 'current'
-              ? { background: '#fff', color: '#5b46e0', border: '2px solid #5b46e0' }
-              : { background: '#eef1f7', color: '#9098b5', border: '2px solid #eef1f7' };
+              ? { background: '#fff', color: '#3a63ff', border: '2px solid #3a63ff' }
+              : { background: '#f2f6ff', color: '#8b97b8', border: '2px solid #f2f6ff' };
           return (
             <div key={label} style={{ flex: 1, minWidth: 76, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative' }}>
-              {i > 0 && <div style={{ position: 'absolute', top: 16, right: '50%', width: '100%', height: 3, background: i <= currentIdx ? 'linear-gradient(90deg,#94b3fb,#b899fb)' : '#eef1f7' }} />}
+              {i > 0 && <div style={{ position: 'absolute', top: 16, right: '50%', width: '100%', height: 3, background: i <= currentIdx ? 'linear-gradient(90deg,#3a63ff,#6d8cff)' : '#f2f6ff' }} />}
               <button onClick={() => setCandTab?.('ugRoadmap')} title={label} style={{ position: 'relative', width: 34, height: 34, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, fontFamily: 'inherit', cursor: 'pointer', ...dot }}>
                 {state === 'done' ? '✓' : i + 1}
               </button>
-              <div style={{ fontSize: 11.5, fontWeight: state === 'current' ? 800 : 600, color: state === 'locked' ? '#9098b5' : '#33405e', marginTop: 8, lineHeight: 1.25 }}>{label}</div>
+              <div style={{ fontSize: 11.5, fontWeight: state === 'current' ? 800 : 600, color: state === 'locked' ? '#8b97b8' : '#38456b', marginTop: 8, lineHeight: 1.25 }}>{label}</div>
             </div>
           );
         })}
@@ -175,16 +175,16 @@ function TrajectoryScore({ scoreLabel, overall, profile }) {
       <CardLabel>{scoreLabel}</CardLabel>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#9098b5', letterSpacing: '.5px', textTransform: 'uppercase' }}>Where you are</div>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 700, color: '#141b34', lineHeight: 1 }}>{overall != null ? overall : '–'}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#8b97b8', letterSpacing: '.5px', textTransform: 'uppercase' }}>Where you are</div>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 34, fontWeight: 700, color: '#111a33', lineHeight: 1 }}>{overall != null ? overall : '–'}</div>
         </div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#b899fb' }}>→</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#6d8cff' }}>→</div>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#7c6ef7', letterSpacing: '.5px', textTransform: 'uppercase' }}>Projected by senior year</div>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 34, fontWeight: 700, color: '#5b46e0', lineHeight: 1 }}>{projected != null ? projected : '–'}</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#6d8cff', letterSpacing: '.5px', textTransform: 'uppercase' }}>Projected by senior year</div>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 34, fontWeight: 700, color: '#3a63ff', lineHeight: 1 }}>{projected != null ? projected : '–'}</div>
         </div>
       </div>
-      <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55, marginTop: 12 }}>
+      <div style={{ fontSize: 13, color: '#5a6a8f', lineHeight: 1.55, marginTop: 12 }}>
         {overall == null
           ? 'Start your profile analysis to see your trajectory.'
           : grade
@@ -204,10 +204,10 @@ function MilestonesCard({ profile }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {items.map((m, i) => (
           <div key={i} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-            <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, background: '#eef1f7', color: '#5b46e0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{i + 1}</span>
+            <span style={{ width: 22, height: 22, borderRadius: '50%', flexShrink: 0, background: '#f2f6ff', color: '#3a63ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800 }}>{i + 1}</span>
             <div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#141b34' }}>{m.title}</div>
-              <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.45, marginTop: 2 }}>{m.detail}</div>
+              <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111a33' }}>{m.title}</div>
+              <div style={{ fontSize: 12.5, color: '#5a6a8f', lineHeight: 1.45, marginTop: 2 }}>{m.detail}</div>
             </div>
           </div>
         ))}
@@ -229,20 +229,20 @@ function CandidateRatingGauge({ value, label }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, flexShrink: 0 }}>
       <svg viewBox="0 0 150 150" width="150" height="150">
-        <circle cx="75" cy="75" r={r} fill="none" stroke="#eef1f7" strokeWidth="13" />
+        <circle cx="75" cy="75" r={r} fill="none" stroke="#f2f6ff" strokeWidth="13" />
         <circle cx="75" cy="75" r={r} fill="none" stroke="url(#ratingGrad)" strokeWidth="13"
           strokeDasharray={c} strokeDashoffset={has ? offset : c} strokeLinecap="round" transform="rotate(-90 75 75)"
           style={{ transition: 'stroke-dashoffset .6s ease' }} />
         <defs>
           <linearGradient id="ratingGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#94b3fb" />
-            <stop offset="100%" stopColor="#b899fb" />
+            <stop offset="0%" stopColor="#3a63ff" />
+            <stop offset="100%" stopColor="#6d8cff" />
           </linearGradient>
         </defs>
-        <text x="75" y="78" textAnchor="middle" fontSize="40" fontWeight="800" fill="#141b34" fontFamily="inherit">{has ? Math.round(pct) : '–'}</text>
-        <text x="75" y="98" textAnchor="middle" fontSize="11" fontWeight="700" letterSpacing="1.2" fill="#9aa3b5" fontFamily="inherit">/ 100</text>
+        <text x="75" y="78" textAnchor="middle" fontSize="40" fontWeight="800" fill="#111a33" fontFamily="inherit">{has ? Math.round(pct) : '–'}</text>
+        <text x="75" y="98" textAnchor="middle" fontSize="11" fontWeight="700" letterSpacing="1.2" fill="#97a3c0" fontFamily="inherit">/ 100</text>
       </svg>
-      <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '.6px', color: '#6d8cff', textTransform: 'uppercase' }}>{label}</div>
     </div>
   );
 }
@@ -272,21 +272,21 @@ function CandidateSummaryCard({ profile, scores, scoreLabel, chosenSchools, auth
     <Card style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 28, flexWrap: 'wrap' }}>
       <div style={{ flex: 1, minWidth: 260 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 28, fontWeight: 700, color: '#141b34', lineHeight: 1.1 }}>{name}</div>
-          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.4px', color: '#5b46e0', background: '#eef1ff', border: '1px solid #e0e0fb', borderRadius: 999, padding: '4px 11px', textTransform: 'capitalize' }}>{type}</span>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 28, fontWeight: 700, color: '#111a33', lineHeight: 1.1 }}>{name}</div>
+          <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.4px', color: '#3a63ff', background: '#eef1ff', border: '1px solid #e8efff', borderRadius: 999, padding: '4px 11px', textTransform: 'capitalize' }}>{type}</span>
         </div>
-        <div style={{ fontSize: 12.5, color: '#9098b5', fontWeight: 600, marginBottom: 16 }}>{scoreLabel}</div>
+        <div style={{ fontSize: 12.5, color: '#8b97b8', fontWeight: 600, marginBottom: 16 }}>{scoreLabel}</div>
         {facts.length ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {facts.map(([label, val]) => (
               <div key={label}>
-                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.5px', color: '#9098b5', textTransform: 'uppercase' }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34', marginTop: 3, lineHeight: 1.35 }}>{val}</div>
+                <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.5px', color: '#8b97b8', textTransform: 'uppercase' }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#111a33', marginTop: 3, lineHeight: 1.35 }}>{val}</div>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: 13.5, color: '#9098b5', lineHeight: 1.55 }}>Chat with your advisor to build your profile — your details and rating will appear here.</div>
+          <div style={{ fontSize: 13.5, color: '#8b97b8', lineHeight: 1.55 }}>Chat with your advisor to build your profile — your details and rating will appear here.</div>
         )}
       </div>
       <CandidateRatingGauge value={scores?.overall} label={scoreLabel} />
@@ -306,15 +306,15 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
 
         <div>
           <TrajectoryScore scoreLabel={scoreLabel} overall={overall} profile={profile} />
-          <div style={{ fontSize: 12, color: '#9098b5', lineHeight: 1.5, marginTop: 8, padding: '0 4px' }}>{UNDERGRAD_HELPER_TEXT}</div>
+          <div style={{ fontSize: 12, color: '#8b97b8', lineHeight: 1.5, marginTop: 8, padding: '0 4px' }}>{UNDERGRAD_HELPER_TEXT}</div>
         </div>
 
-        <Card style={{ background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6' }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your next best move</div>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 20, fontWeight: 700, color: '#141b34', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
+        <Card style={{ background: 'linear-gradient(135deg,#eef1ff,#f2f6ff)', border: '1px solid #e8efff' }}>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#6d8cff', textTransform: 'uppercase' }}>Your next best move</div>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 20, fontWeight: 700, color: '#111a33', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>{move.cta} →</button>
-            <button onClick={() => setCandTab('chat')} title="Talk to a human strategist" style={{ background: '#fff', color: '#5b46e0', border: '1px solid #e0d9ef', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Talk to Human</button>
+            <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(58,99,255,.4)' }}>{move.cta} →</button>
+            <button onClick={() => setCandTab('chat')} title="Talk to a human strategist" style={{ background: '#fff', color: '#3a63ff', border: '1px solid #dbe4f7', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Talk to Human</button>
           </div>
         </Card>
 
@@ -325,18 +325,18 @@ function UndergradJourneyDashboard({ steps, currentIdx, scores, scoreLabel, move
         <div style={{ gridColumn: '1 / -1' }}><UndergradKpiPanel scores={scores || {}} profile={profile || {}} /></div>
 
         {[
-          ['Top strengths', (strengths || []).slice(0, 3), '#2f9e78'],
-          ['Current risks', (weaknesses || []).slice(0, 3), '#e0556b'],
-          ['Next tasks', (tasks || []).slice(0, 3), '#5b46e0'],
+          ['Top strengths', (strengths || []).slice(0, 3), '#0ca678'],
+          ['Current risks', (weaknesses || []).slice(0, 3), '#e8476b'],
+          ['Next tasks', (tasks || []).slice(0, 3), '#3a63ff'],
         ].map(([label, items, color]) => (
           <Card key={label}>
             <CardLabel>{label}</CardLabel>
             {items.length ? items.map((item, index) => (
-              <div key={index} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#33405e', lineHeight: 1.45, marginBottom: 9 }}>
+              <div key={index} style={{ display: 'flex', gap: 9, fontSize: 13, color: '#38456b', lineHeight: 1.45, marginBottom: 9 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: color, marginTop: 6, flexShrink: 0 }} />
                 <span>{typeof item === 'string' ? item : item?.header || item?.title}</span>
               </div>
-            )) : <div style={{ fontSize: 13, color: '#9098b5' }}>Needs update</div>}
+            )) : <div style={{ fontSize: 13, color: '#8b97b8' }}>Needs update</div>}
           </Card>
         ))}
       </div>
@@ -371,13 +371,13 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
       <div className="pw-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 20, maxWidth: 1000, margin: '0 auto' }}>
 
         {/* Hero — Your next best move */}
-        <Card style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f7f0ff)', border: '1px solid #e6e0f6', display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
+        <Card style={{ gridColumn: '1 / -1', background: 'linear-gradient(135deg,#eef1ff,#f2f6ff)', border: '1px solid #e8efff', display: 'flex', alignItems: 'center', gap: 22, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 240 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#7c6ef7', textTransform: 'uppercase' }}>Your next best move</div>
-            <div style={{ fontFamily: "'Newsreader',serif", fontSize: 24, fontWeight: 700, color: '#141b34', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '.6px', color: '#6d8cff', textTransform: 'uppercase' }}>Your next best move</div>
+            <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 24, fontWeight: 700, color: '#111a33', margin: '8px 0 14px', lineHeight: 1.3 }}>{move.text}</div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(148,153,251,.4)' }}>{move.cta} →</button>
-              <button onClick={resetSession} disabled={requiresOAuthDetails} style={{ background: '#fff', color: '#33405e', border: '1px solid #e0d9ef', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 600, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>New session</button>
+              <button onClick={() => setCandTab(move.tab)} style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#fff', border: 'none', borderRadius: 999, padding: '11px 20px', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 10px rgba(58,99,255,.4)' }}>{move.cta} →</button>
+              <button onClick={resetSession} disabled={requiresOAuthDetails} style={{ background: '#fff', color: '#38456b', border: '1px solid #dbe4f7', borderRadius: 999, padding: '11px 18px', fontSize: 13.5, fontWeight: 600, cursor: requiresOAuthDetails ? 'not-allowed' : 'pointer', opacity: requiresOAuthDetails ? 0.45 : 1, fontFamily: 'inherit' }}>New session</button>
             </div>
           </div>
           <ScoreRing value={overall} />
@@ -386,10 +386,10 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         {/* Readiness detail */}
         <Card>
           <CardLabel>{scoreLabel}</CardLabel>
-          <div style={{ fontFamily: "'Newsreader',serif", fontSize: 26, fontWeight: 600, color: '#141b34', marginBottom: 6 }}>
+          <div style={{ fontFamily: "'Bricolage Grotesque',serif", fontSize: 26, fontWeight: 600, color: '#111a33', marginBottom: 6 }}>
             {overall != null ? `${overall} / 100` : 'Not analyzed yet'}
           </div>
-          <div style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.55 }}>
+          <div style={{ fontSize: 13, color: '#5a6a8f', lineHeight: 1.55 }}>
             Built from your full profile — uploaded files, chat context, and saved facts.
           </div>
         </Card>
@@ -397,10 +397,10 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
         {/* Current progress */}
         <Card>
           <CardLabel>Current Progress</CardLabel>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#141b34', marginBottom: 4 }}>Step {safeStepIdx + 1} of {steps.length || '–'}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#5b46e0' }}>{steps[safeStepIdx] || '—'}</div>
-          <div style={{ height: 8, background: '#eef1f7', borderRadius: 4, marginTop: 16, overflow: 'hidden' }}>
-            <div style={{ width: `${steps.length ? ((safeStepIdx + 1) / steps.length) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,#94b3fb,#b899fb)' }} />
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#111a33', marginBottom: 4 }}>Step {safeStepIdx + 1} of {steps.length || '–'}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#3a63ff' }}>{steps[safeStepIdx] || '—'}</div>
+          <div style={{ height: 8, background: '#f2f6ff', borderRadius: 4, marginTop: 16, overflow: 'hidden' }}>
+            <div style={{ width: `${steps.length ? ((safeStepIdx + 1) / steps.length) * 100 : 0}%`, height: '100%', background: 'linear-gradient(90deg,#3a63ff,#6d8cff)' }} />
           </div>
         </Card>
 
@@ -410,8 +410,8 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
           {focusItems.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
               {focusItems.map((w, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.5 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e0556b', marginTop: 6, flexShrink: 0 }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#38456b', lineHeight: 1.5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#e8476b', marginTop: 6, flexShrink: 0 }} />
                   {w}
                 </div>
               ))}
@@ -419,14 +419,14 @@ export default function Dashboard({ scores, currentConfig, STEPS, stepIdx, tasks
           ) : strengths && strengths.length ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
               {strengths.slice(0, 3).map((s, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#33405e', lineHeight: 1.5 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#2f9e78', marginTop: 6, flexShrink: 0 }} />
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13.5, color: '#38456b', lineHeight: 1.5 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#0ca678', marginTop: 6, flexShrink: 0 }} />
                   {s}
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ fontSize: 13.5, color: '#9098b5' }}>Your focus areas appear here after your first analysis.</div>
+            <div style={{ fontSize: 13.5, color: '#8b97b8' }}>Your focus areas appear here after your first analysis.</div>
           )}
         </Card>}
       </div>

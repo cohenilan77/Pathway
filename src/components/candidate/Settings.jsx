@@ -149,12 +149,12 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
   };
 
   const Toggle = ({ on, onToggle }) => (
-    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? 'linear-gradient(135deg,#94b3fb,#b899fb)' : '#e7dcc7', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s', boxShadow: on ? '0 4px 10px rgba(105,91,255,.32)' : 'none' }}>
-      <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#faf7f2', transition: 'left .2s' }} />
+    <span onClick={onToggle} style={{ width: 42, height: 24, borderRadius: 12, background: on ? 'linear-gradient(135deg,#3a63ff,#6d8cff)' : '#e3ebfa', position: 'relative', flexShrink: 0, cursor: 'pointer', display: 'inline-block', transition: 'background .2s', boxShadow: on ? '0 4px 10px rgba(58,99,255,.32)' : 'none' }}>
+      <span style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 18, height: 18, borderRadius: '50%', background: '#f2f6ff', transition: 'left .2s' }} />
     </span>
   );
 
-  const inputStyle = { width: '100%', border: '1.5px solid #f1eadd', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#141b34', background: '#f6f1e8' };
+  const inputStyle = { width: '100%', border: '1.5px solid #dbe4f7', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', color: '#111a33', background: '#eef4ff' };
 
   const lockedCardStyle = requiresOAuthDetails ? { opacity: 0.3, pointerEvents: 'none', userSelect: 'none', position: 'relative' } : { position: 'relative' };
 
@@ -167,47 +167,47 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
       <div style={{ maxWidth: 680, margin: '0 auto', padding: '24px 34px 64px' }}>
 
         {requiresOAuthDetails && (
-          <div style={{ background: 'linear-gradient(135deg,#94b3fb18,#b899fb18)', border: '1.5px solid #b899fb55', borderRadius: 16, padding: '16px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#94b3fb,#b899fb)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#faf7f2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div style={{ background: 'linear-gradient(135deg,#3a63ff18,#6d8cff18)', border: '1.5px solid #6d8cff55', borderRadius: 16, padding: '16px 22px', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+            <span style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f2f6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
             </span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#141b34' }}>Confirm your details to unlock Pathway</div>
-              <div style={{ fontSize: 12.5, color: '#6b7392' }}>This is required once after Google or Outlook sign-in.</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#111a33' }}>Confirm your details to unlock Pathway</div>
+              <div style={{ fontSize: 12.5, color: '#5a6a8f' }}>This is required once after Google or Outlook sign-in.</div>
             </div>
           </div>
         )}
 
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: '#141b34', margin: '0 0 8px', letterSpacing: '-.5px' }}>Settings</h1>
-          <p style={{ fontSize: 14.5, color: '#6b7392', margin: '0 0 28px', fontWeight: 500 }}>{requiresOAuthDetails ? 'Confirm your candidate details before continuing.' : 'Manage your private office preferences.'}</p>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: '#111a33', margin: '0 0 8px', letterSpacing: '-.5px' }}>Settings</h1>
+          <p style={{ fontSize: 14.5, color: '#5a6a8f', margin: '0 0 28px', fontWeight: 500 }}>{requiresOAuthDetails ? 'Confirm your candidate details before continuing.' : 'Manage your private office preferences.'}</p>
 
         {/* Plan */}
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
+        <div style={{ background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(30,45,90,.06)', ...lockedCardStyle }}>
           {requiresOAuthDetails && <LockOverlay />}
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Plan</h3>
-          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: '0 0 6px', letterSpacing: '-.3px' }}>Plan</h3>
+          <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 18px' }}>Choose how much of the process you want to unlock.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 14 }}>
             {PLAN_DETAILS.map(p => {
               const active = plan === p.key;
               return (
                 <div key={p.key} style={{
                   display: 'flex', flexDirection: 'column',
-                  border: active ? '2px solid #9285e4' : '1.5px solid #f1eadd',
-                  background: active ? '#f6f1e8' : '#faf7f2',
+                  border: active ? '2px solid #6d8cff' : '1.5px solid #dbe4f7',
+                  background: active ? '#eef4ff' : '#f2f6ff',
                   borderRadius: 16, padding: '20px 18px',
                 }}>
-                  <div style={{ fontSize: 15.5, fontWeight: 700, color: '#141b34', marginBottom: 8 }}>{p.label}</div>
-                  <div style={{ fontSize: 12.5, color: '#6b7392', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
+                  <div style={{ fontSize: 15.5, fontWeight: 700, color: '#111a33', marginBottom: 8 }}>{p.label}</div>
+                  <div style={{ fontSize: 12.5, color: '#5a6a8f', lineHeight: 1.5, marginBottom: 18, flex: 1 }}>{p.description}</div>
                   <button onClick={() => handleSelectPlan(p.key)} disabled={active} style={{
-                    background: active ? 'none' : 'linear-gradient(135deg,#94b3fb,#b899fb)',
-                    color: active ? '#9098b5' : '#faf7f2',
-                    border: active ? '1.5px solid #f1eadd' : 'none',
+                    background: active ? 'none' : 'linear-gradient(135deg,#3a63ff,#6d8cff)',
+                    color: active ? '#8b97b8' : '#f2f6ff',
+                    border: active ? '1.5px solid #dbe4f7' : 'none',
                     borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 700,
                     cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
-                    boxShadow: active ? 'none' : '0 8px 16px rgba(105,91,255,.3)',
+                    boxShadow: active ? 'none' : '0 8px 16px rgba(58,99,255,.3)',
                   }}>
                     {active ? 'Current Plan' : 'Select'}
                   </button>
@@ -218,15 +218,15 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Journey / Category */}
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
+        <div style={{ background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(30,45,90,.06)', ...lockedCardStyle }}>
           {requiresOAuthDetails && <LockOverlay />}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Your Journey</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: 0, letterSpacing: '-.3px' }}>Your Journey</h3>
             {!profile?.category && (
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#9285e4', background: '#ede9fb', padding: '3px 9px', borderRadius: 8 }}>Unlocks Community</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#6d8cff', background: '#f2f6ff', padding: '3px 9px', borderRadius: 8 }}>Unlocks Community</span>
             )}
           </div>
-          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Select your application type. This unlocks Community and tailors your advisor.</p>
+          <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 18px' }}>Select your application type. This unlocks Community and tailors your advisor.</p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
             {CATEGORIES.map(c => {
               const active = profile?.category === c.key;
@@ -235,15 +235,15 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
                   key={c.key}
                   onClick={() => handleSetCategory(c.key)}
                   style={{
-                    border: active ? '2px solid #9285e4' : '1.5px solid #f1eadd',
-                    background: active ? '#ede9fb' : '#f6f1e8',
+                    border: active ? '2px solid #6d8cff' : '1.5px solid #dbe4f7',
+                    background: active ? '#f2f6ff' : '#eef4ff',
                     borderRadius: 14, padding: '16px 16px',
                     cursor: 'pointer',
                     transition: 'border .15s, background .15s',
                   }}
                 >
-                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#5a3fbf' : '#141b34', marginBottom: 5 }}>{c.label}</div>
-                  <div style={{ fontSize: 12, color: '#9098b5', lineHeight: 1.45 }}>{c.desc}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: active ? '#2f52e6' : '#111a33', marginBottom: 5 }}>{c.label}</div>
+                  <div style={{ fontSize: 12, color: '#8b97b8', lineHeight: 1.45 }}>{c.desc}</div>
                 </div>
               );
             })}
@@ -251,113 +251,113 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         </div>
 
         {/* Profile */}
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
+        <div style={{ background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(30,45,90,.06)', ...lockedCardStyle }}>
           {requiresOAuthDetails && <LockOverlay />}
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Profile</h3>
-          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: '0 0 6px', letterSpacing: '-.3px' }}>Profile</h3>
+          <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 18px' }}>Auto-filled from your advisor conversation. Override manually here.</p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Full Name</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Full Name</label>
               <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Your name" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Target Degree</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Target Degree</label>
               <input value={form.degree} onChange={e => setForm(f => ({ ...f, degree: e.target.value }))} placeholder="MBA, MPS ITP, MFA, MSc, PhD..." style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>GPA</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>GPA</label>
               <input value={form.gpa} onChange={e => setForm(f => ({ ...f, gpa: e.target.value }))} placeholder="e.g. 3.7" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Test / Portfolio Signal</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Test / Portfolio Signal</label>
               <input value={form.gmat} onChange={e => setForm(f => ({ ...f, gmat: e.target.value }))} placeholder="e.g. GRE 320, IELTS 7.5, portfolio ready" style={inputStyle} />
             </div>
           </div>
         </div>
 
         {/* Details */}
-        <div style={{ background: '#faf7f2', border: requiresOAuthDetails ? '1.5px solid #b899fb88' : '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)', position: 'relative' }}>
+        <div style={{ background: '#f2f6ff', border: requiresOAuthDetails ? '1.5px solid #6d8cff88' : '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(30,45,90,.06)', position: 'relative' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: 0, letterSpacing: '-.3px' }}>Details</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: 0, letterSpacing: '-.3px' }}>Details</h3>
             {requiresOAuthDetails && (
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#9285e4', background: '#f1eadd', padding: '3px 9px', borderRadius: 8 }}>Required</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#6d8cff', background: '#dbe4f7', padding: '3px 9px', borderRadius: 8 }}>Required</span>
             )}
           </div>
-          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>
+          <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 18px' }}>
             {requiresOAuthDetails
               ? 'Fill in all required fields to unlock your Pathway private office.'
               : 'Your personal details used by your AI strategist.'}
           </p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Full Name</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Full Name</label>
               <input value={details.name || ''} onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} placeholder="Your name" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Email</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Email</label>
               <input value={details.email || authUser?.email || ''} disabled placeholder="you@example.com" style={{ ...inputStyle, opacity: 0.7, cursor: 'not-allowed' }} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Country of Residence</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Country of Residence</label>
               <input value={details.country || ''} onChange={e => setDetails(d => ({ ...d, country: e.target.value }))} placeholder="e.g. United States" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Age</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Age</label>
               <input type="number" value={details.age || ''} onChange={e => setDetails(d => ({ ...d, age: e.target.value }))} placeholder="e.g. 27" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Phone Number</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Phone Number</label>
               <input value={details.phone || ''} onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} placeholder="Optional" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>LinkedIn URL</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>LinkedIn URL</label>
               <input value={details.linkedin || ''} onChange={e => setDetails(d => ({ ...d, linkedin: e.target.value }))} placeholder="Optional" style={inputStyle} />
             </div>
           </div>
-          <div style={{ height: 1, background: '#f1eadd', margin: '20px 0 14px' }} />
-          <p style={{ fontSize: 12, color: '#9098b5', margin: 0, lineHeight: 1.5 }}>
+          <div style={{ height: 1, background: '#dbe4f7', margin: '20px 0 14px' }} />
+          <p style={{ fontSize: 12, color: '#8b97b8', margin: 0, lineHeight: 1.5 }}>
             These details are used by your AI strategist only to personalise your admissions risk evaluation.
           </p>
         </div>
 
         {/* Security */}
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(60,72,130,.06)' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Security</h3>
-          <p style={{ fontSize: 13, color: '#9098b5', margin: '0 0 18px' }}>Change your password using the normal encrypted authentication system.</p>
+        <div style={{ background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 18, boxShadow: '0 18px 40px rgba(30,45,90,.06)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: '0 0 6px', letterSpacing: '-.3px' }}>Security</h3>
+          <p style={{ fontSize: 13, color: '#8b97b8', margin: '0 0 18px' }}>Change your password using the normal encrypted authentication system.</p>
           <div className="pw-settings-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Current Password</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Current Password</label>
               <input type="password" value={passwordForm.currentPassword} onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))} placeholder="Current password" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>New Password</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>New Password</label>
               <input type="password" value={passwordForm.newPassword} onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))} placeholder="New password" style={inputStyle} />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#33405e', marginBottom: 7 }}>Confirm New Password</label>
+              <label style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#38456b', marginBottom: 7 }}>Confirm New Password</label>
               <input type="password" value={passwordForm.confirmPassword} onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))} placeholder="Confirm new password" style={inputStyle} />
             </div>
           </div>
-          <button onClick={handleChangePassword} disabled={savingPassword} style={{ marginTop: 16, background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, cursor: savingPassword ? 'wait' : 'pointer', opacity: savingPassword ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+          <button onClick={handleChangePassword} disabled={savingPassword} style={{ marginTop: 16, background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '12px 22px', fontSize: 13.5, fontWeight: 700, cursor: savingPassword ? 'wait' : 'pointer', opacity: savingPassword ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
             {savingPassword ? 'Saving...' : 'Change Password'}
           </button>
         </div>
 
         {/* Notifications */}
-        <div style={{ background: '#faf7f2', border: '1px solid #f1eadd', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(60,72,130,.06)', ...lockedCardStyle }}>
+        <div style={{ background: '#f2f6ff', border: '1px solid #dbe4f7', borderRadius: 20, padding: 28, marginBottom: 24, boxShadow: '0 18px 40px rgba(30,45,90,.06)', ...lockedCardStyle }}>
           {requiresOAuthDetails && <LockOverlay />}
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#141b34', margin: '0 0 6px', letterSpacing: '-.3px' }}>Notifications</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f1eadd' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#111a33', margin: '0 0 6px', letterSpacing: '-.3px' }}>Notifications</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #dbe4f7' }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Strategist updates</div>
-              <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>Get notified when your advisor reviews a document.</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#111a33' }}>Strategist updates</div>
+              <div style={{ fontSize: 12.5, color: '#8b97b8', marginTop: 2 }}>Get notified when your advisor reviews a document.</div>
             </div>
             <Toggle on={notifStrategist} onToggle={() => setNotifStrategist(v => !v)} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#141b34' }}>Weekly score digest</div>
-              <div style={{ fontSize: 12.5, color: '#9098b5', marginTop: 2 }}>A summary of your competitiveness metrics.</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#111a33' }}>Weekly score digest</div>
+              <div style={{ fontSize: 12.5, color: '#8b97b8', marginTop: 2 }}>A summary of your competitiveness metrics.</div>
             </div>
             <Toggle on={notifDigest} onToggle={() => setNotifDigest(v => !v)} />
           </div>
@@ -372,20 +372,20 @@ export default function Settings({ profile, plan, setPlan, setShowContactModal, 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           {requiresOAuthDetails ? (
             <>
-              <button onClick={handleUnlock} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+              <button onClick={handleUnlock} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                 {savingDetails ? 'Saving…' : 'Save & Unlock Pathway →'}
               </button>
-              <span style={{ fontSize: 12.5, color: '#9098b5' }}>Fill in required fields above to continue</span>
+              <span style={{ fontSize: 12.5, color: '#8b97b8' }}>Fill in required fields above to continue</span>
             </>
           ) : (
             <>
-              <button onClick={handleSave} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#94b3fb,#b899fb)', color: '#faf7f2', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(105,91,255,.32)' }}>
+              <button onClick={handleSave} disabled={savingDetails} style={{ background: 'linear-gradient(135deg,#3a63ff,#6d8cff)', color: '#f2f6ff', border: 'none', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: savingDetails ? 'wait' : 'pointer', opacity: savingDetails ? 0.7 : 1, fontFamily: 'inherit', boxShadow: '0 10px 20px rgba(58,99,255,.32)' }}>
                 {savingDetails ? 'Saving…' : 'Save Changes'}
               </button>
-              <button onClick={resetSession} style={{ background: 'none', color: '#e0457a', border: '1.5px solid #ffd3e3', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={resetSession} style={{ background: 'none', color: '#e8476b', border: '1.5px solid #ffe9ef', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Clear Session Data
               </button>
-              <button onClick={signOut} style={{ background: 'none', color: '#6b7392', border: '1.5px solid #f1eadd', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              <button onClick={signOut} style={{ background: 'none', color: '#5a6a8f', border: '1.5px solid #dbe4f7', borderRadius: 13, padding: '14px 28px', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                 Sign Out
               </button>
             </>

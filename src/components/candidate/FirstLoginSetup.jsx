@@ -228,7 +228,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #f5f0e8 0%, #fffaf0 100%)',
+      background: 'linear-gradient(135deg, #f2f6ff 0%, #ffffff 100%)',
       padding: 20,
     }}>
       <div style={{
@@ -236,14 +236,14 @@ export default function FirstLoginSetup({ onComplete, user }) {
         maxWidth: 500,
         background: 'white',
         borderRadius: 20,
-        boxShadow: '0 20px 60px rgba(20, 27, 52, 0.15)',
+        boxShadow: '0 20px 60px rgba(30,45,90, 0.15)',
         padding: '40px 30px',
       }}>
         {/* Progress bar */}
         <div style={{ marginBottom: 30 }}>
           <div style={{
             height: 4,
-            background: '#f1eadd',
+            background: '#dbe4f7',
             borderRadius: 2,
             overflow: 'hidden',
             marginBottom: 20,
@@ -251,14 +251,14 @@ export default function FirstLoginSetup({ onComplete, user }) {
             <div style={{
               height: '100%',
               width: `${progress}%`,
-              background: 'linear-gradient(90deg, #94b3fb, #b899fb)',
+              background: 'linear-gradient(90deg, #3a63ff, #6d8cff)',
               transition: 'width 0.3s ease',
             }} />
           </div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#141b34', margin: '0 0 8px' }}>
+          <h2 style={{ fontSize: 22, fontWeight: 800, color: '#111a33', margin: '0 0 8px' }}>
             {currentStep.title}
           </h2>
-          <p style={{ fontSize: 14, color: '#6b7392', margin: 0 }}>
+          <p style={{ fontSize: 14, color: '#5a6a8f', margin: 0 }}>
             {currentStep.subtitle}
           </p>
         </div>
@@ -283,7 +283,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
           {step === 0 && (
             <div>
               <label style={{ display: 'block', marginBottom: 12 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Full Name *
                 </span>
                 <input
@@ -297,7 +297,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -310,7 +310,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
           {step === 1 && (
             <div>
               <label style={{ display: 'block', marginBottom: 18 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Contact Email *
                 </span>
                 <input
@@ -324,7 +324,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -332,7 +332,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 />
               </label>
               <label style={{ display: 'block' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Confirm Email *
                 </span>
                 <input
@@ -346,7 +346,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -359,7 +359,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
           {step === 2 && (
             <div>
               <label style={{ display: 'block', marginBottom: 18 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Country of Residence *
                 </span>
                 <select
@@ -371,7 +371,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -384,7 +384,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 </select>
               </label>
               <label style={{ display: 'block', marginBottom: 18 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Age *
                 </span>
                 <input
@@ -400,7 +400,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -408,7 +408,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 />
               </label>
               <label style={{ display: 'block' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 6, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 6, display: 'block' }}>
                   Timezone
                 </span>
                 <select
@@ -420,7 +420,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                     width: '100%',
                     padding: 12,
                     borderRadius: 10,
-                    border: '1.5px solid #e7dcc7',
+                    border: '1.5px solid #e3ebfa',
                     fontSize: 14,
                     fontFamily: 'inherit',
                     boxSizing: 'border-box',
@@ -437,7 +437,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
           {step === 3 && (
             <div>
               <label style={{ display: 'block', marginBottom: 20 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#5b46e0', marginBottom: 12, display: 'block' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#3a63ff', marginBottom: 12, display: 'block' }}>
                   Choose Your Journey *
                 </span>
                 <div style={{ display: 'grid', gap: 10 }}>
@@ -446,10 +446,10 @@ export default function FirstLoginSetup({ onComplete, user }) {
                       display: 'flex',
                       alignItems: 'center',
                       padding: 12,
-                      border: formData.journeyType === key ? '2px solid #5b46e0' : '1.5px solid #e7dcc7',
+                      border: formData.journeyType === key ? '2px solid #3a63ff' : '1.5px solid #e3ebfa',
                       borderRadius: 10,
                       cursor: 'pointer',
-                      background: formData.journeyType === key ? '#f8f6ff' : '#faf7f2',
+                      background: formData.journeyType === key ? '#ffffff' : '#f2f6ff',
                       transition: 'all 0.2s ease',
                     }}>
                       <input
@@ -460,7 +460,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                         onChange={handleChange}
                         style={{ marginRight: 12, cursor: 'pointer' }}
                       />
-                      <span style={{ fontSize: 14, fontWeight: 600, color: '#141b34' }}>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#111a33' }}>
                         {label}
                       </span>
                     </label>
@@ -473,8 +473,8 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 alignItems: 'flex-start',
                 gap: 12,
                 padding: 12,
-                background: '#fffaf0',
-                border: '1px solid #f1eadd',
+                background: '#ffffff',
+                border: '1px solid #dbe4f7',
                 borderRadius: 10,
                 cursor: 'pointer',
                 marginTop: 20,
@@ -486,7 +486,7 @@ export default function FirstLoginSetup({ onComplete, user }) {
                   onChange={handleChange}
                   style={{ marginTop: 4, cursor: 'pointer', flexShrink: 0 }}
                 />
-                <span style={{ fontSize: 13, color: '#6b7392', lineHeight: 1.5 }}>
+                <span style={{ fontSize: 13, color: '#5a6a8f', lineHeight: 1.5 }}>
                   I agree to receive Pathway journey reminders at this email address
                 </span>
               </label>
@@ -504,9 +504,9 @@ export default function FirstLoginSetup({ onComplete, user }) {
                 flex: 1,
                 padding: '12px 20px',
                 borderRadius: 12,
-                border: '1.5px solid #e7dcc7',
-                background: '#faf7f2',
-                color: '#5b46e0',
+                border: '1.5px solid #e3ebfa',
+                background: '#f2f6ff',
+                color: '#3a63ff',
                 fontWeight: 700,
                 fontSize: 14,
                 cursor: loading ? 'not-allowed' : 'pointer',
@@ -525,14 +525,14 @@ export default function FirstLoginSetup({ onComplete, user }) {
               padding: '12px 20px',
               borderRadius: 12,
               border: 'none',
-              background: 'linear-gradient(135deg, #94b3fb, #b899fb)',
-              color: '#faf7f2',
+              background: 'linear-gradient(135deg, #3a63ff, #6d8cff)',
+              color: '#f2f6ff',
               fontWeight: 700,
               fontSize: 14,
               cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.7 : 1,
               fontFamily: 'inherit',
-              boxShadow: '0 8px 16px rgba(105, 91, 255, 0.3)',
+              boxShadow: '0 8px 16px rgba(58,99,255, 0.3)',
             }}
           >
             {loading ? 'Setting up...' : step === steps.length - 1 ? 'Get Started' : 'Continue'}
