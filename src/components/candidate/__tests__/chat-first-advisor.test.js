@@ -159,8 +159,9 @@ test('production advisor renders a missing-program recovery card', () => {
   assert.match(conversational, /Generate my school list/);
 });
 
-test('undergrad advisor exposes state-driven KPI and tab navigation', () => {
-  assert.match(conversational, /<UndergradKpiPanel/);
+test('undergrad advisor exposes state-driven tab navigation (KPI scorecard lives in Dashboard/Workspace, not chat)', () => {
+  // The KPI scorecard is intentionally NOT rendered inside the chat anymore.
+  assert.ok(!/UndergradKpiPanel/.test(conversational));
   assert.match(conversational, /'View University List': 'universities'/);
   for (const label of ['Academic Base', 'Subject Direction', 'Activity Depth', 'Leadership', 'Testing Readiness', 'Initiative / Projects', 'Consistency / Momentum']) {
     assert.ok(kpiPanel.includes(label));
