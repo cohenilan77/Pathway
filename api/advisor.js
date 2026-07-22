@@ -375,6 +375,7 @@ async function invokeAdvisor(req, bypassRuntimeConfig, candidateState = {}) {
     // Narrative Coaching v2 (NARRATIVE_COACHING_V2): once locked via
     // NarrativeCoachAgent, every downstream AdvisorAgent turn must see it.
     narrativeText: candidateState.narrativeText || req.body?.narrativeText,
+    strategy: candidateState.strategy || req.body?.strategy,
   };
   const body = deterministicContext
     ? { ...baseBody, systemContext: [req.body?.systemContext, deterministicContext].filter(Boolean).join('\n\n') }

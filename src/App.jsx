@@ -430,6 +430,7 @@ export default function App() {
   const [narrativeText, setNarrativeText] = useState(null);
   const [narrativeTextUpdatedAt, setNarrativeTextUpdatedAt] = useState(null);
   const [narrativeCoaching, setNarrativeCoaching] = useState(null);
+  const [strategy, setStrategy] = useState(null);
   const [toast, setToast] = useState('');
   const [chat, setChat] = useState(INITIAL_CHAT);
   const [sessionId, setSessionId] = useState(createSessionId);
@@ -599,6 +600,7 @@ export default function App() {
         setNarrativeText(data?.narrativeText || null);
         setNarrativeTextUpdatedAt(data?.narrativeTextUpdatedAt || null);
         setNarrativeCoaching(data?.narrativeCoaching || null);
+        setStrategy(data?.strategy || data?.narrativeCoaching?.strategy || null);
         const isUndergrad = loadedProfile?.category === 'Undergraduate';
         const loadedUndergrad = data?.undergrad || null;
         setUndergrad(isUndergrad && loadedUndergrad
@@ -655,12 +657,12 @@ export default function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${auth.token}` },
         body: JSON.stringify({
-          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override },
+          data: { sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs: normalizeProgramList(programs, { scores, scoreDetails: insights?.scoreDetails }) || programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, strategy, undergrad, override },
         }),
       }).catch(() => {});
     }, 600);
     return () => clearTimeout(saveTimerRef.current);
-  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, undergrad, override]);
+  }, [auth?.token, sessionId, chat, stepIdx, profile, scores, strengths, weaknesses, tasks, completedTasks, programs, chosenSchools, cvText, cvFile, essayText, essaySchool, essayQuestion, essays, documents, scholarships, interviews, insights, narrative, narrativeText, narrativeTextUpdatedAt, narrativeCoaching, strategy, undergrad, override]);
 
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -786,7 +788,7 @@ export default function App() {
     setTasks(null); setCompletedTasks({});
     setPrograms(null); setChosenSchools(null); setCvText(''); setCvFile(null); setEssayText(''); setEssaySchool('');
     setEssayQuestion(''); setEssays({}); setDocuments([]); setInterviews({});
-    setInsights(null); setNarrative(null); setNarrativeText(null); setNarrativeTextUpdatedAt(null); setNarrativeCoaching(null); setUndergrad(null); setOverride(0);
+    setInsights(null); setNarrative(null); setNarrativeText(null); setNarrativeTextUpdatedAt(null); setNarrativeCoaching(null); setStrategy(null); setUndergrad(null); setOverride(0);
     if (auth?.token) {
       fetch('/api/session', {
         method: 'POST',
@@ -1034,7 +1036,7 @@ export default function App() {
           systemContext,
           ...requestExtras,
           candidateState: {
-            profile: requestProfile, scores, programs, chosenSchools, narrative, documents, essays, interviews,
+            profile: requestProfile, scores, programs, chosenSchools, narrative, narrativeText, narrativeCoaching, strategy, stageName: stage?.stageName, stepIdx, documents, essays, interviews,
             ...(requestExtras.profileSources ? { profileSources: requestExtras.profileSources } : {}),
           },
         }),
@@ -1218,6 +1220,7 @@ export default function App() {
           if (cvStep !== null) setStepIdx(prev => Math.max(prev, cvStep));
         }
         if (typedPatch.narrativeCoaching) setNarrativeCoaching(typedPatch.narrativeCoaching);
+        if (typedPatch.strategy) setStrategy(typedPatch.strategy);
         if (parsed.insights) setInsights(parsed.insights);
         if (parsed.essay && parsed.essay.school) {
           const essayName = safeDocBaseName(parsed.essay.school ? `Essay - ${parsed.essay.school}` : titleFromText(parsed.essay.text, 'Essay Draft'), 'Essay Draft');
@@ -1326,7 +1329,7 @@ export default function App() {
     } catch (error) {
       const message = buildAdvisorFallbackMessage({
         errorName: error?.name,
-        isSchoolListPhase,
+        isSchoolListPhase: isSchoolListTimeoutPhase,
         isCvSubmission,
         requestedProgramList: requestsFirstProgramList || explicitRegenerateProgramList,
       });
@@ -1350,7 +1353,7 @@ export default function App() {
       const res = await fetch('/api/advisor', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}) },
-        body: JSON.stringify({ action: 'candidate_message', message: '__idle_checkin__', messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext, candidateState: { profile, scores, programs, chosenSchools, narrative, documents, essays, interviews } }),
+        body: JSON.stringify({ action: 'candidate_message', message: '__idle_checkin__', messages: idleMessages, aiConfig, language, conversationId: sessionId, profile, scores, programs: normalizeProgramList(programs) || programs, chosenSchools, stage, systemContext, candidateState: { profile, scores, programs, chosenSchools, narrative, narrativeText, narrativeCoaching, strategy, stageName: stage?.stageName, stepIdx, documents, essays, interviews } }),
       });
       const data = await res.json();
       if (!res.ok) return;
@@ -1607,7 +1610,7 @@ export default function App() {
     sel, setSel,
     override, setOverride,
     narrative, setNarrative,
-    narrativeText, setNarrativeText, narrativeTextUpdatedAt, setNarrativeTextUpdatedAt, narrativeCoaching,
+    narrativeText, setNarrativeText, narrativeTextUpdatedAt, setNarrativeTextUpdatedAt, narrativeCoaching, strategy,
     undergrad, setUndergradTaskStatus, acknowledgeReminder, regenerateRoadmap,
     sessionId, chat, setChat, input, setInput, busy,
     STEPS: currentSteps, UNDERGRAD_STEPS, stepIdx,
