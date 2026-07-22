@@ -148,6 +148,14 @@ async function finalizeKpiResponse(response, candidateState, candidateId) {
       careerProgression: candidateFacts.careerProgression,
       leadershipEvidence: candidateFacts.leadershipEvidence,
       achievementsImpact: candidateFacts.achievementsImpact,
+      // Objective test score extracted from the resume/chat must survive to
+      // later turns (profileSources are only sent on the upload turn). Guarded
+      // so a turn without source text can't wipe a previously captured score.
+      gmat: candidateFacts.gmat ?? mergedProfile?.candidateFacts?.gmat,
+      gre: candidateFacts.gre ?? mergedProfile?.candidateFacts?.gre,
+      sat: candidateFacts.sat ?? mergedProfile?.candidateFacts?.sat,
+      act: candidateFacts.act ?? mergedProfile?.candidateFacts?.act,
+      testScore: candidateFacts.testScore ?? mergedProfile?.candidateFacts?.testScore,
       whyMBA: candidateFacts.whyMBA,
       whyNow: candidateFacts.whyNow,
       postMbaGoal: candidateFacts.postMbaGoal,
