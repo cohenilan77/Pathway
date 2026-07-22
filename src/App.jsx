@@ -11,7 +11,7 @@ import { normalizeProgramList } from '../lib/program-normalizer.js';
 import { N1_QUESTION } from '../lib/selection-continuity.js';
 import { buildProfileSourceBundle } from '../lib/profile-source-bundle.js';
 import { calculateCandidateOverall } from '../lib/candidate-kpi-schemas.js';
-import { OPENING_PATH_OPTIONS, resolveOpeningPathChoice } from '../lib/onboarding.js';
+import { resolveOpeningPathChoice } from '../lib/onboarding.js';
 import {
   needsGraduateDegree,
   resolveGraduateDegreeChoice,
@@ -55,21 +55,11 @@ const WELCOME_MESSAGE = {
   Portuguese: "Bem-vindo — fico feliz que esteja aqui. Vamos avançar com clareza, um passo de cada vez.",
 };
 
-const PATH_QUESTION = {
-  English: 'Which path best describes you?',
-  Spanish: '¿Qué camino te describe mejor?',
-  Hebrew: 'איזה מסלול מתאר אתכם בצורה הטובה ביותר?',
-  Arabic: 'أي مسار يصفك بشكل أفضل؟',
-  Chinese: '哪条路径最符合你的情况？',
-  French: 'Quel parcours vous correspond le mieux ?',
-  Portuguese: 'Qual caminho descreve melhor você?',
-};
-
 function buildInitialChat(language) {
-  const options = OPENING_PATH_OPTIONS.join(' | ');
+  // The track question is now asked by the first-run OnboardingModal, not in
+  // chat. The opening path answer still flows through send()/resolveOpeningPathChoice.
   return [
     { role: 'ai', channel: 'web', text: WELCOME_MESSAGE[language] || WELCOME_MESSAGE.English },
-    { role: 'ai', channel: 'web', text: `${PATH_QUESTION[language] || PATH_QUESTION.English} → ${options}` },
   ];
 }
 
@@ -423,6 +413,10 @@ export default function App() {
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
   const [candTab, setCandTab] = useState('advisor');
+  // True once the candidate session has finished hydrating from the server, so
+  // the first-run onboarding modal only appears after we actually know whether
+  // the candidate has a track/category (avoids a flash for returning users).
+  const [sessionHydrated, setSessionHydrated] = useState(false);
   const [docTab, setDocTab] = useState('editor');
   const [adminTab, setAdminTab] = useState('feed');
   const [sel, setSel] = useState(0);
@@ -537,6 +531,7 @@ export default function App() {
   useEffect(() => {
     if (!auth?.token) return;
     let cancelled = false;
+    setSessionHydrated(false);
     (async () => {
       try {
         const res = await fetch('/api/session', { headers: { Authorization: `Bearer ${auth.token}` } });
@@ -550,6 +545,7 @@ export default function App() {
         }
         if (user?.role === 'admin' || user?.role === 'consultant') {
           setScreen('admin');
+          setSessionHydrated(true);
           return;
         }
         const loadedChat = data?.chat?.length ? data.chat : INITIAL_CHAT;
@@ -607,6 +603,7 @@ export default function App() {
           ? runScheduledNagger(loadedUndergrad, { candidateId: user?.id, candidateName: user?.name, now: Date.now() }).state
           : loadedUndergrad);
         setOverride(data?.override ?? data?.scores?.overall ?? 0);
+        setSessionHydrated(true);
 
       } catch {
         if (!cancelled) { setAuth(null); setScreen('login'); }
@@ -1600,8 +1597,16 @@ export default function App() {
     });
   }, [auth?.user?.id, sessionId, profile]);
 
+  // Show the first-run track picker once a candidate session has hydrated and
+  // the candidate has no category yet (brand-new, or a legacy profile that
+  // never captured one). Picking a card feeds send() the opening-path token.
+  const showOnboarding = screen === 'candidate'
+    && sessionHydrated
+    && !!auth?.user
+    && !String(profile?.category || '').trim();
+
   const sharedProps = {
-    screen, role, setRole,
+    screen, role, setRole, showOnboarding,
     showPw, setShowPw,
     remember, setRemember,
     candTab, setCandTab,
