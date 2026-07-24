@@ -3,8 +3,13 @@
     "api/test-simulation.js": { "maxDuration": 60 },
     "api/community-*.js": { "maxDuration": 30 },
     "api/advisor.js": { "maxDuration": 280 },
-    "api/chat.js": { "maxDuration": 280 }
+    "api/chat.js": { "maxDuration": 280 },
+    "api/undergrad.js": { "maxDuration": 60 }
   },
+  "crons": [
+    { "path": "/api/cron/undergrad-idle-sweep", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/undergrad-nudge", "schedule": "0 15 * * 3" }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
